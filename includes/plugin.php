@@ -20,6 +20,9 @@ use EstateOffice\PostTypes\AgreementColumns;
 use EstateOffice\PostTypes\SearchRegister;
 use EstateOffice\PostTypes\SearchMeta;
 use EstateOffice\PostTypes\SearchColumns;
+use EstateOffice\PostTypes\ClientRegister;
+use EstateOffice\PostTypes\ClientMeta;
+use EstateOffice\PostTypes\ClientColumns;
 
 final class Plugin
 {
@@ -41,6 +44,7 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgreementRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [SearchRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ClientRegister::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
@@ -54,6 +58,9 @@ final class Plugin
         SearchRegister::bootstrap();
         SearchMeta::bootstrap();
         SearchColumns::bootstrap();
+        ClientRegister::bootstrap();
+        ClientMeta::bootstrap();
+        ClientColumns::bootstrap();
         AgentProfile::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);

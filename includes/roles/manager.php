@@ -69,6 +69,20 @@ final class Manager
         'delete_published_estate_searches'   => false,
     ];
 
+    private const CLIENT_CAPABILITIES = [
+        'read_estate_client'                 => true,
+        'read_private_estate_clients'        => true,
+        'edit_estate_client'                 => true,
+        'edit_estate_clients'                => true,
+        'edit_others_estate_clients'         => true,
+        'publish_estate_clients'             => true,
+        'delete_estate_client'               => false,
+        'delete_estate_clients'              => false,
+        'delete_others_estate_clients'       => false,
+        'delete_private_estate_clients'      => false,
+        'delete_published_estate_clients'    => false,
+    ];
+
     public static function activate(): void
     {
         self::register();
@@ -88,7 +102,8 @@ final class Manager
             self::BASE_CAPABILITIES,
             self::PROPERTY_CAPABILITIES,
             self::AGREEMENT_CAPABILITIES,
-            self::SEARCH_CAPABILITIES
+            self::SEARCH_CAPABILITIES,
+            self::CLIENT_CAPABILITIES
         );
 
         if (!$role instanceof \WP_Role) {
@@ -155,6 +170,17 @@ final class Manager
             'delete_others_estate_searches',
             'delete_private_estate_searches',
             'delete_published_estate_searches',
+            'read_estate_client',
+            'read_private_estate_clients',
+            'edit_estate_client',
+            'edit_estate_clients',
+            'edit_others_estate_clients',
+            'publish_estate_clients',
+            'delete_estate_client',
+            'delete_estate_clients',
+            'delete_others_estate_clients',
+            'delete_private_estate_clients',
+            'delete_published_estate_clients',
         ];
 
         foreach ($caps as $capability) {
