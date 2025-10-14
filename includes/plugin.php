@@ -12,8 +12,11 @@ use EstateOffice\Roles\Manager as RolesManager;
 use EstateOffice\Settings\GeneralSettings;
 use EstateOffice\Admin\Pages\SettingsPage;
 use EstateOffice\PostTypes\PropertyRegister;
+use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\PropertyMeta;
+use EstateOffice\PostTypes\AgreementMeta;
 use EstateOffice\PostTypes\PropertyColumns;
+use EstateOffice\PostTypes\AgreementColumns;
 
 final class Plugin
 {
@@ -33,6 +36,7 @@ final class Plugin
     {
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgreementRegister::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
@@ -40,6 +44,9 @@ final class Plugin
         PropertyRegister::bootstrap();
         PropertyMeta::bootstrap();
         PropertyColumns::bootstrap();
+        AgreementRegister::bootstrap();
+        AgreementMeta::bootstrap();
+        AgreementColumns::bootstrap();
         AgentProfile::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
