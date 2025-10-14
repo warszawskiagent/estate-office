@@ -9,6 +9,7 @@ namespace EstateOffice;
 
 use EstateOffice\Admin\Admin;
 use EstateOffice\PublicSite\Frontend;
+use EstateOffice\Rest\Rest_API;
 use EstateOffice\Security;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,6 +30,7 @@ class Estate_Office {
         $this->set_locale();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+        $this->define_rest_hooks();
         $this->init_security_layers();
     }
 
@@ -52,6 +54,10 @@ class Estate_Office {
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/controllers/class-contract-controller.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/controllers/class-property-controller.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/controllers/class-search-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-base-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-rest-api.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-properties-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-clients-controller.php';
     }
 
     /**
@@ -84,6 +90,16 @@ class Estate_Office {
         $frontend = new Frontend();
         add_action( 'init', [ $frontend, 'register_post_types' ] );
         add_action( 'init', [ $frontend, 'register_rewrite_tags' ] );
+    }
+
+    /**
+     * Register REST API routes.
+     *
+     * @return void
+     */
+    private function define_rest_hooks(): void {
+        $rest = new Rest_API();
+        add_action( 'rest_api_init', [ $rest, 'register_routes' ] );
     }
 
     /**
