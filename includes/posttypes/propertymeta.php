@@ -6,19 +6,36 @@ namespace EstateOffice\PostTypes;
 
 use WP_Post;
 
+use function checked;
+use function current_time;
+use function delete_post_meta;
+use function esc_attr;
+use function esc_html;
+use function esc_html__;
 use function esc_url;
 use function get_edit_post_link;
 use function get_post;
 use function get_post_meta;
+use function get_posts;
 use function get_the_title;
 use function get_user_by;
+use function time;
+use function update_post_meta;
+use function wp_clear_scheduled_hook;
 use function wp_dropdown_users;
+use function wp_next_scheduled;
+use function wp_schedule_event;
+
+use const DAY_IN_SECONDS;
 
 defined('ABSPATH') || exit;
 
 final class PropertyMeta
 {
     public const AGREEMENTS_META_KEY = 'estate_property_agreements';
+    private const NEW_OFFER_EXPIRY_META_KEY = 'estate_property_new_offer_expires';
+    private const NEW_OFFER_CRON_HOOK = 'estate_office_expire_new_offer_flags';
+    private const NEW_OFFER_DURATION = 7 * DAY_IN_SECONDS;
 
     private const META_FIELDS = [
         'estate_property_reference'          => ['type' => 'string'],
@@ -51,6 +68,17 @@ final class PropertyMeta
         'estate_property_plot_length'         => ['type' => 'decimal', 'precision' => 2],
         'estate_property_plot_width'          => ['type' => 'decimal', 'precision' => 2],
         'estate_property_plot_dimensions'     => ['type' => 'textarea'],
+        'estate_property_flag_new_offer'      => ['type' => 'boolean'],
+        'estate_property_flag_exclusive'      => ['type' => 'boolean'],
+        'estate_property_flag_sold'           => ['type' => 'boolean'],
+        'estate_property_flag_rented'         => ['type' => 'boolean'],
+        'estate_property_flag_price_change'   => ['type' => 'boolean'],
+        'estate_property_flag_no_commission'  => ['type' => 'boolean'],
+        'estate_property_flag_mls'            => ['type' => 'boolean'],
+        'estate_property_flag_premium'        => ['type' => 'boolean'],
+        'estate_property_flag_export_www'     => ['type' => 'boolean'],
+        'estate_property_flag_export_portals' => ['type' => 'boolean'],
+        self::NEW_OFFER_EXPIRY_META_KEY       => ['type' => 'integer'],
     ];
 
     private const LEGAL_STATUSES = [
@@ -76,8 +104,10 @@ final class PropertyMeta
     public static function bootstrap(): void
     {
         add_action('init', [self::class, 'registerMeta']);
+        add_action('init', [self::class, 'scheduleNewOfferCleanup']);
         add_action('add_meta_boxes', [self::class, 'addMetaBoxes']);
         add_action('save_post_' . PropertyRegister::POST_TYPE, [self::class, 'save']);
+        add_action(self::NEW_OFFER_CRON_HOOK, [self::class, 'expireNewOfferFlags']);
     }
 
     public static function registerMeta(): void
@@ -141,6 +171,15 @@ final class PropertyMeta
         );
 
         add_meta_box(
+            'estate-office-property-flags',
+            __('Znaczniki i eksport', 'estate-office'),
+            [self::class, 'renderFlagsBox'],
+            PropertyRegister::POST_TYPE,
+            'side',
+            'default'
+        );
+
+        add_meta_box(
             'estate-office-property-address',
             __('Dane adresowe', 'estate-office'),
             [self::class, 'renderAddressBox'],
@@ -196,6 +235,124 @@ final class PropertyMeta
         echo '</p>';
 
         self::renderAgreementsSummary($post);
+    }
+
+    public static function renderFlagsBox(WP_Post $post): void
+    {
+        $definitions = self::getFlagDefinitions();
+        $groups      = [
+            'flag'   => [],
+            'export' => [],
+        ];
+
+        foreach ($definitions as $key => $definition) {
+            $group = $definition['group'] ?? 'flag';
+            $groups[$group][$key] = $definition;
+        }
+
+        echo '<div class="estate-office-property-flags">';
+        self::renderFlagGroup($post, $groups['flag'], esc_html__('Znaczniki', 'estate-office'));
+        self::renderFlagGroup($post, $groups['export'], esc_html__('Eksport', 'estate-office'));
+        echo '</div>';
+    }
+
+    /**
+     * @param array<string,array{label:string,description:string,badge:string,group:string}> $definitions
+     */
+    private static function renderFlagGroup(WP_Post $post, array $definitions, string $legend): void
+    {
+        if (empty($definitions)) {
+            return;
+        }
+
+        echo '<fieldset class="estate-office-property-flags__group">';
+        echo '<legend><strong>' . esc_html($legend) . '</strong></legend>';
+
+        foreach ($definitions as $key => $definition) {
+            $isChecked = (bool) get_post_meta($post->ID, $key, true);
+            echo '<label class="estate-office-property-flag">';
+            printf(
+                '<input type="checkbox" id="%1$s" name="%1$s" value="1" %2$s />',
+                esc_attr($key),
+                checked($isChecked, true, false)
+            );
+            echo '<span class="estate-office-property-flag__label">' . esc_html($definition['label']) . '</span>';
+            if ($definition['description'] !== '') {
+                echo '<span class="description">' . esc_html($definition['description']) . '</span>';
+            }
+            echo '</label>';
+        }
+
+        echo '</fieldset>';
+    }
+
+    /**
+     * @return array<string,array{label:string,description:string,badge:string,group:string}>
+     */
+    public static function getFlagDefinitions(): array
+    {
+        return [
+            'estate_property_flag_new_offer' => [
+                'label'       => __('Nowa oferta', 'estate-office'),
+                'description' => __('Naklejka i hashtag oferty. Status wygasa automatycznie po 7 dniach.', 'estate-office'),
+                'badge'       => 'new',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_exclusive' => [
+                'label'       => __('Wyłączność', 'estate-office'),
+                'description' => __('Oznacza umowę na wyłączność i wyróżnia ofertę w CRM.', 'estate-office'),
+                'badge'       => 'exclusive',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_sold' => [
+                'label'       => __('Sprzedane', 'estate-office'),
+                'description' => __('Naklejka i hashtag dostępne dla transakcji sprzedaży.', 'estate-office'),
+                'badge'       => 'sold',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_rented' => [
+                'label'       => __('Wynajęte', 'estate-office'),
+                'description' => __('Naklejka i hashtag dostępne dla transakcji wynajmu.', 'estate-office'),
+                'badge'       => 'rented',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_price_change' => [
+                'label'       => __('Nowa cena', 'estate-office'),
+                'description' => __('Podkreśla niedawną zmianę ceny i dodaje hashtag promocji.', 'estate-office'),
+                'badge'       => 'price',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_no_commission' => [
+                'label'       => __('Bez prowizji', 'estate-office'),
+                'description' => __('Informuje klientów o braku prowizji po stronie kupującego.', 'estate-office'),
+                'badge'       => 'commission',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_mls' => [
+                'label'       => __('Oferta MLS', 'estate-office'),
+                'description' => __('Podkreśla, że oferta jest udostępniona w systemie MLS.', 'estate-office'),
+                'badge'       => 'mls',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_premium' => [
+                'label'       => __('Premium', 'estate-office'),
+                'description' => __('Wyróżnia najbardziej ekskluzywne oferty w portfelu.', 'estate-office'),
+                'badge'       => 'premium',
+                'group'       => 'flag',
+            ],
+            'estate_property_flag_export_www' => [
+                'label'       => __('Eksport na WWW', 'estate-office'),
+                'description' => __('Publikuj nieruchomość jako stronę oferty na witrynie.', 'estate-office'),
+                'badge'       => '',
+                'group'       => 'export',
+            ],
+            'estate_property_flag_export_portals' => [
+                'label'       => __('Eksport na portale', 'estate-office'),
+                'description' => __('Funkcjonalność w przygotowaniu – oznacza ofertę do eksportu zewnętrznego.', 'estate-office'),
+                'badge'       => '',
+                'group'       => 'export',
+            ],
+        ];
     }
 
     private static function renderAgreementsSummary(WP_Post $post): void
@@ -487,8 +644,61 @@ final class PropertyMeta
             $values['estate_property_price_per_sqm'] = number_format((float) $price / (float) $area, 2, '.', '');
         }
 
+        if (!empty($values['estate_property_flag_new_offer'])) {
+            $values[self::NEW_OFFER_EXPIRY_META_KEY] = (string) ((int) current_time('timestamp') + self::NEW_OFFER_DURATION);
+        } else {
+            $values[self::NEW_OFFER_EXPIRY_META_KEY] = '';
+        }
+
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
+        }
+    }
+
+    public static function activate(): void
+    {
+        self::scheduleNewOfferCleanup();
+    }
+
+    public static function deactivate(): void
+    {
+        wp_clear_scheduled_hook(self::NEW_OFFER_CRON_HOOK);
+    }
+
+    public static function scheduleNewOfferCleanup(): void
+    {
+        if (!wp_next_scheduled(self::NEW_OFFER_CRON_HOOK)) {
+            wp_schedule_event(time() + DAY_IN_SECONDS, 'daily', self::NEW_OFFER_CRON_HOOK);
+        }
+    }
+
+    public static function expireNewOfferFlags(): void
+    {
+        $now   = (int) current_time('timestamp');
+        $posts = get_posts([
+            'post_type'      => PropertyRegister::POST_TYPE,
+            'post_status'    => 'any',
+            'fields'         => 'ids',
+            'nopaging'       => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'   => 'estate_property_flag_new_offer',
+                    'value' => 1,
+                ],
+                [
+                    'key'     => self::NEW_OFFER_EXPIRY_META_KEY,
+                    'value'   => $now,
+                    'type'    => 'NUMERIC',
+                    'compare' => '<=',
+                ],
+            ],
+        ]);
+
+        foreach ($posts as $postId) {
+            $id = (int) $postId;
+            update_post_meta($id, 'estate_property_flag_new_offer', 0);
+            delete_post_meta($id, self::NEW_OFFER_EXPIRY_META_KEY);
         }
     }
 

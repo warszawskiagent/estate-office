@@ -44,6 +44,7 @@ use function number_format_i18n;
 use function plugins_url;
 use function preg_replace;
 use function remove_query_arg;
+use function sanitize_html_class;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sprintf;
@@ -515,7 +516,21 @@ final class CRM
             echo '<tbody>';
             foreach ($rows as $row) {
                 echo '<tr>';
-                echo '<td><a href="' . esc_url($row['link']) . '">' . esc_html($row['reference']) . '</a></td>';
+                echo '<td>';
+                echo '<a href="' . esc_url($row['link']) . '">' . esc_html($row['reference']) . '</a>';
+                if (!empty($row['badges'])) {
+                    echo '<div class="estate-office-crm__table-badges">';
+                    foreach ($row['badges'] as $badge) {
+                        $className = 'estate-office-crm__badge';
+                        $modifier  = isset($badge['class']) ? trim((string) $badge['class']) : '';
+                        if ($modifier !== '') {
+                            $className .= ' estate-office-crm__badge--' . sanitize_html_class($modifier);
+                        }
+                        echo '<span class="' . esc_attr($className) . '">' . esc_html($badge['label']) . '</span>';
+                    }
+                    echo '</div>';
+                }
+                echo '</td>';
                 echo '<td>' . esc_html($row['address']) . '</td>';
                 echo '<td>' . esc_html($row['price']) . '</td>';
                 echo '<td>' . esc_html($row['price_per_sqm']) . '</td>';
@@ -534,7 +549,7 @@ final class CRM
     }
 
     /**
-     * @return array<int,array{link:string,reference:string,address:string,price:string,price_per_sqm:string,area:string,rooms:string,manager:string}>
+     * @return array<int,array{link:string,reference:string,address:string,price:string,price_per_sqm:string,area:string,rooms:string,manager:string,badges:array<int,array{label:string,class:string}>}>
      */
     private static function queryProperties(string $searchTerm): array
     {
@@ -588,6 +603,7 @@ final class CRM
                 'area'           => self::formatNumberMeta($postId, 'estate_property_area'),
                 'rooms'          => self::formatIntegerMeta($postId, 'estate_property_rooms'),
                 'manager'        => self::getManagerName((int) get_post_meta($postId, 'estate_property_manager', true)),
+                'badges'         => self::getPropertyBadges($postId),
             ];
         }
 
@@ -849,7 +865,8 @@ final class CRM
         self::renderDetailHeader(
             $title,
             sprintf(__('Numer oferty: %s', 'estate-office'), $reference),
-            $postId
+            $postId,
+            self::getPropertyBadges($postId)
         );
 
         $cards = [
@@ -928,6 +945,32 @@ final class CRM
         );
 
         echo '</section>';
+    }
+
+    /**
+     * @return array<int,array{label:string,class:string}>
+     */
+    private static function getPropertyBadges(int $postId): array
+    {
+        $definitions = PropertyMeta::getFlagDefinitions();
+        $badges      = [];
+
+        foreach ($definitions as $metaKey => $definition) {
+            if (($definition['group'] ?? '') !== 'flag') {
+                continue;
+            }
+
+            if ((int) get_post_meta($postId, $metaKey, true) !== 1) {
+                continue;
+            }
+
+            $badges[] = [
+                'label' => (string) $definition['label'],
+                'class' => isset($definition['badge']) ? (string) $definition['badge'] : '',
+            ];
+        }
+
+        return $badges;
     }
 
     private static function renderAgreementDetail(int $postId): void
@@ -1169,7 +1212,10 @@ final class CRM
         echo '</section>';
     }
 
-    private static function renderDetailHeader(string $title, string $subtitle, int $postId): void
+    /**
+     * @param array<int,array{label:string,class:string}> $badges
+     */
+    private static function renderDetailHeader(string $title, string $subtitle, int $postId, array $badges = []): void
     {
         $title = trim($title);
         if ($title === '') {
@@ -1181,6 +1227,18 @@ final class CRM
         echo '<h2>' . esc_html($title) . '</h2>';
         if ($subtitle !== '') {
             echo '<p class="estate-office-crm__detail-subtitle">' . esc_html($subtitle) . '</p>';
+        }
+        if (!empty($badges)) {
+            echo '<ul class="estate-office-crm__detail-badges">';
+            foreach ($badges as $badge) {
+                $className = 'estate-office-crm__badge';
+                $modifier  = isset($badge['class']) ? trim((string) $badge['class']) : '';
+                if ($modifier !== '') {
+                    $className .= ' estate-office-crm__badge--' . sanitize_html_class($modifier);
+                }
+                echo '<li><span class="' . esc_attr($className) . '">' . esc_html($badge['label']) . '</span></li>';
+            }
+            echo '</ul>';
         }
         echo '</div>';
 

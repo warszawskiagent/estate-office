@@ -221,6 +221,76 @@
     margin: 4px 0 0;
 }
 
+.estate-office-crm__detail-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+}
+
+.estate-office-crm__table-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.estate-office-crm__badge {
+    align-items: center;
+    background-color: #f0f0f1;
+    border-radius: 999px;
+    color: #1d2327;
+    display: inline-flex;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    padding: 6px 12px;
+    text-transform: uppercase;
+}
+
+.estate-office-crm__badge--new {
+    background-color: #2271b1;
+    color: #fff;
+}
+
+.estate-office-crm__badge--exclusive {
+    background-color: #6f42c1;
+    color: #fff;
+}
+
+.estate-office-crm__badge--sold {
+    background-color: #d63638;
+    color: #fff;
+}
+
+.estate-office-crm__badge--rented {
+    background-color: #008a20;
+    color: #fff;
+}
+
+.estate-office-crm__badge--price {
+    background-color: #f0b429;
+    color: #1d2327;
+}
+
+.estate-office-crm__badge--commission {
+    background-color: #1d2327;
+    color: #fff;
+}
+
+.estate-office-crm__badge--mls {
+    background-color: #005bb5;
+    color: #fff;
+}
+
+.estate-office-crm__badge--premium {
+    background-color: #b7791f;
+    color: #fff;
+}
+
 .estate-office-crm__detail-actions {
     display: flex;
     gap: 8px;

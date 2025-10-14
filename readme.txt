@@ -17,6 +17,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
 * Rozszerzone meta boksy nieruchomości z danymi adresowymi, prawnymi, technicznymi oraz informacjami CRM (numer oferty, opiekun).
 * Widok listy nieruchomości w kokpicie dostosowany do potrzeb CRM z dedykowanymi kolumnami i sortowaniem.
+* Znaczniki marketingowe ofert (Nowa oferta, Wyłączność, Premium, MLS itp.) z automatycznym wygaszaniem statusu "Nowa oferta".
 * Profil agenta wzbogacony o zdjęcie, szczegóły kontaktowe oraz biografię do wykorzystania w CRM i na stronie.
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
@@ -33,6 +34,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Integracja modułu licencji wraz z panelem aktywacji i walidacją kluczy.
 * Rozbudowa pulpitu CRM o konfigurowalne widżety, wykresy oraz historię aktywności.
 * Rozszerzenie eksportu nieruchomości na WWW o szablony frontowe i znaczniki graficzne.
+* Publiczny katalog ofert wykorzystujący znaczniki marketingowe i konfigurację eksportu.
 * Automatyzacje workflow: powiadomienia e-mail, logi aktywności oraz powiązania na froncie użytkownika.
 * Integracja Google Maps z możliwością zapisu współrzędnych i podglądu lokalizacji w panelu.
 * Moduł galerii nieruchomości z obsługą znaku wodnego i różnymi wariantami rzutów.
@@ -67,3 +69,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Wprowadzono filtr opiekuna na listach nieruchomości, poszukiwań i klientów w kokpicie WordPress.
 * Udostępniono frontowy moduł CRM z pulpitem statystyk, listami rekordów i interaktywnym wyszukiwaniem.
 * Dodano frontowe karty szczegółowe nieruchomości, umów, poszukiwań i klientów wraz z powiązaniami oraz historią etapów.
+* Dodano moduł znaczników i eksportu nieruchomości z automatycznym wygaszaniem statusu "Nowa oferta" oraz odznakami w CRM.

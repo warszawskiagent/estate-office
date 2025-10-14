@@ -47,10 +47,12 @@ final class Plugin
     {
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgreementRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [SearchRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ClientRegister::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
+        register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
