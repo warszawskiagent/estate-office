@@ -6,11 +6,16 @@ namespace EstateOffice\PostTypes;
 
 use WP_Post;
 
+use function get_user_by;
+use function wp_dropdown_users;
+
 defined('ABSPATH') || exit;
 
 final class PropertyMeta
 {
     private const META_FIELDS = [
+        'estate_property_reference'          => ['type' => 'string'],
+        'estate_property_manager'            => ['type' => 'user'],
         'estate_property_street'              => ['type' => 'string'],
         'estate_property_number'              => ['type' => 'string'],
         'estate_property_unit'                => ['type' => 'string'],
@@ -71,11 +76,13 @@ final class PropertyMeta
     public static function registerMeta(): void
     {
         foreach (self::META_FIELDS as $key => $definition) {
+            $restType = self::resolveRestType($definition);
+
             register_post_meta(
                 PropertyRegister::POST_TYPE,
                 $key,
                 [
-                    'type'              => ($definition['type'] ?? 'string') === 'boolean' ? 'boolean' : 'string',
+                    'type'              => $restType,
                     'single'            => true,
                     'show_in_rest'      => true,
                     'auth_callback'     => [self::class, 'canEditMeta'],
@@ -85,8 +92,28 @@ final class PropertyMeta
         }
     }
 
+    private static function resolveRestType(array $definition): string
+    {
+        return match ($definition['type'] ?? 'string') {
+            'boolean'                       => 'boolean',
+            'decimal'                       => 'number',
+            'integer', 'signed_integer',
+            'year', 'user'                  => 'integer',
+            default                         => 'string',
+        };
+    }
+
     public static function addMetaBoxes(): void
     {
+        add_meta_box(
+            'estate-office-property-crm',
+            __('Informacje CRM', 'estate-office'),
+            [self::class, 'renderCrmBox'],
+            PropertyRegister::POST_TYPE,
+            'side',
+            'high'
+        );
+
         add_meta_box(
             'estate-office-property-address',
             __('Dane adresowe', 'estate-office'),
@@ -115,10 +142,36 @@ final class PropertyMeta
         );
     }
 
-    public static function renderAddressBox(WP_Post $post): void
+    public static function renderCrmBox(WP_Post $post): void
     {
         wp_nonce_field('estate_office_property_meta', 'estate_office_property_meta_nonce');
 
+        $reference = esc_attr(get_post_meta($post->ID, 'estate_property_reference', true));
+        $manager   = (int) get_post_meta($post->ID, 'estate_property_manager', true);
+
+        echo '<p>';
+        echo '<label for="estate_property_reference"><strong>' . esc_html__('Numer oferty', 'estate-office') . '</strong></label>';
+        printf('<input type="text" id="estate_property_reference" name="estate_property_reference" value="%s" class="widefat" />', $reference);
+        echo '<span class="description">' . esc_html__('Unikalny identyfikator widoczny w listach CRM.', 'estate-office') . '</span>';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label for="estate_property_manager"><strong>' . esc_html__('Opiekun', 'estate-office') . '</strong></label>';
+        wp_dropdown_users([
+            'name'              => 'estate_property_manager',
+            'id'                => 'estate_property_manager',
+            'selected'          => $manager,
+            'role__in'          => ['estate_agent', 'administrator', 'editor'],
+            'show_option_none'  => __('— Nie przypisano —', 'estate-office'),
+            'option_none_value' => '',
+            'include_selected'  => true,
+        ]);
+        echo '<span class="description">' . esc_html__('Wybierz agenta odpowiedzialnego za nieruchomość.', 'estate-office') . '</span>';
+        echo '</p>';
+    }
+
+    public static function renderAddressBox(WP_Post $post): void
+    {
         $street      = esc_attr(get_post_meta($post->ID, 'estate_property_street', true));
         $number      = esc_attr(get_post_meta($post->ID, 'estate_property_number', true));
         $unit        = esc_attr(get_post_meta($post->ID, 'estate_property_unit', true));
@@ -323,6 +376,16 @@ final class PropertyMeta
             return;
         }
 
+        if (($definition['type'] ?? '') === 'user') {
+            if ($value === '') {
+                delete_post_meta($postId, $key);
+                return;
+            }
+
+            update_post_meta($postId, $key, (int) $value);
+            return;
+        }
+
         if ($value === '') {
             delete_post_meta($postId, $key);
             return;
@@ -340,6 +403,8 @@ final class PropertyMeta
                 return self::sanitizeInteger($value);
             case 'signed_integer':
                 return self::sanitizeInteger($value, true);
+            case 'user':
+                return self::sanitizeUser($value);
             case 'year':
                 return self::sanitizeYear($value);
             case 'textarea':
@@ -349,6 +414,23 @@ final class PropertyMeta
             default:
                 return self::sanitizeLine($value);
         }
+    }
+
+    private static function sanitizeUser(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $userId = absint($value);
+
+        if ($userId <= 0 || !get_user_by('id', $userId)) {
+            return '';
+        }
+
+        return (string) $userId;
     }
 
     private static function sanitizeLine(string $value): string
