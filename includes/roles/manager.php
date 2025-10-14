@@ -41,6 +41,34 @@ final class Manager
         'delete_published_estate_properties'=> false,
     ];
 
+    private const AGREEMENT_CAPABILITIES = [
+        'read_estate_agreement'               => true,
+        'read_private_estate_agreements'      => true,
+        'edit_estate_agreement'               => true,
+        'edit_estate_agreements'              => true,
+        'edit_others_estate_agreements'       => true,
+        'publish_estate_agreements'           => true,
+        'delete_estate_agreement'             => false,
+        'delete_estate_agreements'            => false,
+        'delete_others_estate_agreements'     => false,
+        'delete_private_estate_agreements'    => false,
+        'delete_published_estate_agreements'  => false,
+    ];
+
+    private const SEARCH_CAPABILITIES = [
+        'read_estate_search'                 => true,
+        'read_private_estate_searches'       => true,
+        'edit_estate_search'                 => true,
+        'edit_estate_searches'               => true,
+        'edit_others_estate_searches'        => true,
+        'publish_estate_searches'            => true,
+        'delete_estate_search'               => false,
+        'delete_estate_searches'             => false,
+        'delete_others_estate_searches'      => false,
+        'delete_private_estate_searches'     => false,
+        'delete_published_estate_searches'   => false,
+    ];
+
     public static function activate(): void
     {
         self::register();
@@ -56,16 +84,23 @@ final class Manager
     {
         $role = get_role(self::AGENT_ROLE);
 
+        $capabilities = array_merge(
+            self::BASE_CAPABILITIES,
+            self::PROPERTY_CAPABILITIES,
+            self::AGREEMENT_CAPABILITIES,
+            self::SEARCH_CAPABILITIES
+        );
+
         if (!$role instanceof \WP_Role) {
             $role = add_role(
                 self::AGENT_ROLE,
                 __('Agent nieruchomości', 'estate-office'),
-                array_merge(self::BASE_CAPABILITIES, self::PROPERTY_CAPABILITIES)
+                $capabilities
             );
         }
 
         if ($role instanceof \WP_Role) {
-            foreach (self::BASE_CAPABILITIES + self::PROPERTY_CAPABILITIES as $capability => $granted) {
+            foreach ($capabilities as $capability => $granted) {
                 if ($granted) {
                     $role->add_cap($capability);
                 } else {
@@ -98,6 +133,28 @@ final class Manager
             'delete_others_estate_properties',
             'delete_private_estate_properties',
             'delete_published_estate_properties',
+            'read_estate_agreement',
+            'read_private_estate_agreements',
+            'edit_estate_agreement',
+            'edit_estate_agreements',
+            'edit_others_estate_agreements',
+            'publish_estate_agreements',
+            'delete_estate_agreement',
+            'delete_estate_agreements',
+            'delete_others_estate_agreements',
+            'delete_private_estate_agreements',
+            'delete_published_estate_agreements',
+            'read_estate_search',
+            'read_private_estate_searches',
+            'edit_estate_search',
+            'edit_estate_searches',
+            'edit_others_estate_searches',
+            'publish_estate_searches',
+            'delete_estate_search',
+            'delete_estate_searches',
+            'delete_others_estate_searches',
+            'delete_private_estate_searches',
+            'delete_published_estate_searches',
         ];
 
         foreach ($caps as $capability) {
