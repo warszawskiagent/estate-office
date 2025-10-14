@@ -32,6 +32,8 @@ final class SearchMeta
         'commercial' => 'Lokal H/U',
     ];
 
+    public const AGREEMENTS_META_KEY = 'estate_search_agreements';
+
     private const FINISHES = [
         'shell'      => 'Stan deweloperski',
         'to_finish'  => 'Do wykończenia',

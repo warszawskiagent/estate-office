@@ -20,6 +20,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Moduł poszukiwań z formularzem kryteriów, preferencjami budynku oraz przejrzystą listą w kokpicie.
 * Moduł klientów z profilami osób i firm, pełnymi danymi kontaktowymi, adresowymi i obsługą opiekuna.
 * Powiązania umów z klientami, nieruchomościami i poszukiwaniami wraz z synchronizacją widoków CRM.
+* Automatyczne czyszczenie powiązań CRM przy usuwaniu rekordów, aby zapobiegać sierocym referencjom.
 * Przygotowanie pod przyszłe moduły CRM zgodnie z roadmapą projektu.
 
 == Roadmap ==
@@ -33,6 +34,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
 * Panel frontowy CRM z widokami list, wyszukiwaniem i dodatkowymi filtrami dla agentów.
 * Raporty i analityka efektywności (top oferty, aktywność agentów, statusy umów).
+* Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
 
 == Installation ==
 1. Skopiuj katalog `estate-office` do folderu `wp-content/plugins/`.
@@ -50,3 +52,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano typ wpisu poszukiwań z kryteriami budżetu, lokalizacji i preferencjami oraz dostosowanymi kolumnami listy.
 * Wprowadzono typ wpisu klientów z rozbudowanymi metadanymi kontaktowymi, adresowymi i wsparciem dla roli opiekuna.
 * Dodano powiązania umów z klientami, nieruchomościami i poszukiwaniami oraz podsumowania relacji w panelu CRM.
+* Zapewniono automatyczne utrzymanie spójności powiązań CRM podczas usuwania umów, nieruchomości, klientów i poszukiwań.

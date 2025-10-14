@@ -23,6 +23,7 @@ use EstateOffice\PostTypes\SearchColumns;
 use EstateOffice\PostTypes\ClientRegister;
 use EstateOffice\PostTypes\ClientMeta;
 use EstateOffice\PostTypes\ClientColumns;
+use EstateOffice\PostTypes\RelationCleanup;
 
 final class Plugin
 {
@@ -61,6 +62,7 @@ final class Plugin
         ClientRegister::bootstrap();
         ClientMeta::bootstrap();
         ClientColumns::bootstrap();
+        RelationCleanup::bootstrap();
         AgentProfile::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
