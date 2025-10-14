@@ -6,6 +6,11 @@ namespace EstateOffice\PostTypes;
 
 use WP_Post;
 
+use function esc_url;
+use function get_edit_post_link;
+use function get_post;
+use function get_post_meta;
+use function get_the_title;
 use function get_user_by;
 use function wp_dropdown_users;
 
@@ -13,6 +18,8 @@ defined('ABSPATH') || exit;
 
 final class PropertyMeta
 {
+    public const AGREEMENTS_META_KEY = 'estate_property_agreements';
+
     private const META_FIELDS = [
         'estate_property_reference'          => ['type' => 'string'],
         'estate_property_manager'            => ['type' => 'user'],
@@ -90,6 +97,25 @@ final class PropertyMeta
                 ]
             );
         }
+
+        register_post_meta(
+            PropertyRegister::POST_TYPE,
+            self::AGREEMENTS_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'  => 'array',
+                        'items' => [
+                            'type' => 'integer',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => static fn($value) => self::sanitizeAgreementRelations($value),
+            ]
+        );
     }
 
     private static function resolveRestType(array $definition): string
@@ -168,6 +194,103 @@ final class PropertyMeta
         ]);
         echo '<span class="description">' . esc_html__('Wybierz agenta odpowiedzialnego za nieruchomość.', 'estate-office') . '</span>';
         echo '</p>';
+
+        self::renderAgreementsSummary($post);
+    }
+
+    private static function renderAgreementsSummary(WP_Post $post): void
+    {
+        $agreements = self::sanitizeAgreementRelations(get_post_meta($post->ID, self::AGREEMENTS_META_KEY, true));
+
+        echo '<hr />';
+        echo '<strong>' . esc_html__('Powiązane umowy', 'estate-office') . '</strong>';
+
+        if (empty($agreements)) {
+            echo '<p class="description">' . esc_html__('Brak przypisanych umów. Powiąż nieruchomość podczas edycji umowy.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        echo '<ul class="estate-office-related-agreements">';
+
+        foreach ($agreements as $agreementId) {
+            $label = self::formatAgreementLabel($agreementId);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $editLink = get_edit_post_link($agreementId);
+
+            if ($editLink) {
+                printf('<li><a href="%s">%s</a></li>', esc_url($editLink), esc_html($label));
+            } else {
+                printf('<li>%s</li>', esc_html($label));
+            }
+        }
+
+        echo '</ul>';
+    }
+
+    private static function formatAgreementLabel(int $agreementId): string
+    {
+        if ($agreementId <= 0) {
+            return '';
+        }
+
+        $agreement = get_post($agreementId);
+
+        if (!$agreement || $agreement->post_type !== AgreementRegister::POST_TYPE) {
+            return '';
+        }
+
+        $number = trim((string) get_post_meta($agreementId, 'estate_agreement_number', true));
+
+        if ($number !== '') {
+            return $number;
+        }
+
+        $title = trim((string) get_the_title($agreement));
+
+        if ($title !== '') {
+            return $title;
+        }
+
+        return sprintf(__('Umowa #%d', 'estate-office'), $agreementId);
+    }
+
+    private static function sanitizeAgreementRelations($value): array
+    {
+        if (!is_array($value)) {
+            $value = $value === '' ? [] : [$value];
+        }
+
+        $ids = [];
+
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                continue;
+            }
+
+            $id = (int) $item;
+
+            if ($id <= 0) {
+                continue;
+            }
+
+            $agreement = get_post($id);
+
+            if (!$agreement || $agreement->post_type !== AgreementRegister::POST_TYPE) {
+                continue;
+            }
+
+            $ids[] = $agreement->ID;
+        }
+
+        $ids = array_values(array_unique($ids));
+        sort($ids);
+
+        return $ids;
     }
 
     public static function renderAddressBox(WP_Post $post): void

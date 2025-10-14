@@ -6,21 +6,29 @@ namespace EstateOffice\PostTypes;
 
 use DateTimeImmutable;
 use WP_Post;
+use function get_post;
+use function get_post_meta;
+use function get_post_type;
+use function get_posts;
+use function get_the_title;
 
 defined('ABSPATH') || exit;
 
 final class AgreementMeta
 {
     private const META_FIELDS = [
-        'estate_agreement_number'           => ['type' => 'string'],
-        'estate_agreement_transaction_type' => ['type' => 'enum', 'values' => self::TRANSACTION_TYPES],
-        'estate_agreement_start_date'       => ['type' => 'date'],
-        'estate_agreement_end_date'         => ['type' => 'date'],
-        'estate_agreement_is_indefinite'    => ['type' => 'boolean'],
-        'estate_agreement_commission_amount'=> ['type' => 'decimal', 'precision' => 2],
-        'estate_agreement_commission_unit'  => ['type' => 'enum', 'values' => self::COMMISSION_UNITS],
-        'estate_agreement_stage'            => ['type' => 'enum', 'values' => self::STAGES],
-        'estate_agreement_stage_history'    => ['type' => 'array'],
+        'estate_agreement_number'             => ['type' => 'string'],
+        'estate_agreement_transaction_type'   => ['type' => 'enum', 'values' => self::TRANSACTION_TYPES],
+        'estate_agreement_start_date'         => ['type' => 'date'],
+        'estate_agreement_end_date'           => ['type' => 'date'],
+        'estate_agreement_is_indefinite'      => ['type' => 'boolean'],
+        'estate_agreement_commission_amount'  => ['type' => 'decimal', 'precision' => 2],
+        'estate_agreement_commission_unit'    => ['type' => 'enum', 'values' => self::COMMISSION_UNITS],
+        'estate_agreement_clients'            => ['type' => 'relation', 'post_type' => ClientRegister::POST_TYPE],
+        'estate_agreement_properties'         => ['type' => 'relation', 'post_type' => PropertyRegister::POST_TYPE],
+        'estate_agreement_searches'           => ['type' => 'relation', 'post_type' => SearchRegister::POST_TYPE],
+        'estate_agreement_stage'              => ['type' => 'enum', 'values' => self::STAGES],
+        'estate_agreement_stage_history'      => ['type' => 'array'],
     ];
 
     public const TRANSACTION_TYPES = [
@@ -105,6 +113,20 @@ final class AgreementMeta
             ];
         }
 
+        if (($definition['type'] ?? '') === 'relation') {
+            return [
+                'type'         => 'array',
+                'show_in_rest' => [
+                    'schema' => [
+                        'type'  => 'array',
+                        'items' => [
+                            'type' => 'integer',
+                        ],
+                    ],
+                ],
+            ];
+        }
+
         return [
             'type'         => self::resolveRestType($definition),
             'show_in_rest' => true,
@@ -132,12 +154,113 @@ final class AgreementMeta
         );
 
         add_meta_box(
+            'estate-office-agreement-relations',
+            __('Powiązania CRM', 'estate-office'),
+            [self::class, 'renderRelationsBox'],
+            AgreementRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
             'estate-office-agreement-stage',
             __('Etap umowy', 'estate-office'),
             [self::class, 'renderStageBox'],
             AgreementRegister::POST_TYPE,
             'side'
         );
+    }
+
+    public static function renderRelationsBox(WP_Post $post): void
+    {
+        $transactionType = self::sanitizeEnum(
+            (string) get_post_meta($post->ID, 'estate_agreement_transaction_type', true),
+            self::TRANSACTION_TYPES
+        );
+
+        $clients    = self::ensureIntArray(get_post_meta($post->ID, 'estate_agreement_clients', true));
+        $properties = self::ensureIntArray(get_post_meta($post->ID, 'estate_agreement_properties', true));
+        $searches   = self::ensureIntArray(get_post_meta($post->ID, 'estate_agreement_searches', true));
+
+        $clientOptions    = self::getRelationOptions(ClientRegister::POST_TYPE, $clients);
+        $propertyOptions  = self::getRelationOptions(PropertyRegister::POST_TYPE, $properties);
+        $searchOptions    = self::getRelationOptions(SearchRegister::POST_TYPE, $searches);
+
+        $showProperties = in_array($transactionType, ['sale', 'rent_out'], true);
+        $showSearches   = in_array($transactionType, ['purchase', 'lease'], true);
+
+        echo '<div class="estate-office-agreement-relations">';
+
+        self::renderRelationSelect(
+            'estate_agreement_clients',
+            __('Powiązani klienci', 'estate-office'),
+            __('Wybierz jednego lub kilku klientów powiązanych z umową.', 'estate-office'),
+            $clientOptions,
+            $clients
+        );
+
+        printf(
+            '<div data-relation="properties" style="%s">',
+            $showProperties ? '' : 'display:none;'
+        );
+
+        self::renderRelationSelect(
+            'estate_agreement_properties',
+            __('Powiązane nieruchomości', 'estate-office'),
+            __('Wybierz nieruchomości powiązane z transakcją sprzedaży lub wynajmu.', 'estate-office'),
+            $propertyOptions,
+            $properties
+        );
+
+        echo '</div>';
+
+        printf(
+            '<div data-relation="searches" style="%s">',
+            $showSearches ? '' : 'display:none;'
+        );
+
+        self::renderRelationSelect(
+            'estate_agreement_searches',
+            __('Powiązane poszukiwania', 'estate-office'),
+            __('Wybierz aktywne poszukiwania klientów dla umów kupna lub najmu.', 'estate-office'),
+            $searchOptions,
+            $searches
+        );
+
+        echo '</div>';
+        echo '</div>';
+
+        ?>
+        <script>
+            (function() {
+                const typeField = document.getElementById('estate_agreement_transaction_type');
+                const propertyGroup = document.querySelector('.estate-office-agreement-relations [data-relation="properties"]');
+                const searchGroup = document.querySelector('.estate-office-agreement-relations [data-relation="searches"]');
+
+                if (!typeField || !propertyGroup || !searchGroup) {
+                    return;
+                }
+
+                const toggle = () => {
+                    const value = typeField.value;
+                    if (value === 'sale' || value === 'rent_out') {
+                        propertyGroup.style.display = '';
+                    } else {
+                        propertyGroup.style.display = 'none';
+                    }
+
+                    if (value === 'purchase' || value === 'lease') {
+                        searchGroup.style.display = '';
+                    } else {
+                        searchGroup.style.display = 'none';
+                    }
+                };
+
+                typeField.addEventListener('change', toggle);
+                toggle();
+            })();
+        </script>
+        <?php
     }
 
     public static function renderDetailsBox(WP_Post $post): void
@@ -284,10 +407,20 @@ final class AgreementMeta
             return;
         }
 
+        $previousClients    = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_clients', true));
+        $previousProperties = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_properties', true));
+        $previousSearches   = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_searches', true));
+
         $values = [];
 
         foreach (self::META_FIELDS as $key => $definition) {
             if ($key === 'estate_agreement_stage_history') {
+                continue;
+            }
+
+            if (($definition['type'] ?? '') === 'relation') {
+                $values[$key] = self::sanitizeRelation($_POST[$key] ?? [], $definition);
+
                 continue;
             }
 
@@ -308,9 +441,38 @@ final class AgreementMeta
             $values['estate_agreement_end_date'] = '';
         }
 
+        if (!isset($values['estate_agreement_transaction_type']) || $values['estate_agreement_transaction_type'] === '') {
+            $values['estate_agreement_transaction_type'] = self::sanitizeEnum(
+                (string) get_post_meta($postId, 'estate_agreement_transaction_type', true),
+                self::TRANSACTION_TYPES
+            );
+        }
+
+        $values['estate_agreement_clients']    = $values['estate_agreement_clients'] ?? [];
+        $values['estate_agreement_properties'] = $values['estate_agreement_properties'] ?? [];
+        $values['estate_agreement_searches']   = $values['estate_agreement_searches'] ?? [];
+
+        $transactionType       = $values['estate_agreement_transaction_type'] ?? '';
+        $propertyTransactions  = ['sale', 'rent_out'];
+        $searchTransactions    = ['purchase', 'lease'];
+        $isPropertyTransaction = in_array($transactionType, $propertyTransactions, true);
+        $isSearchTransaction   = in_array($transactionType, $searchTransactions, true);
+
+        if (!$isPropertyTransaction) {
+            $values['estate_agreement_properties'] = [];
+        }
+
+        if (!$isSearchTransaction) {
+            $values['estate_agreement_searches'] = [];
+        }
+
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
+
+        self::syncRelations($postId, $previousClients, $values['estate_agreement_clients'], ClientRegister::POST_TYPE, ClientMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($postId, $previousProperties, $values['estate_agreement_properties'], PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($postId, $previousSearches, $values['estate_agreement_searches'], SearchRegister::POST_TYPE, SearchMeta::AGREEMENTS_META_KEY);
 
         self::updateStage($postId, $values);
         self::synchroniseTitle($postId, $values['estate_agreement_number'] ?? '');
@@ -388,12 +550,251 @@ final class AgreementMeta
             return;
         }
 
+        if (($definition['type'] ?? '') === 'relation') {
+            if (empty($value)) {
+                delete_post_meta($postId, $key);
+
+                return;
+            }
+
+            $value = array_values(array_unique(array_map('intval', (array) $value)));
+
+            update_post_meta($postId, $key, $value);
+
+            return;
+        }
+
         if ($value === '') {
             delete_post_meta($postId, $key);
             return;
         }
 
         update_post_meta($postId, $key, $value);
+    }
+
+    private static function renderRelationSelect(string $fieldId, string $label, string $description, array $options, array $selected): void
+    {
+        $selected = self::ensureIntArray($selected);
+        $name     = $fieldId . '[]';
+        $size     = max(4, min(10, count($options) ?: 4));
+
+        echo '<p class="estate-office-relation-control">';
+        printf('<label for="%s"><strong>%s</strong></label>', esc_attr($fieldId), esc_html($label));
+
+        if ($options) {
+            printf(
+                '<select id="%1$s" name="%2$s" class="widefat" multiple="multiple" size="%3$d">',
+                esc_attr($fieldId),
+                esc_attr($name),
+                (int) $size
+            );
+
+            foreach ($options as $id => $title) {
+                $isSelected = in_array((int) $id, $selected, true);
+
+                printf(
+                    '<option value="%1$d" %2$s>%3$s</option>',
+                    (int) $id,
+                    selected($isSelected, true, false),
+                    esc_html($title)
+                );
+            }
+
+            echo '</select>';
+            printf('<span class="description">%s</span>', esc_html($description));
+        } else {
+            echo '<span class="description">' . esc_html__(
+                'Brak rekordów do wyboru. Dodaj odpowiednie wpisy w CRM, aby je powiązać z umową.',
+                'estate-office'
+            ) . '</span>';
+        }
+
+        echo '</p>';
+    }
+
+    private static function getRelationOptions(string $postType, array $ensureIds = []): array
+    {
+        $posts = get_posts([
+            'post_type'        => $postType,
+            'post_status'      => ['publish', 'pending', 'draft', 'private'],
+            'numberposts'      => -1,
+            'orderby'          => 'title',
+            'order'            => 'ASC',
+            'suppress_filters' => false,
+        ]);
+
+        $options = [];
+
+        foreach ($posts as $post) {
+            $options[$post->ID] = self::formatRelationLabel($post, $postType);
+        }
+
+        foreach ($ensureIds as $id) {
+            $id = (int) $id;
+
+            if ($id <= 0 || isset($options[$id])) {
+                continue;
+            }
+
+            $post = get_post($id);
+
+            if (!$post || $post->post_type !== $postType) {
+                continue;
+            }
+
+            $options[$post->ID] = self::formatRelationLabel($post, $postType);
+        }
+
+        asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $options;
+    }
+
+    private static function formatRelationLabel(WP_Post $post, string $postType): string
+    {
+        $title = trim((string) get_the_title($post));
+
+        if ($title === '') {
+            $title = sprintf(__('Bez tytułu (#%d)', 'estate-office'), $post->ID);
+        }
+
+        if ($postType === ClientRegister::POST_TYPE) {
+            $reference = trim((string) get_post_meta($post->ID, 'estate_client_reference', true));
+
+            if ($reference !== '') {
+                return sprintf('%s — %s', $reference, $title);
+            }
+        }
+
+        if ($postType === PropertyRegister::POST_TYPE) {
+            $reference = trim((string) get_post_meta($post->ID, 'estate_property_reference', true));
+
+            if ($reference !== '') {
+                return sprintf('%s — %s', $reference, $title);
+            }
+        }
+
+        if ($postType === SearchRegister::POST_TYPE) {
+            $reference = trim((string) get_post_meta($post->ID, 'estate_search_reference', true));
+
+            if ($reference !== '') {
+                return sprintf('%s — %s', $reference, $title);
+            }
+        }
+
+        return $title;
+    }
+
+    private static function sanitizeRelation($value, array $definition): array
+    {
+        $postType = (string) ($definition['post_type'] ?? '');
+
+        if ($postType === '') {
+            return [];
+        }
+
+        $raw = is_array($value) ? $value : [$value];
+        $sanitized = [];
+
+        foreach ($raw as $item) {
+            if (is_array($item)) {
+                continue;
+            }
+
+            $id = (int) $item;
+
+            if ($id <= 0) {
+                continue;
+            }
+
+            $post = get_post($id);
+
+            if (!$post || $post->post_type !== $postType) {
+                continue;
+            }
+
+            $sanitized[] = $post->ID;
+        }
+
+        $sanitized = array_values(array_unique($sanitized));
+        sort($sanitized);
+
+        return $sanitized;
+    }
+
+    private static function ensureIntArray($value): array
+    {
+        if (!is_array($value)) {
+            $value = $value === '' ? [] : [$value];
+        }
+
+        $value = array_filter(
+            array_map(
+                static fn($item) => is_scalar($item) ? (int) $item : 0,
+                $value
+            ),
+            static fn($item) => $item > 0
+        );
+
+        $value = array_values(array_unique($value));
+        sort($value);
+
+        return $value;
+    }
+
+    private static function syncRelations(int $agreementId, array $previous, array $current, string $postType, string $metaKey): void
+    {
+        $removed = array_diff($previous, $current);
+        $added   = array_diff($current, $previous);
+
+        foreach ($removed as $relatedId) {
+            self::mutateRelationMeta(
+                (int) $relatedId,
+                $postType,
+                $metaKey,
+                static fn(array $list): array => array_values(array_diff($list, [$agreementId]))
+            );
+        }
+
+        foreach ($added as $relatedId) {
+            self::mutateRelationMeta(
+                (int) $relatedId,
+                $postType,
+                $metaKey,
+                static function (array $list) use ($agreementId): array {
+                    $list[] = $agreementId;
+
+                    $list = array_values(array_unique(array_map('intval', $list)));
+                    sort($list);
+
+                    return $list;
+                }
+            );
+        }
+    }
+
+    private static function mutateRelationMeta(int $postId, string $expectedType, string $metaKey, callable $mutator): void
+    {
+        if ($postId <= 0 || get_post_type($postId) !== $expectedType) {
+            return;
+        }
+
+        $current = self::ensureIntArray(get_post_meta($postId, $metaKey, true));
+        $updated = $mutator($current);
+
+        if (!is_array($updated)) {
+            $updated = [];
+        }
+
+        $updated = self::ensureIntArray($updated);
+
+        if (empty($updated)) {
+            delete_post_meta($postId, $metaKey);
+
+            return;
+        }
+
+        update_post_meta($postId, $metaKey, $updated);
     }
 
     private static function sanitizeValue(string $value, array $definition): string
@@ -471,6 +872,10 @@ final class AgreementMeta
 
         if (($definition['type'] ?? '') === 'array') {
             return static fn($value) => self::sanitizeStageHistory($value);
+        }
+
+        if (($definition['type'] ?? '') === 'relation') {
+            return static fn($value) => self::sanitizeRelation($value, $definition);
         }
 
         return static function ($value) use ($definition) {
