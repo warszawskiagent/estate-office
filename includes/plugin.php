@@ -6,6 +6,7 @@ namespace EstateOffice;
 
 defined('ABSPATH') || exit;
 
+use EstateOffice\Admin\AgentProfile;
 use EstateOffice\Admin\Menu;
 use EstateOffice\Roles\Manager as RolesManager;
 use EstateOffice\Settings\GeneralSettings;
@@ -39,6 +40,7 @@ final class Plugin
         PropertyRegister::bootstrap();
         PropertyMeta::bootstrap();
         PropertyColumns::bootstrap();
+        AgentProfile::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);
