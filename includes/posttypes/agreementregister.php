@@ -56,7 +56,7 @@ final class AgreementRegister
             'labels'             => $labels,
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => false,
+            'show_in_menu'       => 'estate-office-crm',
             'capability_type'    => ['estate_agreement', 'estate_agreements'],
             'map_meta_cap'       => true,
             'supports'           => $supports,

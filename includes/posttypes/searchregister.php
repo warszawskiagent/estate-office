@@ -56,7 +56,7 @@ final class SearchRegister
             'labels'             => $labels,
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => false,
+            'show_in_menu'       => 'estate-office-crm',
             'capability_type'    => ['estate_search', 'estate_searches'],
             'map_meta_cap'       => true,
             'supports'           => $supports,
