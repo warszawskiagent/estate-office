@@ -11,6 +11,7 @@ use EstateOffice\Admin\Admin;
 use EstateOffice\PublicSite\Frontend;
 use EstateOffice\Rest\Rest_API;
 use EstateOffice\Security;
+use EstateOffice\Upgrader;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -31,6 +32,7 @@ class Estate_Office {
         $this->define_admin_hooks();
         $this->define_public_hooks();
         $this->define_rest_hooks();
+        $this->define_upgrade_hooks();
         $this->init_security_layers();
     }
 
@@ -60,6 +62,7 @@ class Estate_Office {
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-clients-controller.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-contracts-controller.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-searches-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/class-upgrader.php';
     }
 
     /**
@@ -107,6 +110,16 @@ class Estate_Office {
     private function define_rest_hooks(): void {
         $rest = new Rest_API();
         add_action( 'rest_api_init', [ $rest, 'register_routes' ] );
+    }
+
+    /**
+     * Register upgrade routines.
+     *
+     * @return void
+     */
+    private function define_upgrade_hooks(): void {
+        $upgrader = new Upgrader();
+        add_action( 'init', [ $upgrader, 'maybe_upgrade' ], 99 );
     }
 
     /**
