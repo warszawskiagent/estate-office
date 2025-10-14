@@ -11,6 +11,7 @@ use EstateOffice\Roles\Manager as RolesManager;
 use EstateOffice\Settings\GeneralSettings;
 use EstateOffice\Admin\Pages\SettingsPage;
 use EstateOffice\PostTypes\PropertyRegister;
+use EstateOffice\PostTypes\PropertyMeta;
 
 final class Plugin
 {
@@ -35,6 +36,7 @@ final class Plugin
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
         PropertyRegister::bootstrap();
+        PropertyMeta::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);
