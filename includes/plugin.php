@@ -27,6 +27,7 @@ use EstateOffice\PostTypes\ClientMeta;
 use EstateOffice\PostTypes\ClientColumns;
 use EstateOffice\PostTypes\RelationCleanup;
 use EstateOffice\PostTypes\ManagerFilters;
+use EstateOffice\Frontend\CRM;
 
 final class Plugin
 {
@@ -69,6 +70,7 @@ final class Plugin
         ManagerFilters::bootstrap();
         AgentProfile::bootstrap();
         Dashboard::bootstrap();
+        CRM::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

@@ -19,6 +19,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Widok listy nieruchomości w kokpicie dostosowany do potrzeb CRM z dedykowanymi kolumnami i sortowaniem.
 * Profil agenta wzbogacony o zdjęcie, szczegóły kontaktowe oraz biografię do wykorzystania w CRM i na stronie.
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
+* Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
 * Moduł umów z dedykowanymi polami meta, historią etapów oraz synchronizacją numeru z tytułem wpisu.
 * Moduł poszukiwań z formularzem kryteriów, preferencjami budynku oraz przejrzystą listą w kokpicie.
 * Moduł klientów z profilami osób i firm, pełnymi danymi kontaktowymi, adresowymi i obsługą opiekuna.
@@ -36,7 +37,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Moduł galerii nieruchomości z obsługą znaku wodnego i różnymi wariantami rzutów.
 * Eksport ofert na portale zewnętrzne (otodom, gratka, Morizon) oraz integracja MLS.
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
-* Panel frontowy CRM z widokami list, wyszukiwaniem i dodatkowymi filtrami dla agentów.
+* Rozbudowa frontowego panelu CRM o widoki szczegółowe, edycję rekordów i rozszerzone raporty.
 * Raporty i analityka efektywności (top oferty, aktywność agentów, statusy umów).
 * Rozszerzenia panelu agentów o masowe akcje, import danych i integrację z raportami.
 * Integracja z modułem raportów czasu rzeczywistego i personalizacją panelu agenta.
@@ -63,3 +64,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozbudowano pulpit CRM o zestawienie liczby rekordów modułów i ranking aktywności agentów wraz z dedykowanym stylem.
 * Dodano zakładkę Agenci z wyszukiwarką, kontaktami i licznikami przypisań oraz skrótami do list CRM.
 * Wprowadzono filtr opiekuna na listach nieruchomości, poszukiwań i klientów w kokpicie WordPress.
+* Udostępniono frontowy moduł CRM z pulpitem statystyk, listami rekordów i interaktywnym wyszukiwaniem.
