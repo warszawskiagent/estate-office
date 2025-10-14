@@ -16,6 +16,7 @@ use WP_Query;
 use WP_User;
 
 use function absint;
+use function apply_filters;
 use function add_action;
 use function add_query_arg;
 use function add_shortcode;
@@ -27,9 +28,12 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_edit_post_link;
+use function get_post;
+use function get_post_field;
 use function get_permalink;
 use function get_post_meta;
 use function get_the_ID;
+use function get_the_title;
 use function get_the_terms;
 use function get_user_by;
 use function is_array;
@@ -48,9 +52,13 @@ use function uasort;
 use function wp_count_posts;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_kses_post;
 use function wp_register_script;
 use function wp_register_style;
 use function wp_reset_postdata;
+use function wp_strip_all_tags;
+use function wpautop;
+use function wp_list_pluck;
 use function wp_unslash;
 use function __;
 
@@ -65,6 +73,8 @@ final class CRM
     private const SHORTCODE = 'estate_office_crm';
     private const SEARCH_PARAM = 'estate_office_search';
     private const SECTION_PARAM = 'estate_office_section';
+    private const RECORD_PARAM = 'estate_office_record';
+    private const RECORD_ID_PARAM = 'estate_office_record_id';
 
     /**
      * @var array<string,string>
@@ -75,6 +85,16 @@ final class CRM
         'agreements' => 'Umowy',
         'searches'   => 'Poszukiwania',
         'clients'    => 'Klienci',
+    ];
+
+    /**
+     * @var array<string,string>
+     */
+    private const SECTION_POST_TYPES = [
+        'properties' => PropertyRegister::POST_TYPE,
+        'agreements' => AgreementRegister::POST_TYPE,
+        'searches'   => SearchRegister::POST_TYPE,
+        'clients'    => ClientRegister::POST_TYPE,
     ];
 
     public static function bootstrap(): void
@@ -117,32 +137,38 @@ final class CRM
 
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
+        $recordId   = $section === 'dashboard' ? 0 : self::resolveRecordId($section);
 
         ob_start();
 
         echo '<div class="estate-office-crm">';
         self::renderHeader($section);
 
-        if ($section !== 'dashboard') {
+        if ($section !== 'dashboard' && $recordId === 0) {
             self::renderSearchForm($section, $searchTerm);
         }
 
-        switch ($section) {
-            case 'properties':
-                self::renderProperties($searchTerm);
-                break;
-            case 'agreements':
-                self::renderAgreements($searchTerm);
-                break;
-            case 'searches':
-                self::renderSearches($searchTerm);
-                break;
-            case 'clients':
-                self::renderClients($searchTerm);
-                break;
-            default:
-                self::renderDashboard();
-                break;
+        if ($section !== 'dashboard' && $recordId > 0) {
+            self::renderBackLink($section);
+            self::renderRecordDetail($section, $recordId);
+        } else {
+            switch ($section) {
+                case 'properties':
+                    self::renderProperties($searchTerm);
+                    break;
+                case 'agreements':
+                    self::renderAgreements($searchTerm);
+                    break;
+                case 'searches':
+                    self::renderSearches($searchTerm);
+                    break;
+                case 'clients':
+                    self::renderClients($searchTerm);
+                    break;
+                default:
+                    self::renderDashboard();
+                    break;
+            }
         }
 
         echo '</div>';
@@ -179,6 +205,59 @@ final class CRM
         }
 
         return sanitize_text_field((string) wp_unslash($_GET[self::SEARCH_PARAM]));
+    }
+
+    private static function resolveRecordId(string $section): int
+    {
+        if (!isset(self::SECTION_POST_TYPES[$section])) {
+            return 0;
+        }
+
+        if (!isset($_GET[self::RECORD_ID_PARAM])) {
+            return 0;
+        }
+
+        $requestedSection = $section;
+        if (isset($_GET[self::RECORD_PARAM])) {
+            $requestedSection = sanitize_key((string) wp_unslash($_GET[self::RECORD_PARAM]));
+        }
+
+        if ($requestedSection !== $section) {
+            return 0;
+        }
+
+        $recordId = absint(wp_unslash((string) $_GET[self::RECORD_ID_PARAM]));
+
+        return $recordId > 0 ? $recordId : 0;
+    }
+
+    private static function renderBackLink(string $section): void
+    {
+        $url = esc_url(add_query_arg(self::SECTION_PARAM, $section, self::getBaseUrl()));
+        echo '<p class="estate-office-crm__back">';
+        echo '<a class="estate-office-crm__button" href="' . $url . '">' . esc_html__('Powrót do listy', 'estate-office') . '</a>';
+        echo '</p>';
+    }
+
+    private static function renderRecordDetail(string $section, int $postId): void
+    {
+        switch ($section) {
+            case 'properties':
+                self::renderPropertyDetail($postId);
+                break;
+            case 'agreements':
+                self::renderAgreementDetail($postId);
+                break;
+            case 'searches':
+                self::renderSearchDetail($postId);
+                break;
+            case 'clients':
+                self::renderClientDetail($postId);
+                break;
+            default:
+                self::renderDetailNotFound();
+                break;
+        }
     }
 
     private static function renderHeader(string $section): void
@@ -227,7 +306,12 @@ final class CRM
             $permalink = '';
         }
 
-        return remove_query_arg([self::SECTION_PARAM, self::SEARCH_PARAM], $permalink);
+        return remove_query_arg([
+            self::SECTION_PARAM,
+            self::SEARCH_PARAM,
+            self::RECORD_PARAM,
+            self::RECORD_ID_PARAM,
+        ], $permalink);
     }
 
     /**
@@ -496,7 +580,7 @@ final class CRM
             }
 
             $rows[] = [
-                'link'           => (string) get_edit_post_link($postId) ?: '#',
+                'link'           => self::getDetailLink('properties', $postId),
                 'reference'      => $reference,
                 'address'        => self::formatPropertyAddress($postId),
                 'price'          => self::formatCurrencyMeta($postId, 'estate_property_price'),
@@ -602,7 +686,7 @@ final class CRM
             }
 
             $rows[] = [
-                'link'          => (string) get_edit_post_link($postId) ?: '#',
+                'link'          => self::getDetailLink('agreements', $postId),
                 'number'        => $number,
                 'transaction'   => self::getAgreementTransactionLabel($transactionKey),
                 'property_type' => self::getPropertyTypeFromAgreement($firstProperty),
@@ -693,7 +777,7 @@ final class CRM
             $query->the_post();
             $postId = (int) get_the_ID();
             $rows[] = [
-                'link'          => (string) get_edit_post_link($postId) ?: '#',
+                'link'          => self::getDetailLink('searches', $postId),
                 'reference'     => self::resolveReference($postId, 'estate_search_reference'),
                 'property_type' => self::mapValue(SearchMeta::PROPERTY_TYPES, (string) get_post_meta($postId, 'estate_search_property_type', true)),
                 'budget'        => self::formatBudgetRange($postId),
@@ -743,6 +827,767 @@ final class CRM
         echo '</section>';
     }
 
+    private static function renderPropertyDetail(int $postId): void
+    {
+        $post = self::getAccessiblePost($postId, PropertyRegister::POST_TYPE);
+        if (!$post instanceof WP_Post) {
+            self::renderDetailNotFound();
+
+            return;
+        }
+
+        $reference    = self::resolveReference($postId, 'estate_property_reference');
+        $transaction  = self::getTermsList($postId, 'estate_transaction_type');
+        $propertyType = self::getTermsList($postId, 'estate_property_type');
+        $manager      = self::getManagerName((int) get_post_meta($postId, 'estate_property_manager', true));
+        $title        = trim((string) get_the_title($postId));
+        if ($title === '') {
+            $title = sprintf(__('Nieruchomość #%d', 'estate-office'), $postId);
+        }
+
+        echo '<section class="estate-office-crm__detail">';
+        self::renderDetailHeader(
+            $title,
+            sprintf(__('Numer oferty: %s', 'estate-office'), $reference),
+            $postId
+        );
+
+        $cards = [
+            [
+                'heading' => __('Informacje CRM', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Numer oferty', 'estate-office'), 'value' => esc_html($reference)],
+                    ['label' => __('Typ transakcji', 'estate-office'), 'value' => esc_html($transaction)],
+                    ['label' => __('Rodzaj nieruchomości', 'estate-office'), 'value' => esc_html($propertyType)],
+                    ['label' => __('Opiekun', 'estate-office'), 'value' => esc_html($manager)],
+                ],
+            ],
+            [
+                'heading' => __('Finanse', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Cena', 'estate-office'), 'value' => esc_html(self::formatCurrencyMeta($postId, 'estate_property_price'))],
+                    ['label' => __('Cena za m²', 'estate-office'), 'value' => esc_html(self::formatCurrencyMeta($postId, 'estate_property_price_per_sqm'))],
+                    ['label' => __('Czynsz administracyjny', 'estate-office'), 'value' => esc_html(self::formatCurrencyMeta($postId, 'estate_property_admin_fee'))],
+                ],
+            ],
+            [
+                'heading' => __('Parametry nieruchomości', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Metraż', 'estate-office'), 'value' => esc_html(self::formatNumberMeta($postId, 'estate_property_area'))],
+                    ['label' => __('Rok budowy', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_build_year'))],
+                    ['label' => __('Piętro', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_floor'))],
+                    ['label' => __('Liczba pięter', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_floors'))],
+                    ['label' => __('Liczba pokoi', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_rooms'))],
+                    ['label' => __('Liczba sypialni', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_bedrooms'))],
+                    ['label' => __('Liczba łazienek', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_bathrooms'))],
+                    ['label' => __('Liczba toalet', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_toilets'))],
+                    ['label' => __('Typ domu', 'estate-office'), 'value' => esc_html(self::formatPropertyHouseType($postId))],
+                ],
+            ],
+            [
+                'heading' => __('Adres', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Pełny adres', 'estate-office'), 'value' => esc_html(self::formatPropertyAddress($postId))],
+                    ['label' => __('Ulica', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_street'))],
+                    ['label' => __('Numer', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_number'))],
+                    ['label' => __('Lokal', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_unit'))],
+                    ['label' => __('Kod pocztowy', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_postal_code'))],
+                    ['label' => __('Dzielnica', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_district'))],
+                    ['label' => __('Miasto', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_city'))],
+                    ['label' => __('Powiat', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_county'))],
+                    ['label' => __('Obręb', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_precinct'))],
+                    ['label' => __('Numer działki', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_property_plot_number'))],
+                ],
+            ],
+            [
+                'heading' => __('Informacje prawne', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Numer księgi wieczystej', 'estate-office'), 'value' => esc_html(self::formatPropertyLandRegister($postId))],
+                    ['label' => __('Stan prawny', 'estate-office'), 'value' => esc_html(self::formatPropertyLegalStatus($postId))],
+                    ['label' => __('Kształt działki', 'estate-office'), 'value' => esc_html(self::formatPropertyPlotShape($postId))],
+                ],
+            ],
+        ];
+
+        self::renderDetailCards($cards);
+
+        $content = apply_filters('the_content', $post->post_content);
+        if (trim(wp_strip_all_tags((string) $content)) !== '') {
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Opis nieruchomości', 'estate-office') . '</h3>';
+            echo wp_kses_post((string) $content);
+            echo '</section>';
+        }
+
+        $agreements = self::sanitizeIdArray(get_post_meta($postId, PropertyMeta::AGREEMENTS_META_KEY, true));
+        self::renderRelationList(
+            __('Powiązane umowy', 'estate-office'),
+            'agreements',
+            $agreements,
+            static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
+        );
+
+        echo '</section>';
+    }
+
+    private static function renderAgreementDetail(int $postId): void
+    {
+        $post = self::getAccessiblePost($postId, AgreementRegister::POST_TYPE);
+        if (!$post instanceof WP_Post) {
+            self::renderDetailNotFound();
+
+            return;
+        }
+
+        $number      = self::resolveReference($postId, 'estate_agreement_number');
+        $title       = trim((string) get_the_title($postId));
+        if ($title === '') {
+            $title = sprintf(__('Umowa #%d', 'estate-office'), $postId);
+        }
+        $transaction = self::getAgreementTransactionLabel((string) get_post_meta($postId, 'estate_agreement_transaction_type', true));
+        $stage       = self::getAgreementStageLabel((string) get_post_meta($postId, 'estate_agreement_stage', true));
+        $startDate   = self::formatDateMeta($postId, 'estate_agreement_start_date');
+        $endDate     = self::formatAgreementEndDate($postId);
+        $commission  = self::formatAgreementCommission($postId);
+
+        echo '<section class="estate-office-crm__detail">';
+        self::renderDetailHeader(
+            $title,
+            sprintf(__('Numer umowy: %s', 'estate-office'), $number),
+            $postId
+        );
+
+        $cards = [
+            [
+                'heading' => __('Szczegóły umowy', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Numer umowy', 'estate-office'), 'value' => esc_html($number)],
+                    ['label' => __('Typ transakcji', 'estate-office'), 'value' => esc_html($transaction)],
+                    ['label' => __('Data zawarcia', 'estate-office'), 'value' => esc_html($startDate)],
+                    ['label' => __('Data zakończenia', 'estate-office'), 'value' => esc_html($endDate)],
+                    ['label' => __('Aktualny etap', 'estate-office'), 'value' => esc_html($stage)],
+                    ['label' => __('Prowizja', 'estate-office'), 'value' => esc_html($commission)],
+                ],
+            ],
+        ];
+
+        self::renderDetailCards($cards);
+
+        $content = apply_filters('the_content', $post->post_content);
+        if (trim(wp_strip_all_tags((string) $content)) !== '') {
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Notatki', 'estate-office') . '</h3>';
+            echo wp_kses_post((string) $content);
+            echo '</section>';
+        }
+
+        $clients    = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_clients', true));
+        $properties = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_properties', true));
+        $searches   = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_searches', true));
+
+        self::renderRelationList(
+            __('Powiązani klienci', 'estate-office'),
+            'clients',
+            $clients,
+            static fn(int $clientId): string => self::getClientRelationLabel($clientId)
+        );
+
+        self::renderRelationList(
+            __('Powiązane nieruchomości', 'estate-office'),
+            'properties',
+            $properties,
+            static fn(int $propertyId): string => self::getPropertyRelationLabel($propertyId)
+        );
+
+        self::renderRelationList(
+            __('Powiązane poszukiwania', 'estate-office'),
+            'searches',
+            $searches,
+            static fn(int $searchId): string => self::getSearchRelationLabel($searchId)
+        );
+
+        self::renderStageHistory($postId);
+
+        echo '</section>';
+    }
+
+    private static function renderSearchDetail(int $postId): void
+    {
+        $post = self::getAccessiblePost($postId, SearchRegister::POST_TYPE);
+        if (!$post instanceof WP_Post) {
+            self::renderDetailNotFound();
+
+            return;
+        }
+
+        $reference    = self::resolveReference($postId, 'estate_search_reference');
+        $title        = trim((string) get_the_title($postId));
+        if ($title === '') {
+            $title = sprintf(__('Poszukiwanie #%d', 'estate-office'), $postId);
+        }
+        $transaction  = self::mapValue(SearchMeta::TRANSACTION_TYPES, (string) get_post_meta($postId, 'estate_search_transaction_type', true));
+        $propertyType = self::mapValue(SearchMeta::PROPERTY_TYPES, (string) get_post_meta($postId, 'estate_search_property_type', true));
+        $manager      = self::getManagerName((int) get_post_meta($postId, 'estate_search_manager', true));
+        $location     = (string) get_post_meta($postId, 'estate_search_location', true);
+        if ($location === '') {
+            $location = '—';
+        }
+
+        echo '<section class="estate-office-crm__detail">';
+        self::renderDetailHeader(
+            $title,
+            sprintf(__('Numer poszukiwania: %s', 'estate-office'), $reference),
+            $postId
+        );
+
+        $cards = [
+            [
+                'heading' => __('Informacje ogólne', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Numer poszukiwania', 'estate-office'), 'value' => esc_html($reference)],
+                    ['label' => __('Typ transakcji', 'estate-office'), 'value' => esc_html($transaction)],
+                    ['label' => __('Rodzaj nieruchomości', 'estate-office'), 'value' => esc_html($propertyType)],
+                    ['label' => __('Lokalizacja', 'estate-office'), 'value' => esc_html($location)],
+                    ['label' => __('Opiekun', 'estate-office'), 'value' => esc_html($manager)],
+                ],
+            ],
+            [
+                'heading' => __('Zakres poszukiwań', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Budżet', 'estate-office'), 'value' => esc_html(self::formatBudgetRange($postId))],
+                    ['label' => __('Metraż', 'estate-office'), 'value' => esc_html(self::formatRange($postId, 'estate_search_area_min', 'estate_search_area_max', 'm²'))],
+                    ['label' => __('Liczba pokoi', 'estate-office'), 'value' => esc_html(self::formatIntegerRange($postId, 'estate_search_rooms_min', 'estate_search_rooms_max'))],
+                    ['label' => __('Gaz', 'estate-office'), 'value' => esc_html(self::formatBooleanMeta($postId, 'estate_search_gas'))],
+                ],
+            ],
+        ];
+
+        self::renderDetailCards($cards);
+
+        $description = (string) get_post_meta($postId, 'estate_search_description', true);
+        if (trim($description) !== '') {
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Opis poszukiwania', 'estate-office') . '</h3>';
+            echo wp_kses_post(wpautop(esc_html($description)));
+            echo '</section>';
+        }
+
+        $agreements = self::sanitizeIdArray(get_post_meta($postId, SearchMeta::AGREEMENTS_META_KEY, true));
+        self::renderRelationList(
+            __('Powiązane umowy', 'estate-office'),
+            'agreements',
+            $agreements,
+            static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
+        );
+
+        echo '</section>';
+    }
+
+    private static function renderClientDetail(int $postId): void
+    {
+        $post = self::getAccessiblePost($postId, ClientRegister::POST_TYPE);
+        if (!$post instanceof WP_Post) {
+            self::renderDetailNotFound();
+
+            return;
+        }
+
+        $name       = self::resolveClientName($postId);
+        $title      = trim((string) get_the_title($postId));
+        if ($title === '') {
+            $title = $name;
+        }
+        $reference  = (string) get_post_meta($postId, 'estate_client_reference', true);
+        $clientType = self::mapValue(ClientMeta::CLIENT_TYPES, (string) get_post_meta($postId, 'estate_client_type', true));
+        $manager    = self::getManagerName((int) get_post_meta($postId, 'estate_client_manager', true));
+        $phone      = self::formatPhone((string) get_post_meta($postId, 'estate_client_phone', true));
+        $email      = self::formatEmail((string) get_post_meta($postId, 'estate_client_email', true));
+        $website    = self::formatWebsite((string) get_post_meta($postId, 'estate_client_website', true));
+
+        echo '<section class="estate-office-crm__detail">';
+        self::renderDetailHeader(
+            $title,
+            $reference !== '' ? sprintf(__('Numer klienta: %s', 'estate-office'), $reference) : '',
+            $postId
+        );
+
+        $cards = [
+            [
+                'heading' => __('Informacje CRM', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Nazwa klienta', 'estate-office'), 'value' => esc_html($name)],
+                    ['label' => __('Typ klienta', 'estate-office'), 'value' => esc_html($clientType)],
+                    ['label' => __('Opiekun', 'estate-office'), 'value' => esc_html($manager)],
+                ],
+            ],
+            [
+                'heading' => __('Kontakt', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Telefon', 'estate-office'), 'value' => $phone],
+                    ['label' => __('E-mail', 'estate-office'), 'value' => $email],
+                    ['label' => __('Strona WWW', 'estate-office'), 'value' => $website],
+                ],
+            ],
+            [
+                'heading' => __('Adresy', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Adres zamieszkania/rejestrowy', 'estate-office'), 'value' => esc_html(self::formatClientAddress($postId))],
+                    ['label' => __('Adres korespondencyjny', 'estate-office'), 'value' => esc_html(self::formatCorrespondenceAddress($postId))],
+                ],
+            ],
+            [
+                'heading' => __('Dane identyfikacyjne', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('PESEL', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_client_pesel'))],
+                    ['label' => __('Rodzaj dokumentu', 'estate-office'), 'value' => esc_html(self::mapValue(ClientMeta::DOCUMENT_TYPES, (string) get_post_meta($postId, 'estate_client_document_type', true)))],
+                    ['label' => __('Numer dokumentu', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_client_document_number'))],
+                    ['label' => __('NIP', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_client_tax_id'))],
+                    ['label' => __('KRS', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_client_krs'))],
+                    ['label' => __('REGON', 'estate-office'), 'value' => esc_html(self::formatRawMeta($postId, 'estate_client_regon'))],
+                ],
+            ],
+        ];
+
+        self::renderDetailCards($cards);
+
+        $content = apply_filters('the_content', $post->post_content);
+        if (trim(wp_strip_all_tags((string) $content)) !== '') {
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Notatki o kliencie', 'estate-office') . '</h3>';
+            echo wp_kses_post((string) $content);
+            echo '</section>';
+        }
+
+        $agreements = self::sanitizeIdArray(get_post_meta($postId, ClientMeta::AGREEMENTS_META_KEY, true));
+        self::renderRelationList(
+            __('Powiązane umowy', 'estate-office'),
+            'agreements',
+            $agreements,
+            static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
+        );
+
+        echo '</section>';
+    }
+
+    private static function renderDetailHeader(string $title, string $subtitle, int $postId): void
+    {
+        $title = trim($title);
+        if ($title === '') {
+            $title = sprintf(__('Rekord #%d', 'estate-office'), $postId);
+        }
+
+        echo '<header class="estate-office-crm__detail-header">';
+        echo '<div class="estate-office-crm__detail-heading">';
+        echo '<h2>' . esc_html($title) . '</h2>';
+        if ($subtitle !== '') {
+            echo '<p class="estate-office-crm__detail-subtitle">' . esc_html($subtitle) . '</p>';
+        }
+        echo '</div>';
+
+        $editLink = get_edit_post_link($postId);
+        if (is_string($editLink) && $editLink !== '') {
+            echo '<div class="estate-office-crm__detail-actions">';
+            echo '<a class="estate-office-crm__action" href="' . esc_url($editLink) . '">' . esc_html__('Edytuj w kokpicie', 'estate-office') . '</a>';
+            echo '</div>';
+        }
+
+        echo '</header>';
+    }
+
+    /**
+     * @param array<int,array{heading:string,rows:array<int,array{label:string,value:string}>}> $cards
+     */
+    private static function renderDetailCards(array $cards): void
+    {
+        echo '<div class="estate-office-crm__detail-columns">';
+        foreach ($cards as $card) {
+            if (empty($card['rows'])) {
+                continue;
+            }
+
+            echo '<div class="estate-office-crm__detail-card">';
+            echo '<h3>' . esc_html($card['heading']) . '</h3>';
+            echo '<dl class="estate-office-crm__detail-list">';
+            foreach ($card['rows'] as $row) {
+                echo '<div class="estate-office-crm__detail-row">';
+                echo '<dt>' . esc_html($row['label']) . '</dt>';
+                echo '<dd>' . wp_kses_post($row['value']) . '</dd>';
+                echo '</div>';
+            }
+            echo '</dl>';
+            echo '</div>';
+        }
+        echo '</div>';
+    }
+
+    /**
+     * @param array<int,int> $ids
+     * @param callable(int):string $labelCallback
+     */
+    private static function renderRelationList(string $heading, string $section, array $ids, callable $labelCallback): void
+    {
+        $postType = self::SECTION_POST_TYPES[$section] ?? '';
+        if ($postType === '') {
+            return;
+        }
+
+        $items = [];
+        foreach ($ids as $id) {
+            $related = self::getAccessiblePost($id, $postType);
+            if (!$related instanceof WP_Post) {
+                continue;
+            }
+
+            $label = trim((string) $labelCallback($related->ID));
+            if ($label === '') {
+                continue;
+            }
+
+            $items[] = [
+                'url'   => self::getDetailLink($section, $related->ID),
+                'label' => $label,
+            ];
+        }
+
+        echo '<section class="estate-office-crm__detail-panel">';
+        echo '<h3>' . esc_html($heading) . '</h3>';
+        if (!$items) {
+            echo '<p>' . esc_html__('Brak powiązanych rekordów.', 'estate-office') . '</p>';
+        } else {
+            echo '<ul class="estate-office-crm__detail-listing">';
+            foreach ($items as $item) {
+                echo '<li><a href="' . esc_url($item['url']) . '">' . esc_html($item['label']) . '</a></li>';
+            }
+            echo '</ul>';
+        }
+        echo '</section>';
+    }
+
+    private static function renderStageHistory(int $postId): void
+    {
+        $history = get_post_meta($postId, 'estate_agreement_stage_history', true);
+        if (!is_array($history) || $history === []) {
+            return;
+        }
+
+        echo '<section class="estate-office-crm__detail-panel">';
+        echo '<h3>' . esc_html__('Historia etapów', 'estate-office') . '</h3>';
+        echo '<ol class="estate-office-crm__timeline">';
+        foreach ($history as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $stageKey   = (string) ($entry['stage'] ?? '');
+            $stageLabel = self::getAgreementStageLabel($stageKey);
+            $date       = (string) ($entry['date'] ?? '');
+
+            echo '<li>';
+            echo '<span class="estate-office-crm__timeline-stage">' . esc_html($stageLabel) . '</span>';
+            if ($date !== '') {
+                echo '<span class="estate-office-crm__timeline-date">' . esc_html($date) . '</span>';
+            }
+            echo '</li>';
+        }
+        echo '</ol>';
+        echo '</section>';
+    }
+
+    private static function renderDetailNotFound(): void
+    {
+        echo '<div class="estate-office-crm__notice estate-office-crm__detail-notice">' . esc_html__('Nie znaleziono rekordu lub brak uprawnień do podglądu.', 'estate-office') . '</div>';
+    }
+
+    private static function getAccessiblePost(int $postId, string $postType): ?WP_Post
+    {
+        if ($postId <= 0 || $postType === '') {
+            return null;
+        }
+
+        $post = get_post($postId);
+        if (!$post instanceof WP_Post || $post->post_type !== $postType) {
+            return null;
+        }
+
+        if (!current_user_can('read_post', $postId) && !current_user_can('edit_post', $postId)) {
+            return null;
+        }
+
+        return $post;
+    }
+
+    private static function getDetailLink(string $section, int $postId): string
+    {
+        if ($section === 'dashboard' || !isset(self::SECTIONS[$section])) {
+            return '#';
+        }
+
+        $url = add_query_arg(self::SECTION_PARAM, $section, self::getBaseUrl());
+        $url = add_query_arg(self::RECORD_PARAM, $section, $url);
+        $url = add_query_arg(self::RECORD_ID_PARAM, (string) $postId, $url);
+
+        return $url;
+    }
+
+    private static function getTermsList(int $postId, string $taxonomy): string
+    {
+        $terms = get_the_terms($postId, $taxonomy);
+        if (!is_array($terms) || $terms === []) {
+            return '—';
+        }
+
+        $names = array_filter(array_map(static fn($term) => is_object($term) && isset($term->name) ? (string) $term->name : '', $terms));
+        if ($names === []) {
+            return '—';
+        }
+
+        return implode(', ', $names);
+    }
+
+    private static function formatRawMeta(int $postId, string $metaKey): string
+    {
+        $value = get_post_meta($postId, $metaKey, true);
+        if (is_scalar($value)) {
+            $string = (string) $value;
+            if ($string !== '') {
+                return $string;
+            }
+        }
+
+        return '—';
+    }
+
+    private static function formatPropertyHouseType(int $postId): string
+    {
+        $value = (string) get_post_meta($postId, 'estate_property_house_type', true);
+        if ($value === '') {
+            return '—';
+        }
+
+        $map = [
+            'detached'      => __('Wolnostojący', 'estate-office'),
+            'semi_detached' => __('Bliźniak', 'estate-office'),
+            'terraced'      => __('Szeregowiec', 'estate-office'),
+            'multi_family'  => __('Wielorodzinny', 'estate-office'),
+        ];
+
+        return $map[$value] ?? '—';
+    }
+
+    private static function formatPropertyLegalStatus(int $postId): string
+    {
+        $value = (string) get_post_meta($postId, 'estate_property_legal_status', true);
+        if ($value === '') {
+            return '—';
+        }
+
+        $map = [
+            'ownership'      => __('Własność', 'estate-office'),
+            'coownership'    => __('Współwłasność', 'estate-office'),
+            'cooperative'    => __('Spółdzielcze własnościowe prawo do lokalu', 'estate-office'),
+            'lease'          => __('Dzierżawa', 'estate-office'),
+            'other'          => __('Inne', 'estate-office'),
+        ];
+
+        return $map[$value] ?? '—';
+    }
+
+    private static function formatPropertyPlotShape(int $postId): string
+    {
+        $value = (string) get_post_meta($postId, 'estate_property_plot_shape', true);
+        if ($value === '') {
+            return '—';
+        }
+
+        $map = [
+            'regular'   => __('Regularny', 'estate-office'),
+            'irregular' => __('Nieregularny', 'estate-office'),
+        ];
+
+        return $map[$value] ?? '—';
+    }
+
+    private static function formatPropertyLandRegister(int $postId): string
+    {
+        $noRegister = (bool) get_post_meta($postId, 'estate_property_no_land_register', true);
+        if ($noRegister) {
+            return __('Brak', 'estate-office');
+        }
+
+        return self::formatRawMeta($postId, 'estate_property_land_register_number');
+    }
+
+    private static function formatBooleanMeta(int $postId, string $metaKey): string
+    {
+        $value = get_post_meta($postId, $metaKey, true);
+        $isTrue = false;
+        if (is_bool($value)) {
+            $isTrue = $value;
+        } elseif (is_scalar($value)) {
+            $isTrue = (bool) $value;
+        }
+
+        return $isTrue ? __('Tak', 'estate-office') : __('Nie', 'estate-office');
+    }
+
+    private static function formatAgreementCommission(int $postId): string
+    {
+        $amount = (string) get_post_meta($postId, 'estate_agreement_commission_amount', true);
+        if ($amount === '') {
+            return '—';
+        }
+
+        $unitKey = (string) get_post_meta($postId, 'estate_agreement_commission_unit', true);
+        $unitMap = [
+            'percent' => '%',
+            'pln'     => 'PLN',
+            'eur'     => 'EUR',
+            'usd'     => 'USD',
+        ];
+
+        $number = number_format_i18n((float) $amount, 2);
+
+        if ($unitKey === 'percent') {
+            return sprintf('%s %%', $number);
+        }
+
+        $unit = $unitMap[$unitKey] ?? 'PLN';
+
+        return sprintf('%s %s', $number, $unit);
+    }
+
+    private static function formatRange(int $postId, string $minKey, string $maxKey, string $unit): string
+    {
+        $min = (string) get_post_meta($postId, $minKey, true);
+        $max = (string) get_post_meta($postId, $maxKey, true);
+
+        if ($min === '' && $max === '') {
+            return '—';
+        }
+
+        $parts = [];
+        if ($min !== '') {
+            $parts[] = sprintf('%s %s', number_format_i18n((float) $min, 2), $unit);
+        }
+        if ($max !== '') {
+            $parts[] = sprintf('%s %s', number_format_i18n((float) $max, 2), $unit);
+        }
+
+        return implode(' - ', $parts);
+    }
+
+    private static function formatIntegerRange(int $postId, string $minKey, string $maxKey): string
+    {
+        $min = (string) get_post_meta($postId, $minKey, true);
+        $max = (string) get_post_meta($postId, $maxKey, true);
+
+        if ($min === '' && $max === '') {
+            return '—';
+        }
+
+        $parts = [];
+        if ($min !== '') {
+            $parts[] = number_format_i18n((int) $min);
+        }
+        if ($max !== '') {
+            $parts[] = number_format_i18n((int) $max);
+        }
+
+        return implode(' - ', $parts);
+    }
+
+    private static function formatCorrespondenceAddress(int $postId): string
+    {
+        $same = (bool) get_post_meta($postId, 'estate_client_correspondence_same', true);
+        if ($same) {
+            return __('Taki sam jak główny', 'estate-office');
+        }
+
+        $street = (string) get_post_meta($postId, 'estate_client_correspondence_street', true);
+        $number = (string) get_post_meta($postId, 'estate_client_correspondence_number', true);
+        $unit   = (string) get_post_meta($postId, 'estate_client_correspondence_unit', true);
+        $postal = (string) get_post_meta($postId, 'estate_client_correspondence_postal_code', true);
+        $city   = (string) get_post_meta($postId, 'estate_client_correspondence_city', true);
+        $country = (string) get_post_meta($postId, 'estate_client_correspondence_country', true);
+
+        $parts = [];
+        if ($street !== '') {
+            $line = $street;
+            if ($number !== '') {
+                $line .= ' ' . $number;
+            }
+            if ($unit !== '') {
+                $line .= '/' . $unit;
+            }
+            $parts[] = $line;
+        }
+        if ($postal !== '') {
+            $parts[] = $postal;
+        }
+        if ($city !== '') {
+            $parts[] = $city;
+        }
+        if ($country !== '') {
+            $parts[] = $country;
+        }
+
+        if ($parts) {
+            return implode(', ', $parts);
+        }
+
+        return __('Brak adresu', 'estate-office');
+    }
+
+    private static function formatWebsite(string $url): string
+    {
+        if ($url === '') {
+            return '—';
+        }
+
+        $sanitized = esc_url($url);
+        if ($sanitized === '') {
+            return esc_html($url);
+        }
+
+        return '<a href="' . $sanitized . '" target="_blank" rel="noopener noreferrer">' . esc_html($url) . '</a>';
+    }
+
+    private static function getAgreementNumberLabel(int $agreementId): string
+    {
+        $number = self::resolveReference($agreementId, 'estate_agreement_number');
+        $stage  = self::getAgreementStageLabel((string) get_post_meta($agreementId, 'estate_agreement_stage', true));
+
+        if ($stage === '—') {
+            return $number;
+        }
+
+        return sprintf('%s – %s', $number, $stage);
+    }
+
+    private static function getClientRelationLabel(int $clientId): string
+    {
+        return self::resolveClientName($clientId);
+    }
+
+    private static function getPropertyRelationLabel(int $propertyId): string
+    {
+        $reference = self::resolveReference($propertyId, 'estate_property_reference');
+        $address   = self::formatPropertyAddress($propertyId);
+
+        return sprintf('%s – %s', $reference, $address);
+    }
+
+    private static function getSearchRelationLabel(int $searchId): string
+    {
+        $reference = self::resolveReference($searchId, 'estate_search_reference');
+        $location  = (string) get_post_meta($searchId, 'estate_search_location', true);
+        if ($location === '') {
+            return $reference;
+        }
+
+        return sprintf('%s – %s', $reference, $location);
+    }
+
     /**
      * @return array<int,array{link:string,name:string,address:string,phone:string,email:string,manager:string}>
      */
@@ -785,7 +1630,7 @@ final class CRM
             $query->the_post();
             $postId = (int) get_the_ID();
             $rows[] = [
-                'link'    => (string) get_edit_post_link($postId) ?: '#',
+                'link'    => self::getDetailLink('clients', $postId),
                 'name'    => self::resolveClientName($postId),
                 'address' => self::formatClientAddress($postId),
                 'phone'   => self::formatPhone((string) get_post_meta($postId, 'estate_client_phone', true)),
