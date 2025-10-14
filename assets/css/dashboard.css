@@ -1,0 +1,49 @@
+.estate-office-dashboard__shortcuts {
+    margin: 1.5rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.estate-office-dashboard__stats {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin-bottom: 2rem;
+}
+
+.estate-office-dashboard__stat {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 1rem;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.estate-office-dashboard__stat-label {
+    display: block;
+    font-size: 0.875rem;
+    color: #50575e;
+    margin-bottom: 0.5rem;
+}
+
+.estate-office-dashboard__stat-value {
+    display: block;
+    font-size: 2rem;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+
+.estate-office-dashboard__stat-link {
+    display: inline-block;
+    font-size: 0.875rem;
+}
+
+.estate-office-dashboard__panels {
+    display: grid;
+    gap: 2rem;
+}
+
+.estate-office-dashboard__panel h2 {
+    margin-top: 0;
+}

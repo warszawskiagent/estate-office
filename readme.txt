@@ -12,6 +12,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia, O wtyczce.
 * Wspólne menu CRM w kokpicie z pulpitem startowym i szybkim dostępem do kluczowych modułów.
+* Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
 * Rozszerzone meta boksy nieruchomości z danymi adresowymi, prawnymi, technicznymi oraz informacjami CRM (numer oferty, opiekun).
@@ -26,7 +27,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 
 == Roadmap ==
 * Integracja modułu licencji wraz z panelem aktywacji i walidacją kluczy.
-* Implementacja pulpitu CRM z widżetami podsumowującymi statystyki i aktywności.
+* Rozbudowa pulpitu CRM o konfigurowalne widżety, wykresy oraz historię aktywności.
 * Rozszerzenie eksportu nieruchomości na WWW o szablony frontowe i znaczniki graficzne.
 * Automatyzacje workflow: powiadomienia e-mail, logi aktywności oraz powiązania na froncie użytkownika.
 * Integracja Google Maps z możliwością zapisu współrzędnych i podglądu lokalizacji w panelu.
@@ -35,7 +36,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
 * Panel frontowy CRM z widokami list, wyszukiwaniem i dodatkowymi filtrami dla agentów.
 * Raporty i analityka efektywności (top oferty, aktywność agentów, statusy umów).
-* Rozbudowa pulpitu CRM o widżety statystyk, aktywności oraz konfigurowalne skróty.
+* Integracja z modułem raportów czasu rzeczywistego i personalizacją panelu agenta.
 * Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
 
 == Installation ==
@@ -56,3 +57,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano powiązania umów z klientami, nieruchomościami i poszukiwaniami oraz podsumowania relacji w panelu CRM.
 * Zapewniono automatyczne utrzymanie spójności powiązań CRM podczas usuwania umów, nieruchomości, klientów i poszukiwań.
 * Skonsolidowano menu administracyjne CRM z pulpitem szybkich akcji i podpięciem typów wpisów pod główną sekcję wtyczki.
+* Rozbudowano pulpit CRM o zestawienie liczby rekordów modułów i ranking aktywności agentów wraz z dedykowanym stylem.
