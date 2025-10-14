@@ -92,6 +92,11 @@ class Estate_Office {
         $frontend = new Frontend();
         add_action( 'init', [ $frontend, 'register_post_types' ] );
         add_action( 'init', [ $frontend, 'register_rewrite_tags' ] );
+        add_action( 'init', [ $frontend, 'register_rewrite_rules' ] );
+        add_filter( 'query_vars', [ $frontend, 'register_query_vars' ] );
+        add_filter( 'template_include', [ $frontend, 'maybe_use_crm_template' ] );
+        add_filter( 'single_template', [ $frontend, 'filter_single_property_template' ] );
+        add_filter( 'archive_template', [ $frontend, 'filter_archive_property_template' ] );
     }
 
     /**

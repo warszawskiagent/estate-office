@@ -16,6 +16,8 @@ Wtyczka tworzy fundamenty do budowy zamkniętego panelu CRM dla agentów nieruch
 == Funkcje ==
 
 * REST API zapewniające bezpieczny CRUD dla klientów, nieruchomości, umów oraz zapisanych wyszukiwań z kontrolą uprawnień.
+* Dedykowany routing `/crm` wyświetlający panel CRM tylko dla uprawnionych użytkowników.
+* Szablony `single` i `archive` dla nieruchomości z możliwością nadpisania w motywie.
 
 == Installation ==
 
