@@ -13,6 +13,10 @@ Estate Office CRM to kompleksowy system do zarządzania biurem nieruchomości w 
 
 Wtyczka tworzy fundamenty do budowy zamkniętego panelu CRM dla agentów nieruchomości. Zawiera rejestrację dedykowanych tabel bazy danych, custom post type dla nieruchomości oraz podstawowe widoki w panelu administracyjnym.
 
+== Funkcje ==
+
+* REST API zapewniające bezpieczny CRUD dla klientów, nieruchomości, umów oraz zapisanych wyszukiwań z kontrolą uprawnień.
+
 == Installation ==
 
 1. Prześlij katalog `estate-office` do katalogu `/wp-content/plugins/`.

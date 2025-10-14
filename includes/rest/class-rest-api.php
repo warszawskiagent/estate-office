@@ -24,6 +24,8 @@ class Rest_API {
         $controllers = [
             new Properties_Controller(),
             new Clients_Controller(),
+            new Contracts_Controller(),
+            new Searches_Controller(),
         ];
 
         foreach ( $controllers as $controller ) {

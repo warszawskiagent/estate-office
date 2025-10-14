@@ -58,6 +58,8 @@ class Estate_Office {
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-rest-api.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-properties-controller.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-clients-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-contracts-controller.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . '/includes/rest/class-searches-controller.php';
     }
 
     /**
