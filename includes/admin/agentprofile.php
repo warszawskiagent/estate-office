@@ -40,12 +40,12 @@ final class AgentProfile
     private const NONCE_ACTION = 'estate_office_agent_profile';
     private const NONCE_NAME   = '_estate_office_agent_nonce';
 
-    private const META_AVATAR       = 'estate_office_agent_avatar_id';
-    private const META_PHONE        = 'estate_office_agent_phone';
-    private const META_PHONE_ALT    = 'estate_office_agent_phone_alt';
-    private const META_OFFICE_PHONE = 'estate_office_agent_office_phone';
-    private const META_WHATSAPP     = 'estate_office_agent_whatsapp';
-    private const META_BIOGRAPHY    = 'estate_office_agent_biography';
+    public const META_AVATAR       = 'estate_office_agent_avatar_id';
+    public const META_PHONE        = 'estate_office_agent_phone';
+    public const META_PHONE_ALT    = 'estate_office_agent_phone_alt';
+    public const META_OFFICE_PHONE = 'estate_office_agent_office_phone';
+    public const META_WHATSAPP     = 'estate_office_agent_whatsapp';
+    public const META_BIOGRAPHY    = 'estate_office_agent_biography';
 
     /**
      * Bootstraps hooks for agent profile management.
