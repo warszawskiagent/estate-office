@@ -38,6 +38,7 @@ use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\ContactForms;
 use EstateOffice\Leads\LeadCollector;
+use EstateOffice\Leads\LeadNotifications;
 
 final class Plugin
 {
@@ -97,6 +98,7 @@ final class Plugin
         AgentPublic::bootstrap();
         ContactForms::bootstrap();
         LeadCollector::bootstrap();
+        LeadNotifications::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

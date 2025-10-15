@@ -26,6 +26,7 @@ final class GeneralSettings
                     'agreement_fields'     => [],
                     'client_fields'        => [],
                     'search_fields'        => [],
+                    'lead_notifications'   => self::getDefaultNotifications(),
                 ],
             ]
         );
@@ -99,6 +100,53 @@ final class GeneralSettings
             'estate-office-settings',
             'estate_office_dynamic_fields'
         );
+
+        add_settings_section(
+            'estate_office_notifications',
+            __('Powiadomienia', 'estate-office'),
+            static fn () => printf('<p>%s</p>', esc_html__('Skonfiguruj powiadomienia e-mail wysyłane po utworzeniu leadu.', 'estate-office')),
+            'estate-office-settings'
+        );
+
+        add_settings_field(
+            'estate_office_lead_notify_agent',
+            __('Powiadom przypisanego agenta', 'estate-office'),
+            [self::class, 'renderNotifyAgentField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_agent_subject',
+            __('Temat wiadomości do agenta', 'estate-office'),
+            [self::class, 'renderAgentSubjectField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_include_message',
+            __('Dołącz treść zapytania', 'estate-office'),
+            [self::class, 'renderIncludeMessageField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_office_email',
+            __('Kopia do biura', 'estate-office'),
+            [self::class, 'renderOfficeEmailField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_office_subject',
+            __('Temat wiadomości do biura', 'estate-office'),
+            [self::class, 'renderOfficeSubjectField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
     }
 
     public static function sanitize($value): array
@@ -113,6 +161,7 @@ final class GeneralSettings
             'agreement_fields'     => self::sanitizeList($value['agreement_fields'] ?? []),
             'client_fields'        => self::sanitizeList($value['client_fields'] ?? []),
             'search_fields'        => self::sanitizeList($value['search_fields'] ?? []),
+            'lead_notifications'   => self::sanitizeNotifications($value['lead_notifications'] ?? []),
         ];
     }
 
@@ -227,6 +276,72 @@ final class GeneralSettings
         echo '</div>';
     }
 
+    public static function renderNotifyAgentField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][notify_agent]');
+
+        printf(
+            '<label><input type="checkbox" name="%1$s" value="1" %2$s /> %3$s</label>',
+            $field,
+            checked($notifications['notify_agent'], true, false),
+            esc_html__('Wyślij powiadomienie e-mail do agenta przypisanego do leadu.', 'estate-office')
+        );
+        echo '<p class="description">' . esc_html__('Jeżeli lead powstał z formularza kontaktowego, agent otrzyma dodatkowe powiadomienie systemowe.', 'estate-office') . '</p>';
+    }
+
+    public static function renderAgentSubjectField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][agent_subject]');
+
+        printf(
+            '<input type="text" id="estate_office_lead_agent_subject" name="%1$s" value="%2$s" class="regular-text" />',
+            $field,
+            esc_attr($notifications['agent_subject'])
+        );
+        echo '<p class="description">' . esc_html__('Pozostaw puste, aby użyć domyślnego tematu „Nowy lead przypisany do Ciebie”.', 'estate-office') . '</p>';
+    }
+
+    public static function renderIncludeMessageField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][include_message]');
+
+        printf(
+            '<label><input type="checkbox" name="%1$s" value="1" %2$s /> %3$s</label>',
+            $field,
+            checked($notifications['include_message'], true, false),
+            esc_html__('Dodaj treść wiadomości klienta do powiadomień.', 'estate-office')
+        );
+    }
+
+    public static function renderOfficeEmailField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][office_email]');
+
+        printf(
+            '<input type="email" id="estate_office_lead_office_email" name="%1$s" value="%2$s" class="regular-text" autocomplete="off" />',
+            $field,
+            esc_attr($notifications['office_email'])
+        );
+        echo '<p class="description">' . esc_html__('Opcjonalny adres biura, który otrzyma kopię każdego nowego leadu.', 'estate-office') . '</p>';
+    }
+
+    public static function renderOfficeSubjectField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][office_subject]');
+
+        printf(
+            '<input type="text" id="estate_office_lead_office_subject" name="%1$s" value="%2$s" class="regular-text" />',
+            $field,
+            esc_attr($notifications['office_subject'])
+        );
+        echo '<p class="description">' . esc_html__('Pozostaw puste, aby użyć domyślnego tematu „Nowe zgłoszenie leadu”.', 'estate-office') . '</p>';
+    }
+
     /**
      * @return array<int,array{key:string,label:string}>
      */
@@ -299,5 +414,53 @@ final class GeneralSettings
         }
 
         return $definitions;
+    }
+
+    private static function sanitizeNotifications($value): array
+    {
+        $value = is_array($value) ? $value : [];
+
+        return [
+            'notify_agent'    => ! empty($value['notify_agent']),
+            'include_message' => ! empty($value['include_message']),
+            'office_email'    => isset($value['office_email']) ? sanitize_email((string) $value['office_email']) : '',
+            'office_subject'  => isset($value['office_subject']) ? sanitize_text_field((string) $value['office_subject']) : '',
+            'agent_subject'   => isset($value['agent_subject']) ? sanitize_text_field((string) $value['agent_subject']) : '',
+        ];
+    }
+
+    private static function getNotificationsOption(): array
+    {
+        $option = get_option(self::OPTION);
+        $stored = isset($option['lead_notifications']) && is_array($option['lead_notifications']) ? $option['lead_notifications'] : [];
+
+        return array_merge(self::getDefaultNotifications(), $stored);
+    }
+
+    private static function getDefaultNotifications(): array
+    {
+        return [
+            'notify_agent'    => true,
+            'include_message' => true,
+            'office_email'    => '',
+            'office_subject'  => '',
+            'agent_subject'   => '',
+        ];
+    }
+
+    /**
+     * @return array{notify_agent:bool,include_message:bool,office_email:string,office_subject:string,agent_subject:string}
+     */
+    public static function getLeadNotificationSettings(): array
+    {
+        $option = self::getNotificationsOption();
+
+        return [
+            'notify_agent'    => (bool) $option['notify_agent'],
+            'include_message' => (bool) $option['include_message'],
+            'office_email'    => (string) $option['office_email'],
+            'office_subject'  => (string) $option['office_subject'],
+            'agent_subject'   => (string) $option['agent_subject'],
+        ];
     }
 }

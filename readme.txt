@@ -27,6 +27,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
 * Automatyczny zapis leadów z formularzy kontaktowych z przypisaniami agentów, statusami i historią zgłoszeń.
+* Powiadomienia e-mail o nowych leadach dla biura i przypisanych agentów z konfigurowalnymi tematami i treścią.
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
@@ -55,6 +56,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozbudowa frontowego panelu CRM o edycję rekordów, zarządzanie relacjami i rozszerzone raporty.
 * Rozwinięcie pól dynamicznych o typy danych, reguły walidacji oraz warunkową widoczność w formularzach.
 * Powiązanie dynamicznych pól poszukiwań z raportami, eksportami i przyszłym modułem workflow.
+* Personalizacja powiadomień leadów o własne szablony HTML, integrację z webhookami i harmonogram wysyłek.
 * Raporty i analityka efektywności (top oferty, aktywność agentów, statusy umów).
 * Rozszerzenia panelu agentów o masowe akcje, import danych i integrację z raportami.
 * Integracja z modułem raportów czasu rzeczywistego i personalizacją panelu agenta.
@@ -101,3 +103,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano historię statusów leadów z automatycznym zapisem zmian i osią czasu w panelu CRM.
 * Udostępniono pola dynamiczne dla nieruchomości, umów i klientów z meta boksami, walidacją, zapisem oraz prezentacją w CRM i widokach publicznych.
 * Dodano pola dynamiczne poszukiwań konfigurowane w ustawieniach z obsługą meta boksów, REST API i prezentacją w panelu CRM.
+* Dodano moduł powiadomień leadów wysyłający e-maile do agentów i biura wraz z konfigurowalnymi tematami i treścią wiadomości.
