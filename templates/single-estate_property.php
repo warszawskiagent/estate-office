@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use EstateOffice\Frontend\OfferSingle;
+use EstateOffice\Frontend\ContactForms;
 
 defined('ABSPATH') || exit;
 
@@ -172,6 +173,25 @@ get_header();
                         <?php echo wp_kses_post(wpautop($context['manager']['bio'])); ?>
                     </div>
                 <?php endif; ?>
+                <?php
+                if (! empty($context['manager']['email'])) {
+                    ContactForms::render([
+                        'context'        => 'offer',
+                        'recipient'      => $context['manager']['email'],
+                        'recipient_name' => $context['manager']['name'] ?? '',
+                        'record_id'      => get_the_ID(),
+                        'source'         => get_permalink(),
+                        'subject'        => sprintf(
+                            /* translators: %s: offer title */
+                            __('Zapytanie dotyczące oferty: %s', 'estate-office'),
+                            get_the_title()
+                        ),
+                        'heading'        => __('Napisz wiadomość', 'estate-office'),
+                        'success_message'=> __('Dziękujemy za wysłanie zapytania. Agent odezwie się wkrótce.', 'estate-office'),
+                        'consent_label'  => __('Wyrażam zgodę na kontakt w sprawie tej oferty oraz przetwarzanie danych w celu obsługi zapytania.', 'estate-office'),
+                    ]);
+                }
+                ?>
             </aside>
         <?php endif; ?>
     </div>

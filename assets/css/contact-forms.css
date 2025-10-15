@@ -1,0 +1,110 @@
+.estate-office-contact-form {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(12, 31, 62, 0.08);
+}
+
+.estate-office-contact-form__title {
+    margin: 0 0 1rem;
+    font-size: 1.2rem;
+}
+
+.estate-office-contact-form__form {
+    display: grid;
+    gap: 1rem;
+}
+
+.estate-office-contact-form__field {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 600;
+    color: #24324a;
+}
+
+.estate-office-contact-form__field input,
+.estate-office-contact-form__field textarea {
+    border: 1px solid rgba(12, 31, 62, 0.15);
+    border-radius: 8px;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #131c2b;
+    background-color: #f9fbff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.estate-office-contact-form__field input:focus,
+.estate-office-contact-form__field textarea:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.18);
+    background-color: #ffffff;
+}
+
+.estate-office-contact-form__field textarea {
+    resize: vertical;
+    min-height: 130px;
+}
+
+.estate-office-contact-form__consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: flex-start;
+    font-size: 0.9rem;
+    color: #3d4b63;
+}
+
+.estate-office-contact-form__consent input {
+    margin-top: 0.25rem;
+}
+
+.estate-office-contact-form__notice {
+    min-height: 1.1rem;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #3d4b63;
+}
+
+.estate-office-contact-form__form.is-error .estate-office-contact-form__notice {
+    color: #b91c1c;
+}
+
+.estate-office-contact-form__form.is-success .estate-office-contact-form__notice {
+    color: #047857;
+}
+
+.estate-office-contact-form__submit {
+    justify-self: flex-start;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.75rem 1.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.estate-office-contact-form__submit:hover,
+.estate-office-contact-form__submit:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(13, 71, 161, 0.25);
+    outline: none;
+}
+
+.estate-office-contact-form__submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .estate-office-contact-form {
+        padding: 1.25rem;
+    }
+}

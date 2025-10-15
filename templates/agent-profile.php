@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use EstateOffice\Frontend\AgentPublic;
+use EstateOffice\Frontend\ContactForms;
 
 defined('ABSPATH') || exit;
 
@@ -54,6 +55,25 @@ get_header();
             <?php endif; ?>
         </div>
     </header>
+
+    <?php
+    if (! empty($context['email'])) {
+        ContactForms::render([
+            'context'        => 'agent-profile',
+            'recipient'      => $context['email'],
+            'recipient_name' => $context['name'] ?? '',
+            'subject'        => sprintf(
+                /* translators: %s: agent name */
+                __('Zapytanie do agenta: %s', 'estate-office'),
+                $context['name'] ?? ''
+            ),
+            'heading'        => __('Skontaktuj się z agentem', 'estate-office'),
+            'success_message'=> __('Dziękujemy za kontakt. Agent skontaktuje się z Tobą najszybciej jak to możliwe.', 'estate-office'),
+            'consent_label'  => __('Wyrażam zgodę na kontakt w sprawie usług pośrednictwa oraz przetwarzanie danych w celu obsługi zapytania.', 'estate-office'),
+            'source'         => $context['profile_url'] ?? '',
+        ]);
+    }
+    ?>
 
     <?php if (! empty($context['specialisations']) || ! empty($context['service_areas'])) : ?>
         <section class="estate-office-agent__highlights">

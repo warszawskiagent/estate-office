@@ -32,6 +32,7 @@ use EstateOffice\Frontend\AgentDirectory;
 use EstateOffice\Frontend\CRM;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
+use EstateOffice\Frontend\ContactForms;
 
 final class Plugin
 {
@@ -83,6 +84,7 @@ final class Plugin
         OfferSingle::bootstrap();
         AgentDirectory::bootstrap();
         AgentPublic::bootstrap();
+        ContactForms::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);
