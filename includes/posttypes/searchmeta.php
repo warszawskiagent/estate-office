@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EstateOffice\PostTypes;
 
+use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 
 use function esc_url;
@@ -33,6 +34,8 @@ final class SearchMeta
     ];
 
     public const AGREEMENTS_META_KEY = 'estate_search_agreements';
+
+    private const DYNAMIC_FIELDS_META_KEY = 'estate_search_dynamic_fields';
 
     private const FINISHES = [
         'shell'      => 'Stan deweloperski',
@@ -196,6 +199,25 @@ final class SearchMeta
                 'sanitize_callback' => static fn($value) => self::sanitizeAgreementRelations($value),
             ]
         );
+
+        register_post_meta(
+            SearchRegister::POST_TYPE,
+            self::DYNAMIC_FIELDS_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
+            ]
+        );
     }
 
     private static function resolveRestType(array $definition): string
@@ -238,6 +260,17 @@ final class SearchMeta
             'normal',
             'default'
         );
+
+        if (!empty(GeneralSettings::getSearchDynamicFields())) {
+            add_meta_box(
+                'estate-office-search-dynamic',
+                __('Pola dodatkowe', 'estate-office'),
+                [self::class, 'renderDynamicFieldsBox'],
+                SearchRegister::POST_TYPE,
+                'normal',
+                'default'
+            );
+        }
     }
 
     public static function renderCrmBox(WP_Post $post): void
@@ -528,6 +561,40 @@ final class SearchMeta
         echo '</table>';
     }
 
+    public static function renderDynamicFieldsBox(WP_Post $post): void
+    {
+        $definitions = GeneralSettings::getSearchDynamicFields();
+
+        if (empty($definitions)) {
+            echo '<p class="description">' . esc_html__('Brak zdefiniowanych pól dodatkowych. Dodaj je w ustawieniach wtyczki.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        $values = get_post_meta($post->ID, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($values)) {
+            $values = [];
+        }
+
+        echo '<table class="form-table estate-office-meta-table">';
+
+        foreach ($definitions as $definition) {
+            $key   = (string) $definition['key'];
+            $label = (string) $definition['label'];
+            $id    = 'estate_search_dynamic_' . $key;
+            $name  = 'estate_search_dynamic[' . $key . ']';
+            $value = isset($values[$key]) ? esc_attr((string) $values[$key]) : '';
+
+            echo '<tr>';
+            echo '<th><label for="' . esc_attr($id) . '">' . esc_html($label) . '</label></th>';
+            printf('<td><input type="text" id="%1$s" name="%2$s" value="%3$s" class="regular-text" autocomplete="off" /></td>', esc_attr($id), esc_attr($name), $value);
+            echo '</tr>';
+        }
+
+        echo '</table>';
+        echo '<p class="description">' . esc_html__('Zmodyfikuj listę pól w sekcji ustawień „Pola poszukiwań”.', 'estate-office') . '</p>';
+    }
+
     private static function renderCheckboxGroup(string $field, array $options, array $selected): void
     {
         $selected = array_map('strval', $selected);
@@ -592,6 +659,9 @@ final class SearchMeta
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
+
+        $dynamicValues = self::sanitizeDynamicInput($_POST['estate_search_dynamic'] ?? []);
+        self::persistDynamicFields($postId, $dynamicValues);
     }
 
     private static function persistMeta(int $postId, string $key, $value, array $definition): void
@@ -629,6 +699,135 @@ final class SearchMeta
         }
 
         update_post_meta($postId, $key, $value);
+    }
+
+    private static function sanitizeDynamicInput($raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getSearchDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($raw as $key => $value) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = '';
+            }
+
+            $clean = self::sanitizeLine(wp_unslash((string) $value));
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    private static function persistDynamicFields(int $postId, array $values): void
+    {
+        if (empty($values)) {
+            delete_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, $values);
+    }
+
+    public static function sanitizeDynamicFields($value, string $metaKey = '', string $objectType = ''): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getSearchDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $raw) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $clean = self::sanitizeLine((string) $raw);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string,value:string}>
+     */
+    public static function getDynamicFieldValues(int $postId): array
+    {
+        $definitions = GeneralSettings::getSearchDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $stored = get_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $values = [];
+
+        foreach ($definitions as $definition) {
+            $key = (string) $definition['key'];
+
+            if (!isset($stored[$key])) {
+                continue;
+            }
+
+            $value = trim((string) $stored[$key]);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $values[] = [
+                'key'   => $key,
+                'label' => (string) $definition['label'],
+                'value' => $value,
+            ];
+        }
+
+        return $values;
     }
 
     private static function sanitizeValue(string $value, array $definition): string

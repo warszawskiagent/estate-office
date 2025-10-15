@@ -25,6 +25,7 @@ final class GeneralSettings
                     'property_fields'      => [],
                     'agreement_fields'     => [],
                     'client_fields'        => [],
+                    'search_fields'        => [],
                 ],
             ]
         );
@@ -90,6 +91,14 @@ final class GeneralSettings
             'estate-office-settings',
             'estate_office_dynamic_fields'
         );
+
+        add_settings_field(
+            'estate_office_search_fields',
+            __('Pola poszukiwań', 'estate-office'),
+            [self::class, 'renderSearchFields'],
+            'estate-office-settings',
+            'estate_office_dynamic_fields'
+        );
     }
 
     public static function sanitize($value): array
@@ -103,6 +112,7 @@ final class GeneralSettings
             'property_fields'      => self::sanitizeList($value['property_fields'] ?? []),
             'agreement_fields'     => self::sanitizeList($value['agreement_fields'] ?? []),
             'client_fields'        => self::sanitizeList($value['client_fields'] ?? []),
+            'search_fields'        => self::sanitizeList($value['search_fields'] ?? []),
         ];
     }
 
@@ -187,6 +197,11 @@ final class GeneralSettings
         self::renderDynamicFields('client_fields', __('Dodaj etykietę pola klienta (np. "Preferowane godziny kontaktu") i naciśnij Enter.', 'estate-office'));
     }
 
+    public static function renderSearchFields(): void
+    {
+        self::renderDynamicFields('search_fields', __('Dodaj etykietę pola poszukiwania (np. "Preferowany standard") i naciśnij Enter.', 'estate-office'));
+    }
+
     private static function renderDynamicFields(string $key, string $placeholder): void
     {
         $option = get_option(self::OPTION);
@@ -234,6 +249,14 @@ final class GeneralSettings
     public static function getClientDynamicFields(): array
     {
         return self::prepareDynamicFields('client_fields');
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getSearchDynamicFields(): array
+    {
+        return self::prepareDynamicFields('search_fields');
     }
 
     /**

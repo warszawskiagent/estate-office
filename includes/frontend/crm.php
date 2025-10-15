@@ -1517,6 +1517,20 @@ final class CRM
             ],
         ];
 
+        $dynamicFields = SearchMeta::getDynamicFieldValues($postId);
+        if (!empty($dynamicFields)) {
+            $cards[] = [
+                'heading' => __('Pola dodatkowe', 'estate-office'),
+                'rows'    => array_map(
+                    static fn(array $field): array => [
+                        'label' => $field['label'],
+                        'value' => esc_html($field['value']),
+                    ],
+                    $dynamicFields
+                ),
+            ];
+        }
+
         self::renderDetailCards($cards);
 
         $description = (string) get_post_meta($postId, 'estate_search_description', true);
