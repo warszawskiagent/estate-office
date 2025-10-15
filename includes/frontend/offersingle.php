@@ -168,6 +168,14 @@ final class OfferSingle
             self::fact(__('Numer księgi wieczystej', 'estate-office'), self::formatLandRegister($meta('estate_property_land_register_number'), $meta('estate_property_no_land_register'))),
         ], static fn (?array $fact) => $fact !== null));
 
+        $customFacts = array_values(array_filter(
+            array_map(
+                static fn(array $field): ?array => self::fact($field['label'], $field['value']),
+                PropertyMeta::getDynamicFieldValues($post->ID)
+            ),
+            static fn (?array $fact) => $fact !== null
+        ));
+
         $plotDetails = array_values(array_filter([
             self::fact(__('Kształt działki', 'estate-office'), self::formatPlotShape($meta('estate_property_plot_shape'))),
             self::fact(__('Długość działki', 'estate-office'), self::formatMeasurement($meta('estate_property_plot_length'), 'm')),
@@ -188,6 +196,7 @@ final class OfferSingle
             'area'         => $area,
             'price_per_sqm'=> $pricePerSqm,
             'facts'        => $facts,
+            'custom_fields'=> $customFacts,
             'plot'         => $plotDetails,
             'address'      => self::buildAddress($post),
             'map'          => self::buildMap($post),

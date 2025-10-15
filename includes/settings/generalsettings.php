@@ -211,4 +211,70 @@ final class GeneralSettings
         );
         echo '</div>';
     }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getPropertyDynamicFields(): array
+    {
+        return self::prepareDynamicFields('property_fields');
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getAgreementDynamicFields(): array
+    {
+        return self::prepareDynamicFields('agreement_fields');
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getClientDynamicFields(): array
+    {
+        return self::prepareDynamicFields('client_fields');
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    private static function prepareDynamicFields(string $optionKey): array
+    {
+        $option = get_option(self::OPTION);
+        $values = isset($option[$optionKey]) && is_array($option[$optionKey]) ? $option[$optionKey] : [];
+
+        $definitions = [];
+        $usedKeys    = [];
+
+        foreach ($values as $label) {
+            $label = trim((string) $label);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $base = sanitize_key($label);
+
+            if ($base === '') {
+                $base = 'field_' . substr(md5($label), 0, 8);
+            }
+
+            $key    = $base;
+            $suffix = 2;
+
+            while (in_array($key, $usedKeys, true)) {
+                $key = $base . '_' . $suffix;
+                $suffix++;
+            }
+
+            $usedKeys[]    = $key;
+            $definitions[] = [
+                'key'   => $key,
+                'label' => $label,
+            ];
+        }
+
+        return $definitions;
+    }
 }

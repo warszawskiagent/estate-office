@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\PostTypes;
 
 use DateTimeImmutable;
+use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 use function get_post;
 use function get_post_meta;
@@ -30,6 +31,8 @@ final class AgreementMeta
         'estate_agreement_stage'              => ['type' => 'enum', 'values' => self::STAGES],
         'estate_agreement_stage_history'      => ['type' => 'array'],
     ];
+
+    private const DYNAMIC_FIELDS_META_KEY = 'estate_agreement_dynamic_fields';
 
     public const TRANSACTION_TYPES = [
         'sale'      => 'Sprzedaż',
@@ -85,6 +88,25 @@ final class AgreementMeta
                 ]
             );
         }
+
+        register_post_meta(
+            AgreementRegister::POST_TYPE,
+            self::DYNAMIC_FIELDS_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
+            ]
+        );
     }
 
     private static function buildRestConfig(array $definition): array
@@ -161,6 +183,17 @@ final class AgreementMeta
             'normal',
             'default'
         );
+
+        if (!empty(GeneralSettings::getAgreementDynamicFields())) {
+            add_meta_box(
+                'estate-office-agreement-dynamic',
+                __('Pola dodatkowe', 'estate-office'),
+                [self::class, 'renderDynamicFieldsBox'],
+                AgreementRegister::POST_TYPE,
+                'normal',
+                'default'
+            );
+        }
 
         add_meta_box(
             'estate-office-agreement-stage',
@@ -343,6 +376,38 @@ final class AgreementMeta
         <?php
     }
 
+    public static function renderDynamicFieldsBox(WP_Post $post): void
+    {
+        $definitions = GeneralSettings::getAgreementDynamicFields();
+
+        if (empty($definitions)) {
+            echo '<p class="description">' . esc_html__('Brak zdefiniowanych pól dodatkowych. Dodaj je w ustawieniach wtyczki.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        $values = get_post_meta($post->ID, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($values)) {
+            $values = [];
+        }
+
+        echo '<table class="form-table estate-office-meta-table">';
+        foreach ($definitions as $definition) {
+            $key   = (string) $definition['key'];
+            $label = (string) $definition['label'];
+            $id    = 'estate_agreement_dynamic_' . $key;
+            $name  = 'estate_agreement_dynamic[' . $key . ']';
+            $value = isset($values[$key]) ? esc_attr((string) $values[$key]) : '';
+
+            echo '<tr>';
+            echo '<th><label for="' . esc_attr($id) . '"><strong>' . esc_html($label) . '</strong></label></th>';
+            printf('<td><input type="text" class="widefat" id="%1$s" name="%2$s" value="%3$s" autocomplete="off" /></td>', esc_attr($id), esc_attr($name), $value);
+            echo '</tr>';
+        }
+        echo '</table>';
+        echo '<p class="description">' . esc_html__('Lista pól znajduje się w ustawieniach w sekcji „Pola umów”.', 'estate-office') . '</p>';
+    }
+
     public static function renderStageBox(WP_Post $post): void
     {
         $stage   = get_post_meta($post->ID, 'estate_agreement_stage', true);
@@ -437,6 +502,8 @@ final class AgreementMeta
             $values[$key] = self::sanitizeValue(wp_unslash((string) $raw), $definition);
         }
 
+        $dynamicValues = self::sanitizeDynamicInput($_POST['estate_agreement_dynamic'] ?? []);
+
         if (!empty($values['estate_agreement_is_indefinite'])) {
             $values['estate_agreement_end_date'] = '';
         }
@@ -469,6 +536,8 @@ final class AgreementMeta
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
+
+        self::persistDynamicFields($postId, $dynamicValues);
 
         self::syncRelations($postId, $previousClients, $values['estate_agreement_clients'], ClientRegister::POST_TYPE, ClientMeta::AGREEMENTS_META_KEY);
         self::syncRelations($postId, $previousProperties, $values['estate_agreement_properties'], PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
@@ -862,6 +931,134 @@ final class AgreementMeta
         }
 
         return $date->format('Y-m-d');
+    }
+
+    private static function sanitizeDynamicInput($raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getAgreementDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($raw as $key => $value) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = '';
+            }
+
+            $clean = self::sanitizeLine(wp_unslash((string) $value));
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    private static function persistDynamicFields(int $postId, array $values): void
+    {
+        if (empty($values)) {
+            delete_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, $values);
+    }
+
+    public static function sanitizeDynamicFields($value, string $metaKey = '', string $objectType = ''): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getAgreementDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $raw) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $clean = self::sanitizeLine((string) $raw);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @return array<int,array{label:string,value:string}>
+     */
+    public static function getDynamicFieldValues(int $postId): array
+    {
+        $definitions = GeneralSettings::getAgreementDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $stored = get_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $values = [];
+
+        foreach ($definitions as $definition) {
+            $key = (string) $definition['key'];
+
+            if (!isset($stored[$key])) {
+                continue;
+            }
+
+            $value = trim((string) $stored[$key]);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $values[] = [
+                'label' => (string) $definition['label'],
+                'value' => $value,
+            ];
+        }
+
+        return $values;
     }
 
     private static function buildSanitizer(array $definition): callable

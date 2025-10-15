@@ -1310,6 +1310,20 @@ final class CRM
             ],
         ];
 
+        $dynamicFields = PropertyMeta::getDynamicFieldValues($postId);
+        if (!empty($dynamicFields)) {
+            $cards[] = [
+                'heading' => __('Pola dodatkowe', 'estate-office'),
+                'rows'    => array_map(
+                    static fn(array $field): array => [
+                        'label' => $field['label'],
+                        'value' => esc_html($field['value']),
+                    ],
+                    $dynamicFields
+                ),
+            ];
+        }
+
         self::renderDetailCards($cards);
 
         $content = apply_filters('the_content', $post->post_content);
@@ -1397,6 +1411,20 @@ final class CRM
                 ],
             ],
         ];
+
+        $dynamicFields = AgreementMeta::getDynamicFieldValues($postId);
+        if (!empty($dynamicFields)) {
+            $cards[] = [
+                'heading' => __('Pola dodatkowe', 'estate-office'),
+                'rows'    => array_map(
+                    static fn(array $field): array => [
+                        'label' => $field['label'],
+                        'value' => esc_html($field['value']),
+                    ],
+                    $dynamicFields
+                ),
+            ];
+        }
 
         self::renderDetailCards($cards);
 
@@ -1574,6 +1602,20 @@ final class CRM
                 ],
             ],
         ];
+
+        $dynamicFields = ClientMeta::getDynamicFieldValues($postId);
+        if (!empty($dynamicFields)) {
+            $cards[] = [
+                'heading' => __('Pola dodatkowe', 'estate-office'),
+                'rows'    => array_map(
+                    static fn(array $field): array => [
+                        'label' => $field['label'],
+                        'value' => esc_html($field['value']),
+                    ],
+                    $dynamicFields
+                ),
+            ];
+        }
 
         self::renderDetailCards($cards);
 

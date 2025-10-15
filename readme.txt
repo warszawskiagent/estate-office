@@ -15,6 +15,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
+* Konfigurowalne pola dodatkowe nieruchomości, umów i klientów obsługiwane w panelu administracyjnym, CRM oraz publicznych widokach.
 * Rozszerzone meta boksy nieruchomości z danymi adresowymi, prawnymi, technicznymi oraz informacjami CRM (numer oferty, opiekun).
 * Integracja Map Google w edycji nieruchomości z zapisem współrzędnych i wyszukiwaniem adresów.
 * Widok listy nieruchomości w kokpicie dostosowany do potrzeb CRM z dedykowanymi kolumnami i sortowaniem.
@@ -52,6 +53,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Eksport ofert na portale zewnętrzne (otodom, gratka, Morizon) oraz integracja MLS.
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
 * Rozbudowa frontowego panelu CRM o edycję rekordów, zarządzanie relacjami i rozszerzone raporty.
+* Rozwinięcie pól dynamicznych o typy danych, reguły walidacji oraz warunkową widoczność w formularzach.
 * Raporty i analityka efektywności (top oferty, aktywność agentów, statusy umów).
 * Rozszerzenia panelu agentów o masowe akcje, import danych i integrację z raportami.
 * Integracja z modułem raportów czasu rzeczywistego i personalizacją panelu agenta.
@@ -96,3 +98,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozbudowano frontowy CRM o zakładkę leadów z tabelą zgłoszeń, kartą detali oraz aktualizacją statystyk i rankingów pod kątem leadów.
 * Udostępniono możliwość aktualizacji statusu leadów z poziomu frontowego CRM wraz z zabezpieczonym zapisem AJAX i komunikatami dla użytkownika.
 * Dodano historię statusów leadów z automatycznym zapisem zmian i osią czasu w panelu CRM.
+* Udostępniono pola dynamiczne dla nieruchomości, umów i klientów z meta boksami, walidacją, zapisem oraz prezentacją w CRM i widokach publicznych.

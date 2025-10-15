@@ -218,6 +218,20 @@ get_header();
         </section>
     <?php endif; ?>
 
+    <?php if (! empty($context['custom_fields'])) : ?>
+        <section class="estate-office-offer__section">
+            <h2 class="estate-office-offer__section-title"><?php esc_html_e('Pola dodatkowe', 'estate-office'); ?></h2>
+            <dl class="estate-office-offer__facts">
+                <?php foreach ($context['custom_fields'] as $fact) : ?>
+                    <div class="estate-office-offer__fact">
+                        <dt><?php echo esc_html($fact['label']); ?></dt>
+                        <dd><?php echo esc_html($fact['value']); ?></dd>
+                    </div>
+                <?php endforeach; ?>
+            </dl>
+        </section>
+    <?php endif; ?>
+
     <?php if (! empty($context['plot'])) : ?>
         <section class="estate-office-offer__section">
             <h2 class="estate-office-offer__section-title"><?php esc_html_e('Informacje o działce', 'estate-office'); ?></h2>

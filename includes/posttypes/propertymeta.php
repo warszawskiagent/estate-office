@@ -41,6 +41,7 @@ use function wp_enqueue_style;
 use function wp_get_attachment_image_url;
 use function wp_get_attachment_metadata;
 use function wp_get_attachment_url;
+use function wp_list_pluck;
 use function wp_localize_script;
 use function wp_next_scheduled;
 use function wp_register_script;
@@ -57,6 +58,7 @@ defined('ABSPATH') || exit;
 final class PropertyMeta
 {
     public const AGREEMENTS_META_KEY = 'estate_property_agreements';
+    private const DYNAMIC_FIELDS_META_KEY = 'estate_property_dynamic_fields';
     private const NEW_OFFER_EXPIRY_META_KEY = 'estate_property_new_offer_expires';
     private const NEW_OFFER_CRON_HOOK = 'estate_office_expire_new_offer_flags';
     private const NEW_OFFER_DURATION = 7 * DAY_IN_SECONDS;
@@ -201,6 +203,25 @@ final class PropertyMeta
                 'sanitize_callback' => static fn($value) => self::sanitizeAgreementRelations($value),
             ]
         );
+
+        register_post_meta(
+            PropertyRegister::POST_TYPE,
+            self::DYNAMIC_FIELDS_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
+            ]
+        );
     }
 
     private static function buildArraySchema(array $definition): array
@@ -276,6 +297,17 @@ final class PropertyMeta
             'normal',
             'default'
         );
+
+        if (!empty(GeneralSettings::getPropertyDynamicFields())) {
+            add_meta_box(
+                'estate-office-property-dynamic',
+                __('Pola dodatkowe', 'estate-office'),
+                [self::class, 'renderDynamicFieldsBox'],
+                PropertyRegister::POST_TYPE,
+                'normal',
+                'default'
+            );
+        }
 
         add_meta_box(
             'estate-office-property-media',
@@ -800,6 +832,40 @@ final class PropertyMeta
         echo '</table>';
     }
 
+    public static function renderDynamicFieldsBox(WP_Post $post): void
+    {
+        $definitions = GeneralSettings::getPropertyDynamicFields();
+
+        if (empty($definitions)) {
+            echo '<p class="description">' . esc_html__('Brak zdefiniowanych pól dodatkowych. Dodaj je w ustawieniach wtyczki.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        $values = get_post_meta($post->ID, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($values)) {
+            $values = [];
+        }
+
+        echo '<table class="form-table estate-office-meta-table">';
+
+        foreach ($definitions as $definition) {
+            $key   = (string) $definition['key'];
+            $label = (string) $definition['label'];
+            $id    = 'estate_property_dynamic_' . $key;
+            $name  = 'estate_property_dynamic[' . $key . ']';
+            $value = isset($values[$key]) ? esc_attr((string) $values[$key]) : '';
+
+            echo '<tr>';
+            echo '<th><label for="' . esc_attr($id) . '">' . esc_html($label) . '</label></th>';
+            printf('<td><input type="text" id="%1$s" name="%2$s" value="%3$s" class="regular-text" autocomplete="off" /></td>', esc_attr($id), esc_attr($name), $value);
+            echo '</tr>';
+        }
+
+        echo '</table>';
+        echo '<p class="description">' . esc_html__('Zmodyfikuj listę pól w sekcji ustawień „Pola nieruchomości”.', 'estate-office') . '</p>';
+    }
+
     public static function renderMediaBox(WP_Post $post): void
     {
         $gallery = get_post_meta($post->ID, 'estate_property_gallery', true);
@@ -962,6 +1028,8 @@ final class PropertyMeta
             $values[$key] = self::sanitizeValue(wp_unslash((string) $raw), $definition);
         }
 
+        $dynamicValues = self::sanitizeDynamicInput($_POST['estate_property_dynamic'] ?? []);
+
         $price = $values['estate_property_price'] ?? '';
         $area  = $values['estate_property_area'] ?? '';
 
@@ -991,6 +1059,8 @@ final class PropertyMeta
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
+
+        self::persistDynamicFields($postId, $dynamicValues);
 
         self::maybeApplyWatermarks($attachmentsForWatermark);
     }
@@ -1511,6 +1581,135 @@ final class PropertyMeta
 
             return self::sanitizeValue($value, $definition);
         };
+    }
+
+    private static function sanitizeDynamicInput($raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getPropertyDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($raw as $key => $value) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = '';
+            }
+
+            $clean = self::sanitizeLine(wp_unslash((string) $value));
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    private static function persistDynamicFields(int $postId, array $values): void
+    {
+        if (empty($values)) {
+            delete_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, $values);
+    }
+
+    public static function sanitizeDynamicFields($value, string $metaKey = '', string $objectType = ''): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getPropertyDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $raw) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $clean = self::sanitizeLine((string) $raw);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string,value:string}>
+     */
+    public static function getDynamicFieldValues(int $postId): array
+    {
+        $definitions = GeneralSettings::getPropertyDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $stored = get_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $values = [];
+
+        foreach ($definitions as $definition) {
+            $key = (string) $definition['key'];
+
+            if (!isset($stored[$key])) {
+                continue;
+            }
+
+            $value = trim((string) $stored[$key]);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $values[] = [
+                'key'   => $key,
+                'label' => (string) $definition['label'],
+                'value' => $value,
+            ];
+        }
+
+        return $values;
     }
 
     public static function canEditMeta(bool $allowed, string $metaKey, int $postId): bool

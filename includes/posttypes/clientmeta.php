@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EstateOffice\PostTypes;
 
+use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 
 use function esc_url;
@@ -19,6 +20,7 @@ defined('ABSPATH') || exit;
 final class ClientMeta
 {
     public const AGREEMENTS_META_KEY = 'estate_client_agreements';
+    private const DYNAMIC_FIELDS_META_KEY = 'estate_client_dynamic_fields';
 
     public const CLIENT_TYPES = [
         'person'  => 'Osoba fizyczna',
@@ -106,6 +108,25 @@ final class ClientMeta
                 'sanitize_callback' => static fn($value) => self::sanitizeAgreementRelations($value),
             ]
         );
+
+        register_post_meta(
+            ClientRegister::POST_TYPE,
+            self::DYNAMIC_FIELDS_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
+            ]
+        );
     }
 
     private static function resolveRestType(array $definition): string
@@ -163,6 +184,17 @@ final class ClientMeta
             'normal',
             'default'
         );
+
+        if (!empty(GeneralSettings::getClientDynamicFields())) {
+            add_meta_box(
+                'estate-office-client-dynamic',
+                __('Pola dodatkowe', 'estate-office'),
+                [self::class, 'renderDynamicFieldsBox'],
+                ClientRegister::POST_TYPE,
+                'normal',
+                'default'
+            );
+        }
     }
 
     public static function renderCrmBox(WP_Post $post): void
@@ -477,6 +509,38 @@ final class ClientMeta
         echo '</div>';
     }
 
+    public static function renderDynamicFieldsBox(WP_Post $post): void
+    {
+        $definitions = GeneralSettings::getClientDynamicFields();
+
+        if (empty($definitions)) {
+            echo '<p class="description">' . esc_html__('Brak zdefiniowanych pól dodatkowych. Dodaj je w ustawieniach wtyczki.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        $values = get_post_meta($post->ID, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($values)) {
+            $values = [];
+        }
+
+        echo '<table class="form-table estate-office-meta-table">';
+        foreach ($definitions as $definition) {
+            $key   = (string) $definition['key'];
+            $label = (string) $definition['label'];
+            $id    = 'estate_client_dynamic_' . $key;
+            $name  = 'estate_client_dynamic[' . $key . ']';
+            $value = isset($values[$key]) ? esc_attr((string) $values[$key]) : '';
+
+            echo '<tr>';
+            echo '<th><label for="' . esc_attr($id) . '"><strong>' . esc_html($label) . '</strong></label></th>';
+            printf('<td><input type="text" class="widefat" id="%1$s" name="%2$s" value="%3$s" autocomplete="off" /></td>', esc_attr($id), esc_attr($name), $value);
+            echo '</tr>';
+        }
+        echo '</table>';
+        echo '<p class="description">' . esc_html__('Skonfiguruj listę pól w sekcji ustawień „Pola klientów”.', 'estate-office') . '</p>';
+    }
+
     public static function save(int $postId, WP_Post $post): void
     {
         if ($post->post_type !== ClientRegister::POST_TYPE) {
@@ -517,6 +581,8 @@ final class ClientMeta
             $values[$key] = self::sanitizeValue(wp_unslash((string) $raw), $definition);
         }
 
+        $dynamicValues = self::sanitizeDynamicInput($_POST['estate_client_dynamic'] ?? []);
+
         if ($values['estate_client_type'] === '') {
             $values['estate_client_type'] = 'person';
         }
@@ -548,8 +614,138 @@ final class ClientMeta
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
 
+        self::persistDynamicFields($postId, $dynamicValues);
+
         $title = self::buildDisplayName($values);
         self::synchroniseTitle($postId, $title);
+    }
+
+    private static function sanitizeDynamicInput($raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getClientDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($raw as $key => $value) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = '';
+            }
+
+            $clean = self::sanitizeLine(wp_unslash((string) $value));
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    private static function persistDynamicFields(int $postId, array $values): void
+    {
+        if (empty($values)) {
+            delete_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, $values);
+    }
+
+    public static function sanitizeDynamicFields($value, string $metaKey = '', string $objectType = ''): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $definitions = GeneralSettings::getClientDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach ($definitions as $definition) {
+            $allowed[(string) $definition['key']] = true;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $raw) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $clean = self::sanitizeLine((string) $raw);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            $sanitized[$key] = $clean;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @return array<int,array{label:string,value:string}>
+     */
+    public static function getDynamicFieldValues(int $postId): array
+    {
+        $definitions = GeneralSettings::getClientDynamicFields();
+        if (empty($definitions)) {
+            return [];
+        }
+
+        $stored = get_post_meta($postId, self::DYNAMIC_FIELDS_META_KEY, true);
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $values = [];
+
+        foreach ($definitions as $definition) {
+            $key = (string) $definition['key'];
+
+            if (!isset($stored[$key])) {
+                continue;
+            }
+
+            $value = trim((string) $stored[$key]);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $values[] = [
+                'label' => (string) $definition['label'],
+                'value' => $value,
+            ];
+        }
+
+        return $values;
     }
 
     private static function persistMeta(int $postId, string $key, $value, array $definition): void
