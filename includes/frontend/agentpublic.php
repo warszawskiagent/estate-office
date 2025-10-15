@@ -244,9 +244,11 @@ final class AgentPublic
             $officeLogo = $officeLogoId ? wp_get_attachment_url($officeLogoId) : '';
         }
 
-        $phones = self::collectPhones($agent);
-        $whatsapp = self::formatWhatsapp((string) get_user_meta($agent->ID, AgentProfile::META_WHATSAPP, true));
-        $bio      = (string) get_user_meta($agent->ID, AgentProfile::META_BIOGRAPHY, true);
+        $phones          = self::collectPhones($agent);
+        $whatsapp        = self::formatWhatsapp((string) get_user_meta($agent->ID, AgentProfile::META_WHATSAPP, true));
+        $bio             = (string) get_user_meta($agent->ID, AgentProfile::META_BIOGRAPHY, true);
+        $specialisations = AgentProfile::getListValues($agent->ID, AgentProfile::META_SPECIALISATIONS);
+        $serviceAreas    = AgentProfile::getListValues($agent->ID, AgentProfile::META_SERVICE_AREAS);
 
         $properties = self::collectProperties($agent);
 
@@ -261,6 +263,8 @@ final class AgentPublic
             'properties_count' => count($properties),
             'profile_url' => self::getProfileUrl($agent->ID),
             'office_logo' => $officeLogo,
+            'specialisations' => $specialisations,
+            'service_areas'   => $serviceAreas,
         ];
     }
 

@@ -55,6 +55,31 @@ get_header();
         </div>
     </header>
 
+    <?php if (! empty($context['specialisations']) || ! empty($context['service_areas'])) : ?>
+        <section class="estate-office-agent__highlights">
+            <?php if (! empty($context['specialisations'])) : ?>
+                <div class="estate-office-agent__highlight">
+                    <h2 class="estate-office-agent__highlight-title"><?php esc_html_e('Specjalizacje', 'estate-office'); ?></h2>
+                    <ul class="estate-office-agent__chips">
+                        <?php foreach ($context['specialisations'] as $item) : ?>
+                            <li class="estate-office-agent__chip"><?php echo esc_html($item); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+            <?php if (! empty($context['service_areas'])) : ?>
+                <div class="estate-office-agent__highlight">
+                    <h2 class="estate-office-agent__highlight-title"><?php esc_html_e('Obsługiwane obszary', 'estate-office'); ?></h2>
+                    <ul class="estate-office-agent__chips">
+                        <?php foreach ($context['service_areas'] as $item) : ?>
+                            <li class="estate-office-agent__chip estate-office-agent__chip--outline"><?php echo esc_html($item); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
+
     <?php if (! empty($context['bio'])) : ?>
         <section class="estate-office-agent__bio">
             <?php echo wp_kses_post(wpautop($context['bio'])); ?>

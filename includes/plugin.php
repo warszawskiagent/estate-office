@@ -28,6 +28,7 @@ use EstateOffice\PostTypes\ClientColumns;
 use EstateOffice\PostTypes\RelationCleanup;
 use EstateOffice\PostTypes\ManagerFilters;
 use EstateOffice\Frontend\AgentPublic;
+use EstateOffice\Frontend\AgentDirectory;
 use EstateOffice\Frontend\CRM;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
@@ -80,6 +81,7 @@ final class Plugin
         CRM::bootstrap();
         Offers::bootstrap();
         OfferSingle::bootstrap();
+        AgentDirectory::bootstrap();
         AgentPublic::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);

@@ -9,9 +9,15 @@ use WP_User;
 use function add_action;
 use function current_user_can;
 use function esc_attr;
+use function array_filter;
+use function array_map;
+use function array_unique;
+use function array_values;
 use function esc_html__;
 use function esc_html_e;
+use function esc_textarea;
 use function esc_url;
+use function explode;
 use function get_user_meta;
 use function plugins_url;
 use function update_user_meta;
@@ -29,6 +35,8 @@ use const ESTATE_OFFICE_PLUGIN_VERSION;
 
 use function delete_user_meta;
 use function sanitize_text_field;
+use function str_replace;
+use function implode;
 use function wp_get_attachment_image_url;
 use function wp_kses_post;
 
@@ -40,12 +48,14 @@ final class AgentProfile
     private const NONCE_ACTION = 'estate_office_agent_profile';
     private const NONCE_NAME   = '_estate_office_agent_nonce';
 
-    public const META_AVATAR       = 'estate_office_agent_avatar_id';
-    public const META_PHONE        = 'estate_office_agent_phone';
-    public const META_PHONE_ALT    = 'estate_office_agent_phone_alt';
-    public const META_OFFICE_PHONE = 'estate_office_agent_office_phone';
-    public const META_WHATSAPP     = 'estate_office_agent_whatsapp';
-    public const META_BIOGRAPHY    = 'estate_office_agent_biography';
+    public const META_AVATAR          = 'estate_office_agent_avatar_id';
+    public const META_PHONE           = 'estate_office_agent_phone';
+    public const META_PHONE_ALT       = 'estate_office_agent_phone_alt';
+    public const META_OFFICE_PHONE    = 'estate_office_agent_office_phone';
+    public const META_WHATSAPP        = 'estate_office_agent_whatsapp';
+    public const META_BIOGRAPHY       = 'estate_office_agent_biography';
+    public const META_SPECIALISATIONS = 'estate_office_agent_specialisations';
+    public const META_SERVICE_AREAS   = 'estate_office_agent_service_areas';
 
     /**
      * Bootstraps hooks for agent profile management.
@@ -68,12 +78,14 @@ final class AgentProfile
             return;
         }
 
-        $avatarId   = (int) get_user_meta($user->ID, self::META_AVATAR, true);
-        $phone      = (string) get_user_meta($user->ID, self::META_PHONE, true);
-        $phoneAlt   = (string) get_user_meta($user->ID, self::META_PHONE_ALT, true);
-        $officePhone = (string) get_user_meta($user->ID, self::META_OFFICE_PHONE, true);
-        $whatsapp   = (string) get_user_meta($user->ID, self::META_WHATSAPP, true);
-        $bio        = (string) get_user_meta($user->ID, self::META_BIOGRAPHY, true);
+        $avatarId     = (int) get_user_meta($user->ID, self::META_AVATAR, true);
+        $phone        = (string) get_user_meta($user->ID, self::META_PHONE, true);
+        $phoneAlt     = (string) get_user_meta($user->ID, self::META_PHONE_ALT, true);
+        $officePhone  = (string) get_user_meta($user->ID, self::META_OFFICE_PHONE, true);
+        $whatsapp     = (string) get_user_meta($user->ID, self::META_WHATSAPP, true);
+        $bio          = (string) get_user_meta($user->ID, self::META_BIOGRAPHY, true);
+        $specialsRaw  = (string) get_user_meta($user->ID, self::META_SPECIALISATIONS, true);
+        $areasRaw     = (string) get_user_meta($user->ID, self::META_SERVICE_AREAS, true);
 
         $avatarUrl = $avatarId > 0 ? wp_get_attachment_image_url($avatarId, 'thumbnail') : '';
 
@@ -182,6 +194,32 @@ final class AgentProfile
                     </p>
                 </td>
             </tr>
+            <tr>
+                <th scope="row">
+                    <label for="estate-office-agent-specialisations">
+                        <?php esc_html_e('Specjalizacje', 'estate-office'); ?>
+                    </label>
+                </th>
+                <td>
+                    <textarea class="large-text" rows="3" name="<?php echo esc_attr(self::META_SPECIALISATIONS); ?>" id="estate-office-agent-specialisations"><?php echo esc_textarea($specialsRaw); ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e('Wypisz główne specjalizacje agenta (np. apartamenty premium, rynek pierwotny). Każdą pozycję umieść w osobnej linii.', 'estate-office'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="estate-office-agent-service-areas">
+                        <?php esc_html_e('Obsługiwane obszary', 'estate-office'); ?>
+                    </label>
+                </th>
+                <td>
+                    <textarea class="large-text" rows="3" name="<?php echo esc_attr(self::META_SERVICE_AREAS); ?>" id="estate-office-agent-service-areas"><?php echo esc_textarea($areasRaw); ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e('Wskaż miasta, dzielnice lub regiony, na których agent koncentruje działania. Każdy obszar wpisz w nowej linii.', 'estate-office'); ?>
+                    </p>
+                </td>
+            </tr>
         </table>
         <?php
     }
@@ -231,6 +269,55 @@ final class AgentProfile
             $bio = wp_kses_post(wp_unslash((string) $_POST[self::META_BIOGRAPHY]));
             update_user_meta($userId, self::META_BIOGRAPHY, $bio);
         }
+
+        foreach ([self::META_SPECIALISATIONS, self::META_SERVICE_AREAS] as $listMetaKey) {
+            if (! isset($_POST[$listMetaKey])) {
+                continue;
+            }
+
+            $listValue = self::sanitizeListField(wp_unslash((string) $_POST[$listMetaKey]));
+
+            if ($listValue === '') {
+                delete_user_meta($userId, $listMetaKey);
+                continue;
+            }
+
+            update_user_meta($userId, $listMetaKey, $listValue);
+        }
+    }
+
+    /**
+     * Returns list-based agent metadata as an array of values.
+     *
+     * @return array<int,string>
+     */
+    public static function getListValues(int $userId, string $metaKey): array
+    {
+        $raw = (string) get_user_meta($userId, $metaKey, true);
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $raw = str_replace("\r", "\n", $raw);
+        $items = array_filter(array_map('trim', explode("\n", $raw)), static fn(string $value): bool => $value !== '');
+
+        return array_map('sanitize_text_field', $items);
+    }
+
+    private static function sanitizeListField(string $value): string
+    {
+        $value = str_replace("\r", "\n", $value);
+        $rows  = array_filter(array_map('trim', explode("\n", $value)), static fn(string $row): bool => $row !== '');
+
+        if (empty($rows)) {
+            return '';
+        }
+
+        $sanitized = array_map('sanitize_text_field', $rows);
+        $unique    = array_values(array_unique($sanitized));
+
+        return implode("\n", $unique);
     }
 
     /**
