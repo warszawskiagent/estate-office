@@ -18,6 +18,19 @@
         settings.i18n || {}
     );
 
+    const mediaStrings = Object.assign(
+        {
+            galleryTitle: '',
+            galleryButton: '',
+            singleTitle: '',
+            singleButton: '',
+            remove: '',
+            emptyGallery: '',
+            dragHint: '',
+        },
+        settings.media || {}
+    );
+
     function updateStatus(wrapper, message) {
         const status = wrapper.querySelector('.estate-office-map-status');
         if (!status) {
@@ -212,7 +225,311 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function getAttachmentPreview(attachment) {
+        if (!attachment) {
+            return '';
+        }
+
+        if (attachment.sizes) {
+            if (attachment.sizes.medium && attachment.sizes.medium.url) {
+                return attachment.sizes.medium.url;
+            }
+
+            if (attachment.sizes.thumbnail && attachment.sizes.thumbnail.url) {
+                return attachment.sizes.thumbnail.url;
+            }
+        }
+
+        return attachment.url || attachment.icon || '';
+    }
+
+    function updateGalleryEmptyState(wrapper) {
+        const empty = wrapper.querySelector('.estate-office-gallery-empty');
+        const list = wrapper.querySelector('.estate-office-gallery-list');
+
+        if (!empty || !list) {
+            return;
+        }
+
+        if (list.children.length === 0) {
+            empty.classList.remove('hidden');
+            empty.removeAttribute('hidden');
+        } else {
+            empty.classList.add('hidden');
+            empty.setAttribute('hidden', 'hidden');
+        }
+    }
+
+    function getDragAfterElement(list, y) {
+        const items = Array.from(list.querySelectorAll('.estate-office-gallery-item:not(.is-dragging)'));
+
+        return items.reduce(
+            function (closest, child) {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                }
+
+                return closest;
+            },
+            { offset: Number.NEGATIVE_INFINITY, element: null }
+        ).element;
+    }
+
+    function enableDragForItem(item, list) {
+        if (!item || !list) {
+            return;
+        }
+
+        item.addEventListener('dragstart', function (event) {
+            item.classList.add('is-dragging');
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', item.dataset.id || '');
+            }
+        });
+
+        item.addEventListener('dragend', function () {
+            item.classList.remove('is-dragging');
+        });
+    }
+
+    function addGalleryAttachment(wrapper, attachment) {
+        const list = wrapper.querySelector('.estate-office-gallery-list');
+
+        if (!list || !attachment || !attachment.id) {
+            return;
+        }
+
+        const id = attachment.id;
+        if (list.querySelector('[data-id="' + id + '"]')) {
+            return;
+        }
+
+        const item = document.createElement('li');
+        item.className = 'estate-office-gallery-item';
+        item.dataset.id = id;
+        item.setAttribute('draggable', 'true');
+
+        const thumb = document.createElement('div');
+        thumb.className = 'estate-office-gallery-thumb';
+        const previewUrl = getAttachmentPreview(attachment);
+
+        if (previewUrl) {
+            const img = document.createElement('img');
+            img.src = previewUrl;
+            img.alt = '';
+            thumb.appendChild(img);
+        } else {
+            thumb.classList.add('is-placeholder');
+            const placeholder = document.createElement('span');
+            placeholder.textContent = mediaStrings.emptyGallery || '';
+            thumb.appendChild(placeholder);
+        }
+
+        item.appendChild(thumb);
+
+        const actions = document.createElement('div');
+        actions.className = 'estate-office-gallery-actions';
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'button-link estate-office-gallery-remove';
+        removeButton.textContent = mediaStrings.remove || '';
+        removeButton.addEventListener('click', function () {
+            item.remove();
+            updateGalleryEmptyState(wrapper);
+        });
+        actions.appendChild(removeButton);
+        item.appendChild(actions);
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        const inputName = wrapper.dataset.input ? wrapper.dataset.input + '[]' : 'estate_property_gallery[]';
+        input.name = inputName;
+        input.value = id;
+        item.appendChild(input);
+
+        list.appendChild(item);
+        enableDragForItem(item, list);
+        updateGalleryEmptyState(wrapper);
+    }
+
+    function initGallery(wrapper) {
+        const list = wrapper.querySelector('.estate-office-gallery-list');
+        const addButton = wrapper.querySelector('.estate-office-gallery-add');
+
+        if (!list || !addButton || !window.wp || !wp.media) {
+            return;
+        }
+
+        const reorderHint = wrapper.querySelector('.description.reorder');
+        if (reorderHint && mediaStrings.dragHint) {
+            reorderHint.textContent = mediaStrings.dragHint;
+        }
+
+        Array.from(list.querySelectorAll('.estate-office-gallery-item')).forEach(function (item) {
+            enableDragForItem(item, list);
+            const removeButton = item.querySelector('.estate-office-gallery-remove');
+            if (removeButton) {
+                removeButton.addEventListener('click', function () {
+                    item.remove();
+                    updateGalleryEmptyState(wrapper);
+                });
+            }
+        });
+
+        list.addEventListener('dragover', function (event) {
+            event.preventDefault();
+            const dragging = list.querySelector('.estate-office-gallery-item.is-dragging');
+            if (!dragging) {
+                return;
+            }
+
+            const afterElement = getDragAfterElement(list, event.clientY);
+
+            if (!afterElement) {
+                list.appendChild(dragging);
+            } else {
+                list.insertBefore(dragging, afterElement);
+            }
+        });
+
+        let frame;
+
+        addButton.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            if (!frame) {
+                frame = wp.media({
+                    title: wrapper.dataset.frameTitle || mediaStrings.galleryTitle || '',
+                    button: {
+                        text: wrapper.dataset.frameButton || mediaStrings.galleryButton || '',
+                    },
+                    multiple: true,
+                    library: {
+                        type: 'image',
+                    },
+                });
+
+                frame.on('select', function () {
+                    const selection = frame.state().get('selection');
+                    if (!selection) {
+                        return;
+                    }
+
+                    selection.each(function (model) {
+                        addGalleryAttachment(wrapper, model.toJSON());
+                    });
+                });
+            }
+
+            frame.open();
+        });
+
+        updateGalleryEmptyState(wrapper);
+    }
+
+    function renderPlaceholder(preview, text) {
+        if (!preview) {
+            return;
+        }
+
+        preview.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'placeholder';
+        span.textContent = text || '';
+        preview.appendChild(span);
+    }
+
+    function initSingleMedia(wrapper) {
+        const input = wrapper.querySelector('input[type="hidden"]');
+        const addButton = wrapper.querySelector('.estate-office-single-add');
+        const removeButton = wrapper.querySelector('.estate-office-single-remove');
+        const preview = wrapper.querySelector('.estate-office-single-preview');
+        const placeholderText = wrapper.dataset.placeholder || mediaStrings.emptyGallery || '';
+
+        if (removeButton) {
+            removeButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (input) {
+                    input.value = '';
+                }
+                renderPlaceholder(preview, placeholderText);
+                removeButton.setAttribute('disabled', 'disabled');
+            });
+        }
+
+        if (!addButton || !window.wp || !wp.media) {
+            if (!input || !input.value) {
+                renderPlaceholder(preview, placeholderText);
+            }
+            return;
+        }
+
+        let frame;
+
+        addButton.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            if (!frame) {
+                frame = wp.media({
+                    title: wrapper.dataset.frameTitle || mediaStrings.singleTitle || '',
+                    button: {
+                        text: wrapper.dataset.frameButton || mediaStrings.singleButton || '',
+                    },
+                    multiple: false,
+                    library: {
+                        type: 'image',
+                    },
+                });
+
+                frame.on('select', function () {
+                    const selection = frame.state().get('selection');
+                    if (!selection) {
+                        return;
+                    }
+
+                    const attachment = selection.first();
+                    if (!attachment) {
+                        return;
+                    }
+
+                    const data = attachment.toJSON();
+
+                    if (input) {
+                        input.value = data.id || '';
+                    }
+
+                    if (preview) {
+                        const url = getAttachmentPreview(data);
+                        if (url) {
+                            preview.innerHTML = '';
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.alt = '';
+                            preview.appendChild(img);
+                        } else {
+                            renderPlaceholder(preview, placeholderText);
+                        }
+                    }
+
+                    if (removeButton) {
+                        removeButton.removeAttribute('disabled');
+                    }
+                });
+            }
+
+            frame.open();
+        });
+
+        if (!input || !input.value) {
+            renderPlaceholder(preview, placeholderText);
+        }
+    }
+
+    function initMapField() {
         const wrapper = document.querySelector('.estate-office-map-field');
         if (!wrapper) {
             return;
@@ -230,5 +547,33 @@
 
         wrapper.classList.remove('is-disabled');
         initMap(wrapper);
+    }
+
+    function initGalleries() {
+        const wrappers = document.querySelectorAll('.estate-office-gallery');
+        if (!wrappers.length) {
+            return;
+        }
+
+        wrappers.forEach(function (wrapper) {
+            initGallery(wrapper);
+        });
+    }
+
+    function initSingleMediaFields() {
+        const wrappers = document.querySelectorAll('.estate-office-single-media');
+        if (!wrappers.length) {
+            return;
+        }
+
+        wrappers.forEach(function (wrapper) {
+            initSingleMedia(wrapper);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initMapField();
+        initGalleries();
+        initSingleMediaFields();
     });
 })(window, document);

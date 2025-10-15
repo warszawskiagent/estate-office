@@ -7,6 +7,7 @@ namespace EstateOffice\PostTypes;
 use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 
+use function absint;
 use function checked;
 use function current_time;
 use function delete_post_meta;
@@ -15,28 +16,39 @@ use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
+use function esc_url_raw;
+use function get_attached_file;
 use function get_current_screen;
 use function get_edit_post_link;
 use function get_option;
 use function get_post;
 use function get_post_meta;
+use function get_post_mime_type;
 use function get_posts;
 use function get_the_title;
 use function get_user_by;
 use function plugins_url;
 use function rawurlencode;
 use function time;
+use function trailingslashit;
 use function update_post_meta;
+use function wp_check_filetype;
 use function wp_clear_scheduled_hook;
 use function wp_dropdown_users;
+use function wp_enqueue_media;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_get_attachment_image_url;
+use function wp_get_attachment_metadata;
+use function wp_get_attachment_url;
 use function wp_localize_script;
 use function wp_next_scheduled;
 use function wp_register_script;
 use function wp_register_style;
 use function wp_schedule_event;
 use function wp_script_is;
+use function wp_update_attachment_metadata;
+use function wp_upload_dir;
 
 use const DAY_IN_SECONDS;
 
@@ -48,6 +60,9 @@ final class PropertyMeta
     private const NEW_OFFER_EXPIRY_META_KEY = 'estate_property_new_offer_expires';
     private const NEW_OFFER_CRON_HOOK = 'estate_office_expire_new_offer_flags';
     private const NEW_OFFER_DURATION = 7 * DAY_IN_SECONDS;
+    private const WATERMARK_META_KEY = '_estate_office_watermark_applied';
+    private const SUPPORTED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+    private const SUPPORTED_WATERMARK_MIMES = ['image/png'];
 
     private const META_FIELDS = [
         'estate_property_reference'          => ['type' => 'string'],
@@ -94,6 +109,11 @@ final class PropertyMeta
         'estate_property_flag_premium'        => ['type' => 'boolean'],
         'estate_property_flag_export_www'     => ['type' => 'boolean'],
         'estate_property_flag_export_portals' => ['type' => 'boolean'],
+        'estate_property_gallery'             => ['type' => 'array', 'items' => 'attachment'],
+        'estate_property_floor_plan_2d'       => ['type' => 'integer'],
+        'estate_property_floor_plan_3d'       => ['type' => 'integer'],
+        'estate_property_video_url'           => ['type' => 'url'],
+        'estate_property_virtual_tour_url'    => ['type' => 'url'],
         self::NEW_OFFER_EXPIRY_META_KEY       => ['type' => 'integer'],
     ];
 
@@ -130,6 +150,24 @@ final class PropertyMeta
     public static function registerMeta(): void
     {
         foreach (self::META_FIELDS as $key => $definition) {
+            if (($definition['type'] ?? '') === 'array') {
+                register_post_meta(
+                    PropertyRegister::POST_TYPE,
+                    $key,
+                    [
+                        'type'              => 'array',
+                        'single'            => true,
+                        'show_in_rest'      => [
+                            'schema' => self::buildArraySchema($definition),
+                        ],
+                        'auth_callback'     => [self::class, 'canEditMeta'],
+                        'sanitize_callback' => static fn($value) => self::sanitizeArrayMeta($value, $definition),
+                    ]
+                );
+
+                continue;
+            }
+
             $restType = self::resolveRestType($definition);
 
             register_post_meta(
@@ -163,6 +201,22 @@ final class PropertyMeta
                 'sanitize_callback' => static fn($value) => self::sanitizeAgreementRelations($value),
             ]
         );
+    }
+
+    private static function buildArraySchema(array $definition): array
+    {
+        $itemType = 'string';
+
+        if (($definition['items'] ?? '') === 'attachment') {
+            $itemType = 'integer';
+        }
+
+        return [
+            'type'  => 'array',
+            'items' => [
+                'type' => $itemType,
+            ],
+        ];
     }
 
     private static function resolveRestType(array $definition): string
@@ -218,6 +272,15 @@ final class PropertyMeta
             'estate-office-property-details',
             __('Parametry nieruchomości', 'estate-office'),
             [self::class, 'renderDetailsBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-media',
+            __('Galeria i multimedia', 'estate-office'),
+            [self::class, 'renderMediaBox'],
             PropertyRegister::POST_TYPE,
             'normal',
             'default'
@@ -566,6 +629,8 @@ final class PropertyMeta
 
         wp_enqueue_style('estate-office-property-meta');
 
+        wp_enqueue_media();
+
         $settings = get_option(GeneralSettings::OPTION);
         $apiKey   = is_array($settings) && !empty($settings['google_maps_api_key']) ? $settings['google_maps_api_key'] : '';
 
@@ -605,6 +670,15 @@ final class PropertyMeta
                     'applyLocation'   => esc_html__('Lokalizacja zaktualizowana.', 'estate-office'),
                     'cleared'         => esc_html__('Lokalizacja została usunięta.', 'estate-office'),
                     'geocodeError'    => esc_html__('Nie udało się pobrać adresu dla wybranych współrzędnych.', 'estate-office'),
+                ],
+                'media' => [
+                    'galleryTitle'   => esc_html__('Wybierz zdjęcia nieruchomości', 'estate-office'),
+                    'galleryButton'  => esc_html__('Dodaj do galerii', 'estate-office'),
+                    'singleTitle'    => esc_html__('Wybierz obraz', 'estate-office'),
+                    'singleButton'   => esc_html__('Użyj obrazu', 'estate-office'),
+                    'remove'         => esc_html__('Usuń', 'estate-office'),
+                    'emptyGallery'   => esc_html__('Nie dodano jeszcze zdjęć.', 'estate-office'),
+                    'dragHint'       => esc_html__('Przeciągnij elementy, aby ustawić kolejność prezentacji. Pierwsze zdjęcie będzie wyróżnione w listach.', 'estate-office'),
                 ],
             ]
         );
@@ -711,6 +785,124 @@ final class PropertyMeta
         echo '</table>';
     }
 
+    public static function renderMediaBox(WP_Post $post): void
+    {
+        $gallery = get_post_meta($post->ID, 'estate_property_gallery', true);
+        $gallery = is_array($gallery) ? array_values(array_filter(array_map('absint', $gallery))) : [];
+        $watermarkId = self::getWatermarkAttachment();
+        $hasWatermark = $watermarkId > 0;
+
+        echo '<div class="estate-office-media-box">';
+        echo '<p class="description">' . esc_html__('Dodaj multimedia oferty. Pierwsze zdjęcie będzie wykorzystywane jako główna miniatura.', 'estate-office') . '</p>';
+
+        if ($hasWatermark) {
+            echo '<p class="description status">' . esc_html__('Po zapisaniu wpisu na obrazy zostanie nałożony skonfigurowany znak wodny.', 'estate-office') . '</p>';
+        } else {
+            echo '<p class="description warning">' . esc_html__('Aby nakładać znak wodny, wgraj plik w ustawieniach wtyczki w sekcji Integracje.', 'estate-office') . '</p>';
+        }
+
+        $emptyLabel   = esc_attr__('Nie dodano jeszcze zdjęć.', 'estate-office');
+        $removeLabel  = esc_attr__('Usuń', 'estate-office');
+        $frameTitle   = esc_attr__('Galeria nieruchomości', 'estate-office');
+        $frameButton  = esc_attr__('Dodaj do galerii', 'estate-office');
+
+        echo '<div class="estate-office-gallery" data-input="estate_property_gallery" data-empty-label="' . $emptyLabel . '" data-remove-label="' . $removeLabel . '" data-frame-title="' . $frameTitle . '" data-frame-button="' . $frameButton . '">';
+        $emptyClass = empty($gallery) ? '' : ' hidden';
+        echo '<p class="estate-office-gallery-empty' . $emptyClass . '">' . esc_html__('Nie dodano jeszcze zdjęć.', 'estate-office') . '</p>';
+        echo '<ul class="estate-office-gallery-list">';
+
+        foreach ($gallery as $attachmentId) {
+            $thumb = wp_get_attachment_image_url($attachmentId, 'medium');
+            if (!$thumb) {
+                $thumb = wp_get_attachment_image_url($attachmentId, 'thumbnail');
+            }
+            if (!$thumb) {
+                $thumb = wp_get_attachment_url($attachmentId);
+            }
+
+            $thumbAttr = $thumb ? esc_url($thumb) : '';
+
+            echo '<li class="estate-office-gallery-item" data-id="' . esc_attr((string) $attachmentId) . '" draggable="true">';
+
+            if ($thumbAttr !== '') {
+                echo '<div class="estate-office-gallery-thumb"><img src="' . $thumbAttr . '" alt="" /></div>';
+            } else {
+                echo '<div class="estate-office-gallery-thumb is-placeholder"><span>' . esc_html__('Brak podglądu', 'estate-office') . '</span></div>';
+            }
+
+            echo '<div class="estate-office-gallery-actions">';
+            echo '<button type="button" class="button-link estate-office-gallery-remove">' . esc_html__('Usuń', 'estate-office') . '</button>';
+            echo '</div>';
+            printf('<input type="hidden" name="estate_property_gallery[]" value="%d" />', $attachmentId);
+            echo '</li>';
+        }
+
+        echo '</ul>';
+        echo '<p class="description reorder">' . esc_html__('Przeciągnij elementy, aby ustawić kolejność prezentacji. Pierwsze zdjęcie będzie wyróżnione w listach.', 'estate-office') . '</p>';
+        echo '<button type="button" class="button estate-office-gallery-add">' . esc_html__('Dodaj zdjęcia', 'estate-office') . '</button>';
+        echo '</div>';
+
+        $floor2d = (int) get_post_meta($post->ID, 'estate_property_floor_plan_2d', true);
+        $floor3d = (int) get_post_meta($post->ID, 'estate_property_floor_plan_3d', true);
+
+        self::renderSingleMediaField(
+            'estate_property_floor_plan_2d',
+            $floor2d,
+            __('Rzut 2D', 'estate-office'),
+            __('Opcjonalny rzut 2D nieruchomości w formacie graficznym.', 'estate-office')
+        );
+
+        self::renderSingleMediaField(
+            'estate_property_floor_plan_3d',
+            $floor3d,
+            __('Rzut 3D', 'estate-office'),
+            __('Dodaj wizualizację 3D lub plan mieszkania w formacie graficznym.', 'estate-office')
+        );
+
+        $videoUrl       = esc_url(get_post_meta($post->ID, 'estate_property_video_url', true));
+        $virtualTourUrl = esc_url(get_post_meta($post->ID, 'estate_property_virtual_tour_url', true));
+
+        echo '<p class="estate-office-media-field">';
+        echo '<label for="estate_property_video_url"><strong>' . esc_html__('Link do filmu', 'estate-office') . '</strong></label>';
+        printf('<input type="url" id="estate_property_video_url" name="estate_property_video_url" value="%s" class="widefat" placeholder="https://" />', esc_attr($videoUrl));
+        echo '<span class="description">' . esc_html__('Wklej adres filmu z YouTube lub innego hostingu wideo.', 'estate-office') . '</span>';
+        echo '</p>';
+
+        echo '<p class="estate-office-media-field">';
+        echo '<label for="estate_property_virtual_tour_url"><strong>' . esc_html__('Link do wirtualnego spaceru', 'estate-office') . '</strong></label>';
+        printf('<input type="url" id="estate_property_virtual_tour_url" name="estate_property_virtual_tour_url" value="%s" class="widefat" placeholder="https://" />', esc_attr($virtualTourUrl));
+        echo '<span class="description">' . esc_html__('Podaj adres prezentacji 3D (Matterport, spacer 360 itp.).', 'estate-office') . '</span>';
+        echo '</p>';
+
+        echo '</div>';
+    }
+
+    private static function renderSingleMediaField(string $key, int $attachmentId, string $label, string $description): void
+    {
+        $image = $attachmentId > 0 ? wp_get_attachment_image_url($attachmentId, 'medium') : '';
+        $frameTitle     = esc_attr(sprintf(__('Wybierz obraz – %s', 'estate-office'), $label));
+        $frameButton    = esc_attr__('Użyj obrazu', 'estate-office');
+        $placeholderTxt = esc_attr__('Brak wybranego pliku.', 'estate-office');
+
+        echo '<div class="estate-office-single-media" data-input="' . esc_attr($key) . '" data-frame-title="' . $frameTitle . '" data-frame-button="' . $frameButton . '" data-placeholder="' . $placeholderTxt . '">';
+        echo '<p class="estate-office-single-heading"><strong>' . esc_html($label) . '</strong></p>';
+        echo '<div class="estate-office-single-preview">';
+        if ($image) {
+            echo '<img src="' . esc_url($image) . '" alt="" />';
+        } else {
+            echo '<span class="placeholder">' . esc_html__('Brak wybranego pliku.', 'estate-office') . '</span>';
+        }
+        echo '</div>';
+        printf('<input type="hidden" name="%1$s" id="%1$s" value="%2$d" />', esc_attr($key), $attachmentId);
+        echo '<div class="estate-office-single-actions">';
+        echo '<button type="button" class="button estate-office-single-add">' . esc_html__('Wybierz obraz', 'estate-office') . '</button>';
+        $disabled = $attachmentId > 0 ? '' : ' disabled';
+        echo '<button type="button" class="button-link estate-office-single-remove"' . $disabled . '>' . esc_html__('Usuń', 'estate-office') . '</button>';
+        echo '</div>';
+        echo '<p class="description">' . esc_html($description) . '</p>';
+        echo '</div>';
+    }
+
     public static function save(int $postId, WP_Post $post): void
     {
         if ($post->post_type !== PropertyRegister::POST_TYPE) {
@@ -743,6 +935,11 @@ final class PropertyMeta
                 continue;
             }
 
+            if (($definition['type'] ?? '') === 'array') {
+                $values[$key] = self::sanitizeArrayInput($_POST[$key] ?? [], $definition);
+                continue;
+            }
+
             $raw = $_POST[$key] ?? '';
             if (is_array($raw)) {
                 $raw = '';
@@ -763,9 +960,24 @@ final class PropertyMeta
             $values[self::NEW_OFFER_EXPIRY_META_KEY] = '';
         }
 
+        $attachmentsForWatermark = $values['estate_property_gallery'] ?? [];
+        if (!is_array($attachmentsForWatermark)) {
+            $attachmentsForWatermark = [];
+        }
+
+        if (!empty($values['estate_property_floor_plan_2d'])) {
+            $attachmentsForWatermark[] = (int) $values['estate_property_floor_plan_2d'];
+        }
+
+        if (!empty($values['estate_property_floor_plan_3d'])) {
+            $attachmentsForWatermark[] = (int) $values['estate_property_floor_plan_3d'];
+        }
+
         foreach ($values as $key => $value) {
             self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
         }
+
+        self::maybeApplyWatermarks($attachmentsForWatermark);
     }
 
     public static function activate(): void
@@ -817,6 +1029,18 @@ final class PropertyMeta
 
     private static function persistMeta(int $postId, string $key, $value, array $definition): void
     {
+        if (($definition['type'] ?? '') === 'array') {
+            $value = is_array($value) ? array_values(array_filter(array_map('absint', $value))) : [];
+
+            if (empty($value)) {
+                delete_post_meta($postId, $key);
+                return;
+            }
+
+            update_post_meta($postId, $key, $value);
+            return;
+        }
+
         if (($definition['type'] ?? '') === 'boolean') {
             update_post_meta($postId, $key, $value ? 1 : 0);
             return;
@@ -857,6 +1081,8 @@ final class PropertyMeta
                 return self::sanitizeTextarea($value);
             case 'enum':
                 return self::sanitizeEnum($value, (array) ($definition['values'] ?? []));
+            case 'url':
+                return self::sanitizeUrl($value);
             default:
                 return self::sanitizeLine($value);
         }
@@ -973,6 +1199,290 @@ final class PropertyMeta
     private static function sanitizeBoolean(string $value): bool
     {
         return $value === '1' || $value === 'true' || $value === 'yes';
+    }
+
+    private static function sanitizeUrl(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $sanitized = esc_url_raw($value, ['http', 'https']);
+
+        return $sanitized ?: '';
+    }
+
+    private static function sanitizeArrayInput($value, array $definition): array
+    {
+        return self::sanitizeArray($value, $definition);
+    }
+
+    private static function sanitizeArrayMeta($value, array $definition): array
+    {
+        return self::sanitizeArray($value, $definition);
+    }
+
+    private static function sanitizeArray($value, array $definition): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $itemsType = $definition['items'] ?? 'string';
+        $sanitized = [];
+
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                continue;
+            }
+
+            $item = (string) $item;
+
+            if ($itemsType === 'attachment') {
+                $id = absint($item);
+                if ($id > 0) {
+                    $sanitized[] = $id;
+                }
+                continue;
+            }
+
+            $item = sanitize_text_field($item);
+
+            if ($item !== '') {
+                $sanitized[] = $item;
+            }
+        }
+
+        return array_values(array_unique($sanitized));
+    }
+
+    private static function getWatermarkAttachment(): int
+    {
+        $settings = get_option(GeneralSettings::OPTION);
+
+        if (!is_array($settings) || empty($settings['watermark_attachment'])) {
+            return 0;
+        }
+
+        $id = (int) $settings['watermark_attachment'];
+
+        return $id > 0 ? $id : 0;
+    }
+
+    private static function maybeApplyWatermarks(array $attachments): void
+    {
+        $attachments = array_values(array_unique(array_filter(array_map('absint', $attachments))));
+
+        if (empty($attachments)) {
+            return;
+        }
+
+        $watermarkId = self::getWatermarkAttachment();
+
+        if ($watermarkId <= 0) {
+            return;
+        }
+
+        $watermarkPath = get_attached_file($watermarkId);
+
+        if (!$watermarkPath || !file_exists($watermarkPath) || !is_readable($watermarkPath)) {
+            return;
+        }
+
+        $filetype = wp_check_filetype($watermarkPath);
+        $mime     = $filetype['type'] ?? '';
+
+        if ($mime === '' || !in_array($mime, self::SUPPORTED_WATERMARK_MIMES, true)) {
+            return;
+        }
+
+        foreach ($attachments as $attachmentId) {
+            self::applyWatermark($attachmentId, $watermarkPath, $watermarkId);
+        }
+    }
+
+    private static function applyWatermark(int $attachmentId, string $watermarkPath, int $watermarkId): void
+    {
+        if ($attachmentId <= 0) {
+            return;
+        }
+
+        $applied = (int) get_post_meta($attachmentId, self::WATERMARK_META_KEY, true);
+
+        if ($applied === $watermarkId) {
+            return;
+        }
+
+        $filePath = get_attached_file($attachmentId);
+
+        if (!$filePath || !file_exists($filePath) || !is_writable($filePath)) {
+            return;
+        }
+
+        $mime = (string) get_post_mime_type($attachmentId);
+
+        if (!in_array($mime, self::SUPPORTED_IMAGE_MIMES, true)) {
+            return;
+        }
+
+        if (!self::applyWatermarkToFile($filePath, $watermarkPath, $mime)) {
+            return;
+        }
+
+        $metadata = wp_get_attachment_metadata($attachmentId);
+
+        if (is_array($metadata) && !empty($metadata['sizes']) && is_array($metadata['sizes'])) {
+            $uploadDir = wp_upload_dir();
+            $baseDir   = isset($uploadDir['basedir']) ? trailingslashit($uploadDir['basedir']) : '';
+            $relative  = '';
+
+            if (!empty($metadata['file'])) {
+                $directory = trim(dirname((string) $metadata['file']), '/.\\');
+                if ($directory !== '') {
+                    $relative = trailingslashit($directory);
+                }
+            }
+
+            foreach ($metadata['sizes'] as $size) {
+                $sizeFile = $size['file'] ?? '';
+                if ($sizeFile === '') {
+                    continue;
+                }
+
+                $sizePath = $baseDir . $relative . $sizeFile;
+
+                if (!file_exists($sizePath) || !is_writable($sizePath)) {
+                    continue;
+                }
+
+                self::applyWatermarkToFile($sizePath, $watermarkPath, $mime);
+            }
+
+            wp_update_attachment_metadata($attachmentId, $metadata);
+        }
+
+        update_post_meta($attachmentId, self::WATERMARK_META_KEY, $watermarkId);
+    }
+
+    private static function applyWatermarkToFile(string $imagePath, string $watermarkPath, string $mime): bool
+    {
+        if (!function_exists('imagecreatetruecolor')) {
+            return false;
+        }
+
+        if (!file_exists($imagePath) || !is_readable($imagePath) || !is_writable($imagePath)) {
+            return false;
+        }
+
+        $image = self::createImageResource($imagePath, $mime);
+
+        if (!$image) {
+            return false;
+        }
+
+        $watermark = imagecreatefrompng($watermarkPath);
+
+        if (!$watermark) {
+            if (is_resource($image) || $image instanceof \GdImage) {
+                imagedestroy($image);
+            }
+            return false;
+        }
+
+        imagealphablending($watermark, true);
+        imagesavealpha($watermark, true);
+
+        $imageWidth      = imagesx($image);
+        $imageHeight     = imagesy($image);
+        $watermarkWidth  = imagesx($watermark);
+        $watermarkHeight = imagesy($watermark);
+
+        if ($imageWidth <= 0 || $imageHeight <= 0 || $watermarkWidth <= 0 || $watermarkHeight <= 0) {
+            imagedestroy($image);
+            imagedestroy($watermark);
+            return false;
+        }
+
+        $maxWidth  = max(1, (int) round($imageWidth * 0.35));
+        $maxHeight = max(1, (int) round($imageHeight * 0.35));
+        $ratio     = min($maxWidth / $watermarkWidth, $maxHeight / $watermarkHeight, 1.0);
+
+        if ($ratio < 1.0) {
+            $targetWidth  = max(1, (int) round($watermarkWidth * $ratio));
+            $targetHeight = max(1, (int) round($watermarkHeight * $ratio));
+            $resized      = imagecreatetruecolor($targetWidth, $targetHeight);
+
+            if (!$resized) {
+                imagedestroy($image);
+                imagedestroy($watermark);
+                return false;
+            }
+
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            imagecopyresampled($resized, $watermark, 0, 0, 0, 0, $targetWidth, $targetHeight, $watermarkWidth, $watermarkHeight);
+            imagedestroy($watermark);
+            $watermark       = $resized;
+            $watermarkWidth  = $targetWidth;
+            $watermarkHeight = $targetHeight;
+        }
+
+        $margin = max(10, (int) round(min($imageWidth, $imageHeight) * 0.03));
+        $destX  = max(0, $imageWidth - $watermarkWidth - $margin);
+        $destY  = max(0, $imageHeight - $watermarkHeight - $margin);
+
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+        imagecopy($image, $watermark, $destX, $destY, 0, 0, $watermarkWidth, $watermarkHeight);
+
+        $saved = self::saveImageResource($image, $mime, $imagePath);
+
+        imagedestroy($image);
+        imagedestroy($watermark);
+
+        return $saved;
+    }
+
+    private static function createImageResource(string $path, string $mime)
+    {
+        switch ($mime) {
+            case 'image/png':
+                return function_exists('imagecreatefrompng') ? @imagecreatefrompng($path) : null;
+            case 'image/webp':
+                return function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($path) : null;
+            case 'image/jpeg':
+            default:
+                return function_exists('imagecreatefromjpeg') ? @imagecreatefromjpeg($path) : null;
+        }
+    }
+
+    private static function saveImageResource($image, string $mime, string $path): bool
+    {
+        switch ($mime) {
+            case 'image/png':
+                if (!function_exists('imagepng')) {
+                    return false;
+                }
+
+                imagesavealpha($image, true);
+
+                return imagepng($image, $path);
+            case 'image/webp':
+                if (!function_exists('imagewebp')) {
+                    return false;
+                }
+
+                return imagewebp($image, $path, 90);
+            case 'image/jpeg':
+            default:
+                if (!function_exists('imagejpeg')) {
+                    return false;
+                }
+
+                return imagejpeg($image, $path, 90);
+        }
     }
 
     private static function buildSanitizer(array $definition): callable

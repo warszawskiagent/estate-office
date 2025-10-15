@@ -77,3 +77,180 @@
         padding-left: 0;
     }
 }
+
+.estate-office-media-box {
+    margin-top: 1.5em;
+}
+
+.estate-office-media-box > .description {
+    margin-top: 0;
+}
+
+.estate-office-media-box .description.status {
+    color: #2271b1;
+}
+
+.estate-office-media-box .description.warning {
+    color: #8a1f11;
+}
+
+.estate-office-gallery {
+    margin-top: 1em;
+    padding: 1em;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.estate-office-gallery-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.estate-office-gallery-item {
+    width: 140px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    background: #fdfdfd;
+    cursor: grab;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.estate-office-gallery-item.is-dragging {
+    opacity: 0.75;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.estate-office-gallery-thumb {
+    width: 100%;
+    height: 110px;
+    border-bottom: 1px solid #ccd0d4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f6f7f7;
+    overflow: hidden;
+}
+
+.estate-office-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-gallery-thumb.is-placeholder span {
+    font-size: 12px;
+    color: #6c7781;
+    padding: 0 0.75em;
+    text-align: center;
+}
+
+.estate-office-gallery-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5em 0.65em;
+}
+
+.estate-office-gallery-actions .button-link {
+    color: #d63638;
+}
+
+.estate-office-gallery-empty {
+    margin: 0 0 0.75em;
+    color: #6c7781;
+    font-style: italic;
+}
+
+.estate-office-gallery-empty.hidden {
+    display: none;
+}
+
+.estate-office-media-box .description.reorder {
+    margin-top: 0.75em;
+    font-style: italic;
+    color: #50575e;
+}
+
+.estate-office-gallery-add {
+    margin-top: 0.5em;
+}
+
+.estate-office-single-media {
+    margin-top: 1.5em;
+    padding: 1em;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.estate-office-single-heading {
+    margin: 0 0 0.5em;
+    font-weight: 600;
+}
+
+.estate-office-single-preview {
+    width: 100%;
+    max-width: 320px;
+    min-height: 180px;
+    border: 1px dashed #ccd0d4;
+    border-radius: 4px;
+    background: #f6f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 0.75em;
+}
+
+.estate-office-single-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.estate-office-single-preview .placeholder {
+    color: #6c7781;
+    font-style: italic;
+    text-align: center;
+    padding: 0 1em;
+}
+
+.estate-office-single-actions {
+    display: flex;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.estate-office-media-field {
+    margin-top: 1.25em;
+}
+
+.estate-office-media-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35em;
+}
+
+.estate-office-media-field .description {
+    margin-top: 0.25em;
+    color: #50575e;
+}
+
+@media (max-width: 782px) {
+    .estate-office-gallery-list {
+        justify-content: center;
+    }
+
+    .estate-office-single-preview {
+        max-width: 100%;
+    }
+
+    .estate-office-single-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

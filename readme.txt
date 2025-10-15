@@ -24,6 +24,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
+* Galeria nieruchomości z obsługą zdjęć, rzutów 2D/3D, linków wideo oraz automatycznym nakładaniem znaku wodnego.
 * Moduł umów z dedykowanymi polami meta, historią etapów oraz synchronizacją numeru z tytułem wpisu.
 * Moduł poszukiwań z formularzem kryteriów, preferencjami budynku oraz przejrzystą listą w kokpicie.
 * Moduł klientów z profilami osób i firm, pełnymi danymi kontaktowymi, adresowymi i obsługą opiekuna.
@@ -40,7 +41,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Automatyzacja generowania stron ofertowych z SEO i indeksacją w sitemapie.
 * Automatyzacje workflow: powiadomienia e-mail, logi aktywności oraz powiązania na froncie użytkownika.
 * Rozszerzenie integracji Map Google o podgląd lokalizacji w frontowym CRM, katalogu ofert i filtrach wyszukiwania.
-* Moduł galerii nieruchomości z obsługą znaku wodnego i różnymi wariantami rzutów.
+* Rozbudowa galerii nieruchomości o podpisy zdjęć, oznaczanie zdjęcia głównego i integrację z eksportem portali.
 * Eksport ofert na portale zewnętrzne (otodom, gratka, Morizon) oraz integracja MLS.
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
 * Rozbudowa frontowego panelu CRM o edycję rekordów, zarządzanie relacjami i rozszerzone raporty.
@@ -75,3 +76,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano moduł znaczników i eksportu nieruchomości z automatycznym wygaszaniem statusu "Nowa oferta" oraz odznakami w CRM.
 * Udostępniono shortcode katalogu ofert z filtrowaniem oraz prezentacją odznak i danych opiekunów dla nieruchomości eksportowanych na WWW.
 * Zintegrowano mapę Google w edycji nieruchomości, umożliwiając zapisywanie współrzędnych, adresu oraz czyszczenie lokalizacji z poziomu metaboxu.
+* Dodano galerię nieruchomości z automatycznym nakładaniem znaku wodnego, wyborem rzutów 2D/3D oraz polami linków multimedialnych.
