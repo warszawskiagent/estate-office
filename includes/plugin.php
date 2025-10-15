@@ -27,6 +27,7 @@ use EstateOffice\PostTypes\ClientMeta;
 use EstateOffice\PostTypes\ClientColumns;
 use EstateOffice\PostTypes\RelationCleanup;
 use EstateOffice\PostTypes\ManagerFilters;
+use EstateOffice\Frontend\AgentPublic;
 use EstateOffice\Frontend\CRM;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
@@ -53,8 +54,10 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgreementRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [SearchRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ClientRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
+        register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'deactivate']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
@@ -77,6 +80,7 @@ final class Plugin
         CRM::bootstrap();
         Offers::bootstrap();
         OfferSingle::bootstrap();
+        AgentPublic::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\Frontend;
 
 use EstateOffice\Admin\AgentProfile;
+use EstateOffice\Frontend\AgentPublic;
 use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use WP_Post;
@@ -487,6 +488,9 @@ final class Offers
                     echo '<div class="estate-office-offers__meta-item"><strong>' . esc_html__('E-mail', 'estate-office') . '</strong><a href="' . esc_url('mailto:' . $email) . '">' . esc_html($email) . '</a></div>';
                 }
             }
+            if (!empty($manager['profile_url'])) {
+                echo '<div class="estate-office-offers__meta-item"><a class="estate-office-offers__agent-link" href="' . esc_url((string) $manager['profile_url']) . '">' . esc_html__('Profil agenta', 'estate-office') . '</a></div>';
+            }
             echo '</div>';
         }
 
@@ -519,6 +523,10 @@ final class Offers
                 $phone = (string) get_user_meta($manager->ID, AgentProfile::META_OFFICE_PHONE, true);
             }
             $managerData['phone'] = $phone;
+            $profileUrl = AgentPublic::getProfileUrl($manager->ID);
+            if ($profileUrl !== '') {
+                $managerData['profile_url'] = $profileUrl;
+            }
         }
 
         return [

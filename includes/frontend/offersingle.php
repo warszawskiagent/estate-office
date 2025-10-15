@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\Frontend;
 
 use EstateOffice\Admin\AgentProfile;
+use EstateOffice\Frontend\AgentPublic;
 use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\Settings\GeneralSettings;
@@ -583,6 +584,7 @@ final class OfferSingle
             'avatar'     => $avatarUrl,
             'whatsapp'   => $whatsapp,
             'bio'        => $bio,
+            'profile_url'=> AgentPublic::getProfileUrl($managerId),
         ];
     }
 

@@ -200,6 +200,17 @@
     margin-bottom: 0.2rem;
 }
 
+.estate-office-offers__agent-link {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.estate-office-offers__agent-link:hover,
+.estate-office-offers__agent-link:focus {
+    text-decoration: underline;
+}
+
 .estate-office-offers__title {
     font-size: 1.25rem;
     font-weight: 700;

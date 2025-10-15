@@ -162,6 +162,11 @@ get_header();
                         <?php echo esc_html($context['manager']['whatsapp']['label']); ?>
                     </a>
                 <?php endif; ?>
+                <?php if (! empty($context['manager']['profile_url'])) : ?>
+                    <a class="estate-office-offer__contact-profile" href="<?php echo esc_url($context['manager']['profile_url']); ?>">
+                        <?php esc_html_e('Zobacz profil agenta', 'estate-office'); ?>
+                    </a>
+                <?php endif; ?>
                 <?php if (! empty($context['manager']['bio'])) : ?>
                     <div class="estate-office-offer__contact-bio">
                         <?php echo wp_kses_post(wpautop($context['manager']['bio'])); ?>

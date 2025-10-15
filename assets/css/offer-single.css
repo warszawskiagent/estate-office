@@ -302,7 +302,8 @@
 }
 
 .estate-office-offer__contact-mail,
-.estate-office-offer__contact-whatsapp {
+.estate-office-offer__contact-whatsapp,
+.estate-office-offer__contact-profile {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -332,6 +333,17 @@
 .estate-office-offer__contact-whatsapp:focus {
     background: #16a34a;
     color: #f8fafc;
+}
+
+.estate-office-offer__contact-profile {
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+}
+
+.estate-office-offer__contact-profile:hover,
+.estate-office-offer__contact-profile:focus {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
 }
 
 .estate-office-offer__contact-bio {

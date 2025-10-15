@@ -1,0 +1,214 @@
+.estate-office-agent {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: inherit;
+    color: #1f2933;
+}
+
+.estate-office-agent__header {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 40px;
+}
+
+.estate-office-agent__avatar {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.estate-office-agent__title {
+    margin: 0 0 12px;
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+.estate-office-agent__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.estate-office-agent__meta li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.estate-office-agent__meta strong {
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agent__meta a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.estate-office-agent__meta a:hover,
+.estate-office-agent__meta a:focus {
+    text-decoration: underline;
+}
+
+.estate-office-agent__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.estate-office-agent__logo {
+    height: 32px;
+}
+
+.estate-office-agent__bio {
+    margin-bottom: 48px;
+    padding: 24px;
+    background: #f8fafc;
+    border-radius: 12px;
+    line-height: 1.6;
+}
+
+.estate-office-agent__bio p {
+    margin: 0 0 1em;
+}
+
+.estate-office-agent__section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 24px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.estate-office-agent__properties {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.estate-office-agent__card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.estate-office-agent__card:hover,
+.estate-office-agent__card:focus-within {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 50px rgba(15, 23, 42, 0.12);
+}
+
+.estate-office-agent__card-thumb {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: #e2e8f0;
+}
+
+.estate-office-agent__card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-agent__card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+}
+
+.estate-office-agent__card-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.estate-office-agent__card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.estate-office-agent__card-title a:hover,
+.estate-office-agent__card-title a:focus {
+    color: #2563eb;
+}
+
+.estate-office-agent__card-price {
+    font-weight: 700;
+    color: #111827;
+}
+
+.estate-office-agent__card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.estate-office-agent__badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.estate-office-agent__badge-item {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.estate-office-agent__empty {
+    padding: 32px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    color: #475569;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .estate-office-agent__header {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .estate-office-agent__avatar {
+        margin: 0 auto;
+    }
+
+    .estate-office-agent__meta {
+        justify-content: center;
+    }
+
+    .estate-office-agent__section-title {
+        justify-content: center;
+    }
+}
