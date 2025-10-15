@@ -6,6 +6,8 @@ namespace EstateOffice\Admin;
 
 use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\ClientRegister;
+use EstateOffice\PostTypes\LeadMeta;
+use EstateOffice\PostTypes\LeadRegister;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\PostTypes\SearchRegister;
 use WP_Screen;
@@ -168,6 +170,10 @@ final class Dashboard
                 'type'  => ClientRegister::POST_TYPE,
                 'label' => __('Klienci', 'estate-office'),
             ],
+            [
+                'type'  => LeadRegister::POST_TYPE,
+                'label' => __('Leady', 'estate-office'),
+            ],
         ];
 
         $stats = [];
@@ -204,6 +210,10 @@ final class Dashboard
             __('Klienci', 'estate-office') => [
                 'meta_key'  => 'estate_client_manager',
                 'post_type' => ClientRegister::POST_TYPE,
+            ],
+            __('Leady', 'estate-office') => [
+                'meta_key'  => LeadMeta::META_ASSIGNED,
+                'post_type' => LeadRegister::POST_TYPE,
             ],
         ];
 
@@ -279,6 +289,11 @@ final class Dashboard
             [
                 'label' => __('Przeglądaj klientów', 'estate-office'),
                 'href'  => admin_url('edit.php?post_type=' . ClientRegister::POST_TYPE),
+                'class' => '',
+            ],
+            [
+                'label' => __('Przeglądaj leady', 'estate-office'),
+                'href'  => admin_url('edit.php?post_type=' . LeadRegister::POST_TYPE),
                 'class' => '',
             ],
         ];

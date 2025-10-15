@@ -25,6 +25,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
+* Automatyczny zapis leadów z formularzy kontaktowych z przypisaniami agentów, statusami i historią zgłoszeń.
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
@@ -52,7 +53,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzenia panelu agentów o masowe akcje, import danych i integrację z raportami.
 * Integracja z modułem raportów czasu rzeczywistego i personalizacją panelu agenta.
 * Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
-* Rozbudowa formularzy kontaktowych o zapis leadów w CRM, automatyczne przypisywanie do opiekunów i powiadomienia e-mail.
+* Rozbudowa leadów o automatyczne powiadomienia e-mail, sekwencje follow-up i integrację z raportami.
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
 
 == Installation ==
@@ -87,3 +88,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzono profil agenta o specjalizacje i obsługiwane obszary dostępne w CRM, na stronie oferty oraz w katalogach.
 * Dodano publiczny katalog agentów z filtrami specjalizacji i obszarów działania, kartami kontaktów oraz paginacją.
 * Dodano formularze kontaktowe na stronach ofert i profilach agentów z obsługą AJAX, walidacją oraz dedykowanymi filtrami nagłówków e-mail.
+* Dodano moduł leadów CRM rejestrujący zgłoszenia z formularzy, statusy oraz przypisania opiekunów z podsumowaniami w panelu administracyjnym.

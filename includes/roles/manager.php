@@ -83,6 +83,21 @@ final class Manager
         'delete_published_estate_clients'    => false,
     ];
 
+    private const LEAD_CAPABILITIES = [
+        'read_estate_lead'                  => true,
+        'read_private_estate_leads'         => true,
+        'edit_estate_lead'                  => true,
+        'edit_estate_leads'                 => true,
+        'edit_others_estate_leads'          => true,
+        'edit_published_estate_leads'       => true,
+        'publish_estate_leads'              => false,
+        'delete_estate_lead'                => false,
+        'delete_estate_leads'               => false,
+        'delete_others_estate_leads'        => false,
+        'delete_private_estate_leads'       => false,
+        'delete_published_estate_leads'     => false,
+    ];
+
     public static function activate(): void
     {
         self::register();
@@ -103,7 +118,8 @@ final class Manager
             self::PROPERTY_CAPABILITIES,
             self::AGREEMENT_CAPABILITIES,
             self::SEARCH_CAPABILITIES,
-            self::CLIENT_CAPABILITIES
+            self::CLIENT_CAPABILITIES,
+            self::LEAD_CAPABILITIES
         );
 
         if (!$role instanceof \WP_Role) {
@@ -181,6 +197,18 @@ final class Manager
             'delete_others_estate_clients',
             'delete_private_estate_clients',
             'delete_published_estate_clients',
+            'read_estate_lead',
+            'read_private_estate_leads',
+            'edit_estate_lead',
+            'edit_estate_leads',
+            'edit_others_estate_leads',
+            'edit_published_estate_leads',
+            'publish_estate_leads',
+            'delete_estate_lead',
+            'delete_estate_leads',
+            'delete_others_estate_leads',
+            'delete_private_estate_leads',
+            'delete_published_estate_leads',
         ];
 
         foreach ($caps as $capability) {

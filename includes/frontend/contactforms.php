@@ -114,6 +114,7 @@ final class ContactForms
         $submit  = sanitize_text_field((string) ($config['submit_label'] ?? esc_html__('Wyślij wiadomość', 'estate-office')));
         $consent = sanitize_text_field((string) ($config['consent_label'] ?? esc_html__('Wyrażam zgodę na kontakt w sprawie niniejszej oferty.', 'estate-office')));
         $record  = absint((int) ($config['record_id'] ?? 0));
+        $assigned = absint((int) ($config['assigned_to'] ?? 0));
         $source  = isset($config['source']) ? esc_url((string) $config['source']) : '';
         $recipientName = sanitize_text_field((string) ($config['recipient_name'] ?? ''));
 
@@ -139,6 +140,9 @@ final class ContactForms
                 <input type="hidden" name="recipient" value="<?php echo esc_attr($recipient); ?>" />
                 <input type="hidden" name="recipient_name" value="<?php echo esc_attr($recipientName); ?>" />
                 <input type="hidden" name="record_id" value="<?php echo esc_attr((string) $record); ?>" />
+                <?php if ($assigned > 0) : ?>
+                    <input type="hidden" name="assigned_to" value="<?php echo esc_attr((string) $assigned); ?>" />
+                <?php endif; ?>
                 <?php if ($source !== '') : ?>
                     <input type="hidden" name="source" value="<?php echo esc_attr($source); ?>" />
                 <?php endif; ?>
@@ -195,6 +199,7 @@ final class ContactForms
         $recipientName = sanitize_text_field(wp_unslash($_POST['recipient_name'] ?? ''));
         $context = sanitize_text_field(wp_unslash($_POST['context'] ?? ''));
         $recordId = absint((int) ($_POST['record_id'] ?? 0));
+        $assignedTo = absint((int) ($_POST['assigned_to'] ?? 0));
         $source = isset($_POST['source']) ? esc_url_raw(wp_unslash($_POST['source'])) : '';
 
         if ($name === '' || $email === '' || $message === '' || ! $privacy) {
@@ -228,6 +233,7 @@ final class ContactForms
             'source'         => $source,
             'recipient'      => $recipient,
             'recipient_name' => $recipientName,
+            'assigned_to'    => $assignedTo,
         ];
 
         /**

@@ -189,6 +189,7 @@ get_header();
                         'heading'        => __('Napisz wiadomość', 'estate-office'),
                         'success_message'=> __('Dziękujemy za wysłanie zapytania. Agent odezwie się wkrótce.', 'estate-office'),
                         'consent_label'  => __('Wyrażam zgodę na kontakt w sprawie tej oferty oraz przetwarzanie danych w celu obsługi zapytania.', 'estate-office'),
+                        'assigned_to'    => $context['manager']['id'] ?? 0,
                     ]);
                 }
                 ?>

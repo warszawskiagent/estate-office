@@ -253,6 +253,7 @@ final class AgentPublic
         $properties = self::collectProperties($agent);
 
         return [
+            'id'          => $agent->ID,
             'name'        => $agent->display_name,
             'email'       => sanitize_email($agent->user_email),
             'avatar'      => $avatarUrl,

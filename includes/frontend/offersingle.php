@@ -578,6 +578,7 @@ final class OfferSingle
         $bio = (string) get_user_meta($managerId, AgentProfile::META_BIOGRAPHY, true);
 
         return [
+            'id'         => $managerId,
             'name'       => $user->display_name,
             'email'      => $user->user_email,
             'phones'     => $phones,

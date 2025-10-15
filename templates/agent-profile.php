@@ -71,6 +71,7 @@ get_header();
             'success_message'=> __('Dziękujemy za kontakt. Agent skontaktuje się z Tobą najszybciej jak to możliwe.', 'estate-office'),
             'consent_label'  => __('Wyrażam zgodę na kontakt w sprawie usług pośrednictwa oraz przetwarzanie danych w celu obsługi zapytania.', 'estate-office'),
             'source'         => $context['profile_url'] ?? '',
+            'assigned_to'    => $context['id'] ?? 0,
         ]);
     }
     ?>

@@ -26,6 +26,9 @@ use EstateOffice\PostTypes\ClientRegister;
 use EstateOffice\PostTypes\ClientMeta;
 use EstateOffice\PostTypes\ClientColumns;
 use EstateOffice\PostTypes\RelationCleanup;
+use EstateOffice\PostTypes\LeadRegister;
+use EstateOffice\PostTypes\LeadMeta;
+use EstateOffice\PostTypes\LeadColumns;
 use EstateOffice\PostTypes\ManagerFilters;
 use EstateOffice\Frontend\AgentPublic;
 use EstateOffice\Frontend\AgentDirectory;
@@ -33,6 +36,7 @@ use EstateOffice\Frontend\CRM;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\ContactForms;
+use EstateOffice\Leads\LeadCollector;
 
 final class Plugin
 {
@@ -56,6 +60,8 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgreementRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [SearchRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ClientRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadRegister::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadMeta::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
@@ -75,6 +81,9 @@ final class Plugin
         ClientRegister::bootstrap();
         ClientMeta::bootstrap();
         ClientColumns::bootstrap();
+        LeadRegister::bootstrap();
+        LeadMeta::bootstrap();
+        LeadColumns::bootstrap();
         RelationCleanup::bootstrap();
         ManagerFilters::bootstrap();
         AgentProfile::bootstrap();
@@ -85,6 +94,7 @@ final class Plugin
         AgentDirectory::bootstrap();
         AgentPublic::bootstrap();
         ContactForms::bootstrap();
+        LeadCollector::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);
