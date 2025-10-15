@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EstateOffice\Frontend;
 
+use EstateOffice\Frontend\LeadActions;
 use EstateOffice\PostTypes\AgreementMeta;
 use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\ClientMeta;
@@ -53,6 +54,7 @@ use function remove_query_arg;
 use function sanitize_html_class;
 use function sanitize_key;
 use function sanitize_text_field;
+use function selected;
 use function sprintf;
 use function str_starts_with;
 use function uasort;
@@ -62,6 +64,7 @@ use function wp_enqueue_style;
 use function wp_kses_post;
 use function wp_register_script;
 use function wp_register_style;
+use function wp_create_nonce;
 use function wp_reset_postdata;
 use function wp_strip_all_tags;
 use function wpautop;
@@ -471,7 +474,7 @@ final class CRM
         $recipient   = (string) get_post_meta($postId, LeadMeta::META_RECIPIENT, true);
         $recipientName = (string) get_post_meta($postId, LeadMeta::META_RECIPIENT_NAME, true);
 
-        echo '<section class="estate-office-crm__detail">';
+        echo '<section class="estate-office-crm__detail" data-eo-lead-detail data-lead-id="' . esc_attr((string) $postId) . '">';
         self::renderDetailHeader($title, '', $postId, [
             [
                 'label' => $statusLabel,
@@ -523,6 +526,39 @@ final class CRM
             echo '</section>';
         }
 
+        if (LeadActions::canCurrentUserManageLead($postId)) {
+            self::renderLeadStatusForm($postId, $statusKey);
+        }
+
+        echo '</section>';
+    }
+
+    private static function renderLeadStatusForm(int $postId, string $currentStatus): void
+    {
+        $statuses = LeadMeta::getStatuses();
+
+        echo '<section class="estate-office-crm__detail-panel estate-office-crm__detail-panel--form">';
+        echo '<h3>' . esc_html__('Aktualizacja statusu', 'estate-office') . '</h3>';
+        echo '<form class="estate-office-crm__lead-status-form" data-eo-lead-status-form method="post">';
+        echo '<input type="hidden" name="lead_id" value="' . esc_attr((string) $postId) . '">';
+        echo '<input type="hidden" name="nonce" value="' . esc_attr(wp_create_nonce(LeadActions::NONCE_ACTION)) . '">';
+        echo '<label class="estate-office-crm__form-label" for="estate-office-lead-status">' . esc_html__('Status leadu', 'estate-office') . '</label>';
+        echo '<select class="estate-office-crm__form-control" name="status" id="estate-office-lead-status">';
+        foreach ($statuses as $value => $label) {
+            printf(
+                '<option value="%s" %s>%s</option>',
+                esc_attr($value),
+                selected($currentStatus, (string) $value, false),
+                esc_html($label)
+            );
+        }
+        echo '</select>';
+
+        echo '<div class="estate-office-crm__form-actions">';
+        echo '<button type="submit" class="estate-office-crm__button">' . esc_html__('Zapisz status', 'estate-office') . '</button>';
+        echo '<p class="estate-office-crm__form-message" data-eo-lead-status-message></p>';
+        echo '</div>';
+        echo '</form>';
         echo '</section>';
     }
 

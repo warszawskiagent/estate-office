@@ -29,6 +29,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
+* Panel leadów w frontowym CRM umożliwiający aktualizację statusów bez przechodzenia do kokpitu administracyjnego.
 * Galeria nieruchomości z obsługą zdjęć, rzutów 2D/3D, linków wideo oraz automatycznym nakładaniem znaku wodnego.
 * Moduł umów z dedykowanymi polami meta, historią etapów oraz synchronizacją numeru z tytułem wpisu.
 * Moduł poszukiwań z formularzem kryteriów, preferencjami budynku oraz przejrzystą listą w kokpicie.
@@ -56,6 +57,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
 * Rozbudowa leadów o automatyczne powiadomienia e-mail, sekwencje follow-up, raportowanie skuteczności i automatyczną zmianę statusów.
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
+* Historia statusów leadów i notatki działań dostępne z poziomu frontowego CRM.
 
 == Installation ==
 1. Skopiuj katalog `estate-office` do folderu `wp-content/plugins/`.
@@ -91,3 +93,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano formularze kontaktowe na stronach ofert i profilach agentów z obsługą AJAX, walidacją oraz dedykowanymi filtrami nagłówków e-mail.
 * Dodano moduł leadów CRM rejestrujący zgłoszenia z formularzy, statusy oraz przypisania opiekunów z podsumowaniami w panelu administracyjnym.
 * Rozbudowano frontowy CRM o zakładkę leadów z tabelą zgłoszeń, kartą detali oraz aktualizacją statystyk i rankingów pod kątem leadów.
+* Udostępniono możliwość aktualizacji statusu leadów z poziomu frontowego CRM wraz z zabezpieczonym zapisem AJAX i komunikatami dla użytkownika.

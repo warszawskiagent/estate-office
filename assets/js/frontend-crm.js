@@ -38,4 +38,90 @@
         const table = document.getElementById(tableId);
         filterTable(table, target.value);
     });
+
+    const leadActions = window.EstateOfficeLeadActions || {};
+
+    const showLeadMessage = (element, type, text) => {
+        if (!element) {
+            return;
+        }
+
+        element.textContent = text;
+        element.classList.remove('is-success', 'is-error');
+
+        if (type === 'success') {
+            element.classList.add('is-success');
+        } else if (type === 'error') {
+            element.classList.add('is-error');
+        }
+    };
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (!form.matches('[data-eo-lead-status-form]')) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (!leadActions.ajaxUrl) {
+            return;
+        }
+
+        const messageElement = form.querySelector('[data-eo-lead-status-message]');
+        showLeadMessage(messageElement, '', '');
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        form.classList.add('is-loading');
+
+        const formData = new FormData(form);
+        formData.append('action', 'estate_office_update_lead_status');
+
+        if (!formData.has('nonce') && typeof leadActions.nonce === 'string') {
+            formData.append('nonce', leadActions.nonce);
+        }
+
+        fetch(leadActions.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData,
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, status: response.status, body: data })))
+            .then(({ ok, body }) => {
+                if (ok && body && body.success) {
+                    const successMessage = (leadActions.messages && leadActions.messages.success)
+                        || (body.data && body.data.message)
+                        || '';
+                    showLeadMessage(messageElement, 'success', successMessage);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 600);
+
+                    return;
+                }
+
+                const errorMessage = (body && body.data && body.data.message)
+                    || (leadActions.messages && leadActions.messages.error)
+                    || '';
+                showLeadMessage(messageElement, 'error', errorMessage);
+            })
+            .catch(() => {
+                const errorMessage = (leadActions.messages && leadActions.messages.error) || '';
+                showLeadMessage(messageElement, 'error', errorMessage);
+            })
+            .finally(() => {
+                form.classList.remove('is-loading');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+            });
+    });
 })();

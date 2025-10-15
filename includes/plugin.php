@@ -33,6 +33,7 @@ use EstateOffice\PostTypes\ManagerFilters;
 use EstateOffice\Frontend\AgentPublic;
 use EstateOffice\Frontend\AgentDirectory;
 use EstateOffice\Frontend\CRM;
+use EstateOffice\Frontend\LeadActions;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\ContactForms;
@@ -89,6 +90,7 @@ final class Plugin
         AgentProfile::bootstrap();
         Dashboard::bootstrap();
         CRM::bootstrap();
+        LeadActions::bootstrap();
         Offers::bootstrap();
         OfferSingle::bootstrap();
         AgentDirectory::bootstrap();
