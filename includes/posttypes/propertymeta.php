@@ -435,6 +435,21 @@ final class PropertyMeta
         ];
     }
 
+    public static function getLegalStatusLabel(string $status): string
+    {
+        return self::LEGAL_STATUSES[$status] ?? '';
+    }
+
+    public static function getPlotShapeLabel(string $shape): string
+    {
+        return self::PLOT_SHAPES[$shape] ?? '';
+    }
+
+    public static function getHouseTypeLabel(string $type): string
+    {
+        return self::HOUSE_TYPES[$type] ?? '';
+    }
+
     private static function renderAgreementsSummary(WP_Post $post): void
     {
         $agreements = self::sanitizeAgreementRelations(get_post_meta($post->ID, self::AGREEMENTS_META_KEY, true));

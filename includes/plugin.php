@@ -29,6 +29,7 @@ use EstateOffice\PostTypes\RelationCleanup;
 use EstateOffice\PostTypes\ManagerFilters;
 use EstateOffice\Frontend\CRM;
 use EstateOffice\Frontend\Offers;
+use EstateOffice\Frontend\OfferSingle;
 
 final class Plugin
 {
@@ -75,6 +76,7 @@ final class Plugin
         Dashboard::bootstrap();
         CRM::bootstrap();
         Offers::bootstrap();
+        OfferSingle::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

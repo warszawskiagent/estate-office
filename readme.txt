@@ -23,6 +23,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
+* Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
 * Galeria nieruchomości z obsługą zdjęć, rzutów 2D/3D, linków wideo oraz automatycznym nakładaniem znaku wodnego.
 * Moduł umów z dedykowanymi polami meta, historią etapów oraz synchronizacją numeru z tytułem wpisu.
@@ -37,7 +38,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Integracja modułu licencji wraz z panelem aktywacji i walidacją kluczy.
 * Rozbudowa pulpitu CRM o konfigurowalne widżety, wykresy oraz historię aktywności.
 * Rozszerzenie eksportu nieruchomości na WWW o szablony frontowe i znaczniki graficzne.
-* Rozbudowa katalogu ofert o widoki szczegółowe, formularze kontaktowe i rozbudowane sortowanie.
+* Rozbudowa strony oferty o formularze kontaktowe, rekomendowane oferty i dodatkowe materiały do pobrania.
 * Automatyzacja generowania stron ofertowych z SEO i indeksacją w sitemapie.
 * Automatyzacje workflow: powiadomienia e-mail, logi aktywności oraz powiązania na froncie użytkownika.
 * Rozszerzenie integracji Map Google o podgląd lokalizacji w frontowym CRM, katalogu ofert i filtrach wyszukiwania.
@@ -77,3 +78,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Udostępniono shortcode katalogu ofert z filtrowaniem oraz prezentacją odznak i danych opiekunów dla nieruchomości eksportowanych na WWW.
 * Zintegrowano mapę Google w edycji nieruchomości, umożliwiając zapisywanie współrzędnych, adresu oraz czyszczenie lokalizacji z poziomu metaboxu.
 * Dodano galerię nieruchomości z automatycznym nakładaniem znaku wodnego, wyborem rzutów 2D/3D oraz polami linków multimedialnych.
+* Udostępniono szczegółowy szablon strony oferty z prezentacją galerii, danych technicznych, kontaktu agenta i mapy lokalizacji.

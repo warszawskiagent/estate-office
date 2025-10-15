@@ -77,6 +77,9 @@ final class PropertyRegister
             'has_archive'        => true,
             'show_in_rest'       => true,
             'menu_icon'          => 'dashicons-building',
+            'publicly_queryable' => true,
+            'exclude_from_search' => true,
+            'show_in_nav_menus'  => false,
         ];
 
         $postType = register_post_type(self::POST_TYPE, $args);
