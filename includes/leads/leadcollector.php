@@ -90,6 +90,13 @@ final class LeadCollector
             update_post_meta($postId, LeadMeta::META_ASSIGNED, $assignedTo);
         }
 
+        LeadMeta::appendStatusHistory(
+            $postId,
+            $status,
+            0,
+            __('Lead utworzony na podstawie formularza kontaktowego.', 'estate-office')
+        );
+
         do_action('estate_office_lead_stored', $postId, $meta, $data);
     }
 

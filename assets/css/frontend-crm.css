@@ -540,6 +540,12 @@
     font-size: 0.9rem;
 }
 
+.estate-office-crm__timeline-note {
+    margin: 6px 0 0;
+    color: #1d2327;
+    font-size: 0.95rem;
+}
+
 .estate-office-crm__detail-notice {
     border-color: #c3c4c7;
     background: #fff;

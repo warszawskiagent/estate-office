@@ -81,9 +81,21 @@ final class LeadActions
             wp_send_json_error(['message' => __('Brak uprawnień do aktualizacji leadu.', 'estate-office')], 403);
         }
 
+        $previousStatus = (string) get_post_meta($leadId, LeadMeta::META_STATUS, true);
+        $previousStatus = $previousStatus !== '' ? LeadMeta::sanitizeStatus($previousStatus) : '';
+
         $status = isset($_POST['status']) ? sanitize_text_field(wp_unslash((string) $_POST['status'])) : '';
         $status = LeadMeta::sanitizeStatus($status);
         update_post_meta($leadId, LeadMeta::META_STATUS, $status);
+
+        if ($previousStatus === '' || $previousStatus !== $status) {
+            LeadMeta::appendStatusHistory(
+                $leadId,
+                $status,
+                get_current_user_id(),
+                __('Aktualizacja statusu w panelu CRM.', 'estate-office')
+            );
+        }
 
         wp_send_json_success([
             'status'  => $status,

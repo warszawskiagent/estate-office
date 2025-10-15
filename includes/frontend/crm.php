@@ -526,6 +526,8 @@ final class CRM
             echo '</section>';
         }
 
+        self::renderLeadHistory($postId);
+
         if (LeadActions::canCurrentUserManageLead($postId)) {
             self::renderLeadStatusForm($postId, $statusKey);
         }
@@ -559,6 +561,45 @@ final class CRM
         echo '<p class="estate-office-crm__form-message" data-eo-lead-status-message></p>';
         echo '</div>';
         echo '</form>';
+        echo '</section>';
+    }
+
+    private static function renderLeadHistory(int $postId): void
+    {
+        $history = LeadMeta::getStatusHistory($postId);
+        if ($history === []) {
+            return;
+        }
+
+        echo '<section class="estate-office-crm__detail-panel">';
+        echo '<h3>' . esc_html__('Historia statusów', 'estate-office') . '</h3>';
+        echo '<ul class="estate-office-crm__timeline">';
+
+        foreach (array_reverse($history) as $entry) {
+            $status = isset($entry['status']) ? (string) $entry['status'] : '';
+            $label  = LeadMeta::getStatusLabel($status);
+            $timestamp = isset($entry['timestamp']) ? (string) $entry['timestamp'] : '';
+            $dateLabel = self::formatMysqlDateTime($timestamp);
+            $userId    = isset($entry['user']) ? (int) $entry['user'] : 0;
+            $userLabel = self::formatLeadHistoryUser($userId);
+            $note      = isset($entry['note']) ? (string) $entry['note'] : '';
+
+            $metaParts = array_filter([$dateLabel, $userLabel], static function ($value): bool {
+                return is_string($value) && $value !== '' && $value !== '—';
+            });
+
+            echo '<li>';
+            echo '<span class="estate-office-crm__timeline-stage">' . esc_html($label) . '</span>';
+            if ($metaParts !== []) {
+                echo '<span class="estate-office-crm__timeline-date">' . esc_html(implode(' • ', $metaParts)) . '</span>';
+            }
+            if ($note !== '') {
+                echo '<p class="estate-office-crm__timeline-note">' . esc_html($note) . '</p>';
+            }
+            echo '</li>';
+        }
+
+        echo '</ul>';
         echo '</section>';
     }
 
@@ -2265,6 +2306,48 @@ final class CRM
         $timeText = is_string($timePart) && $timePart !== '' ? ' ' . $timePart : '';
 
         return trim($datePart . $timeText);
+    }
+
+    private static function formatMysqlDateTime(string $value): string
+    {
+        if ($value === '' || $value === '0000-00-00 00:00:00') {
+            return '';
+        }
+
+        $dateFormat = (string) get_option('date_format');
+        $timeFormat = (string) get_option('time_format');
+
+        if ($dateFormat === '') {
+            $dateFormat = 'Y-m-d';
+        }
+        if ($timeFormat === '') {
+            $timeFormat = 'H:i';
+        }
+
+        $datePart = mysql2date($dateFormat, $value, true);
+        $timePart = mysql2date($timeFormat, $value, true);
+
+        if (!is_string($datePart) || $datePart === '') {
+            return '';
+        }
+
+        $timeText = is_string($timePart) && $timePart !== '' ? ' ' . $timePart : '';
+
+        return trim($datePart . $timeText);
+    }
+
+    private static function formatLeadHistoryUser(int $userId): string
+    {
+        if ($userId <= 0) {
+            return __('System', 'estate-office');
+        }
+
+        $label = self::getManagerName($userId);
+        if ($label === '—') {
+            return __('Nieznany użytkownik', 'estate-office');
+        }
+
+        return $label;
     }
 
     private static function formatDateMeta(int $postId, string $metaKey): string

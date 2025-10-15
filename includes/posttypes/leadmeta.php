@@ -11,7 +11,10 @@ use function __;
 use function absint;
 use function add_action;
 use function add_meta_box;
+use function array_slice;
+use function current_time;
 use function current_user_can;
+use function get_current_user_id;
 use function delete_post_meta;
 use function esc_attr;
 use function esc_html;
@@ -23,6 +26,7 @@ use function get_edit_post_link;
 use function get_permalink;
 use function get_post;
 use function get_post_meta;
+use function is_array;
 use function sanitize_email;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
@@ -53,11 +57,14 @@ final class LeadMeta
     public const META_RECIPIENT      = 'estate_lead_recipient';
     public const META_RECIPIENT_NAME = 'estate_lead_recipient_name';
     public const META_SUBJECT        = 'estate_lead_subject';
+    public const META_STATUS_HISTORY = 'estate_lead_status_history';
 
     private const NONCE_ACTION = 'estate_office_save_lead';
     private const NONCE_NAME   = 'estate_office_lead_nonce';
 
     private const STATUS_DEFAULT = 'new';
+
+    private const HISTORY_LIMIT = 50;
 
     /** @var array<string,string> */
     private static array $statuses;
@@ -96,6 +103,7 @@ final class LeadMeta
             self::META_RECIPIENT => ['type' => 'string', 'sanitize_callback' => 'sanitize_email'],
             self::META_RECIPIENT_NAME => ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field'],
             self::META_SUBJECT => ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field'],
+            self::META_STATUS_HISTORY => ['type' => 'array', 'sanitize_callback' => [self::class, 'sanitizeStatusHistory']],
         ];
 
         foreach ($definitions as $metaKey => $args) {
@@ -266,9 +274,21 @@ final class LeadMeta
             return;
         }
 
+        $previousStatus = (string) get_post_meta($postId, self::META_STATUS, true);
+        $previousStatus = $previousStatus !== '' ? self::sanitizeStatus($previousStatus) : '';
+
         $status = isset($_POST['estate_lead_status']) ? sanitize_text_field(wp_unslash((string) $_POST['estate_lead_status'])) : '';
         $status = self::sanitizeStatus($status);
         update_post_meta($postId, self::META_STATUS, $status);
+
+        if ($previousStatus === '' || $previousStatus !== $status) {
+            self::appendStatusHistory(
+                $postId,
+                $status,
+                get_current_user_id(),
+                __('Aktualizacja statusu w kokpicie administratora.', 'estate-office')
+            );
+        }
 
         $assigned = isset($_POST['estate_lead_assigned_to']) ? absint(wp_unslash((string) $_POST['estate_lead_assigned_to'])) : 0;
         if ($assigned > 0) {
@@ -294,6 +314,82 @@ final class LeadMeta
         }
 
         return self::$statuses;
+    }
+
+    /**
+     * @return array<int,array{status:string,user:int,timestamp:string,note:string}>
+     */
+    public static function getStatusHistory(int $postId): array
+    {
+        $history = get_post_meta($postId, self::META_STATUS_HISTORY, true);
+        if (!is_array($history)) {
+            return [];
+        }
+
+        return self::sanitizeStatusHistory($history);
+    }
+
+    public static function appendStatusHistory(int $postId, string $status, int $userId = 0, string $note = ''): void
+    {
+        if ($postId <= 0) {
+            return;
+        }
+
+        $status = self::sanitizeStatus($status);
+        $userId = absint($userId);
+        $history = self::getStatusHistory($postId);
+
+        $entry = [
+            'status'    => $status,
+            'user'      => $userId,
+            'timestamp' => current_time('mysql'),
+            'note'      => $note !== '' ? sanitize_text_field($note) : '',
+        ];
+
+        $history[] = $entry;
+
+        if (count($history) > self::HISTORY_LIMIT) {
+            $history = array_slice($history, -self::HISTORY_LIMIT);
+        }
+
+        update_post_meta($postId, self::META_STATUS_HISTORY, $history);
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<int,array{status:string,user:int,timestamp:string,note:string}>
+     */
+    public static function sanitizeStatusHistory($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $status = isset($item['status']) ? self::sanitizeStatus((string) $item['status']) : self::STATUS_DEFAULT;
+            $user   = isset($item['user']) ? absint($item['user']) : 0;
+            $timestamp = isset($item['timestamp']) ? sanitize_text_field((string) $item['timestamp']) : '';
+            if ($timestamp === '') {
+                $timestamp = current_time('mysql');
+            }
+
+            $note = isset($item['note']) ? sanitize_text_field((string) $item['note']) : '';
+
+            $sanitized[] = [
+                'status'    => $status,
+                'user'      => $user,
+                'timestamp' => $timestamp,
+                'note'      => $note,
+            ];
+        }
+
+        return $sanitized;
     }
 
     public static function sanitizeStatus(string $status): string
