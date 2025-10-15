@@ -8,6 +8,8 @@ use EstateOffice\PostTypes\AgreementMeta;
 use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\ClientMeta;
 use EstateOffice\PostTypes\ClientRegister;
+use EstateOffice\PostTypes\LeadMeta;
+use EstateOffice\PostTypes\LeadRegister;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\PostTypes\SearchMeta;
 use EstateOffice\PostTypes\SearchRegister;
@@ -21,7 +23,9 @@ use function add_action;
 use function add_query_arg;
 use function add_shortcode;
 use function admin_url;
+use function array_search;
 use function array_slice;
+use function get_current_user_id;
 use function current_user_can;
 use function esc_attr;
 use function esc_html;
@@ -32,9 +36,11 @@ use function get_post;
 use function get_post_field;
 use function get_permalink;
 use function get_post_meta;
+use function get_post_type_object;
 use function get_the_ID;
 use function get_the_title;
 use function get_the_terms;
+use function get_option;
 use function get_user_by;
 use function is_array;
 use function is_scalar;
@@ -61,6 +67,7 @@ use function wp_strip_all_tags;
 use function wpautop;
 use function wp_list_pluck;
 use function wp_unslash;
+use function mysql2date;
 use function __;
 
 use const ARRAY_A;
@@ -86,6 +93,7 @@ final class CRM
         'agreements' => 'Umowy',
         'searches'   => 'Poszukiwania',
         'clients'    => 'Klienci',
+        'leads'      => 'Leady',
     ];
 
     /**
@@ -96,6 +104,7 @@ final class CRM
         'agreements' => AgreementRegister::POST_TYPE,
         'searches'   => SearchRegister::POST_TYPE,
         'clients'    => ClientRegister::POST_TYPE,
+        'leads'      => LeadRegister::POST_TYPE,
     ];
 
     public static function bootstrap(): void
@@ -138,6 +147,7 @@ final class CRM
 
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
+        $canAccess  = self::userCanAccessSection($section);
         $recordId   = $section === 'dashboard' ? 0 : self::resolveRecordId($section);
 
         ob_start();
@@ -145,11 +155,13 @@ final class CRM
         echo '<div class="estate-office-crm">';
         self::renderHeader($section);
 
-        if ($section !== 'dashboard' && $recordId === 0) {
+        if ($section !== 'dashboard' && $recordId === 0 && $canAccess) {
             self::renderSearchForm($section, $searchTerm);
         }
 
-        if ($section !== 'dashboard' && $recordId > 0) {
+        if (!$canAccess) {
+            self::renderSectionRestricted();
+        } elseif ($section !== 'dashboard' && $recordId > 0) {
             self::renderBackLink($section);
             self::renderRecordDetail($section, $recordId);
         } else {
@@ -165,6 +177,9 @@ final class CRM
                     break;
                 case 'clients':
                     self::renderClients($searchTerm);
+                    break;
+                case 'leads':
+                    self::renderLeads($searchTerm);
                     break;
                 default:
                     self::renderDashboard();
@@ -182,7 +197,32 @@ final class CRM
         return current_user_can('edit_estate_properties')
             || current_user_can('edit_estate_agreements')
             || current_user_can('edit_estate_clients')
-            || current_user_can('edit_estate_searches');
+            || current_user_can('edit_estate_searches')
+            || current_user_can('edit_estate_leads');
+    }
+
+    private static function userCanAccessSection(string $section): bool
+    {
+        if ($section === 'dashboard') {
+            return true;
+        }
+
+        $postType = self::SECTION_POST_TYPES[$section] ?? '';
+        if ($postType === '') {
+            return false;
+        }
+
+        $object = get_post_type_object($postType);
+        if (!$object) {
+            return false;
+        }
+
+        $capability = $object->cap->edit_posts ?? '';
+        if (!is_string($capability) || $capability === '') {
+            return false;
+        }
+
+        return current_user_can($capability);
     }
 
     private static function resolveSection(): string
@@ -255,6 +295,9 @@ final class CRM
             case 'clients':
                 self::renderClientDetail($postId);
                 break;
+            case 'leads':
+                self::renderLeadDetail($postId);
+                break;
             default:
                 self::renderDetailNotFound();
                 break;
@@ -272,6 +315,9 @@ final class CRM
         echo '</div>';
         echo '<nav class="estate-office-crm__nav">';
         foreach (self::SECTIONS as $slug => $label) {
+            if (!self::userCanAccessSection($slug)) {
+                continue;
+            }
             $url = esc_url(add_query_arg(self::SECTION_PARAM, $slug, $baseUrl));
             $classes = ['estate-office-crm__nav-link'];
             if ($slug === $section) {
@@ -335,6 +381,11 @@ final class CRM
         return $args;
     }
 
+    private static function renderSectionRestricted(): void
+    {
+        echo '<div class="estate-office-crm__notice estate-office-crm__notice--error">' . esc_html__('Brak uprawnień do tej sekcji.', 'estate-office') . '</div>';
+    }
+
     private static function renderDashboard(): void
     {
         $stats     = self::getDashboardStats();
@@ -388,6 +439,93 @@ final class CRM
         echo '</section>';
     }
 
+    private static function renderLeadDetail(int $postId): void
+    {
+        $post = self::getAccessiblePost($postId, LeadRegister::POST_TYPE);
+        if (!$post instanceof WP_Post) {
+            self::renderDetailNotFound();
+
+            return;
+        }
+
+        $name        = (string) get_post_meta($postId, LeadMeta::META_NAME, true);
+        $title       = trim((string) get_the_title($postId));
+        if ($title === '') {
+            $title = $name !== '' ? $name : sprintf(__('Lead #%d', 'estate-office'), $postId);
+        }
+
+        $statusKey   = (string) get_post_meta($postId, LeadMeta::META_STATUS, true);
+        $statusKey   = $statusKey !== '' ? $statusKey : 'new';
+        $statusKey   = LeadMeta::sanitizeStatus($statusKey);
+        $statusLabel = LeadMeta::getStatusLabel($statusKey);
+        $assigned    = self::getManagerName((int) get_post_meta($postId, LeadMeta::META_ASSIGNED, true));
+        $created     = self::formatPostDateTime($postId);
+        $phone       = self::formatPhone((string) get_post_meta($postId, LeadMeta::META_PHONE, true));
+        $email       = self::formatEmail((string) get_post_meta($postId, LeadMeta::META_EMAIL, true));
+        $contextKey  = (string) get_post_meta($postId, LeadMeta::META_CONTEXT, true);
+        $context     = LeadMeta::getContextLabel($contextKey);
+        $recordId    = absint((int) get_post_meta($postId, LeadMeta::META_RECORD, true));
+        $record      = self::getLeadRecordSummary($recordId);
+        $source      = (string) get_post_meta($postId, LeadMeta::META_SOURCE, true);
+        $subject     = (string) get_post_meta($postId, LeadMeta::META_SUBJECT, true);
+        $recipient   = (string) get_post_meta($postId, LeadMeta::META_RECIPIENT, true);
+        $recipientName = (string) get_post_meta($postId, LeadMeta::META_RECIPIENT_NAME, true);
+
+        echo '<section class="estate-office-crm__detail">';
+        self::renderDetailHeader($title, '', $postId, [
+            [
+                'label' => $statusLabel,
+                'class' => 'status-' . $statusKey,
+            ],
+        ]);
+
+        $recordValue = esc_html($record['label']);
+        if ($record['link'] !== '') {
+            $recordValue = '<a href="' . esc_url($record['link']) . '">' . esc_html($record['label']) . '</a>';
+        }
+
+        $cards = [
+            [
+                'heading' => __('Status i przypisanie', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Status', 'estate-office'), 'value' => self::formatLeadStatusBadge($statusKey)],
+                    ['label' => __('Data zgłoszenia', 'estate-office'), 'value' => esc_html($created)],
+                    ['label' => __('Przypisany agent', 'estate-office'), 'value' => esc_html($assigned)],
+                ],
+            ],
+            [
+                'heading' => __('Dane kontaktowe', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Imię i nazwisko', 'estate-office'), 'value' => esc_html($name !== '' ? $name : '—')],
+                    ['label' => __('E-mail', 'estate-office'), 'value' => $email],
+                    ['label' => __('Telefon', 'estate-office'), 'value' => $phone],
+                ],
+            ],
+            [
+                'heading' => __('Kontekst zgłoszenia', 'estate-office'),
+                'rows'    => [
+                    ['label' => __('Kontekst', 'estate-office'), 'value' => esc_html($context)],
+                    ['label' => __('Powiązany rekord', 'estate-office'), 'value' => $recordValue],
+                    ['label' => __('Źródło zgłoszenia', 'estate-office'), 'value' => $source !== '' ? self::formatWebsite($source) : '—'],
+                    ['label' => __('Adresat wiadomości', 'estate-office'), 'value' => self::formatLeadRecipient($recipientName, $recipient)],
+                    ['label' => __('Temat', 'estate-office'), 'value' => esc_html($subject !== '' ? $subject : '—')],
+                ],
+            ],
+        ];
+
+        self::renderDetailCards($cards);
+
+        $message = trim($post->post_content);
+        if ($message !== '') {
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Treść wiadomości', 'estate-office') . '</h3>';
+            echo wp_kses_post(wpautop(esc_html($message)));
+            echo '</section>';
+        }
+
+        echo '</section>';
+    }
+
     /**
      * @return array<int,array{label:string,count:int}>
      */
@@ -395,25 +533,37 @@ final class CRM
     {
         $postTypes = [
             [
-                'type'  => PropertyRegister::POST_TYPE,
-                'label' => __('Nieruchomości', 'estate-office'),
+                'type'    => PropertyRegister::POST_TYPE,
+                'label'   => __('Nieruchomości', 'estate-office'),
+                'section' => 'properties',
             ],
             [
-                'type'  => AgreementRegister::POST_TYPE,
-                'label' => __('Umowy', 'estate-office'),
+                'type'    => AgreementRegister::POST_TYPE,
+                'label'   => __('Umowy', 'estate-office'),
+                'section' => 'agreements',
             ],
             [
-                'type'  => SearchRegister::POST_TYPE,
-                'label' => __('Poszukiwania', 'estate-office'),
+                'type'    => SearchRegister::POST_TYPE,
+                'label'   => __('Poszukiwania', 'estate-office'),
+                'section' => 'searches',
             ],
             [
-                'type'  => ClientRegister::POST_TYPE,
-                'label' => __('Klienci', 'estate-office'),
+                'type'    => ClientRegister::POST_TYPE,
+                'label'   => __('Klienci', 'estate-office'),
+                'section' => 'clients',
+            ],
+            [
+                'type'    => LeadRegister::POST_TYPE,
+                'label'   => __('Leady', 'estate-office'),
+                'section' => 'leads',
             ],
         ];
 
         $stats = [];
         foreach ($postTypes as $postType) {
+            if (isset($postType['section']) && !self::userCanAccessSection($postType['section'])) {
+                continue;
+            }
             $counts    = wp_count_posts($postType['type']);
             $published = $counts && isset($counts->publish) ? (int) $counts->publish : 0;
             $stats[]   = [
@@ -445,11 +595,20 @@ final class CRM
                 'meta_key'  => 'estate_client_manager',
                 'post_type' => ClientRegister::POST_TYPE,
             ],
+            __('Leady', 'estate-office') => [
+                'meta_key'  => LeadMeta::META_ASSIGNED,
+                'post_type' => LeadRegister::POST_TYPE,
+            ],
         ];
 
         $agents = [];
 
         foreach ($sources as $label => $source) {
+            $section = array_search($source['post_type'], self::SECTION_POST_TYPES, true);
+            if (is_string($section) && !self::userCanAccessSection($section)) {
+                continue;
+            }
+
             $query = $wpdb->prepare(
                 "SELECT CAST(pm.meta_value AS UNSIGNED) AS user_id, COUNT(pm.post_id) AS total
                  FROM {$wpdb->postmeta} pm
@@ -604,6 +763,104 @@ final class CRM
                 'rooms'          => self::formatIntegerMeta($postId, 'estate_property_rooms'),
                 'manager'        => self::getManagerName((int) get_post_meta($postId, 'estate_property_manager', true)),
                 'badges'         => self::getPropertyBadges($postId),
+            ];
+        }
+
+        wp_reset_postdata();
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int,array{link:string,display:string,context:string,phone:string,email:string,status_key:string,assigned:string,created:string,record_label:string,record_link:string}>
+     */
+    private static function queryLeads(string $searchTerm): array
+    {
+        $args = [
+            'post_type'      => LeadRegister::POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => 20,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'no_found_rows'  => true,
+        ];
+
+        $metaQuery = [];
+        $currentUserId = get_current_user_id();
+
+        if ($currentUserId > 0 && !current_user_can('edit_others_estate_leads')) {
+            $metaQuery[] = [
+                'key'     => LeadMeta::META_ASSIGNED,
+                'value'   => $currentUserId,
+                'compare' => '=',
+            ];
+        }
+
+        if ($searchTerm !== '') {
+            $args['s'] = $searchTerm;
+            $metaQuery[] = [
+                'relation' => 'OR',
+                [
+                    'key'     => LeadMeta::META_NAME,
+                    'value'   => $searchTerm,
+                    'compare' => 'LIKE',
+                ],
+                [
+                    'key'     => LeadMeta::META_EMAIL,
+                    'value'   => $searchTerm,
+                    'compare' => 'LIKE',
+                ],
+                [
+                    'key'     => LeadMeta::META_PHONE,
+                    'value'   => $searchTerm,
+                    'compare' => 'LIKE',
+                ],
+                [
+                    'key'     => LeadMeta::META_CONTEXT,
+                    'value'   => $searchTerm,
+                    'compare' => 'LIKE',
+                ],
+            ];
+        }
+
+        if ($metaQuery !== []) {
+            if (count($metaQuery) > 1) {
+                $metaQuery = array_merge(['relation' => 'AND'], $metaQuery);
+            }
+
+            $args['meta_query'] = $metaQuery;
+        }
+
+        $query = new WP_Query($args);
+        $rows  = [];
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            $postId     = (int) get_the_ID();
+            $name       = (string) get_post_meta($postId, LeadMeta::META_NAME, true);
+            $display    = $name !== '' ? $name : (string) get_the_title($postId);
+            if ($display === '') {
+                $display = sprintf(__('Lead #%d', 'estate-office'), $postId);
+            }
+
+            $statusKey    = (string) get_post_meta($postId, LeadMeta::META_STATUS, true);
+            $statusKey    = $statusKey !== '' ? $statusKey : 'new';
+            $statusKey    = LeadMeta::sanitizeStatus($statusKey);
+            $contextKey   = (string) get_post_meta($postId, LeadMeta::META_CONTEXT, true);
+            $recordId     = absint((int) get_post_meta($postId, LeadMeta::META_RECORD, true));
+            $record       = self::getLeadRecordSummary($recordId);
+
+            $rows[] = [
+                'link'         => self::getDetailLink('leads', $postId),
+                'display'      => $display,
+                'context'      => LeadMeta::getContextLabel($contextKey),
+                'phone'        => self::formatPhone((string) get_post_meta($postId, LeadMeta::META_PHONE, true)),
+                'email'        => self::formatEmail((string) get_post_meta($postId, LeadMeta::META_EMAIL, true)),
+                'status_key'   => $statusKey,
+                'assigned'     => self::getManagerName((int) get_post_meta($postId, LeadMeta::META_ASSIGNED, true)),
+                'created'      => self::formatPostDateTime($postId),
+                'record_label' => $record['label'],
+                'record_link'  => $record['link'],
             ];
         }
 
@@ -832,6 +1089,56 @@ final class CRM
                 echo '<td>' . $row['phone'] . '</td>';
                 echo '<td>' . $row['email'] . '</td>';
                 echo '<td>' . esc_html($row['manager']) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody>';
+        } else {
+            self::renderEmptyTableMessage(count($headers));
+        }
+
+        echo '</table>';
+        echo '</section>';
+    }
+
+    private static function renderLeads(string $searchTerm): void
+    {
+        $rows    = self::queryLeads($searchTerm);
+        $tableId = self::getTableId('leads');
+        echo '<section class="estate-office-crm__section">';
+        echo '<h2>' . esc_html__('Lista leadów', 'estate-office') . '</h2>';
+        $headers = [
+            __('Lead', 'estate-office'),
+            __('Telefon', 'estate-office'),
+            __('E-mail', 'estate-office'),
+            __('Status', 'estate-office'),
+            __('Opiekun', 'estate-office'),
+            __('Data zgłoszenia', 'estate-office'),
+            __('Powiązany rekord', 'estate-office'),
+        ];
+        self::renderTableHeader($headers, $tableId);
+
+        if ($rows) {
+            echo '<tbody>';
+            foreach ($rows as $row) {
+                echo '<tr>';
+                echo '<td>';
+                echo '<a href="' . esc_url($row['link']) . '">' . esc_html($row['display']) . '</a>';
+                if ($row['context'] !== '') {
+                    echo '<div class="estate-office-crm__meta">' . esc_html($row['context']) . '</div>';
+                }
+                echo '</td>';
+                echo '<td>' . $row['phone'] . '</td>';
+                echo '<td>' . $row['email'] . '</td>';
+                echo '<td>' . self::formatLeadStatusBadge($row['status_key']) . '</td>';
+                echo '<td>' . esc_html($row['assigned']) . '</td>';
+                echo '<td>' . esc_html($row['created']) . '</td>';
+                echo '<td>';
+                if ($row['record_link'] !== '') {
+                    echo '<a href="' . esc_url($row['record_link']) . '">' . esc_html($row['record_label']) . '</a>';
+                } else {
+                    echo esc_html($row['record_label']);
+                }
+                echo '</td>';
                 echo '</tr>';
             }
             echo '</tbody>';
@@ -1610,6 +1917,16 @@ final class CRM
         return '<a href="' . $sanitized . '" target="_blank" rel="noopener noreferrer">' . esc_html($url) . '</a>';
     }
 
+    private static function formatLeadStatusBadge(string $status): string
+    {
+        $status = LeadMeta::sanitizeStatus($status);
+        $label  = LeadMeta::getStatusLabel($status);
+
+        $class = 'estate-office-crm__badge estate-office-crm__badge--status-' . sanitize_html_class($status);
+
+        return '<span class="' . esc_attr($class) . '">' . esc_html($label) . '</span>';
+    }
+
     private static function getAgreementNumberLabel(int $agreementId): string
     {
         $number = self::resolveReference($agreementId, 'estate_agreement_number');
@@ -1644,6 +1961,53 @@ final class CRM
         }
 
         return sprintf('%s – %s', $reference, $location);
+    }
+
+    /**
+     * @return array{label:string,link:string}
+     */
+    private static function getLeadRecordSummary(int $recordId): array
+    {
+        if ($recordId <= 0) {
+            return [
+                'label' => __('Brak powiązania', 'estate-office'),
+                'link'  => '',
+            ];
+        }
+
+        $post = get_post($recordId);
+        if (!$post instanceof WP_Post) {
+            return [
+                'label' => sprintf(__('Rekord #%d', 'estate-office'), $recordId),
+                'link'  => '',
+            ];
+        }
+
+        $title = trim((string) $post->post_title);
+        if ($title === '') {
+            $title = sprintf(__('Rekord #%d', 'estate-office'), $recordId);
+        }
+
+        $section = '';
+        foreach (self::SECTION_POST_TYPES as $slug => $postType) {
+            if ($postType === $post->post_type) {
+                $section = $slug;
+                break;
+            }
+        }
+
+        $link = '';
+        if ($section !== '') {
+            $accessible = self::getAccessiblePost($recordId, $post->post_type);
+            if ($accessible instanceof WP_Post) {
+                $link = self::getDetailLink($section, $recordId);
+            }
+        }
+
+        return [
+            'label' => $title,
+            'link'  => $link,
+        ];
     }
 
     /**
@@ -1838,6 +2202,35 @@ final class CRM
         return '—';
     }
 
+    private static function formatPostDateTime(int $postId): string
+    {
+        $date = get_post_field('post_date', $postId);
+        if (!is_string($date) || $date === '' || $date === '0000-00-00 00:00:00') {
+            return '—';
+        }
+
+        $dateFormat = (string) get_option('date_format');
+        $timeFormat = (string) get_option('time_format');
+
+        if ($dateFormat === '') {
+            $dateFormat = 'Y-m-d';
+        }
+        if ($timeFormat === '') {
+            $timeFormat = 'H:i';
+        }
+
+        $datePart = mysql2date($dateFormat, $date, true);
+        $timePart = mysql2date($timeFormat, $date, true);
+
+        if (!is_string($datePart) || $datePart === '') {
+            return '—';
+        }
+
+        $timeText = is_string($timePart) && $timePart !== '' ? ' ' . $timePart : '';
+
+        return trim($datePart . $timeText);
+    }
+
     private static function formatDateMeta(int $postId, string $metaKey): string
     {
         $value = (string) get_post_meta($postId, $metaKey, true);
@@ -1953,6 +2346,24 @@ final class CRM
         }
 
         return '<a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a>';
+    }
+
+    private static function formatLeadRecipient(string $name, string $email): string
+    {
+        $name  = trim($name);
+        $email = trim($email);
+
+        if ($email === '') {
+            return $name !== '' ? esc_html($name) : '—';
+        }
+
+        $link = '<a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a>';
+
+        if ($name === '') {
+            return $link;
+        }
+
+        return esc_html($name) . '<br />' . $link;
     }
 
     /**

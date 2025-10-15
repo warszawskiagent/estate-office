@@ -137,6 +137,14 @@
     text-decoration: underline;
 }
 
+.estate-office-crm__meta {
+    color: #50575e;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    margin-top: 4px;
+    text-transform: uppercase;
+}
+
 .estate-office-crm__dashboard {
     display: grid;
     gap: 24px;
@@ -191,6 +199,12 @@
     border-radius: 4px;
     color: #8a1f1f;
     padding: 16px;
+}
+
+.estate-office-crm__notice--error {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #7f1d1d;
 }
 
 .estate-office-crm__detail {
@@ -288,6 +302,31 @@
 
 .estate-office-crm__badge--premium {
     background-color: #b7791f;
+    color: #fff;
+}
+
+.estate-office-crm__badge--status-new {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.estate-office-crm__badge--status-contacted {
+    background-color: #0ea5e9;
+    color: #fff;
+}
+
+.estate-office-crm__badge--status-in_progress {
+    background-color: #f97316;
+    color: #fff;
+}
+
+.estate-office-crm__badge--status-completed {
+    background-color: #16a34a;
+    color: #fff;
+}
+
+.estate-office-crm__badge--status-rejected {
+    background-color: #dc2626;
     color: #fff;
 }
 
