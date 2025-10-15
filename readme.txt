@@ -16,6 +16,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
 * Rozszerzone meta boksy nieruchomości z danymi adresowymi, prawnymi, technicznymi oraz informacjami CRM (numer oferty, opiekun).
+* Integracja Map Google w edycji nieruchomości z zapisem współrzędnych i wyszukiwaniem adresów.
 * Widok listy nieruchomości w kokpicie dostosowany do potrzeb CRM z dedykowanymi kolumnami i sortowaniem.
 * Znaczniki marketingowe ofert (Nowa oferta, Wyłączność, Premium, MLS itp.) z automatycznym wygaszaniem statusu "Nowa oferta".
 * Profil agenta wzbogacony o zdjęcie, szczegóły kontaktowe oraz biografię do wykorzystania w CRM i na stronie.
@@ -38,7 +39,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozbudowa katalogu ofert o widoki szczegółowe, formularze kontaktowe i rozbudowane sortowanie.
 * Automatyzacja generowania stron ofertowych z SEO i indeksacją w sitemapie.
 * Automatyzacje workflow: powiadomienia e-mail, logi aktywności oraz powiązania na froncie użytkownika.
-* Integracja Google Maps z możliwością zapisu współrzędnych i podglądu lokalizacji w panelu.
+* Rozszerzenie integracji Map Google o podgląd lokalizacji w frontowym CRM, katalogu ofert i filtrach wyszukiwania.
 * Moduł galerii nieruchomości z obsługą znaku wodnego i różnymi wariantami rzutów.
 * Eksport ofert na portale zewnętrzne (otodom, gratka, Morizon) oraz integracja MLS.
 * Kalkulator notarialny i kredytowy dostępny zarówno w panelu, jak i na stronach ofertowych.
@@ -73,3 +74,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano frontowe karty szczegółowe nieruchomości, umów, poszukiwań i klientów wraz z powiązaniami oraz historią etapów.
 * Dodano moduł znaczników i eksportu nieruchomości z automatycznym wygaszaniem statusu "Nowa oferta" oraz odznakami w CRM.
 * Udostępniono shortcode katalogu ofert z filtrowaniem oraz prezentacją odznak i danych opiekunów dla nieruchomości eksportowanych na WWW.
+* Zintegrowano mapę Google w edycji nieruchomości, umożliwiając zapisywanie współrzędnych, adresu oraz czyszczenie lokalizacji z poziomu metaboxu.

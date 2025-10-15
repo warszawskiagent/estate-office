@@ -4,27 +4,39 @@ declare(strict_types=1);
 
 namespace EstateOffice\PostTypes;
 
+use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 
 use function checked;
 use function current_time;
 use function delete_post_meta;
 use function esc_attr;
+use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
+use function get_current_screen;
 use function get_edit_post_link;
+use function get_option;
 use function get_post;
 use function get_post_meta;
 use function get_posts;
 use function get_the_title;
 use function get_user_by;
+use function plugins_url;
+use function rawurlencode;
 use function time;
 use function update_post_meta;
 use function wp_clear_scheduled_hook;
 use function wp_dropdown_users;
+use function wp_enqueue_script;
+use function wp_enqueue_style;
+use function wp_localize_script;
 use function wp_next_scheduled;
+use function wp_register_script;
+use function wp_register_style;
 use function wp_schedule_event;
+use function wp_script_is;
 
 use const DAY_IN_SECONDS;
 
@@ -49,6 +61,10 @@ final class PropertyMeta
         'estate_property_county'              => ['type' => 'string'],
         'estate_property_precinct'            => ['type' => 'string'],
         'estate_property_plot_number'         => ['type' => 'string'],
+        'estate_property_latitude'            => ['type' => 'decimal', 'precision' => 8],
+        'estate_property_longitude'           => ['type' => 'decimal', 'precision' => 8],
+        'estate_property_map_address'         => ['type' => 'string'],
+        'estate_property_map_place_id'        => ['type' => 'string'],
         'estate_property_house_type'          => ['type' => 'enum', 'values' => self::HOUSE_TYPES],
         'estate_property_land_register_number'=> ['type' => 'string'],
         'estate_property_legal_status'        => ['type' => 'enum', 'values' => self::LEGAL_STATUSES],
@@ -108,6 +124,7 @@ final class PropertyMeta
         add_action('add_meta_boxes', [self::class, 'addMetaBoxes']);
         add_action('save_post_' . PropertyRegister::POST_TYPE, [self::class, 'save']);
         add_action(self::NEW_OFFER_CRON_HOOK, [self::class, 'expireNewOfferFlags']);
+        add_action('admin_enqueue_scripts', [self::class, 'enqueueAssets']);
     }
 
     public static function registerMeta(): void
@@ -461,6 +478,13 @@ final class PropertyMeta
         $county      = esc_attr(get_post_meta($post->ID, 'estate_property_county', true));
         $precinct    = esc_attr(get_post_meta($post->ID, 'estate_property_precinct', true));
         $plotNumber  = esc_attr(get_post_meta($post->ID, 'estate_property_plot_number', true));
+        $latitudeRaw  = (string) get_post_meta($post->ID, 'estate_property_latitude', true);
+        $longitudeRaw = (string) get_post_meta($post->ID, 'estate_property_longitude', true);
+        $mapAddress   = (string) get_post_meta($post->ID, 'estate_property_map_address', true);
+        $placeId      = (string) get_post_meta($post->ID, 'estate_property_map_place_id', true);
+        $latitude     = esc_attr($latitudeRaw);
+        $longitude    = esc_attr($longitudeRaw);
+        $placeAttr    = esc_attr($placeId);
         $houseType   = esc_attr(get_post_meta($post->ID, 'estate_property_house_type', true));
 
         echo '<table class="form-table estate-office-meta-table">';
@@ -501,6 +525,95 @@ final class PropertyMeta
         echo '<p class="description">' . esc_html__('Pole dotyczy wyłącznie nieruchomości typu dom.', 'estate-office') . '</p>';
         echo '</td></tr>';
         echo '</table>';
+
+        $displayAddress = $mapAddress !== '' ? esc_html($mapAddress) : esc_html__('Brak wybranej lokalizacji.', 'estate-office');
+        $clearDisabled  = $latitudeRaw === '' || $longitudeRaw === '' ? ' disabled' : '';
+
+        echo '<div class="estate-office-map-field" data-lat="' . $latitude . '" data-lng="' . $longitude . '" data-address="' . esc_attr($mapAddress) . '" data-place="' . $placeAttr . '" data-empty-label="' . esc_attr__('Brak wybranej lokalizacji.', 'estate-office') . '">';
+        echo '<label for="estate_property_map_search" class="estate-office-map-label">' . esc_html__('Zaznacz lokalizację na mapie', 'estate-office') . '</label>';
+        printf('<input type="search" id="estate_property_map_search" class="estate-office-map-search" placeholder="%s" autocomplete="off" />', esc_attr__('Wpisz adres nieruchomości…', 'estate-office'));
+        echo '<p class="description">' . esc_html__('Wyszukaj adres lub kliknij na mapie, aby ustawić pinezkę. Współrzędne zostaną zapisane w metadanych nieruchomości.', 'estate-office') . '</p>';
+        echo '<div class="estate-office-map-canvas" aria-label="' . esc_attr__('Mapa lokalizacji nieruchomości', 'estate-office') . '"></div>';
+        echo '<div class="estate-office-map-footer">';
+        echo '<span class="estate-office-map-address" aria-live="polite">' . $displayAddress . '</span>';
+        echo '<button type="button" class="button-link estate-office-map-clear"' . $clearDisabled . '>' . esc_html__('Wyczyść lokalizację', 'estate-office') . '</button>';
+        echo '</div>';
+        echo '<p class="estate-office-map-status" aria-live="polite"></p>';
+        echo '</div>';
+
+        printf('<input type="hidden" id="estate_property_latitude" name="estate_property_latitude" value="%s" />', $latitude);
+        printf('<input type="hidden" id="estate_property_longitude" name="estate_property_longitude" value="%s" />', $longitude);
+        printf('<input type="hidden" id="estate_property_map_address" name="estate_property_map_address" value="%s" />', esc_attr($mapAddress));
+        printf('<input type="hidden" id="estate_property_map_place_id" name="estate_property_map_place_id" value="%s" />', $placeAttr);
+    }
+
+    public static function enqueueAssets(string $hook = ''): void
+    {
+        unset($hook);
+
+        $screen = get_current_screen();
+
+        if (!$screen || PropertyRegister::POST_TYPE !== $screen->post_type) {
+            return;
+        }
+
+        wp_register_style(
+            'estate-office-property-meta',
+            plugins_url('assets/css/property-meta.css', ESTATE_OFFICE_PLUGIN_FILE),
+            [],
+            ESTATE_OFFICE_PLUGIN_VERSION
+        );
+
+        wp_enqueue_style('estate-office-property-meta');
+
+        $settings = get_option(GeneralSettings::OPTION);
+        $apiKey   = is_array($settings) && !empty($settings['google_maps_api_key']) ? $settings['google_maps_api_key'] : '';
+
+        $dependencies = [];
+
+        if ($apiKey !== '') {
+            if (!wp_script_is('estate-office-google-maps', 'registered')) {
+                wp_register_script(
+                    'estate-office-google-maps',
+                    sprintf('https://maps.googleapis.com/maps/api/js?key=%s&libraries=places', rawurlencode($apiKey)),
+                    [],
+                    null,
+                    true
+                );
+            }
+
+            $dependencies[] = 'estate-office-google-maps';
+        }
+
+        wp_register_script(
+            'estate-office-property-meta',
+            plugins_url('assets/js/property-meta.js', ESTATE_OFFICE_PLUGIN_FILE),
+            $dependencies,
+            ESTATE_OFFICE_PLUGIN_VERSION,
+            true
+        );
+
+        wp_localize_script(
+            'estate-office-property-meta',
+            'EstateOfficePropertyMap',
+            [
+                'apiKey' => $apiKey,
+                'i18n'   => [
+                    'noApiKey'        => esc_html__('Aby korzystać z mapy, uzupełnij klucz API Map Google w ustawieniach wtyczki.', 'estate-office'),
+                    'markerTitle'     => esc_html__('Lokalizacja nieruchomości', 'estate-office'),
+                    'searchPlaceholder'=> esc_html__('Wpisz adres nieruchomości…', 'estate-office'),
+                    'applyLocation'   => esc_html__('Lokalizacja zaktualizowana.', 'estate-office'),
+                    'cleared'         => esc_html__('Lokalizacja została usunięta.', 'estate-office'),
+                    'geocodeError'    => esc_html__('Nie udało się pobrać adresu dla wybranych współrzędnych.', 'estate-office'),
+                ],
+            ]
+        );
+
+        if ($apiKey !== '') {
+            wp_enqueue_script('estate-office-google-maps');
+        }
+
+        wp_enqueue_script('estate-office-property-meta');
     }
 
     public static function renderLegalBox(WP_Post $post): void
