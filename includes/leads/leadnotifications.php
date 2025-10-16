@@ -103,7 +103,7 @@ final class LeadNotifications
 
         $lines   = [];
         $lines[] = sprintf(__('Lead: %s', 'estate-office'), wp_strip_all_tags($lead->post_title));
-        $lines[] = sprintf(__('Status: %s', 'estate-office'), LeadMeta::getStatusLabel($status !== '' ? $status : 'new'));
+        $lines[] = sprintf(__('Status: %s', 'estate-office'), LeadMeta::getStatusLabel($status !== '' ? $status : LeadMeta::getDefaultStatus()));
         $lines[] = '';
         $lines[] = __('Dane kontaktowe', 'estate-office');
         $lines[] = sprintf(__('Imię i nazwisko: %s', 'estate-office'), $name !== '' ? $name : '—');

@@ -62,7 +62,7 @@ final class LeadCollector
             return;
         }
 
-        $status = LeadMeta::sanitizeStatus('new');
+        $status = LeadMeta::getDefaultStatus();
 
         $meta = [
             LeadMeta::META_NAME           => $name,

@@ -155,17 +155,18 @@
     }
 
     function setupRoleManager() {
-        const template = $('#estate-office-role-template');
-        if (!template.length) {
-            return;
-        }
-
         $(document).on('click', '.estate-office-role-manager__add', function (event) {
             event.preventDefault();
             const container = $(this).closest('.estate-office-role-manager');
             const list = container.find('.estate-office-role-manager__list');
             const nextIndex = parseInt(container.attr('data-next-index') || list.children().length, 10);
             container.attr('data-next-index', String(nextIndex + 1));
+
+            const templateId = container.attr('data-template') || 'estate-office-role-template';
+            const template = $('#' + templateId);
+            if (!template.length) {
+                return;
+            }
 
             let markup = template.html().replace(/__index__/g, nextIndex);
             const row = $(markup);

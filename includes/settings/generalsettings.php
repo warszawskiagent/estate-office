@@ -28,6 +28,7 @@ final class GeneralSettings
                     'search_fields'        => [],
                     'lead_notifications'   => self::getDefaultNotifications(),
                     'client_roles'         => self::getDefaultClientRolesOption(),
+                    'lead_statuses'        => self::getDefaultLeadStatusesOption(),
                 ],
             ]
         );
@@ -108,6 +109,21 @@ final class GeneralSettings
             [self::class, 'renderClientRolesField'],
             'estate-office-settings',
             'estate_office_dynamic_fields'
+        );
+
+        add_settings_section(
+            'estate_office_leads',
+            __('Leady', 'estate-office'),
+            static fn () => printf('<p>%s</p>', esc_html__('Dostosuj statusy leadów oraz automatyzacje komunikacji.', 'estate-office')),
+            'estate-office-settings'
+        );
+
+        add_settings_field(
+            'estate_office_lead_statuses',
+            __('Statusy leadów', 'estate-office'),
+            [self::class, 'renderLeadStatusesField'],
+            'estate-office-settings',
+            'estate_office_leads'
         );
 
         add_settings_section(
@@ -204,6 +220,7 @@ final class GeneralSettings
             'search_fields'        => self::sanitizeList($value['search_fields'] ?? []),
             'lead_notifications'   => self::sanitizeNotifications($value['lead_notifications'] ?? []),
             'client_roles'         => self::sanitizeRoles($value['client_roles'] ?? []),
+            'lead_statuses'        => self::sanitizeStatuses($value['lead_statuses'] ?? []),
         ];
     }
 
@@ -299,7 +316,7 @@ final class GeneralSettings
         $fieldBase = self::OPTION . '[client_roles]';
         $nextIndex = count($roles);
 
-        echo '<div class="estate-office-role-manager" data-field="' . esc_attr($fieldBase) . '" data-next-index="' . esc_attr((string) $nextIndex) . '">';
+        echo '<div class="estate-office-role-manager" data-field="' . esc_attr($fieldBase) . '" data-next-index="' . esc_attr((string) $nextIndex) . '" data-template="estate-office-role-template">';
         echo '<div class="estate-office-role-manager__list">';
 
         foreach ($roles as $index => $role) {
@@ -313,6 +330,29 @@ final class GeneralSettings
 
         if (!has_action('admin_print_footer_scripts', [self::class, 'renderClientRoleTemplate'])) {
             add_action('admin_print_footer_scripts', [self::class, 'renderClientRoleTemplate']);
+        }
+    }
+
+    public static function renderLeadStatusesField(): void
+    {
+        $statuses  = self::getLeadStatusDefinitions();
+        $fieldBase = self::OPTION . '[lead_statuses]';
+        $nextIndex = count($statuses);
+
+        echo '<div class="estate-office-role-manager estate-office-status-manager" data-field="' . esc_attr($fieldBase) . '" data-next-index="' . esc_attr((string) $nextIndex) . '" data-template="estate-office-status-template">';
+        echo '<div class="estate-office-role-manager__list">';
+
+        foreach ($statuses as $index => $status) {
+            self::renderLeadStatusRow((string) $index, $status['key'], $status['label']);
+        }
+
+        echo '</div>';
+        echo '<button type="button" class="button estate-office-role-manager__add">' . esc_html__('Dodaj status', 'estate-office') . '</button>';
+        echo '<p class="description">' . esc_html__('Ustal etapy obsługi leadów widoczne w CRM oraz powiadomieniach. Klucze są wykorzystywane w automatyzacjach i integracjach.', 'estate-office') . '</p>';
+        echo '</div>';
+
+        if (!has_action('admin_print_footer_scripts', [self::class, 'renderLeadStatusTemplate'])) {
+            add_action('admin_print_footer_scripts', [self::class, 'renderLeadStatusTemplate']);
         }
     }
 
@@ -492,6 +532,24 @@ final class GeneralSettings
         echo '</script>';
     }
 
+    public static function renderLeadStatusTemplate(): void
+    {
+        static $rendered = false;
+
+        if ($rendered) {
+            return;
+        }
+
+        $rendered = true;
+
+        echo '<script type="text/template" id="estate-office-status-template">';
+        ob_start();
+        self::renderLeadStatusRow('__index__', '', '', true);
+        $template = ob_get_clean();
+        echo $template; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '</script>';
+    }
+
     /**
      * @return array<int,array{key:string,label:string}>
      */
@@ -597,6 +655,37 @@ final class GeneralSettings
         return $options;
     }
 
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getLeadStatusDefinitions(): array
+    {
+        $option   = get_option(self::OPTION);
+        $statuses = isset($option['lead_statuses']) ? $option['lead_statuses'] : [];
+
+        $statuses = self::sanitizeStatuses($statuses);
+
+        if ($statuses === []) {
+            return self::getDefaultLeadStatusesOption();
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getLeadStatusOptions(): array
+    {
+        $options = [];
+
+        foreach (self::getLeadStatusDefinitions() as $status) {
+            $options[$status['key']] = $status['label'];
+        }
+
+        return $options;
+    }
+
     private static function sanitizeNotifications($value): array
     {
         $value = is_array($value) ? $value : [];
@@ -694,53 +783,17 @@ final class GeneralSettings
      */
     private static function sanitizeRoles($value): array
     {
-        $value = is_array($value) ? array_values($value) : [];
+        return self::sanitizeKeyedList($value, self::getDefaultClientRolesOption(), 'role');
+    }
 
-        $roles    = [];
-        $usedKeys = [];
-
-        foreach ($value as $role) {
-            $label = '';
-            $key   = '';
-
-            if (is_array($role)) {
-                $label = isset($role['label']) ? sanitize_text_field((string) $role['label']) : '';
-                $key   = isset($role['key']) ? sanitize_key((string) $role['key']) : '';
-            } elseif (is_scalar($role)) {
-                $label = sanitize_text_field((string) $role);
-            }
-
-            $label = trim($label);
-
-            if ($label === '') {
-                continue;
-            }
-
-            $baseKey = $key !== '' ? $key : sanitize_key(\remove_accents($label));
-
-            if ($baseKey === '') {
-                $baseKey = 'role_' . substr(md5($label), 0, 8);
-            }
-
-            $uniqueKey = $baseKey;
-            $suffix    = 2;
-            while (in_array($uniqueKey, $usedKeys, true)) {
-                $uniqueKey = $baseKey . '_' . $suffix;
-                $suffix++;
-            }
-
-            $usedKeys[] = $uniqueKey;
-            $roles[]    = [
-                'key'   => $uniqueKey,
-                'label' => $label,
-            ];
-        }
-
-        if ($roles === []) {
-            return self::getDefaultClientRolesOption();
-        }
-
-        return $roles;
+    /**
+     * @param mixed $value
+     *
+     * @return array<int,array{key:string,label:string}>
+     */
+    private static function sanitizeStatuses($value): array
+    {
+        return self::sanitizeKeyedList($value, self::getDefaultLeadStatusesOption(), 'status');
     }
 
     /**
@@ -757,45 +810,151 @@ final class GeneralSettings
         ];
     }
 
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    private static function getDefaultLeadStatusesOption(): array
+    {
+        return [
+            ['key' => 'new', 'label' => __('Nowy', 'estate-office')],
+            ['key' => 'contacted', 'label' => __('Skontaktowano', 'estate-office')],
+            ['key' => 'in_progress', 'label' => __('W trakcie', 'estate-office')],
+            ['key' => 'completed', 'label' => __('Zamknięty', 'estate-office')],
+            ['key' => 'rejected', 'label' => __('Odrzucony', 'estate-office')],
+        ];
+    }
+
     private static function renderClientRoleRow(string $index, string $key, string $label, bool $isTemplate = false): void
     {
         $fieldBase = self::OPTION . '[client_roles][' . $index . ']';
-        $autoAttr  = $isTemplate || $key === '' ? ' data-auto="1"' : ' data-auto="0"';
+
+        self::renderManagerRow(
+            $fieldBase,
+            $key,
+            $label,
+            [
+                'label_screen'      => __('Nazwa roli', 'estate-office'),
+                'label_placeholder' => __('Np. Sprzedający', 'estate-office'),
+                'key_screen'        => __('Klucz roli', 'estate-office'),
+                'key_placeholder'   => __('np. seller', 'estate-office'),
+                'key_description'   => __('Klucz jest wykorzystywany do raportowania i integracji.', 'estate-office'),
+                'remove_label'      => __('Usuń rolę', 'estate-office'),
+                'remove_text'       => __('Usuń', 'estate-office'),
+            ],
+            $isTemplate
+        );
+    }
+
+    private static function renderLeadStatusRow(string $index, string $key, string $label, bool $isTemplate = false): void
+    {
+        $fieldBase = self::OPTION . '[lead_statuses][' . $index . ']';
+
+        self::renderManagerRow(
+            $fieldBase,
+            $key,
+            $label,
+            [
+                'label_screen'      => __('Nazwa statusu', 'estate-office'),
+                'label_placeholder' => __('Np. Nowy lead', 'estate-office'),
+                'key_screen'        => __('Klucz statusu', 'estate-office'),
+                'key_placeholder'   => __('np. new', 'estate-office'),
+                'key_description'   => __('Klucz identyfikuje status w raportach i automatyzacjach.', 'estate-office'),
+                'remove_label'      => __('Usuń status', 'estate-office'),
+                'remove_text'       => __('Usuń', 'estate-office'),
+            ],
+            $isTemplate
+        );
+    }
+
+    private static function renderManagerRow(string $fieldBase, string $key, string $label, array $strings, bool $isTemplate): void
+    {
+        $autoAttr = $isTemplate || $key === '' ? ' data-auto="1"' : ' data-auto="0"';
 
         echo '<div class="estate-office-role-manager__row">';
         echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--label">';
         echo '<label>';
-        echo '<span class="screen-reader-text">' . esc_html__('Nazwa roli', 'estate-office') . '</span>';
+        echo '<span class="screen-reader-text">' . esc_html($strings['label_screen']) . '</span>';
         printf(
             '<input type="text" class="regular-text estate-office-role-label" name="%1$s[label]" value="%2$s" placeholder="%3$s" autocomplete="off" />',
             esc_attr($fieldBase),
             esc_attr($label),
-            esc_attr__('Np. Sprzedający', 'estate-office')
+            esc_attr($strings['label_placeholder'])
         );
         echo '</label>';
         echo '</div>';
 
         echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--key">';
         echo '<label>';
-        echo '<span class="screen-reader-text">' . esc_html__('Klucz roli', 'estate-office') . '</span>';
+        echo '<span class="screen-reader-text">' . esc_html($strings['key_screen']) . '</span>';
         printf(
             '<input type="text" class="regular-text estate-office-role-key" name="%1$s[key]" value="%2$s" placeholder="%3$s" autocomplete="off"%4$s />',
             esc_attr($fieldBase),
             esc_attr($key),
-            esc_attr__('np. seller', 'estate-office'),
+            esc_attr($strings['key_placeholder']),
             $autoAttr
         );
         echo '</label>';
-        echo '<p class="description">' . esc_html__('Klucz jest wykorzystywany do raportowania i integracji.', 'estate-office') . '</p>';
+        echo '<p class="description">' . esc_html($strings['key_description']) . '</p>';
         echo '</div>';
 
         echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--actions">';
         printf(
             '<button type="button" class="button-link delete estate-office-role-remove" aria-label="%1$s">%2$s</button>',
-            esc_attr__('Usuń rolę', 'estate-office'),
-            esc_html__('Usuń', 'estate-office')
+            esc_attr($strings['remove_label']),
+            esc_html($strings['remove_text'])
         );
         echo '</div>';
         echo '</div>';
+    }
+
+    private static function sanitizeKeyedList($value, array $default, string $prefix): array
+    {
+        $value = is_array($value) ? array_values($value) : [];
+
+        $items    = [];
+        $usedKeys = [];
+
+        foreach ($value as $item) {
+            $label = '';
+            $key   = '';
+
+            if (is_array($item)) {
+                $label = isset($item['label']) ? sanitize_text_field((string) $item['label']) : '';
+                $key   = isset($item['key']) ? sanitize_key((string) $item['key']) : '';
+            } elseif (is_scalar($item)) {
+                $label = sanitize_text_field((string) $item);
+            }
+
+            $label = trim($label);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $baseKey = $key !== '' ? $key : sanitize_key(\remove_accents($label));
+
+            if ($baseKey === '') {
+                $baseKey = $prefix . '_' . substr(md5($label), 0, 8);
+            }
+
+            $uniqueKey = $baseKey;
+            $suffix    = 2;
+            while (in_array($uniqueKey, $usedKeys, true)) {
+                $uniqueKey = $baseKey . '_' . $suffix;
+                $suffix++;
+            }
+
+            $usedKeys[] = $uniqueKey;
+            $items[]    = [
+                'key'   => $uniqueKey,
+                'label' => $label,
+            ];
+        }
+
+        if ($items === []) {
+            return $default;
+        }
+
+        return $items;
     }
 }

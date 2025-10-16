@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\PostTypes;
 
 use EstateOffice\Roles\Manager as RolesManager;
+use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
 
 use DateTime;
@@ -80,6 +81,9 @@ final class LeadMeta
 
     /** @var array<string,string> */
     private static array $statuses;
+
+    /** @var string|null */
+    private static ?string $defaultStatus = null;
 
     /**
      * Registers meta boxes and metadata.
@@ -203,7 +207,7 @@ final class LeadMeta
         wp_nonce_field(self::NONCE_ACTION, self::NONCE_NAME);
 
         $status    = (string) get_post_meta($post->ID, self::META_STATUS, true);
-        $status    = $status !== '' ? $status : self::STATUS_DEFAULT;
+        $status    = $status !== '' ? $status : self::getDefaultStatus();
         $status    = self::sanitizeStatus($status);
         $assigned  = absint((int) get_post_meta($post->ID, self::META_ASSIGNED, true));
         $context   = (string) get_post_meta($post->ID, self::META_CONTEXT, true);
@@ -394,16 +398,41 @@ final class LeadMeta
     public static function getStatuses(): array
     {
         if (!isset(self::$statuses)) {
-            self::$statuses = [
-                'new'         => esc_html__('Nowy', 'estate-office'),
-                'contacted'   => esc_html__('Skontaktowano', 'estate-office'),
-                'in_progress' => esc_html__('W trakcie', 'estate-office'),
-                'completed'   => esc_html__('Zamknięty', 'estate-office'),
-                'rejected'    => esc_html__('Odrzucony', 'estate-office'),
-            ];
+            $options = GeneralSettings::getLeadStatusOptions();
+
+            if ($options === []) {
+                $options = [
+                    'new'         => esc_html__('Nowy', 'estate-office'),
+                    'contacted'   => esc_html__('Skontaktowano', 'estate-office'),
+                    'in_progress' => esc_html__('W trakcie', 'estate-office'),
+                    'completed'   => esc_html__('Zamknięty', 'estate-office'),
+                    'rejected'    => esc_html__('Odrzucony', 'estate-office'),
+                ];
+            }
+
+            self::$statuses      = $options;
+            self::$defaultStatus = null;
         }
 
         return self::$statuses;
+    }
+
+    public static function getDefaultStatus(): string
+    {
+        if (self::$defaultStatus !== null) {
+            return self::$defaultStatus;
+        }
+
+        $statuses = array_keys(self::getStatuses());
+        if ($statuses === []) {
+            self::$defaultStatus = self::STATUS_DEFAULT;
+
+            return self::$defaultStatus;
+        }
+
+        self::$defaultStatus = (string) $statuses[0];
+
+        return self::$defaultStatus;
     }
 
     /**
@@ -462,7 +491,7 @@ final class LeadMeta
                 continue;
             }
 
-            $status = isset($item['status']) ? self::sanitizeStatus((string) $item['status']) : self::STATUS_DEFAULT;
+            $status = isset($item['status']) ? self::sanitizeStatus((string) $item['status']) : self::getDefaultStatus();
             $user   = isset($item['user']) ? absint($item['user']) : 0;
             $timestamp = isset($item['timestamp']) ? sanitize_text_field((string) $item['timestamp']) : '';
             if ($timestamp === '') {
@@ -639,7 +668,7 @@ final class LeadMeta
     {
         $statuses = array_keys(self::getStatuses());
         if (!in_array($status, $statuses, true)) {
-            return self::STATUS_DEFAULT;
+            return self::getDefaultStatus();
         }
 
         return $status;
@@ -649,7 +678,13 @@ final class LeadMeta
     {
         $statuses = self::getStatuses();
 
-        return $statuses[$status] ?? $statuses[self::STATUS_DEFAULT];
+        if (isset($statuses[$status])) {
+            return $statuses[$status];
+        }
+
+        $default = self::getDefaultStatus();
+
+        return $statuses[$default] ?? $default;
     }
 
     public static function getContextLabel(string $context): string
