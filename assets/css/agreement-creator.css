@@ -210,6 +210,26 @@
     color: #b71d33;
 }
 
+.estate-office-agreement-creator__prompt {
+    margin-top: 20px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px solid #c9d3df;
+    background: #f8fbff;
+    display: grid;
+    gap: 12px;
+}
+
+.estate-office-agreement-creator__prompt p {
+    margin: 0;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__prompt.is-visible {
+    box-shadow: 0 12px 32px rgba(30, 41, 59, 0.12);
+}
+
 .estate-office-agreement-creator__clients {
     display: grid;
     gap: 20px;

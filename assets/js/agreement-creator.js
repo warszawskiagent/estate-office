@@ -17,6 +17,10 @@
     const clientResults = overlay.querySelector('[data-eo-agreement-search-results]');
     const selectedClients = overlay.querySelector('[data-eo-agreement-selected]');
     const clientForm = overlay.querySelector('form[data-eo-agreement-new-client]');
+    const clientPrompt = overlay.querySelector('[data-eo-agreement-client-prompt]');
+    const clientPromptYes = overlay.querySelector('[data-eo-agreement-client-yes]');
+    const clientPromptNo = overlay.querySelector('[data-eo-agreement-client-no]');
+    const newClientDetails = overlay.querySelector('[data-eo-agreement-new-client-details]');
     const nextButton = overlay.querySelector('[data-eo-agreement-next]');
     const backButton = overlay.querySelector('[data-eo-agreement-back]');
     const finishButton = overlay.querySelector('[data-eo-agreement-finish]');
@@ -41,6 +45,28 @@
         redirect: '',
         transactionType: '',
         record: null,
+    };
+
+    const hideClientPrompt = () => {
+        if (!clientPrompt) {
+            return;
+        }
+
+        clientPrompt.classList.remove('is-visible');
+        clientPrompt.setAttribute('hidden', 'hidden');
+    };
+
+    const showClientPrompt = () => {
+        if (!clientPrompt || state.clients.length < 1) {
+            return;
+        }
+
+        clientPrompt.classList.add('is-visible');
+        clientPrompt.removeAttribute('hidden');
+
+        window.requestAnimationFrame(() => {
+            clientPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
     };
 
     if (propertySearchInput && config.placeholders?.propertySearch) {
@@ -137,6 +163,7 @@
         if (clientResults) {
             clientResults.innerHTML = '';
         }
+        hideClientPrompt();
     };
 
     const closeOverlay = () => {
@@ -195,6 +222,8 @@
         if (!selectedClients) {
             return;
         }
+
+        hideClientPrompt();
 
         if (!state.clients.length) {
             selectedClients.innerHTML = '<p>' + (config.messages?.emptyClients || '') + '</p>';
@@ -804,6 +833,10 @@
                 renderClients();
                 setMessage(message, 'success', config.messages?.clientAdded || '');
                 renderSummary();
+                showClientPrompt();
+                if (clientResults) {
+                    clientResults.innerHTML = '';
+                }
             })
             .catch(() => {
                 const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
@@ -839,6 +872,9 @@
                 renderClients();
                 setMessage(message, 'success', config.messages?.clientRemoved || '');
                 renderSummary();
+                if (!state.clients.length) {
+                    hideClientPrompt();
+                }
             })
             .catch(() => {
                 const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
@@ -888,6 +924,7 @@
                     renderClients();
                     renderSummary();
                     setMessage(message, 'success', config.messages?.clientCreated || '');
+                    showClientPrompt();
                 })
                 .catch(() => {
                     setMessage(message, 'error', config.messages?.genericError || '');
@@ -1177,9 +1214,35 @@
             return;
         }
 
+        hideClientPrompt();
         switchStep(3);
         prepareStepThree();
     };
+
+    if (clientPromptYes) {
+        clientPromptYes.addEventListener('click', (event) => {
+            event.preventDefault();
+            hideClientPrompt();
+            if (newClientDetails) {
+                newClientDetails.setAttribute('open', 'open');
+            }
+            if (clientForm) {
+                clientForm.reset();
+                const focusTarget = clientForm.querySelector('input:not([type="hidden"]), select, textarea');
+                if (focusTarget) {
+                    focusTarget.focus();
+                }
+            }
+        });
+    }
+
+    if (clientPromptNo) {
+        clientPromptNo.addEventListener('click', (event) => {
+            event.preventDefault();
+            hideClientPrompt();
+            goToStepThree();
+        });
+    }
 
     if (nextButton) {
         nextButton.addEventListener('click', goToStepThree);

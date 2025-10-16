@@ -258,7 +258,7 @@ final class AgreementCreator
         echo '<div class="estate-office-agreement-creator__search-results" data-eo-agreement-search-results></div>';
         echo '</div>';
         echo '</div>';
-        echo '<details class="estate-office-agreement-creator__new-client">';
+        echo '<details class="estate-office-agreement-creator__new-client" data-eo-agreement-new-client-details>';
         echo '<summary>' . esc_html__('Dodaj nowego klienta', 'estate-office') . '</summary>';
         echo '<form data-eo-agreement-new-client>'; // nested form? can't have form inside form, but step 2 container is div not form so ok.
         echo '<div class="estate-office-agreement-creator__grid">';
@@ -304,6 +304,13 @@ final class AgreementCreator
         echo '<button type="button" class="estate-office-agreement-creator__ghost" data-eo-agreement-back>' . esc_html__('Wróć', 'estate-office') . '</button>';
         echo '</div>';
         echo '<div class="estate-office-agreement-creator__message" data-eo-agreement-message></div>';
+        echo '<div class="estate-office-agreement-creator__prompt" data-eo-agreement-client-prompt hidden>';
+        echo '<p>' . esc_html__('Czy chcesz dodać kolejnego klienta?', 'estate-office') . '</p>';
+        echo '<div class="estate-office-agreement-creator__actions">';
+        echo '<button type="button" class="estate-office-agreement-creator__secondary" data-eo-agreement-client-yes>' . esc_html__('Tak, dodaj kolejnego', 'estate-office') . '</button>';
+        echo '<button type="button" class="estate-office-agreement-creator__ghost" data-eo-agreement-client-no>' . esc_html__('Nie, przejdź dalej', 'estate-office') . '</button>';
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 
