@@ -192,6 +192,8 @@ final class AgreementCreator
 
     private static function renderStepAgreement(): void
     {
+        $agreementDynamic = GeneralSettings::getAgreementDynamicFields();
+
         echo '<form class="estate-office-agreement-creator__form is-active" data-eo-agreement-step="1">';
         echo '<h2>' . esc_html__('Szczegóły umowy', 'estate-office') . '</h2>';
         echo '<p class="description">' . esc_html__('Uzupełnij podstawowe dane nowej umowy, a następnie przejdź do dodawania klientów.', 'estate-office') . '</p>';
@@ -216,6 +218,25 @@ final class AgreementCreator
         }
         echo '</select></label>';
         echo '</div>';
+        if (!empty($agreementDynamic)) {
+            echo '<div class="estate-office-agreement-creator__dynamic">';
+            echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe umowy', 'estate-office') . '</p>';
+            echo '<div class="estate-office-agreement-creator__grid">';
+            foreach ($agreementDynamic as $field) {
+                $key   = (string) ($field['key'] ?? '');
+                $label = (string) ($field['label'] ?? '');
+
+                if ($key === '' || $label === '') {
+                    continue;
+                }
+
+                echo '<label>' . esc_html($label) . '<input type="text" name="estate_agreement_dynamic[' . esc_attr($key) . ']" autocomplete="off" /></label>';
+            }
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Zarządzaj listą pól w sekcji „Pola umów” ustawień wtyczki.', 'estate-office') . '</p>';
+            echo '</div>';
+        }
+
         echo '<div class="estate-office-agreement-creator__actions">';
         echo '<button type="submit" class="estate-office-agreement-creator__primary">' . esc_html__('Zapisz i przejdź dalej', 'estate-office') . '</button>';
         echo '</div>';
@@ -408,6 +429,7 @@ final class AgreementCreator
         ];
 
         $values = AgreementMeta::prepareValues($input);
+        $dynamicValues = AgreementMeta::prepareDynamicValues($_POST['estate_agreement_dynamic'] ?? []);
 
         if (empty($values['estate_agreement_number'])) {
             wp_send_json_error(['message' => esc_html__('Numer umowy jest wymagany.', 'estate-office')]);
@@ -440,7 +462,7 @@ final class AgreementCreator
                 'post_title' => $values['estate_agreement_number'],
             ]);
 
-            AgreementMeta::persistValues($agreementId, $values);
+            AgreementMeta::persistValues($agreementId, $values, $dynamicValues);
         } else {
             $agreementId = wp_insert_post([
                 'post_type'   => AgreementRegister::POST_TYPE,
@@ -456,7 +478,7 @@ final class AgreementCreator
             AgreementMeta::persistValues(
                 $agreementId,
                 $values,
-                [],
+                $dynamicValues,
                 [
                     'stage'         => AgreementMeta::getDefaultStage(),
                     'stage_date'    => $stageDate,

@@ -518,6 +518,11 @@ final class AgreementMeta
         return $values;
     }
 
+    public static function prepareDynamicValues($raw): array
+    {
+        return self::sanitizeDynamicInput($raw);
+    }
+
     public static function persistValues(int $postId, array $values, array $dynamicValues = [], array $options = []): void
     {
         $values = array_intersect_key($values, self::META_FIELDS);
