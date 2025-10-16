@@ -63,7 +63,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
 * Rozbudowa leadów o automatyczne powiadomienia e-mail, sekwencje follow-up, raportowanie skuteczności i automatyczną zmianę statusów.
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
-* Notatki działań leadów oraz przypomnienia follow-up dostępne z poziomu frontowego CRM.
+* Automatyczne przypomnienia follow-up dla leadów (powiadomienia e-mail, integracja z kalendarzami i zadaniami).
 
 == Installation ==
 1. Skopiuj katalog `estate-office` do folderu `wp-content/plugins/`.
@@ -101,6 +101,8 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozbudowano frontowy CRM o zakładkę leadów z tabelą zgłoszeń, kartą detali oraz aktualizacją statystyk i rankingów pod kątem leadów.
 * Udostępniono możliwość aktualizacji statusu leadów z poziomu frontowego CRM wraz z zabezpieczonym zapisem AJAX i komunikatami dla użytkownika.
 * Dodano historię statusów leadów z automatycznym zapisem zmian i osią czasu w panelu CRM.
+* Dodano notatki leadów z przypomnieniami follow-up dostępnymi w kokpicie administracyjnym i froncie CRM.
 * Udostępniono pola dynamiczne dla nieruchomości, umów i klientów z meta boksami, walidacją, zapisem oraz prezentacją w CRM i widokach publicznych.
 * Dodano pola dynamiczne poszukiwań konfigurowane w ustawieniach z obsługą meta boksów, REST API i prezentacją w panelu CRM.
 * Dodano moduł powiadomień leadów wysyłający e-maile do agentów i biura wraz z konfigurowalnymi tematami i treścią wiadomości.
+* Dodano notatki leadów wraz z przypomnieniami follow-up i formularzem dodawania dostępnym w kokpicie i panelu CRM na froncie.

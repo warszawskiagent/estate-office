@@ -7,6 +7,9 @@ namespace EstateOffice\PostTypes;
 use EstateOffice\Roles\Manager as RolesManager;
 use WP_Post;
 
+use DateTime;
+use Exception;
+
 use function __;
 use function absint;
 use function add_action;
@@ -14,7 +17,6 @@ use function add_meta_box;
 use function array_slice;
 use function current_time;
 use function current_user_can;
-use function get_current_user_id;
 use function delete_post_meta;
 use function esc_attr;
 use function esc_html;
@@ -23,17 +25,23 @@ use function esc_textarea;
 use function esc_url;
 use function esc_url_raw;
 use function get_edit_post_link;
+use function get_option;
 use function get_permalink;
 use function get_post;
 use function get_post_meta;
+use function get_userdata;
 use function is_array;
+use function nl2br;
 use function sanitize_email;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
 use function selected;
 use function sprintf;
+use function strtotime;
+use function wp_date;
 use function wp_dropdown_users;
 use function wp_nonce_field;
+use function wp_timezone;
 use function wp_unslash;
 use function wp_verify_nonce;
 use function update_post_meta;
@@ -58,6 +66,8 @@ final class LeadMeta
     public const META_RECIPIENT_NAME = 'estate_lead_recipient_name';
     public const META_SUBJECT        = 'estate_lead_subject';
     public const META_STATUS_HISTORY = 'estate_lead_status_history';
+    public const META_NOTES          = 'estate_lead_notes';
+    public const META_FOLLOW_UP      = 'estate_lead_follow_up';
 
     private const NONCE_ACTION = 'estate_office_save_lead';
     private const NONCE_NAME   = 'estate_office_lead_nonce';
@@ -65,6 +75,7 @@ final class LeadMeta
     private const STATUS_DEFAULT = 'new';
 
     private const HISTORY_LIMIT = 50;
+    private const NOTES_LIMIT   = 100;
 
     /** @var array<string,string> */
     private static array $statuses;
@@ -104,6 +115,8 @@ final class LeadMeta
             self::META_RECIPIENT_NAME => ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field'],
             self::META_SUBJECT => ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field'],
             self::META_STATUS_HISTORY => ['type' => 'array', 'sanitize_callback' => [self::class, 'sanitizeStatusHistory']],
+            self::META_NOTES => ['type' => 'array', 'sanitize_callback' => [self::class, 'sanitizeNotes']],
+            self::META_FOLLOW_UP => ['type' => 'string', 'sanitize_callback' => [self::class, 'sanitizeFollowUp']],
         ];
 
         foreach ($definitions as $metaKey => $args) {
@@ -137,6 +150,15 @@ final class LeadMeta
             [self::class, 'renderManagementBox'],
             LeadRegister::POST_TYPE,
             'side'
+        );
+
+        add_meta_box(
+            'estate-office-lead-notes',
+            esc_html__('Notatki i follow-up', 'estate-office'),
+            [self::class, 'renderNotesBox'],
+            LeadRegister::POST_TYPE,
+            'normal',
+            'default'
         );
     }
 
@@ -256,6 +278,63 @@ final class LeadMeta
         }
     }
 
+    public static function renderNotesBox(WP_Post $post): void
+    {
+        $followUp      = self::getFollowUp($post->ID);
+        $followUpValue = self::formatFollowUpInputValue($followUp);
+        $notes         = self::getNotes($post->ID);
+
+        echo '<div class="estate-office-lead__notes-box">';
+        if ($followUp !== '') {
+            $followUpTimestamp = strtotime($followUp);
+            $followUpLabel     = $followUpTimestamp !== false
+                ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), $followUpTimestamp, wp_timezone())
+                : '';
+            echo '<p class="estate-office-lead__follow-up">';
+            echo '<strong>' . esc_html__('Najbliższy follow-up', 'estate-office') . ':</strong> ' . esc_html($followUpLabel);
+            echo '</p>';
+        }
+
+        if ($notes !== []) {
+            echo '<ul class="estate-office-lead__notes-list">';
+            foreach (array_reverse($notes) as $entry) {
+                $timestamp = $entry['timestamp'];
+                $userId    = $entry['user'];
+                $note      = $entry['note'];
+
+                $user      = $userId > 0 ? get_userdata($userId) : null;
+                $userLabel = $user !== null ? $user->display_name : esc_html__('System', 'estate-office');
+                $dateTimestamp = $timestamp !== '' ? strtotime($timestamp) : false;
+                $dateLabel = $dateTimestamp !== false
+                    ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), $dateTimestamp, wp_timezone())
+                    : '';
+
+                echo '<li class="estate-office-lead__note">';
+                echo '<div class="estate-office-lead__note-meta">';
+                if ($dateLabel !== '') {
+                    echo '<span class="estate-office-lead__note-date">' . esc_html($dateLabel) . '</span>';
+                }
+                if ($userLabel !== '') {
+                    echo '<span class="estate-office-lead__note-author">' . esc_html($userLabel) . '</span>';
+                }
+                echo '</div>';
+                echo '<p class="estate-office-lead__note-text">' . nl2br(esc_html($note)) . '</p>';
+                echo '</li>';
+            }
+            echo '</ul>';
+        } else {
+            echo '<p>' . esc_html__('Brak zapisanych notatek dla tego leadu.', 'estate-office') . '</p>';
+        }
+
+        echo '<p><label for="estate_lead_new_note"><strong>' . esc_html__('Dodaj notatkę', 'estate-office') . '</strong></label></p>';
+        echo '<textarea id="estate_lead_new_note" name="estate_lead_new_note" class="widefat" rows="4"></textarea>';
+
+        echo '<p><label for="estate_lead_follow_up"><strong>' . esc_html__('Przypomnienie follow-up', 'estate-office') . '</strong></label></p>';
+        echo '<input type="datetime-local" id="estate_lead_follow_up" name="estate_lead_follow_up" class="widefat" value="' . esc_attr($followUpValue) . '">';
+        echo '<p class="description">' . esc_html__('Pozostaw puste, aby usunąć przypomnienie follow-up.', 'estate-office') . '</p>';
+        echo '</div>';
+    }
+
     public static function save(int $postId, WP_Post $post): void
     {
         if ($post->post_type !== LeadRegister::POST_TYPE) {
@@ -295,6 +374,15 @@ final class LeadMeta
             update_post_meta($postId, self::META_ASSIGNED, $assigned);
         } else {
             delete_post_meta($postId, self::META_ASSIGNED);
+        }
+
+        $followUpRaw = isset($_POST['estate_lead_follow_up']) ? wp_unslash((string) $_POST['estate_lead_follow_up']) : '';
+        $followUp    = self::sanitizeFollowUp($followUpRaw);
+        self::updateFollowUp($postId, $followUp);
+
+        $note = isset($_POST['estate_lead_new_note']) ? sanitize_textarea_field(wp_unslash((string) $_POST['estate_lead_new_note'])) : '';
+        if ($note !== '') {
+            self::appendNote($postId, $note, get_current_user_id());
         }
     }
 
@@ -390,6 +478,134 @@ final class LeadMeta
         }
 
         return $sanitized;
+    }
+
+    /**
+     * @return array<int,array{user:int,timestamp:string,note:string}>
+     */
+    public static function getNotes(int $postId): array
+    {
+        $notes = get_post_meta($postId, self::META_NOTES, true);
+        if (!is_array($notes)) {
+            return [];
+        }
+
+        return self::sanitizeNotes($notes);
+    }
+
+    public static function appendNote(int $postId, string $note, int $userId = 0): void
+    {
+        $note = trim($note);
+        if ($postId <= 0 || $note === '') {
+            return;
+        }
+
+        $notes   = self::getNotes($postId);
+        $notes[] = [
+            'user'      => absint($userId),
+            'timestamp' => current_time('mysql'),
+            'note'      => sanitize_textarea_field($note),
+        ];
+
+        if (count($notes) > self::NOTES_LIMIT) {
+            $notes = array_slice($notes, -self::NOTES_LIMIT);
+        }
+
+        update_post_meta($postId, self::META_NOTES, $notes);
+    }
+
+    public static function updateFollowUp(int $postId, string $followUp): void
+    {
+        if ($postId <= 0) {
+            return;
+        }
+
+        if ($followUp !== '') {
+            update_post_meta($postId, self::META_FOLLOW_UP, $followUp);
+        } else {
+            delete_post_meta($postId, self::META_FOLLOW_UP);
+        }
+    }
+
+    public static function getFollowUp(int $postId): string
+    {
+        $value = (string) get_post_meta($postId, self::META_FOLLOW_UP, true);
+
+        return self::sanitizeFollowUp($value);
+    }
+
+    private static function formatFollowUpInputValue(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            $date = new DateTime($value, wp_timezone());
+        } catch (Exception $exception) {
+            return '';
+        }
+
+        return $date->format('Y-m-d\TH:i');
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<int,array{user:int,timestamp:string,note:string}>
+     */
+    public static function sanitizeNotes($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $userId    = isset($item['user']) ? absint($item['user']) : 0;
+            $timestamp = isset($item['timestamp']) ? sanitize_text_field((string) $item['timestamp']) : '';
+            if ($timestamp === '') {
+                $timestamp = current_time('mysql');
+            }
+
+            $note = isset($item['note']) ? sanitize_textarea_field((string) $item['note']) : '';
+            if ($note === '') {
+                continue;
+            }
+
+            $sanitized[] = [
+                'user'      => $userId,
+                'timestamp' => $timestamp,
+                'note'      => $note,
+            ];
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    public static function sanitizeFollowUp($value): string
+    {
+        $value = is_string($value) ? trim($value) : '';
+        if ($value === '') {
+            return '';
+        }
+
+        $value = str_replace('T', ' ', $value);
+
+        try {
+            $date = new DateTime($value, wp_timezone());
+        } catch (Exception $exception) {
+            return '';
+        }
+
+        return $date->format('Y-m-d H:i:s');
     }
 
     public static function sanitizeStatus(string $status): string

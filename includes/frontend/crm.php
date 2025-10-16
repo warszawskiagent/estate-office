@@ -58,6 +58,8 @@ use function selected;
 use function sprintf;
 use function str_starts_with;
 use function uasort;
+use function nl2br;
+use function strtotime;
 use function wp_count_posts;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
@@ -70,6 +72,7 @@ use function wp_strip_all_tags;
 use function wpautop;
 use function wp_list_pluck;
 use function wp_unslash;
+use function wp_date;
 use function mysql2date;
 use function __;
 
@@ -527,6 +530,7 @@ final class CRM
         }
 
         self::renderLeadHistory($postId);
+        self::renderLeadNotes($postId);
 
         if (LeadActions::canCurrentUserManageLead($postId)) {
             self::renderLeadStatusForm($postId, $statusKey);
@@ -600,6 +604,77 @@ final class CRM
         }
 
         echo '</ul>';
+        echo '</section>';
+    }
+
+    private static function renderLeadNotes(int $postId): void
+    {
+        $notes    = LeadMeta::getNotes($postId);
+        $followUp = LeadMeta::getFollowUp($postId);
+        $followUpLabel = $followUp !== '' ? self::formatMysqlDateTime($followUp) : '';
+
+        $followUpInput = '';
+        if ($followUp !== '') {
+            $timestamp = strtotime($followUp);
+            if ($timestamp !== false) {
+                $followUpInput = wp_date('Y-m-d\TH:i', $timestamp);
+            }
+        }
+
+        echo '<section class="estate-office-crm__detail-panel">';
+        echo '<h3>' . esc_html__('Notatki i follow-up', 'estate-office') . '</h3>';
+
+        if ($followUpLabel !== '') {
+            echo '<p class="estate-office-crm__follow-up">';
+            echo esc_html__('Najbliższy follow-up:', 'estate-office') . ' <strong>' . esc_html($followUpLabel) . '</strong>';
+            echo '</p>';
+        } else {
+            echo '<p class="estate-office-crm__follow-up is-empty">' . esc_html__('Brak zaplanowanego follow-up.', 'estate-office') . '</p>';
+        }
+
+        if ($notes !== []) {
+            echo '<ul class="estate-office-crm__notes-list">';
+            foreach (array_reverse($notes) as $entry) {
+                $dateLabel = self::formatMysqlDateTime($entry['timestamp']);
+                $userLabel = self::formatLeadHistoryUser($entry['user']);
+                $noteText  = nl2br(esc_html($entry['note']));
+
+                echo '<li class="estate-office-crm__note">';
+                echo '<div class="estate-office-crm__note-meta">';
+                if ($dateLabel !== '') {
+                    echo '<span class="estate-office-crm__note-date">' . esc_html($dateLabel) . '</span>';
+                }
+                if ($userLabel !== '') {
+                    echo '<span class="estate-office-crm__note-author">' . esc_html($userLabel) . '</span>';
+                }
+                echo '</div>';
+                echo '<p class="estate-office-crm__note-text">' . $noteText . '</p>';
+                echo '</li>';
+            }
+            echo '</ul>';
+        } else {
+            echo '<p class="estate-office-crm__notes-empty">' . esc_html__('Brak notatek dla tego leadu.', 'estate-office') . '</p>';
+        }
+
+        if (LeadActions::canCurrentUserManageLead($postId)) {
+            echo '<form class="estate-office-crm__lead-note-form" data-eo-lead-note-form method="post">';
+            echo '<input type="hidden" name="lead_id" value="' . esc_attr((string) $postId) . '">';
+            echo '<input type="hidden" name="nonce" value="' . esc_attr(wp_create_nonce(LeadActions::NOTE_NONCE_ACTION)) . '">';
+
+            echo '<label class="estate-office-crm__form-label" for="estate-office-lead-note">' . esc_html__('Dodaj notatkę', 'estate-office') . '</label>';
+            echo '<textarea class="estate-office-crm__form-control" id="estate-office-lead-note" name="note" rows="4"></textarea>';
+
+            echo '<label class="estate-office-crm__form-label" for="estate-office-lead-follow-up">' . esc_html__('Termin follow-up', 'estate-office') . '</label>';
+            echo '<input class="estate-office-crm__form-control" type="datetime-local" id="estate-office-lead-follow-up" name="follow_up" value="' . esc_attr($followUpInput) . '">';
+            echo '<p class="estate-office-crm__form-help">' . esc_html__('Pozostaw puste, aby usunąć termin follow-up.', 'estate-office') . '</p>';
+
+            echo '<div class="estate-office-crm__form-actions">';
+            echo '<button type="submit" class="estate-office-crm__button">' . esc_html__('Zapisz zmiany', 'estate-office') . '</button>';
+            echo '<p class="estate-office-crm__form-message" data-eo-lead-note-message></p>';
+            echo '</div>';
+            echo '</form>';
+        }
+
         echo '</section>';
     }
 
