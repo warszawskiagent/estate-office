@@ -33,6 +33,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Konfigurowalne role klientów definiowane w ustawieniach CRM i wykorzystywane w umowach, kreatorze oraz raportach.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
+* Automatyczne meta tagi Open Graph/Twitter oraz dane strukturalne JSON-LD dla eksportowanych ofert wraz z dedykowanym wpisem w mapie witryny.
 * Materiały do pobrania zarządzane w panelu nieruchomości oraz prezentowane na stronach ofertowych.
 * Rekomendacje podobnych ofert na stronach nieruchomości ułatwiające użytkownikom odkrywanie alternatyw.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
@@ -59,7 +60,6 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 == Roadmap ==
 * Integracja modułu licencji wraz z panelem aktywacji i walidacją kluczy.
 * Rozbudowa pulpitu CRM o konfigurowalne widżety, wykresy oraz historię aktywności.
-* Automatyzacja generowania stron ofertowych z SEO i indeksacją w sitemapie.
 * Automatyzacje workflow: logi aktywności oraz powiązania na froncie użytkownika.
 * Integracja galerii nieruchomości z eksportami portali (synchronizacja podpisów i zdjęć głównych).
 * Eksport ofert na portale zewnętrzne (otodom, gratka, Morizon) oraz integracja MLS.
@@ -141,3 +141,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano materiały do pobrania w metadanych nieruchomości z obsługą w panelu, CRM i publicznym szablonie oferty.
 * Rozszerzono publiczny szablon oferty o sekcję rekomendowanych nieruchomości dopasowanych po typie transakcji, rodzaju i lokalizacji.
 * Dodano podpisy zdjęć i wybór zdjęcia głównego w galerii nieruchomości oraz prezentację podpisów w publicznym szablonie oferty.
+* Dodano moduł SEO ofert generujący metadane Open Graph/Twitter, dane strukturalne JSON-LD oraz dedykowany wpis w mapie witryny dla nieruchomości eksportowanych na WWW.

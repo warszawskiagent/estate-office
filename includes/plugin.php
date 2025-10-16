@@ -37,6 +37,7 @@ use EstateOffice\Frontend\AgreementCreator;
 use EstateOffice\Frontend\LeadActions;
 use EstateOffice\Frontend\Offers;
 use EstateOffice\Frontend\OfferSingle;
+use EstateOffice\Frontend\OfferSeo;
 use EstateOffice\Frontend\ContactForms;
 use EstateOffice\Frontend\Maps;
 use EstateOffice\Leads\LeadCollector;
@@ -100,6 +101,7 @@ final class Plugin
         LeadActions::bootstrap();
         Offers::bootstrap();
         OfferSingle::bootstrap();
+        OfferSeo::bootstrap();
         AgentDirectory::bootstrap();
         AgentPublic::bootstrap();
         ContactForms::bootstrap();
