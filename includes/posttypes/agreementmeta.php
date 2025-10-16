@@ -7,11 +7,13 @@ namespace EstateOffice\PostTypes;
 use DateTimeImmutable;
 use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
+use function __;
 use function get_post;
 use function get_post_meta;
 use function get_post_type;
 use function get_posts;
 use function get_the_title;
+use function sanitize_key;
 use function wp_unslash;
 
 defined('ABSPATH') || exit;
@@ -34,6 +36,8 @@ final class AgreementMeta
     ];
 
     private const DYNAMIC_FIELDS_META_KEY = 'estate_agreement_dynamic_fields';
+
+    public const CLIENT_ROLES_META_KEY = 'estate_agreement_client_roles';
 
     public const TRANSACTION_TYPES = [
         'sale'      => 'Sprzedaż',
@@ -108,6 +112,182 @@ final class AgreementMeta
                 'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
             ]
         );
+
+        register_post_meta(
+            AgreementRegister::POST_TYPE,
+            self::CLIENT_ROLES_META_KEY,
+            [
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeClientRoles'],
+            ]
+        );
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getClientRoleOptions(): array
+    {
+        $options = GeneralSettings::getClientRoleOptions();
+
+        if ($options === []) {
+            $options = self::getDefaultClientRoleOptions();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function getDefaultClientRoleOptions(): array
+    {
+        return [
+            'seller'   => __('Sprzedający', 'estate-office'),
+            'buyer'    => __('Kupujący', 'estate-office'),
+            'landlord' => __('Wynajmujący', 'estate-office'),
+            'tenant'   => __('Najemca', 'estate-office'),
+            'other'    => __('Inna rola', 'estate-office'),
+        ];
+    }
+
+    public static function getClientRoleLabel(string $role): string
+    {
+        $role = self::sanitizeClientRoleKey($role);
+
+        $options = self::getClientRoleOptions();
+
+        return $options[$role] ?? '';
+    }
+
+    public static function sanitizeClientRoles($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $sanitized = [];
+        $options   = self::getClientRoleOptions();
+
+        foreach ($value as $clientId => $role) {
+            if (is_array($role)) {
+                $role = '';
+            }
+
+            $roleKey = self::sanitizeClientRoleKey(is_scalar($role) ? (string) $role : '');
+            if ($roleKey === '' || !isset($options[$roleKey])) {
+                continue;
+            }
+
+            $id = (int) $clientId;
+            if ($id <= 0) {
+                continue;
+            }
+
+            $sanitized[(string) $id] = $roleKey;
+        }
+
+        return $sanitized;
+    }
+
+    public static function sanitizeClientRoleKey(string $role): string
+    {
+        $role = sanitize_key($role);
+
+        if ($role === '') {
+            return '';
+        }
+
+        return isset(self::getClientRoleOptions()[$role]) ? $role : '';
+    }
+
+    public static function getClientRolesForAgreement(int $agreementId): array
+    {
+        return self::sanitizeClientRoles(get_post_meta($agreementId, self::CLIENT_ROLES_META_KEY, true));
+    }
+
+    public static function persistClientRoles(int $agreementId, array $roles): void
+    {
+        $existing = self::getClientRolesForAgreement($agreementId);
+
+        foreach ($roles as $clientId => $role) {
+            $id = (int) $clientId;
+            if ($id <= 0) {
+                continue;
+            }
+
+            $roleKey = self::sanitizeClientRoleKey(is_scalar($role) ? (string) $role : '');
+            if ($roleKey === '') {
+                unset($existing[(string) $id]);
+                continue;
+            }
+
+            $existing[(string) $id] = $roleKey;
+        }
+
+        if ($existing === []) {
+            delete_post_meta($agreementId, self::CLIENT_ROLES_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($agreementId, self::CLIENT_ROLES_META_KEY, $existing);
+    }
+
+    public static function removeClientRole(int $agreementId, int $clientId): void
+    {
+        $roles = self::getClientRolesForAgreement($agreementId);
+        unset($roles[(string) $clientId]);
+
+        if ($roles === []) {
+            delete_post_meta($agreementId, self::CLIENT_ROLES_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($agreementId, self::CLIENT_ROLES_META_KEY, $roles);
+    }
+
+    public static function pruneClientRoles(int $agreementId, array $clientIds): void
+    {
+        $clientIds = self::ensureIntArray($clientIds);
+        $roles     = self::getClientRolesForAgreement($agreementId);
+
+        if ($clientIds === []) {
+            $roles = [];
+        } else {
+            $allowed = array_fill_keys(array_map('strval', $clientIds), true);
+            $roles   = array_intersect_key($roles, $allowed);
+        }
+
+        if ($roles === []) {
+            delete_post_meta($agreementId, self::CLIENT_ROLES_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($agreementId, self::CLIENT_ROLES_META_KEY, $roles);
+    }
+
+    public static function suggestClientRole(string $transactionType): string
+    {
+        return match (self::sanitizeEnum($transactionType, self::TRANSACTION_TYPES)) {
+            'sale'     => 'seller',
+            'purchase' => 'buyer',
+            'rent_out' => 'landlord',
+            'lease'    => 'tenant',
+            default    => 'other',
+        };
     }
 
     private static function buildRestConfig(array $definition): array
@@ -232,6 +412,41 @@ final class AgreementMeta
             $clientOptions,
             $clients
         );
+
+        $clientRoles = self::getClientRolesForAgreement($post->ID);
+        if ($clients) {
+            echo '<div class="estate-office-agreement-relations__roles">';
+            echo '<h4>' . esc_html__('Role klientów', 'estate-office') . '</h4>';
+            echo '<p class="description">' . esc_html__('Określ rolę każdego klienta w umowie, aby ułatwić raportowanie i komunikację.', 'estate-office') . '</p>';
+            echo '<ul>';
+            foreach ($clients as $clientId) {
+                $clientId = (int) $clientId;
+                if ($clientId <= 0) {
+                    continue;
+                }
+
+                $label = get_the_title($clientId);
+                if (!is_string($label) || $label === '') {
+                    $label = sprintf(__('Klient #%d', 'estate-office'), $clientId);
+                }
+
+                echo '<li>';
+                echo '<label>';
+                echo '<span class="screen-reader-text">' . esc_html__('Rola klienta', 'estate-office') . '</span>';
+                echo '<strong>' . esc_html($label) . '</strong>';
+                echo '<select name="estate_agreement_client_roles[' . esc_attr((string) $clientId) . ']">';
+                echo '<option value="">' . esc_html__('Wybierz rolę', 'estate-office') . '</option>';
+                foreach (self::getClientRoleOptions() as $roleKey => $roleLabel) {
+                    $selected = selected($clientRoles[(string) $clientId] ?? '', $roleKey, false);
+                    echo '<option value="' . esc_attr($roleKey) . '" ' . $selected . '>' . esc_html($roleLabel) . '</option>';
+                }
+                echo '</select>';
+                echo '</label>';
+                echo '</li>';
+            }
+            echo '</ul>';
+            echo '</div>';
+        }
 
         printf(
             '<div data-relation="properties" style="%s">',
@@ -549,6 +764,11 @@ final class AgreementMeta
         self::syncRelations($postId, $previousProperties, $properties, PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
         self::syncRelations($postId, $previousSearches, $searches, SearchRegister::POST_TYPE, SearchMeta::AGREEMENTS_META_KEY);
 
+        if (isset($options['client_roles']) && is_array($options['client_roles'])) {
+            self::persistClientRoles($postId, $options['client_roles']);
+        }
+        self::pruneClientRoles($postId, $clients);
+
         $stage = $options['stage'] ?? null;
         if ($stage !== null) {
             $stage = self::sanitizeEnum((string) $stage, self::STAGES);
@@ -617,6 +837,7 @@ final class AgreementMeta
         update_post_meta($agreementId, 'estate_agreement_clients', $clients);
         update_post_meta($agreementId, 'estate_agreement_properties', $properties);
         update_post_meta($agreementId, 'estate_agreement_searches', $searches);
+        self::pruneClientRoles($agreementId, $clients);
     }
 
     public static function isNumberTaken(string $number, ?int $excludeId = null): bool
@@ -745,6 +966,13 @@ final class AgreementMeta
         self::syncRelations($postId, $previousClients, $values['estate_agreement_clients'], ClientRegister::POST_TYPE, ClientMeta::AGREEMENTS_META_KEY);
         self::syncRelations($postId, $previousProperties, $values['estate_agreement_properties'], PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
         self::syncRelations($postId, $previousSearches, $values['estate_agreement_searches'], SearchRegister::POST_TYPE, SearchMeta::AGREEMENTS_META_KEY);
+
+        $roleInput = isset($_POST['estate_agreement_client_roles']) ? $_POST['estate_agreement_client_roles'] : [];
+        if (!is_array($roleInput)) {
+            $roleInput = [];
+        }
+        self::persistClientRoles($postId, $roleInput);
+        self::pruneClientRoles($postId, $values['estate_agreement_clients']);
 
         self::updateStage($postId, $values);
         self::synchroniseTitle($postId, $values['estate_agreement_number'] ?? '');

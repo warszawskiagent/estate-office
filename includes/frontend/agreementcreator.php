@@ -90,6 +90,7 @@ final class AgreementCreator
         add_action('wp_ajax_estate_office_attach_search', [self::class, 'handleAttachSearch']);
         add_action('wp_ajax_estate_office_detach_record', [self::class, 'handleDetachRecord']);
         add_action('wp_ajax_estate_office_finalize_agreement', [self::class, 'handleFinalize']);
+        add_action('wp_ajax_estate_office_update_client_role', [self::class, 'handleUpdateClientRole']);
     }
 
     public static function registerAssets(): void
@@ -157,15 +158,22 @@ final class AgreementCreator
                 'recordMissingSearch'   => esc_html__('Dodaj lub wybierz poszukiwanie, aby zakończyć kreator.', 'estate-office'),
                 'clientsSummarySingular' => esc_html__('%d klient przypisany do umowy.', 'estate-office'),
                 'clientsSummaryPlural'   => esc_html__('%d klientów przypisanych do umowy.', 'estate-office'),
-                'recordLabelProperty'    => esc_html__('Nieruchomość', 'estate-office'),
-                'recordLabelSearch'      => esc_html__('Poszukiwanie', 'estate-office'),
-                'recordSelect'           => esc_html__('Wybierz', 'estate-office'),
-            ],
-            'placeholders'    => [
-                'propertySearch' => esc_attr__('Numer oferty, adres lub opiekun', 'estate-office'),
-                'searchSearch'   => esc_attr__('Numer poszukiwania, lokalizacja lub opiekun', 'estate-office'),
-            ],
-        ];
+            'recordLabelProperty'    => esc_html__('Nieruchomość', 'estate-office'),
+            'recordLabelSearch'      => esc_html__('Poszukiwanie', 'estate-office'),
+            'recordSelect'           => esc_html__('Wybierz', 'estate-office'),
+            'roleUpdated'    => esc_html__('Zapisano rolę klienta w umowie.', 'estate-office'),
+            'roleUpdateError'=> esc_html__('Nie udało się zapisać roli klienta.', 'estate-office'),
+        ],
+        'placeholders'    => [
+            'propertySearch' => esc_attr__('Numer oferty, adres lub opiekun', 'estate-office'),
+            'searchSearch'   => esc_attr__('Numer poszukiwania, lokalizacja lub opiekun', 'estate-office'),
+        ],
+        'clientRoles'     => array_map('esc_html', AgreementMeta::getClientRoleOptions()),
+        'labels'          => [
+            'clientRole'            => esc_html__('Rola w umowie', 'estate-office'),
+            'clientRolePlaceholder' => esc_html__('Wybierz rolę', 'estate-office'),
+        ],
+    ];
 
         wp_localize_script(self::SCRIPT_HANDLE, 'EstateOfficeAgreementCreator', $data);
     }
@@ -274,7 +282,16 @@ final class AgreementCreator
         echo '<label>' . esc_html__('Telefon', 'estate-office') . '<input type="tel" name="estate_client_phone" /></label>';
         echo '<label>' . esc_html__('E-mail', 'estate-office') . '<input type="email" name="estate_client_email" /></label>';
         echo '<label>' . esc_html__('Strona WWW', 'estate-office') . '<input type="url" name="estate_client_website" /></label>';
+        echo '<label>' . esc_html__('Rola w umowie', 'estate-office');
+        echo '<select name="client_role">';
+        echo '<option value="">' . esc_html__('Wybierz rolę', 'estate-office') . '</option>';
+        foreach (AgreementMeta::getClientRoleOptions() as $roleKey => $roleLabel) {
+            echo '<option value="' . esc_attr($roleKey) . '">' . esc_html($roleLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</label>';
         echo '</div>';
+        echo '<p class="description">' . esc_html__('Po zapisaniu klienta możesz zmienić jego rolę bezpośrednio na liście po lewej stronie.', 'estate-office') . '</p>';
         if (!empty($clientDynamic)) {
             echo '<div class="estate-office-agreement-creator__dynamic">';
             echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe klienta', 'estate-office') . '</p>';
@@ -568,6 +585,14 @@ final class AgreementCreator
             wp_send_json_error(['message' => esc_html__('Nie znaleziono klienta.', 'estate-office')]);
         }
 
+        $roleInput = isset($_POST['role']) ? sanitize_text_field(wp_unslash((string) $_POST['role'])) : '';
+        $roleKey   = AgreementMeta::sanitizeClientRoleKey($roleInput);
+
+        if ($roleKey === '') {
+            $transactionType = (string) get_post_meta($agreementId, 'estate_agreement_transaction_type', true);
+            $roleKey         = AgreementMeta::suggestClientRole($transactionType);
+        }
+
         $clients    = AgreementMeta::prepareValues([
             'estate_agreement_clients' => get_post_meta($agreementId, 'estate_agreement_clients', true),
         ])['estate_agreement_clients'] ?? [];
@@ -579,6 +604,7 @@ final class AgreementCreator
         $searches   = get_post_meta($agreementId, 'estate_agreement_searches', true);
 
         AgreementMeta::syncAgreementRelations($agreementId, $clients, $properties ?: [], $searches ?: []);
+        AgreementMeta::persistClientRoles($agreementId, [$clientId => $roleKey]);
 
         wp_send_json_success([
             'clients' => self::getAgreementClients($agreementId),
@@ -612,6 +638,48 @@ final class AgreementCreator
         $searches   = get_post_meta($agreementId, 'estate_agreement_searches', true);
 
         AgreementMeta::syncAgreementRelations($agreementId, $clients, $properties ?: [], $searches ?: []);
+        AgreementMeta::removeClientRole($agreementId, $clientId);
+
+        wp_send_json_success([
+            'clients' => self::getAgreementClients($agreementId),
+        ]);
+    }
+
+    private static function handleUpdateClientRole(): void
+    {
+        self::verifyPermissions();
+        check_ajax_referer(self::NONCE_ACTION, 'nonce');
+
+        $agreementId = isset($_POST['agreement_id']) ? absint($_POST['agreement_id']) : 0;
+        $clientId    = isset($_POST['client_id']) ? absint($_POST['client_id']) : 0;
+        $roleInput   = isset($_POST['role']) ? sanitize_text_field(wp_unslash((string) $_POST['role'])) : '';
+
+        if ($agreementId <= 0 || $clientId <= 0) {
+            wp_send_json_error(['message' => esc_html__('Nieprawidłowe dane przekazane do aktualizacji roli klienta.', 'estate-office')]);
+        }
+
+        if (!current_user_can('edit_post', $agreementId)) {
+            wp_send_json_error(['message' => esc_html__('Brak uprawnień do aktualizacji umowy.', 'estate-office')]);
+        }
+
+        $agreement = get_post($agreementId);
+        if (!$agreement instanceof WP_Post || $agreement->post_type !== AgreementRegister::POST_TYPE) {
+            wp_send_json_error(['message' => esc_html__('Nie znaleziono umowy.', 'estate-office')]);
+        }
+
+        $clients = get_post_meta($agreementId, 'estate_agreement_clients', true);
+        if (!is_array($clients)) {
+            $clients = [];
+        }
+        $clients = array_values(array_unique(array_map('intval', $clients)));
+
+        if (!in_array($clientId, $clients, true)) {
+            wp_send_json_error(['message' => esc_html__('Klient nie jest powiązany z tą umową.', 'estate-office')]);
+        }
+
+        $roleKey = AgreementMeta::sanitizeClientRoleKey($roleInput);
+        AgreementMeta::persistClientRoles($agreementId, [$clientId => $roleKey]);
+        AgreementMeta::pruneClientRoles($agreementId, $clients);
 
         wp_send_json_success([
             'clients' => self::getAgreementClients($agreementId),
@@ -633,8 +701,14 @@ final class AgreementCreator
         }
 
         $clientData = isset($_POST['client']) && is_array($_POST['client']) ? $_POST['client'] : [];
-        $values     = ClientMeta::prepareValues($clientData);
-        $dynamic    = ClientMeta::prepareDynamicValues($clientData['dynamic'] ?? []);
+        $roleInput  = isset($clientData['client_role']) ? sanitize_text_field(wp_unslash((string) $clientData['client_role'])) : '';
+        if (isset($clientData['client_role'])) {
+            unset($clientData['client_role']);
+        }
+
+        $values  = ClientMeta::prepareValues($clientData);
+        $dynamic = ClientMeta::prepareDynamicValues($clientData['dynamic'] ?? []);
+        $roleKey = AgreementMeta::sanitizeClientRoleKey($roleInput);
 
         $clientId = wp_insert_post([
             'post_type'   => ClientRegister::POST_TYPE,
@@ -659,6 +733,13 @@ final class AgreementCreator
         $searches   = get_post_meta($agreementId, 'estate_agreement_searches', true);
 
         AgreementMeta::syncAgreementRelations($agreementId, $clients, $properties ?: [], $searches ?: []);
+
+        if ($roleKey === '') {
+            $transactionType = (string) get_post_meta($agreementId, 'estate_agreement_transaction_type', true);
+            $roleKey         = AgreementMeta::suggestClientRole($transactionType);
+        }
+
+        AgreementMeta::persistClientRoles($agreementId, [$clientId => $roleKey]);
 
         wp_send_json_success([
             'client'  => self::formatClient(get_post($clientId)),
@@ -1228,6 +1309,8 @@ final class AgreementCreator
             'name'  => get_the_title($client),
             'phone' => is_string($phone) ? $phone : '',
             'email' => is_string($email) ? $email : '',
+            'role'  => '',
+            'role_label' => '',
         ];
     }
 
@@ -1654,9 +1737,14 @@ final class AgreementCreator
         ]);
 
         $formatted = [];
+        $roles = AgreementMeta::getClientRolesForAgreement($agreementId);
+
         foreach ($clients as $client) {
             $data = self::formatClient($client);
             if (!empty($data)) {
+                $roleKey            = $roles[(string) $client->ID] ?? '';
+                $data['role']       = $roleKey;
+                $data['role_label'] = AgreementMeta::getClientRoleLabel($roleKey);
                 $formatted[] = $data;
             }
         }

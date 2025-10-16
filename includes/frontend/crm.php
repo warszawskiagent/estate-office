@@ -1553,12 +1553,15 @@ final class CRM
         $clients    = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_clients', true));
         $properties = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_properties', true));
         $searches   = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_searches', true));
+        $clientRoles = AgreementMeta::getClientRolesForAgreement($postId);
 
         self::renderRelationList(
             __('Powiązani klienci', 'estate-office'),
             'clients',
             $clients,
-            static fn(int $clientId): string => self::getClientRelationLabel($clientId)
+            static function (int $clientId) use ($clientRoles): string {
+                return self::getClientRelationLabel($clientId, $clientRoles);
+            }
         );
 
         self::renderRelationList(
@@ -1760,7 +1763,18 @@ final class CRM
             __('Powiązane umowy', 'estate-office'),
             'agreements',
             $agreements,
-            static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
+            static function (int $agreementId) use ($postId): string {
+                $label     = self::getAgreementNumberLabel($agreementId);
+                $roles     = AgreementMeta::getClientRolesForAgreement($agreementId);
+                $roleKey   = $roles[(string) $postId] ?? '';
+                $roleLabel = $roleKey !== '' ? AgreementMeta::getClientRoleLabel($roleKey) : '';
+
+                if ($roleLabel !== '') {
+                    return sprintf('%s – %s', $label, $roleLabel);
+                }
+
+                return $label;
+            }
         );
 
         echo '</section>';
@@ -2186,9 +2200,19 @@ final class CRM
         return sprintf('%s – %s', $number, $stage);
     }
 
-    private static function getClientRelationLabel(int $clientId): string
+    private static function getClientRelationLabel(int $clientId, array $roles = []): string
     {
-        return self::resolveClientName($clientId);
+        $name = self::resolveClientName($clientId);
+        $role = $roles[(string) $clientId] ?? '';
+
+        if ($role !== '') {
+            $label = AgreementMeta::getClientRoleLabel($role);
+            if ($label !== '') {
+                return sprintf('%s – %s', $name, $label);
+            }
+        }
+
+        return $name;
     }
 
     private static function getPropertyRelationLabel(int $propertyId): string

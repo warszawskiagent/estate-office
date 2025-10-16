@@ -127,6 +127,10 @@ final class RelationCleanup
 
         $updated = array_values(array_diff($current, [$relatedId]));
 
+        if ($metaKey === 'estate_agreement_clients') {
+            AgreementMeta::removeClientRole($agreementId, $relatedId);
+        }
+
         if (empty($updated)) {
             delete_post_meta($agreementId, $metaKey);
 

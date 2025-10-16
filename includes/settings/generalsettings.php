@@ -27,6 +27,7 @@ final class GeneralSettings
                     'client_fields'        => [],
                     'search_fields'        => [],
                     'lead_notifications'   => self::getDefaultNotifications(),
+                    'client_roles'         => self::getDefaultClientRolesOption(),
                 ],
             ]
         );
@@ -97,6 +98,14 @@ final class GeneralSettings
             'estate_office_search_fields',
             __('Pola poszukiwań', 'estate-office'),
             [self::class, 'renderSearchFields'],
+            'estate-office-settings',
+            'estate_office_dynamic_fields'
+        );
+
+        add_settings_field(
+            'estate_office_client_roles',
+            __('Role klientów w umowach', 'estate-office'),
+            [self::class, 'renderClientRolesField'],
             'estate-office-settings',
             'estate_office_dynamic_fields'
         );
@@ -194,6 +203,7 @@ final class GeneralSettings
             'client_fields'        => self::sanitizeList($value['client_fields'] ?? []),
             'search_fields'        => self::sanitizeList($value['search_fields'] ?? []),
             'lead_notifications'   => self::sanitizeNotifications($value['lead_notifications'] ?? []),
+            'client_roles'         => self::sanitizeRoles($value['client_roles'] ?? []),
         ];
     }
 
@@ -281,6 +291,29 @@ final class GeneralSettings
     public static function renderSearchFields(): void
     {
         self::renderDynamicFields('search_fields', __('Dodaj etykietę pola poszukiwania (np. "Preferowany standard") i naciśnij Enter.', 'estate-office'));
+    }
+
+    public static function renderClientRolesField(): void
+    {
+        $roles     = self::getClientRoleDefinitions();
+        $fieldBase = self::OPTION . '[client_roles]';
+        $nextIndex = count($roles);
+
+        echo '<div class="estate-office-role-manager" data-field="' . esc_attr($fieldBase) . '" data-next-index="' . esc_attr((string) $nextIndex) . '">';
+        echo '<div class="estate-office-role-manager__list">';
+
+        foreach ($roles as $index => $role) {
+            self::renderClientRoleRow((string) $index, $role['key'], $role['label']);
+        }
+
+        echo '</div>';
+        echo '<button type="button" class="button estate-office-role-manager__add">' . esc_html__('Dodaj rolę', 'estate-office') . '</button>';
+        echo '<p class="description">' . esc_html__('Zdefiniuj listę ról klientów wykorzystywanych w umowach i raportach. Klucze powinny być unikalne – są używane w automatyzacjach oraz integracjach.', 'estate-office') . '</p>';
+        echo '</div>';
+
+        if (!has_action('admin_print_footer_scripts', [self::class, 'renderClientRoleTemplate'])) {
+            add_action('admin_print_footer_scripts', [self::class, 'renderClientRoleTemplate']);
+        }
     }
 
     private static function renderDynamicFields(string $key, string $placeholder): void
@@ -441,6 +474,24 @@ final class GeneralSettings
         echo '<p class="description">' . esc_html__('Adres biura jest pobierany z pola „Kopia do biura”.', 'estate-office') . '</p>';
     }
 
+    public static function renderClientRoleTemplate(): void
+    {
+        static $rendered = false;
+
+        if ($rendered) {
+            return;
+        }
+
+        $rendered = true;
+
+        echo '<script type="text/template" id="estate-office-role-template">';
+        ob_start();
+        self::renderClientRoleRow('__index__', '', '', true);
+        $template = ob_get_clean();
+        echo $template; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '</script>';
+    }
+
     /**
      * @return array<int,array{key:string,label:string}>
      */
@@ -513,6 +564,37 @@ final class GeneralSettings
         }
 
         return $definitions;
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    public static function getClientRoleDefinitions(): array
+    {
+        $option = get_option(self::OPTION);
+        $roles  = isset($option['client_roles']) ? $option['client_roles'] : [];
+
+        $roles = self::sanitizeRoles($roles);
+
+        if ($roles === []) {
+            return self::getDefaultClientRolesOption();
+        }
+
+        return $roles;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getClientRoleOptions(): array
+    {
+        $options = [];
+
+        foreach (self::getClientRoleDefinitions() as $role) {
+            $options[$role['key']] = $role['label'];
+        }
+
+        return $options;
     }
 
     private static function sanitizeNotifications($value): array
@@ -603,5 +685,117 @@ final class GeneralSettings
             'notify_agent'  => !empty($option['reminder_notify_agent']),
             'notify_office' => !empty($option['reminder_notify_office']),
         ];
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return array<int,array{key:string,label:string}>
+     */
+    private static function sanitizeRoles($value): array
+    {
+        $value = is_array($value) ? array_values($value) : [];
+
+        $roles    = [];
+        $usedKeys = [];
+
+        foreach ($value as $role) {
+            $label = '';
+            $key   = '';
+
+            if (is_array($role)) {
+                $label = isset($role['label']) ? sanitize_text_field((string) $role['label']) : '';
+                $key   = isset($role['key']) ? sanitize_key((string) $role['key']) : '';
+            } elseif (is_scalar($role)) {
+                $label = sanitize_text_field((string) $role);
+            }
+
+            $label = trim($label);
+
+            if ($label === '') {
+                continue;
+            }
+
+            $baseKey = $key !== '' ? $key : sanitize_key(\remove_accents($label));
+
+            if ($baseKey === '') {
+                $baseKey = 'role_' . substr(md5($label), 0, 8);
+            }
+
+            $uniqueKey = $baseKey;
+            $suffix    = 2;
+            while (in_array($uniqueKey, $usedKeys, true)) {
+                $uniqueKey = $baseKey . '_' . $suffix;
+                $suffix++;
+            }
+
+            $usedKeys[] = $uniqueKey;
+            $roles[]    = [
+                'key'   => $uniqueKey,
+                'label' => $label,
+            ];
+        }
+
+        if ($roles === []) {
+            return self::getDefaultClientRolesOption();
+        }
+
+        return $roles;
+    }
+
+    /**
+     * @return array<int,array{key:string,label:string}>
+     */
+    private static function getDefaultClientRolesOption(): array
+    {
+        return [
+            ['key' => 'seller', 'label' => __('Sprzedający', 'estate-office')],
+            ['key' => 'buyer', 'label' => __('Kupujący', 'estate-office')],
+            ['key' => 'landlord', 'label' => __('Wynajmujący', 'estate-office')],
+            ['key' => 'tenant', 'label' => __('Najemca', 'estate-office')],
+            ['key' => 'other', 'label' => __('Inna rola', 'estate-office')],
+        ];
+    }
+
+    private static function renderClientRoleRow(string $index, string $key, string $label, bool $isTemplate = false): void
+    {
+        $fieldBase = self::OPTION . '[client_roles][' . $index . ']';
+        $autoAttr  = $isTemplate || $key === '' ? ' data-auto="1"' : ' data-auto="0"';
+
+        echo '<div class="estate-office-role-manager__row">';
+        echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--label">';
+        echo '<label>';
+        echo '<span class="screen-reader-text">' . esc_html__('Nazwa roli', 'estate-office') . '</span>';
+        printf(
+            '<input type="text" class="regular-text estate-office-role-label" name="%1$s[label]" value="%2$s" placeholder="%3$s" autocomplete="off" />',
+            esc_attr($fieldBase),
+            esc_attr($label),
+            esc_attr__('Np. Sprzedający', 'estate-office')
+        );
+        echo '</label>';
+        echo '</div>';
+
+        echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--key">';
+        echo '<label>';
+        echo '<span class="screen-reader-text">' . esc_html__('Klucz roli', 'estate-office') . '</span>';
+        printf(
+            '<input type="text" class="regular-text estate-office-role-key" name="%1$s[key]" value="%2$s" placeholder="%3$s" autocomplete="off"%4$s />',
+            esc_attr($fieldBase),
+            esc_attr($key),
+            esc_attr__('np. seller', 'estate-office'),
+            $autoAttr
+        );
+        echo '</label>';
+        echo '<p class="description">' . esc_html__('Klucz jest wykorzystywany do raportowania i integracji.', 'estate-office') . '</p>';
+        echo '</div>';
+
+        echo '<div class="estate-office-role-manager__col estate-office-role-manager__col--actions">';
+        printf(
+            '<button type="button" class="button-link delete estate-office-role-remove" aria-label="%1$s">%2$s</button>',
+            esc_attr__('Usuń rolę', 'estate-office'),
+            esc_html__('Usuń', 'estate-office')
+        );
+        echo '</div>';
+        echo '</div>';
     }
 }

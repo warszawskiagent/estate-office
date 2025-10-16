@@ -38,6 +38,10 @@
     const step3Heading = overlay.querySelector('[data-eo-agreement-step3-heading]');
     const step3Description = overlay.querySelector('[data-eo-agreement-step3-description]');
     const prevButton = overlay.querySelector('[data-eo-agreement-prev]');
+    const clientRoleOptions = (typeof config.clientRoles === 'object' && config.clientRoles !== null) ? config.clientRoles : {};
+    const clientRoleEntries = Object.entries(clientRoleOptions);
+    const clientRoleLabel = config.labels?.clientRole || '';
+    const clientRolePlaceholder = config.labels?.clientRolePlaceholder || '';
 
     const state = {
         agreementId: 0,
@@ -234,17 +238,63 @@
         state.clients.forEach((client) => {
             const pill = document.createElement('div');
             pill.className = 'estate-office-agreement-creator__client-pill';
+
+            const header = document.createElement('div');
+            header.className = 'estate-office-agreement-creator__client-pill-header';
+
             const content = document.createElement('div');
+            content.className = 'estate-office-agreement-creator__client-pill-info';
             content.innerHTML = '<strong>' + (client.name || '') + '</strong>'
                 + (client.email ? '<br><span>' + client.email + '</span>' : '')
                 + (client.phone ? '<br><span>' + client.phone + '</span>' : '');
+
             const removeButton = document.createElement('button');
             removeButton.type = 'button';
+            removeButton.className = 'estate-office-agreement-creator__client-remove';
             removeButton.textContent = '×';
             removeButton.setAttribute('aria-label', 'Usuń');
             removeButton.addEventListener('click', () => detachClient(client.id));
-            pill.appendChild(content);
-            pill.appendChild(removeButton);
+
+            header.appendChild(content);
+            header.appendChild(removeButton);
+            pill.appendChild(header);
+
+            const roleWrapper = document.createElement('label');
+            roleWrapper.className = 'estate-office-agreement-creator__client-role';
+            if (clientRoleLabel) {
+                const roleText = document.createElement('span');
+                roleText.textContent = clientRoleLabel;
+                roleWrapper.appendChild(roleText);
+            }
+
+            const roleSelect = document.createElement('select');
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = clientRolePlaceholder || '';
+            roleSelect.appendChild(placeholderOption);
+
+            clientRoleEntries.forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                roleSelect.appendChild(option);
+            });
+
+            const initialRole = client.role || '';
+            roleSelect.value = initialRole;
+            roleSelect.dataset.previousValue = initialRole;
+            roleSelect.addEventListener('change', (event) => {
+                const value = event.target.value || '';
+                const previous = event.target.dataset.previousValue || '';
+                if (value === previous) {
+                    return;
+                }
+                updateClientRole(client.id, value, roleSelect, previous);
+            });
+
+            roleWrapper.appendChild(roleSelect);
+            pill.appendChild(roleWrapper);
+
             selectedClients.appendChild(pill);
         });
     };
@@ -879,6 +929,57 @@
             .catch(() => {
                 const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
                 setMessage(message, 'error', config.messages?.genericError || '');
+            });
+    };
+
+    const updateClientRole = (clientId, role, selectElement, fallback) => {
+        if (!state.agreementId || !clientId) {
+            return;
+        }
+
+        const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
+        setMessage(message, '', '');
+
+        if (selectElement) {
+            selectElement.setAttribute('disabled', 'disabled');
+        }
+
+        const payload = new FormData();
+        payload.append('action', 'estate_office_update_client_role');
+        payload.append('nonce', config.nonce);
+        payload.append('agreement_id', String(state.agreementId));
+        payload.append('client_id', String(clientId));
+        payload.append('role', role || '');
+
+        fetch(config.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: payload,
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    setMessage(message, 'error', body?.data?.message || config.messages?.roleUpdateError || config.messages?.genericError || '');
+                    if (selectElement) {
+                        selectElement.removeAttribute('disabled');
+                        selectElement.value = fallback;
+                        selectElement.dataset.previousValue = fallback;
+                    }
+                    return;
+                }
+
+                state.clients = body.data?.clients || [];
+                renderClients();
+                renderSummary();
+                setMessage(message, 'success', config.messages?.roleUpdated || '');
+            })
+            .catch(() => {
+                setMessage(message, 'error', config.messages?.roleUpdateError || config.messages?.genericError || '');
+                if (selectElement) {
+                    selectElement.removeAttribute('disabled');
+                    selectElement.value = fallback;
+                    selectElement.dataset.previousValue = fallback;
+                }
             });
     };
 

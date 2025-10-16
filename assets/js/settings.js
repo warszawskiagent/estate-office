@@ -104,8 +104,125 @@
         });
     }
 
+    function slugifyKey(value) {
+        if (typeof value !== 'string') {
+            return '';
+        }
+
+        if (typeof value.normalize === 'function') {
+            value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        return value
+            .replace(/[^A-Za-z0-9_\s-]/g, '')
+            .replace(/[^A-Za-z0-9_]+/g, '_')
+            .replace(/_{2,}/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
+    }
+
+    function hasDuplicateKey(list, key, current) {
+        let duplicate = false;
+
+        list.find('.estate-office-role-key').each(function () {
+            if (this === current) {
+                return;
+            }
+
+            if ($(this).val() === key) {
+                duplicate = true;
+                return false;
+            }
+        });
+
+        return duplicate;
+    }
+
+    function ensureUniqueKey(list, slug, current) {
+        if (!slug) {
+            return '';
+        }
+
+        let candidate = slug;
+        let suffix = 2;
+
+        while (hasDuplicateKey(list, candidate, current)) {
+            candidate = slug + '_' + suffix;
+            suffix += 1;
+        }
+
+        return candidate;
+    }
+
+    function setupRoleManager() {
+        const template = $('#estate-office-role-template');
+        if (!template.length) {
+            return;
+        }
+
+        $(document).on('click', '.estate-office-role-manager__add', function (event) {
+            event.preventDefault();
+            const container = $(this).closest('.estate-office-role-manager');
+            const list = container.find('.estate-office-role-manager__list');
+            const nextIndex = parseInt(container.attr('data-next-index') || list.children().length, 10);
+            container.attr('data-next-index', String(nextIndex + 1));
+
+            let markup = template.html().replace(/__index__/g, nextIndex);
+            const row = $(markup);
+            list.append(row);
+        });
+
+        $(document).on('click', '.estate-office-role-remove', function (event) {
+            event.preventDefault();
+            $(this).closest('.estate-office-role-manager__row').remove();
+        });
+
+        $(document).on('input', '.estate-office-role-label', function () {
+            const row = $(this).closest('.estate-office-role-manager__row');
+            const keyField = row.find('.estate-office-role-key');
+
+            if (!keyField.length) {
+                return;
+            }
+
+            if (keyField.attr('data-auto') === '0') {
+                return;
+            }
+
+            const slug = slugifyKey($(this).val());
+            const list = row.closest('.estate-office-role-manager__list');
+
+            if (!slug) {
+                keyField.val('');
+                keyField.attr('data-auto', '1');
+                return;
+            }
+
+            const unique = ensureUniqueKey(list, slug, keyField.get(0));
+            keyField.val(unique);
+            keyField.attr('data-auto', '1');
+        });
+
+        $(document).on('input', '.estate-office-role-key', function () {
+            const field = $(this);
+            const list = field.closest('.estate-office-role-manager__list');
+            const slug = slugifyKey(field.val());
+
+            if (!slug) {
+                field.val('');
+                field.attr('data-auto', '1');
+                return;
+            }
+
+            const unique = ensureUniqueKey(list, slug, field.get(0));
+            field.val(unique);
+            field.attr('data-auto', '0');
+        });
+    }
+
     $(function () {
         setupMediaButtons();
         setupTagsInput();
+        setupRoleManager();
     });
 })(jQuery);
