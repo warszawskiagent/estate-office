@@ -1,0 +1,205 @@
+.estate-office-quick-create {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estate-office-quick-create[hidden] {
+    display: none;
+}
+
+.estate-office-quick-create__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.6);
+}
+
+.estate-office-quick-create__dialog {
+    position: relative;
+    z-index: 1;
+    width: min(960px, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 25px 65px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+}
+
+.estate-office-quick-create__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #111827;
+}
+
+.estate-office-quick-create__tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px 0;
+}
+
+.estate-office-quick-create__tab {
+    border: none;
+    background: #eef2ff;
+    color: #312e81;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.estate-office-quick-create__tab.is-active,
+.estate-office-quick-create__tab:hover {
+    background: #4338ca;
+    color: #fff;
+}
+
+.estate-office-quick-create__panels {
+    padding: 16px 24px 24px;
+    overflow-y: auto;
+}
+
+.estate-office-quick-create__panel[hidden] {
+    display: none;
+}
+
+.estate-office-quick-create__panel header {
+    margin-bottom: 16px;
+}
+
+.estate-office-quick-create__panel h2 {
+    margin: 0 0 4px;
+    font-size: 1.4rem;
+    color: #111827;
+}
+
+.estate-office-quick-create__panel .description {
+    margin: 0;
+    color: #6b7280;
+}
+
+.estate-office-quick-create__form {
+    display: grid;
+    gap: 20px;
+}
+
+.estate-office-quick-create__grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.estate-office-quick-create__grid label,
+.estate-office-quick-create__wide {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+}
+
+.estate-office-quick-create__grid input,
+.estate-office-quick-create__grid select,
+.estate-office-quick-create__wide textarea {
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-weight: 400;
+    font-size: 0.95rem;
+}
+
+.estate-office-quick-create__grid input:focus,
+.estate-office-quick-create__grid select:focus,
+.estate-office-quick-create__wide textarea:focus {
+    outline: 2px solid #4338ca;
+    outline-offset: 0;
+}
+
+.estate-office-quick-create__wide textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.estate-office-quick-create__fieldset {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.estate-office-quick-create__fieldset legend {
+    padding: 0 8px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.estate-office-quick-create__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.estate-office-quick-create__primary {
+    background: #4338ca;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.estate-office-quick-create__primary:hover,
+.estate-office-quick-create__primary:focus {
+    background: #3730a3;
+    outline: none;
+}
+
+.estate-office-quick-create__message {
+    font-size: 0.95rem;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: none;
+}
+
+.estate-office-quick-create__message.is-error {
+    display: block;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.estate-office-quick-create__message.is-success {
+    display: block;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.estate-office-quick-create .required {
+    color: #dc2626;
+    margin-left: 4px;
+}
+
+@media (max-width: 782px) {
+    .estate-office-quick-create__dialog {
+        width: calc(100% - 1.5rem);
+        max-height: calc(100% - 1.5rem);
+    }
+
+    .estate-office-quick-create__tabs {
+        flex-wrap: wrap;
+    }
+
+    .estate-office-quick-create__grid {
+        grid-template-columns: 1fr;
+    }
+}

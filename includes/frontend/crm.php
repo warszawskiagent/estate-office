@@ -7,6 +7,7 @@ namespace EstateOffice\Frontend;
 use EstateOffice\Frontend\AgreementCreator;
 use EstateOffice\Frontend\LeadActions;
 use EstateOffice\Frontend\Maps;
+use EstateOffice\Frontend\QuickCreate;
 use EstateOffice\PostTypes\AgreementMeta;
 use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\ClientMeta;
@@ -157,6 +158,8 @@ final class CRM
             AgreementCreator::enqueueAssets();
         }
 
+        QuickCreate::enqueueAssets();
+
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
         $canAccess  = self::userCanAccessSection($section);
@@ -202,6 +205,7 @@ final class CRM
         if (current_user_can('publish_estate_agreements')) {
             AgreementCreator::renderModal();
         }
+        QuickCreate::renderModal();
         echo '</div>';
 
         return (string) ob_get_clean();
@@ -329,9 +333,23 @@ final class CRM
         $baseUrl = self::getBaseUrl();
         echo '<header class="estate-office-crm__header">';
         echo '<div class="estate-office-crm__header-actions">';
+
         if (current_user_can('publish_estate_agreements')) {
             echo '<button type="button" class="estate-office-crm__primary" data-eo-agreement-open>' . esc_html__('Dodaj nową umowę', 'estate-office') . '</button>';
         }
+
+        if (QuickCreate::userCanCreate('property') && in_array($section, ['properties', 'dashboard'], true)) {
+            echo '<button type="button" class="estate-office-crm__button" data-eo-quick-open="property">' . esc_html__('Dodaj nieruchomość', 'estate-office') . '</button>';
+        }
+
+        if (QuickCreate::userCanCreate('search') && in_array($section, ['searches', 'dashboard'], true)) {
+            echo '<button type="button" class="estate-office-crm__button" data-eo-quick-open="search">' . esc_html__('Dodaj poszukiwanie', 'estate-office') . '</button>';
+        }
+
+        if (QuickCreate::userCanCreate('client') && in_array($section, ['clients', 'dashboard'], true)) {
+            echo '<button type="button" class="estate-office-crm__button" data-eo-quick-open="client">' . esc_html__('Dodaj klienta', 'estate-office') . '</button>';
+        }
+
         echo '</div>';
         echo '<nav class="estate-office-crm__nav">';
         foreach (self::SECTIONS as $slug => $label) {
