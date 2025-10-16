@@ -13,6 +13,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia, O wtyczce.
 * Panel zarządzania licencją z weryfikacją klucza, statusem i historią sprawdzeń.
 * Automatyczne odświeżanie statusu licencji z komunikatami o błędach i przypomnieniami o zbliżającym się wygaśnięciu.
+* Komendy WP-CLI do sprawdzania statusu, aktywacji, odświeżania i dezaktywacji licencji wraz z podglądem historii.
 * Wspólne menu CRM w kokpicie z pulpitem startowym i szybkim dostępem do kluczowych modułów.
 * Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
@@ -78,6 +79,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
 * Rozszerzenie przypomnień follow-up o integrację z kalendarzami, zadaniami i wieloetapowymi sekwencjami.
 * Rozbudowa widoków map o klastry wyników, tryb pełnoekranowy oraz filtrowanie po promieniu lokalizacji.
+* Rozszerzenie komend WP-CLI o zarządzanie rekordami CRM, eksportami i zadaniami automatyzacji.
 * Rozszerzenie kreatora umów o edycję i dodawanie kolejnych nieruchomości lub poszukiwań po utworzeniu rekordu.
 * Rozbudowa kreatora umów o walidację typów danych pól dynamicznych i raportowanie braków konfiguracji.
 * Rozszerzenie ról klientów o personalizację komunikatów, automatyczne powiadomienia i pogłębione raportowanie w CRM.
@@ -146,3 +148,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano moduł zarządzania licencją umożliwiający weryfikację, odświeżanie statusu oraz dezaktywację klucza licencyjnego.
 * Zaimplementowano harmonogram automatycznego sprawdzania statusu licencji wraz z powiadomieniami o błędach i zbliżającym się terminie ważności.
 * Dodano historię sprawdzeń licencji z logowaniem wyników i podglądem zdarzeń w panelu administracyjnym.
+* Dodano komendy WP-CLI do zarządzania licencją (status, aktywacja, odświeżanie, dezaktywacja, historia) dostępne z wiersza poleceń.

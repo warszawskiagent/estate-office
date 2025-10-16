@@ -100,36 +100,11 @@ final class Manager
 
         check_admin_referer('estate_office_license_manage', 'estate_office_license_nonce');
 
-        $action = sanitize_key(wp_unslash((string) ($_POST['estate_office_license_action'] ?? '')));
-        $key    = sanitize_text_field(wp_unslash((string) ($_POST['license_key'] ?? '')));
-        $email  = sanitize_text_field(wp_unslash((string) ($_POST['license_email'] ?? '')));
+        $action = (string) wp_unslash((string) ($_POST['estate_office_license_action'] ?? ''));
+        $key    = (string) wp_unslash((string) ($_POST['license_key'] ?? ''));
+        $email  = (string) wp_unslash((string) ($_POST['license_email'] ?? ''));
 
-        $context = match ($action) {
-            'activate'   => 'activate',
-            'refresh'    => 'refresh',
-            'deactivate' => 'deactivate',
-            default      => 'manage',
-        };
-
-        try {
-            switch ($action) {
-                case 'activate':
-                    self::activate($key, $email);
-                    break;
-                case 'refresh':
-                    self::refresh($key ?: (string) get_option(self::OPTION_KEY, ''), $email ?: (string) get_option(self::OPTION_EMAIL, ''));
-                    break;
-                case 'deactivate':
-                    self::deactivate();
-                    break;
-                default:
-                    self::addNotice('warning', __('Nieznana akcja licencyjna.', 'estate-office'));
-                    break;
-            }
-        } catch (\RuntimeException $exception) {
-            self::recordEvent('error', $exception->getMessage(), $context);
-            self::addNotice('error', $exception->getMessage());
-        }
+        self::processAction($action, $key, $email);
 
         $redirect = wp_get_referer();
         if (!$redirect || strpos($redirect, 'page=estate-office-license') === false) {
@@ -168,7 +143,73 @@ final class Manager
         printf('<div class="notice %1$s"><p>%2$s</p></div>', esc_attr($type), esc_html((string) $notice['message']));
     }
 
-    private static function activate(string $key, string $email): void
+    public static function processAction(string $action, string $key = '', string $email = '', bool $suppressNotices = false): array
+    {
+        $action = sanitize_key($action);
+        $key    = sanitize_text_field($key);
+        $email  = sanitize_text_field($email);
+
+        if ($action === 'refresh' || $action === 'deactivate') {
+            if ($key === '') {
+                $key = sanitize_text_field((string) get_option(self::OPTION_KEY, ''));
+            }
+
+            if ($email === '') {
+                $email = sanitize_text_field((string) get_option(self::OPTION_EMAIL, ''));
+            }
+        }
+
+        $context = match ($action) {
+            'activate'   => 'activate',
+            'refresh'    => 'refresh',
+            'deactivate' => 'deactivate',
+            default      => 'manage',
+        };
+
+        try {
+            switch ($action) {
+                case 'activate':
+                    return [
+                        'status'  => 'success',
+                        'message' => self::activate($key, $email, !$suppressNotices),
+                    ];
+                case 'refresh':
+                    return [
+                        'status'  => 'success',
+                        'message' => self::refresh($key, $email, !$suppressNotices),
+                    ];
+                case 'deactivate':
+                    return [
+                        'status'  => 'success',
+                        'message' => self::deactivate(!$suppressNotices),
+                    ];
+                default:
+                    $message = __('Nieznana akcja licencyjna.', 'estate-office');
+
+                    if (!$suppressNotices) {
+                        self::addNotice('warning', $message);
+                    }
+
+                    return [
+                        'status'  => 'error',
+                        'message' => $message,
+                    ];
+            }
+        } catch (\RuntimeException $exception) {
+            self::recordEvent('error', $exception->getMessage(), $context);
+
+            if (!$suppressNotices) {
+                self::addNotice('error', $exception->getMessage());
+            }
+
+            return [
+                'status'  => 'error',
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    private static function activate(string $key, string $email, bool $addNotice = true): string
     {
         self::validateKeyAndEmail($key, $email);
 
@@ -178,15 +219,19 @@ final class Manager
         self::persist($key, $email, $response);
         self::recordEvent('success', $message, 'activate');
 
-        self::addNotice('success', $message);
+        if ($addNotice) {
+            self::addNotice('success', $message);
+        }
+
+        return $message;
     }
 
-    private static function refresh(string $key, string $email): void
+    private static function refresh(string $key, string $email, bool $addNotice = true): string
     {
-        self::refreshStatus($key, $email, false, 'refresh');
+        return self::refreshStatus($key, $email, !$addNotice, 'refresh');
     }
 
-    private static function deactivate(): void
+    private static function deactivate(bool $addNotice = true): string
     {
         $key   = (string) get_option(self::OPTION_KEY, '');
         $email = (string) get_option(self::OPTION_EMAIL, '');
@@ -195,7 +240,11 @@ final class Manager
             try {
                 self::remoteRequest('deactivate', $key, $email);
             } catch (\RuntimeException $exception) {
-                self::addNotice('warning', $exception->getMessage());
+                if ($addNotice) {
+                    self::addNotice('warning', $exception->getMessage());
+                }
+
+                self::recordEvent('error', $exception->getMessage(), 'deactivate');
             }
         }
 
@@ -208,7 +257,11 @@ final class Manager
         $message = __('Licencja została dezaktywowana na tej stronie.', 'estate-office');
         self::recordEvent('success', $message, 'deactivate');
 
-        self::addNotice('success', $message);
+        if ($addNotice) {
+            self::addNotice('success', $message);
+        }
+
+        return $message;
     }
 
     private static function validateKeyAndEmail(string $key, string $email): void
@@ -283,11 +336,11 @@ final class Manager
         }
     }
 
-    private static function refreshStatus(string $key, string $email, bool $silent, string $context): void
+    private static function refreshStatus(string $key, string $email, bool $silent, string $context): string
     {
         if ($key === '') {
             if ($silent) {
-                return;
+                return '';
             }
 
             throw new \RuntimeException(__('Wprowadź klucz licencyjny, aby sprawdzić status.', 'estate-office'));
@@ -302,6 +355,8 @@ final class Manager
         if (!$silent) {
             self::addNotice('success', $message);
         }
+
+        return $message;
     }
 
     private static function normalizeStatus(string $status): string
