@@ -15,12 +15,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Estate_Office_Admin_Menu {
 
     /**
+     * Ekran agentów.
+     *
+     * @var Estate_Office_Admin_Agents_Page
+     */
+    private Estate_Office_Admin_Agents_Page $agents_page;
+
+    /**
+     * Ekran ustawień.
+     *
+     * @var Estate_Office_Admin_Settings_Page
+     */
+    private Estate_Office_Admin_Settings_Page $settings_page;
+
+    /**
+     * Konstruktor.
+     */
+    public function __construct() {
+        $this->agents_page   = new Estate_Office_Admin_Agents_Page();
+        $this->settings_page = new Estate_Office_Admin_Settings_Page();
+    }
+
+    /**
      * Rejestracja hooków panelu administratora.
      *
      * @return void
      */
     public function hooks() : void {
         add_action( 'admin_menu', [ $this, 'register_menu_pages' ] );
+        $this->agents_page->hooks();
+        $this->settings_page->hooks();
     }
 
     /**
@@ -29,12 +53,13 @@ class Estate_Office_Admin_Menu {
      * @return void
      */
     public function register_menu_pages() : void {
-        $capability = 'manage_options';
+        $capability_main     = 'manage_estate_office_crm';
+        $capability_settings = 'manage_estate_office_settings';
 
         $parent_slug = add_menu_page(
             __( 'Estate Office CRM', 'estate-office' ),
             __( 'Estate Office CRM', 'estate-office' ),
-            $capability,
+            $capability_main,
             'estate-office-crm',
             [ $this, 'render_dashboard_placeholder' ],
             'dashicons-admin-multisite',
@@ -45,25 +70,25 @@ class Estate_Office_Admin_Menu {
             $parent_slug,
             __( 'Agenci', 'estate-office' ),
             __( 'Agenci', 'estate-office' ),
-            $capability,
+            'manage_estate_office_agents',
             'estate-office-agents',
-            [ $this, 'render_agents_placeholder' ]
+            [ $this->agents_page, 'render_page' ]
         );
 
         add_submenu_page(
             $parent_slug,
             __( 'Ustawienia', 'estate-office' ),
             __( 'Ustawienia', 'estate-office' ),
-            $capability,
+            $capability_settings,
             'estate-office-settings',
-            [ $this, 'render_settings_placeholder' ]
+            [ $this->settings_page, 'render_page' ]
         );
 
         add_submenu_page(
             $parent_slug,
             __( 'Licencja', 'estate-office' ),
             __( 'Licencja', 'estate-office' ),
-            $capability,
+            $capability_settings,
             'estate-office-license',
             [ $this, 'render_license_placeholder' ]
         );
@@ -72,7 +97,7 @@ class Estate_Office_Admin_Menu {
             $parent_slug,
             __( 'O wtyczce', 'estate-office' ),
             __( 'About', 'estate-office' ),
-            $capability,
+            $capability_main,
             'estate-office-about',
             [ $this, 'render_about_page' ]
         );
@@ -87,30 +112,6 @@ class Estate_Office_Admin_Menu {
         $this->render_placeholder(
             __( 'Pulpit CRM będzie dostępny w wersji 0.7.0.', 'estate-office' ),
             'dashboard'
-        );
-    }
-
-    /**
-     * Placeholder modułu agentów (wersja 0.3.0).
-     *
-     * @return void
-     */
-    public function render_agents_placeholder() : void {
-        $this->render_placeholder(
-            __( 'Moduł zarządzania agentami zostanie wdrożony w wersji 0.3.0.', 'estate-office' ),
-            'groups'
-        );
-    }
-
-    /**
-     * Placeholder ustawień (wersja 0.3.0).
-     *
-     * @return void
-     */
-    public function render_settings_placeholder() : void {
-        $this->render_placeholder(
-            __( 'Sekcja ustawień (API Google, pola dynamiczne) pojawi się w wersji 0.3.0.', 'estate-office' ),
-            'admin-generic'
         );
     }
 

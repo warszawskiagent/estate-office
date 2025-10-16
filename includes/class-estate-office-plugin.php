@@ -36,6 +36,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Installer $installer = null;
 
     /**
+     * Menedżer ról i uprawnień.
+     *
+     * @var Estate_Office_Roles|null
+     */
+    private ?Estate_Office_Roles $roles = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -89,6 +96,7 @@ final class Estate_Office_Plugin {
      */
     public function boot() : void {
         $this->load_textdomain();
+        $this->get_roles()->ensure_capabilities();
         $this->get_installer()->maybe_upgrade();
         $this->init_admin();
 
@@ -106,7 +114,9 @@ final class Estate_Office_Plugin {
             return;
         }
 
-        self::instance()->get_installer()->install();
+        $instance = self::instance();
+        $instance->get_roles()->register_roles();
+        $instance->get_installer()->install();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
     }
@@ -152,6 +162,19 @@ final class Estate_Office_Plugin {
         }
 
         return $this->installer;
+    }
+
+    /**
+     * Pobiera menedżera ról.
+     *
+     * @return Estate_Office_Roles
+     */
+    private function get_roles() : Estate_Office_Roles {
+        if ( null === $this->roles ) {
+            $this->roles = new Estate_Office_Roles();
+        }
+
+        return $this->roles;
     }
 
     /**
