@@ -9,7 +9,6 @@ defined('ABSPATH') || exit;
 use EstateOffice\Admin\Dashboard;
 use EstateOffice\Admin\Pages\AboutPage;
 use EstateOffice\Admin\Pages\AgentsPage;
-use EstateOffice\Admin\Pages\LicensePage;
 use EstateOffice\Admin\Pages\SettingsPage;
 
 final class Menu
@@ -36,15 +35,6 @@ final class Menu
         );
 
         remove_submenu_page('estate-office-crm', 'estate-office-crm');
-
-        add_submenu_page(
-            'estate-office-crm',
-            __('Licencja', 'estate-office'),
-            __('Licencja', 'estate-office'),
-            'manage_options',
-            'estate-office-license',
-            [LicensePage::class, 'render']
-        );
 
         add_submenu_page(
             'estate-office-crm',

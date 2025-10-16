@@ -40,8 +40,7 @@ use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\OfferSeo;
 use EstateOffice\Frontend\ContactForms;
 use EstateOffice\Frontend\Maps;
-use EstateOffice\License\Manager as LicenseManager;
-use EstateOffice\License\Cli as LicenseCli;
+use EstateOffice\Activation\Pages as ActivationPages;
 use EstateOffice\Leads\LeadCollector;
 use EstateOffice\Leads\LeadNotifications;
 use EstateOffice\Leads\LeadReminders;
@@ -72,12 +71,11 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadMeta::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'activate']);
-        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LicenseManager::class, 'activatePlugin']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ActivationPages::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'deactivate']);
-        register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LicenseManager::class, 'deactivatePlugin']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
@@ -113,8 +111,6 @@ final class Plugin
         LeadNotifications::bootstrap();
         LeadReminders::bootstrap();
         Maps::bootstrap();
-        LicenseManager::bootstrap();
-        LicenseCli::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

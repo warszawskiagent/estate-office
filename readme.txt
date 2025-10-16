@@ -10,10 +10,9 @@ License URI: http://warszawskiagent.pl
 EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 zawiera podstawową strukturę panelu administracyjnego, zarządzanie rolą agentów oraz sekcję ustawień dla kluczowych integracji.
 
 == Description ==
-* Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia, O wtyczce.
-* Panel zarządzania licencją z weryfikacją klucza, statusem i historią sprawdzeń.
-* Automatyczne odświeżanie statusu licencji z komunikatami o błędach i przypomnieniami o zbliżającym się wygaśnięciu.
-* Komendy WP-CLI do sprawdzania statusu, aktywacji, odświeżania i dezaktywacji licencji wraz z podglądem historii.
+* Kompletny szkielet panelu administracyjnego z zakładkami: Agenci, Ustawienia i O wtyczce.
+* Moduł licencji jest tymczasowo dezaktywowany do czasu udostępnienia generatora kluczy testowych.
+* Automatyczne tworzenie stron z shortcode'ami CRM i katalogu ofert oraz dedykowanego menu nawigacyjnego podczas aktywacji.
 * Wspólne menu CRM w kokpicie z pulpitem startowym i szybkim dostępem do kluczowych modułów.
 * Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
@@ -145,7 +144,5 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzono publiczny szablon oferty o sekcję rekomendowanych nieruchomości dopasowanych po typie transakcji, rodzaju i lokalizacji.
 * Dodano podpisy zdjęć i wybór zdjęcia głównego w galerii nieruchomości oraz prezentację podpisów w publicznym szablonie oferty.
 * Dodano moduł SEO ofert generujący metadane Open Graph/Twitter, dane strukturalne JSON-LD oraz dedykowany wpis w mapie witryny dla nieruchomości eksportowanych na WWW.
-* Dodano moduł zarządzania licencją umożliwiający weryfikację, odświeżanie statusu oraz dezaktywację klucza licencyjnego.
-* Zaimplementowano harmonogram automatycznego sprawdzania statusu licencji wraz z powiadomieniami o błędach i zbliżającym się terminie ważności.
-* Dodano historię sprawdzeń licencji z logowaniem wyników i podglądem zdarzeń w panelu administracyjnym.
-* Dodano komendy WP-CLI do zarządzania licencją (status, aktywacja, odświeżanie, dezaktywacja, historia) dostępne z wiersza poleceń.
+* Podczas aktywacji wtyczki automatycznie tworzone są strony panelu CRM, katalogu ofert i katalogu agentów wraz z dedykowanym menu nawigacyjnym.
+* Tymczasowo dezaktywowano moduł licencji do czasu przygotowania generatora kluczy – dotychczasowe akcje i harmonogramy nie są ładowane.
