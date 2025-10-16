@@ -163,6 +163,9 @@ class Estate_Office_Database_Schema {
             amenities LONGTEXT NULL,
             equipment LONGTEXT NULL,
             additional_areas LONGTEXT NULL,
+            gallery LONGTEXT NULL,
+            floor_plan_2d LONGTEXT NULL,
+            floor_plan_3d LONGTEXT NULL,
             labels LONGTEXT NULL,
             export_web TINYINT(1) NOT NULL DEFAULT 0,
             export_portals TINYINT(1) NOT NULL DEFAULT 0,
@@ -191,7 +194,13 @@ class Estate_Office_Database_Schema {
         $schema[] = "CREATE TABLE {$prefix}searches (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             contract_id BIGINT(20) UNSIGNED NULL,
+            search_number VARCHAR(60) NOT NULL,
             transaction_type VARCHAR(20) NOT NULL,
+            property_type VARCHAR(30) NOT NULL,
+            location_city VARCHAR(150) NOT NULL DEFAULT '',
+            location_district VARCHAR(150) NOT NULL DEFAULT '',
+            location_voivodeship VARCHAR(150) NOT NULL DEFAULT '',
+            location_keywords VARCHAR(255) NOT NULL DEFAULT '',
             price_min DECIMAL(15,2) NULL,
             price_max DECIMAL(15,2) NULL,
             area_min DECIMAL(10,2) NULL,
@@ -203,8 +212,11 @@ class Estate_Office_Database_Schema {
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY  (id),
+            UNIQUE KEY search_number (search_number),
             KEY contract_id (contract_id),
-            KEY transaction_type (transaction_type)
+            KEY transaction_type (transaction_type),
+            KEY property_type (property_type),
+            KEY location_city (location_city)
         ) {$charset_collate};";
 
         $schema[] = "CREATE TABLE {$prefix}contract_clients (

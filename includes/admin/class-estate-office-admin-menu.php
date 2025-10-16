@@ -29,11 +29,27 @@ class Estate_Office_Admin_Menu {
     private Estate_Office_Admin_Settings_Page $settings_page;
 
     /**
+     * Ekran nieruchomości.
+     *
+     * @var Estate_Office_Admin_Properties_Page
+     */
+    private Estate_Office_Admin_Properties_Page $properties_page;
+
+    /**
+     * Ekran poszukiwań.
+     *
+     * @var Estate_Office_Admin_Searches_Page
+     */
+    private Estate_Office_Admin_Searches_Page $searches_page;
+
+    /**
      * Konstruktor.
      */
     public function __construct() {
-        $this->agents_page   = new Estate_Office_Admin_Agents_Page();
-        $this->settings_page = new Estate_Office_Admin_Settings_Page();
+        $this->agents_page      = new Estate_Office_Admin_Agents_Page();
+        $this->properties_page  = new Estate_Office_Admin_Properties_Page();
+        $this->searches_page    = new Estate_Office_Admin_Searches_Page();
+        $this->settings_page    = new Estate_Office_Admin_Settings_Page();
     }
 
     /**
@@ -44,6 +60,8 @@ class Estate_Office_Admin_Menu {
     public function hooks() : void {
         add_action( 'admin_menu', [ $this, 'register_menu_pages' ] );
         $this->agents_page->hooks();
+        $this->properties_page->hooks();
+        $this->searches_page->hooks();
         $this->settings_page->hooks();
     }
 
@@ -53,8 +71,10 @@ class Estate_Office_Admin_Menu {
      * @return void
      */
     public function register_menu_pages() : void {
-        $capability_main     = 'manage_estate_office_crm';
-        $capability_settings = 'manage_estate_office_settings';
+        $capability_main        = 'manage_estate_office_crm';
+        $capability_settings    = 'manage_estate_office_settings';
+        $capability_properties  = 'manage_estate_office_properties';
+        $capability_searches    = 'manage_estate_office_searches';
 
         $parent_slug = add_menu_page(
             __( 'Estate Office CRM', 'estate-office' ),
@@ -64,6 +84,24 @@ class Estate_Office_Admin_Menu {
             [ $this, 'render_dashboard_placeholder' ],
             'dashicons-admin-multisite',
             56
+        );
+
+        add_submenu_page(
+            $parent_slug,
+            __( 'Nieruchomości', 'estate-office' ),
+            __( 'Nieruchomości', 'estate-office' ),
+            $capability_properties,
+            'estate-office-properties',
+            [ $this->properties_page, 'render_page' ]
+        );
+
+        add_submenu_page(
+            $parent_slug,
+            __( 'Poszukiwania', 'estate-office' ),
+            __( 'Poszukiwania', 'estate-office' ),
+            $capability_searches,
+            'estate-office-searches',
+            [ $this->searches_page, 'render_page' ]
         );
 
         add_submenu_page(
