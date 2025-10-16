@@ -3,7 +3,7 @@
  * Plugin Name: EstateOffice CRM
  * Plugin URI: http://warszawskiagent.pl
  * Description: EstateOffice to zaawansowany CRM dla biur nieruchomości, zarządzający nieruchomościami, klientami, umowami i agentami.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Tomasz Obarski
  * Author URI: http://warszawskiagent.pl
  * License: GPL-2.0-or-later
@@ -25,7 +25,7 @@ if ( defined( 'ESTATE_OFFICE_VERSION' ) ) {
     return;
 }
 
-const ESTATE_OFFICE_VERSION = '0.1.0';
+const ESTATE_OFFICE_VERSION = '0.2.0';
 const ESTATE_OFFICE_MINIMUM_WP = '6.8.3';
 const ESTATE_OFFICE_MINIMUM_PHP = '8.3';
 
@@ -55,6 +55,8 @@ function estate_office_register_autoloader() : void {
 
         if ( str_contains( $normalized, 'estate-office-admin-' ) ) {
             $path = $base_dir . 'admin/' . $file_name;
+        } elseif ( str_contains( $normalized, 'estate-office-database-' ) ) {
+            $path = $base_dir . 'database/' . $file_name;
         } else {
             $path = $base_dir . $file_name;
         }

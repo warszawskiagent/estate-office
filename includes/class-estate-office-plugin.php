@@ -29,6 +29,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Admin_Menu $admin_menu = null;
 
     /**
+     * Klasa odpowiedzialna za instalację/aktualizację bazy danych.
+     *
+     * @var Estate_Office_Installer|null
+     */
+    private ?Estate_Office_Installer $installer = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -82,6 +89,7 @@ final class Estate_Office_Plugin {
      */
     public function boot() : void {
         $this->load_textdomain();
+        $this->get_installer()->maybe_upgrade();
         $this->init_admin();
 
         add_action( 'admin_init', [ $this, 'register_settings_placeholders' ] );
@@ -97,6 +105,8 @@ final class Estate_Office_Plugin {
             deactivate_plugins( ESTATE_OFFICE_BASENAME );
             return;
         }
+
+        self::instance()->get_installer()->install();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
     }
@@ -129,6 +139,19 @@ final class Estate_Office_Plugin {
             $this->admin_menu = new Estate_Office_Admin_Menu();
             $this->admin_menu->hooks();
         }
+    }
+
+    /**
+     * Pobiera instancję instalatora.
+     *
+     * @return Estate_Office_Installer
+     */
+    private function get_installer() : Estate_Office_Installer {
+        if ( null === $this->installer ) {
+            $this->installer = new Estate_Office_Installer();
+        }
+
+        return $this->installer;
     }
 
     /**
