@@ -425,6 +425,11 @@ final class Manager
         }, $history);
     }
 
+    public static function clearHistory(): void
+    {
+        delete_option(self::OPTION_HISTORY);
+    }
+
     public static function describeContext(string $context): string
     {
         return match (sanitize_key($context)) {
