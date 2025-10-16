@@ -40,6 +40,7 @@ use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\OfferSeo;
 use EstateOffice\Frontend\ContactForms;
 use EstateOffice\Frontend\Maps;
+use EstateOffice\License\Manager as LicenseManager;
 use EstateOffice\Leads\LeadCollector;
 use EstateOffice\Leads\LeadNotifications;
 use EstateOffice\Leads\LeadReminders;
@@ -109,6 +110,7 @@ final class Plugin
         LeadNotifications::bootstrap();
         LeadReminders::bootstrap();
         Maps::bootstrap();
+        LicenseManager::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);
