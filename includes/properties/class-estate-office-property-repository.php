@@ -181,6 +181,103 @@ class Estate_Office_Property_Repository {
     }
 
     /**
+     * Pobiera listę ofert przeznaczonych do eksportu na WWW.
+     *
+     * @param array<string,mixed> $args Argumenty filtrowania.
+     *
+     * @return array<string,mixed>
+     */
+    public function get_exported_offers( array $args ) : array {
+        $defaults = [
+            'transaction_types' => [],
+            'property_type'     => '',
+            'city'              => '',
+            'district'          => '',
+            'paged'             => 1,
+            'per_page'          => 12,
+        ];
+
+        $args = wp_parse_args( $args, $defaults );
+
+        $paged    = max( 1, (int) $args['paged'] );
+        $per_page = max( 1, (int) $args['per_page'] );
+
+        $this->expire_new_offer_flags();
+
+        [ $where_sql, $params ] = $this->build_offer_where( $args );
+
+        $order      = 'ORDER BY COALESCE(updated_at, created_at) DESC, id DESC';
+        $limit_sql  = ' LIMIT %d OFFSET %d';
+        $select_sql = "SELECT * FROM {$this->table} {$where_sql} {$order}{$limit_sql}";
+        $count_sql  = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
+
+        $items = $this->wpdb->get_results(
+            $this->prepare_query( $select_sql, array_merge( $params, [ $per_page, ( $paged - 1 ) * $per_page ] ) ),
+            ARRAY_A
+        );
+
+        $total = (int) $this->wpdb->get_var( $this->prepare_query( $count_sql, $params ) );
+
+        return [
+            'items'        => is_array( $items ) ? $items : [],
+            'total'        => $total,
+            'per_page'     => $per_page,
+            'total_page'   => (int) ceil( $total / $per_page ),
+            'current_page' => $paged,
+        ];
+    }
+
+    /**
+     * Zwraca ofertę przeznaczoną do publikacji na WWW.
+     *
+     * @param int $property_id ID nieruchomości.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function find_exported_offer( int $property_id ) : ?array {
+        $query = $this->wpdb->prepare(
+            "SELECT * FROM {$this->table} WHERE id = %d AND export_web = 1",
+            $property_id
+        );
+
+        $result = $this->wpdb->get_row( $query, ARRAY_A );
+
+        return $result ?: null;
+    }
+
+    /**
+     * Zwraca listę wartości filtrów dostępnych dla ofert.
+     *
+     * @param array<string,mixed> $args Argumenty kontekstowe.
+     *
+     * @return array<string,array<int,string>>
+     */
+    public function get_offer_filters( array $args ) : array {
+        $defaults = [
+            'transaction_types' => [],
+        ];
+
+        $args = wp_parse_args( $args, $defaults );
+
+        [ $where_sql, $params ] = $this->build_offer_where( $args );
+
+        $filters = [
+            'transaction_type' => [],
+            'property_type'    => [],
+            'city'             => [],
+            'district'         => [],
+        ];
+
+        foreach ( $filters as $column => $list ) {
+            $sql      = "SELECT DISTINCT {$column} FROM {$this->table} {$where_sql} AND {$column} <> '' ORDER BY {$column} ASC";
+            $values   = $this->wpdb->get_col( $this->prepare_query( $sql, $params ) );
+            $filters[ $column ] = array_values( array_unique( array_map( 'sanitize_text_field', array_filter( (array) $values ) ) ) );
+        }
+
+        return $filters;
+    }
+
+    /**
      * Wyszukuje nieruchomość po ID.
      *
      * @param int $property_id ID nieruchomości.
@@ -408,5 +505,37 @@ class Estate_Office_Property_Repository {
         }
 
         return $this->wpdb->prepare( $sql, $params );
+    }
+
+    /**
+     * Buduje część WHERE dla zapytań ofertowych.
+     *
+     * @param array<string,mixed> $args Argumenty filtrowania.
+     *
+     * @return array{0:string,1:array<int,mixed>}
+     */
+    private function build_offer_where( array $args ) : array {
+        $conditions = [ 'export_web = 1' ];
+        $params     = [];
+
+        if ( ! empty( $args['transaction_types'] ) && is_array( $args['transaction_types'] ) ) {
+            $types = array_values( array_filter( array_map( 'strval', $args['transaction_types'] ) ) );
+            if ( ! empty( $types ) ) {
+                $placeholders = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+                $conditions[] = "transaction_type IN ({$placeholders})";
+                $params       = array_merge( $params, $types );
+            }
+        }
+
+        foreach ( [ 'property_type', 'city', 'district' ] as $field ) {
+            if ( ! empty( $args[ $field ] ) ) {
+                $conditions[] = "{$field} = %s";
+                $params[]     = (string) $args[ $field ];
+            }
+        }
+
+        $where_sql = 'WHERE ' . implode( ' AND ', $conditions );
+
+        return [ $where_sql, $params ];
     }
 }

@@ -5,7 +5,7 @@ Strona: http://warszawskiagent.pl  \\
 Docelowe wersje: 0.1 – 1.0  \\
 Minimalne wymagania: PHP 8.3, WordPress 6.8.3
 
-## Status rozwoju (aktualizacja 0.7.0)
+## Status rozwoju (aktualizacja 0.8.0)
 Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki EstateOffice wraz z etapem realizacji, przewidzianą wersją wdrożenia oraz orientacyjnym postępem.
 
 | Moduł / Funkcjonalność | Opis skrócony | Wersja docelowa | Postęp |
@@ -21,7 +21,7 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 | Moduł klientów | Profil klienta i powiązania danych | 0.6.0 | 60% |
 | Dashboard CRM | Pulpit podsumowań i wskaźników | 0.7.0 | 70% |
 | Frontend CRM (po zalogowaniu) | Widoki list i szczegółów dla użytkowników | 0.7.0 | 65% |
-| Publiczne oferty nieruchomości | Strony ofert z kategoryzacją | 0.8.0 | 0% |
+| Publiczne oferty nieruchomości | Strony ofert z kategoryzacją | 0.8.0 | 70% |
 | System licencyjny | Aktywacja licencji i ograniczenia | 0.9.0 | 0% |
 | Integracje z portalami | Eksport danych na portale zewnętrzne | 0.9.0 | 0% |
 | Kalkulator notarialny | Kalkulator kosztów notarialnych | 1.0.0 | 0% |
@@ -35,19 +35,21 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 0.4.0 (zakończona)**: Pierwsza iteracja modułu nieruchomości – formularz CRUD w panelu administratora, repozytorium danych, obsługa galerii i oznaczeń oraz walidacja numerów ofert. Testy modułu nieruchomości prowadzone są po każdej migracji danych; zakończenie planowane po iteracji 0.5.0.
 - **Wersja 0.5.0 (zakończona)**: Moduł poszukiwań – lista z filtrami, formularz preferencji oraz repozytorium z walidacją numerów. Rozpoczęto przygotowania do powiązań z umowami i klientami.
 - **Wersja 0.6.0 (zakończona)**: Moduł umów i klientów – wieloetapowy kreator umów, zarządzanie etapami, profil klienta i powiązania z nieruchomościami/poszukiwaniami.
-- **Wersja 0.7.0 (bieżąca)**: Dashboard CRM i frontend po zalogowaniu.
+- **Wersja 0.7.0 (zakończona)**: Dashboard CRM i frontend po zalogowaniu.
+- **Wersja 0.8.0 (bieżąca)**: Publiczne strony ofert z filtrowaniem i widokiem szczegółowym.
 - **Wersja 0.8.0 – 0.9.0**: Publiczne oferty oraz system licencyjny i integracje.
 - **Wersja 1.0.0**: Kalkulatory notarialny i kredytowy, finalne testy akceptacyjne oraz publikacja stabilna.
 
 ## Komunikaty projektowe
-- **Wprowadzone w tej wersji (0.7.0)**: interaktywny pulpit administratora z metrykami, rankingiem agentów i historią etapów oraz portal frontendowy CRM dla zalogowanych użytkowników z zakładkami (pulpit, nieruchomości, poszukiwania, umowy, klienci) i widokami szczegółowymi.
+- **Wprowadzone w tej wersji (0.8.0)**: automatyczne tworzenie publicznych stron „Oferty na sprzedaż” i „Oferty na wynajem” z filtrowaniem według typu transakcji, typu nieruchomości, miasta i dzielnicy, widokiem kart ofert, paginacją oraz sekcją szczegółów ze zdjęciami.
+- **Wprowadzone wcześniej (0.7.0)**: interaktywny pulpit administratora z metrykami, rankingiem agentów i historią etapów oraz portal frontendowy CRM dla zalogowanych użytkowników z zakładkami (pulpit, nieruchomości, poszukiwania, umowy, klienci) i widokami szczegółowymi.
 - **Wprowadzone wcześniej (0.6.0)**: kreator umów z etapami i historią, przypisywanie klientów (wyszukiwanie + szybkie tworzenie), widok profilu umowy oraz pełny moduł klientów (lista, formularz, profil, powiązania). Integracja nieruchomości i poszukiwań z umowami.
 - **Wprowadzone wcześniej (0.5.0)**: moduł poszukiwań klientów z filtrowaną listą, formularzem preferencji (budynek, media, udogodnienia, powierzchnie dodatkowe) oraz repozytorium z automatyczną numeracją i walidacją unikalności.
 - **Wprowadzone wcześniej (0.4.0)**: panel nieruchomości z listą, filtrowaniem i pełnym formularzem edycji (galerie, multimedia, oznaczenia, adresy i parametry techniczne), repozytorium nieruchomości z walidacją numerów ofert i automatycznym wygaszaniem znacznika "Nowa oferta".
 - **Wprowadzone wcześniej (0.3.0)**: panel zarządzania agentami (tworzenie użytkowników, biografia, zdjęcie, kontakt), rola Agent z dedykowanymi uprawnieniami, ekran ustawień z konfiguracją API Google, brandingiem oraz dynamicznymi polami.
 - **Wprowadzone wcześniej (0.2.0)**: dodano instalator bazy danych z automatyczną migracją schematu oraz kompletne definicje tabel dla agentów, klientów, umów, nieruchomości i poszukiwań.
 - **Zrealizowane wcześniej (0.1.0)**: utworzenie roadmapy i fundamentów strukturalnych wtyczki (plik główny, klasy ładowania, rejestracja menu placeholder).
-- **Następne kroki**: przygotowanie dashboardu CRM i widoków frontowych (0.7.0) oraz dalsza integracja procesów (powiązania nieruchomości/poszukiwań z etapami umów).
+- **Następne kroki**: rozwój systemu licencyjnego i integracji eksportu na portale (0.9.0) oraz przygotowanie kalkulatorów finansowych (1.0.0).
 - **Harmonogram testów**: testy migracji schematu startują w 0.2.0, sanity-checki formularzy nieruchomości prowadzone są po każdej aktualizacji 0.4.x; pełne testy CRUD dla umów i klientów zaplanowane są na zakończenie 0.6.x, a testy integracyjne CRM na 0.7.0.
 
 

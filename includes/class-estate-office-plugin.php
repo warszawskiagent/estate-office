@@ -50,6 +50,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Frontend_Portal $frontend = null;
 
     /**
+     * Kontroler publicznej prezentacji ofert.
+     *
+     * @var Estate_Office_Frontend_Offers|null
+     */
+    private ?Estate_Office_Frontend_Offers $offers = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -126,6 +133,7 @@ final class Estate_Office_Plugin {
         $instance->get_roles()->register_roles();
         $instance->get_installer()->install();
         Estate_Office_Frontend_Portal::ensure_portal_page();
+        Estate_Office_Frontend_Offers::ensure_offer_pages();
         flush_rewrite_rules();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
@@ -172,6 +180,12 @@ final class Estate_Office_Plugin {
         }
 
         $this->frontend->hooks();
+
+        if ( null === $this->offers ) {
+            $this->offers = new Estate_Office_Frontend_Offers();
+        }
+
+        $this->offers->hooks();
     }
 
     /**
