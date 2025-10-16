@@ -14,6 +14,7 @@ use function get_post_meta;
 use function get_the_title;
 use function get_user_by;
 use function wp_dropdown_users;
+use function wp_unslash;
 
 defined('ABSPATH') || exit;
 
@@ -539,6 +540,74 @@ final class ClientMeta
         }
         echo '</table>';
         echo '<p class="description">' . esc_html__('Skonfiguruj listę pól w sekcji ustawień „Pola klientów”.', 'estate-office') . '</p>';
+    }
+
+    public static function prepareValues(array $source): array
+    {
+        $values = [];
+
+        foreach (self::META_FIELDS as $key => $definition) {
+            if (($definition['type'] ?? '') === 'boolean') {
+                $values[$key] = self::sanitizeBoolean(!empty($source[$key]) ? '1' : '0');
+
+                continue;
+            }
+
+            $raw = $source[$key] ?? '';
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $values[$key] = self::sanitizeValue(wp_unslash(is_scalar($raw) ? (string) $raw : ''), $definition);
+        }
+
+        if ($values['estate_client_type'] === '') {
+            $values['estate_client_type'] = 'person';
+        }
+
+        if ($values['estate_client_type'] === 'company') {
+            $values['estate_client_first_name']      = '';
+            $values['estate_client_last_name']       = '';
+            $values['estate_client_pesel']           = '';
+            $values['estate_client_document_type']   = '';
+            $values['estate_client_document_number'] = '';
+        } else {
+            $values['estate_client_company_name']           = '';
+            $values['estate_client_company_representative'] = '';
+            $values['estate_client_tax_id']                 = '';
+            $values['estate_client_krs']                    = '';
+            $values['estate_client_regon']                  = '';
+        }
+
+        if (!empty($values['estate_client_correspondence_same'])) {
+            $values['estate_client_correspondence_street']      = '';
+            $values['estate_client_correspondence_number']      = '';
+            $values['estate_client_correspondence_unit']        = '';
+            $values['estate_client_correspondence_postal_code'] = '';
+            $values['estate_client_correspondence_city']        = '';
+            $values['estate_client_correspondence_country']     = '';
+        }
+
+        return $values;
+    }
+
+    public static function prepareDynamicValues($raw): array
+    {
+        return self::sanitizeDynamicInput($raw);
+    }
+
+    public static function persistValues(int $postId, array $values, array $dynamicValues = []): void
+    {
+        $values = array_intersect_key($values, self::META_FIELDS);
+
+        foreach ($values as $key => $value) {
+            self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
+        }
+
+        self::persistDynamicFields($postId, is_array($dynamicValues) ? $dynamicValues : []);
+
+        $title = self::buildDisplayName($values);
+        self::synchroniseTitle($postId, $title);
     }
 
     public static function save(int $postId, WP_Post $post): void

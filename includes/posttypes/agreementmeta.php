@@ -12,6 +12,7 @@ use function get_post_meta;
 use function get_post_type;
 use function get_posts;
 use function get_the_title;
+use function wp_unslash;
 
 defined('ABSPATH') || exit;
 
@@ -446,6 +447,203 @@ final class AgreementMeta
             </ul>
         <?php endif; ?>
         <?php
+    }
+
+    public static function getDefaultStage(): string
+    {
+        return self::DEFAULT_STAGE;
+    }
+
+    public static function prepareValues(array $source, array $context = []): array
+    {
+        $values = [];
+
+        foreach (self::META_FIELDS as $key => $definition) {
+            if ($key === 'estate_agreement_stage_history') {
+                continue;
+            }
+
+            if (($definition['type'] ?? '') === 'relation') {
+                $values[$key] = self::sanitizeRelation($source[$key] ?? [], $definition);
+
+                continue;
+            }
+
+            if (($definition['type'] ?? '') === 'boolean') {
+                $values[$key] = self::sanitizeBoolean(!empty($source[$key]) ? '1' : '0');
+
+                continue;
+            }
+
+            $raw = $source[$key] ?? '';
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $values[$key] = self::sanitizeValue(wp_unslash(is_scalar($raw) ? (string) $raw : ''), $definition);
+        }
+
+        if (!empty($values['estate_agreement_is_indefinite'])) {
+            $values['estate_agreement_end_date'] = '';
+        }
+
+        if (
+            empty($values['estate_agreement_transaction_type'])
+            && isset($context['transaction_type'])
+        ) {
+            $values['estate_agreement_transaction_type'] = self::sanitizeEnum(
+                (string) $context['transaction_type'],
+                self::TRANSACTION_TYPES
+            );
+        }
+
+        $values['estate_agreement_clients']    = $values['estate_agreement_clients'] ?? [];
+        $values['estate_agreement_properties'] = $values['estate_agreement_properties'] ?? [];
+        $values['estate_agreement_searches']   = $values['estate_agreement_searches'] ?? [];
+
+        $transactionType       = $values['estate_agreement_transaction_type'] ?? '';
+        $propertyTransactions  = ['sale', 'rent_out'];
+        $searchTransactions    = ['purchase', 'lease'];
+        $isPropertyTransaction = in_array($transactionType, $propertyTransactions, true);
+        $isSearchTransaction   = in_array($transactionType, $searchTransactions, true);
+
+        if (!$isPropertyTransaction) {
+            $values['estate_agreement_properties'] = [];
+        }
+
+        if (!$isSearchTransaction) {
+            $values['estate_agreement_searches'] = [];
+        }
+
+        return $values;
+    }
+
+    public static function persistValues(int $postId, array $values, array $dynamicValues = [], array $options = []): void
+    {
+        $values = array_intersect_key($values, self::META_FIELDS);
+
+        $previousClients    = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_clients', true));
+        $previousProperties = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_properties', true));
+        $previousSearches   = self::ensureIntArray(get_post_meta($postId, 'estate_agreement_searches', true));
+
+        foreach ($values as $key => $value) {
+            if ($key === 'estate_agreement_stage_history') {
+                continue;
+            }
+
+            self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
+        }
+
+        self::persistDynamicFields($postId, is_array($dynamicValues) ? $dynamicValues : []);
+
+        $clients    = self::ensureIntArray($values['estate_agreement_clients'] ?? []);
+        $properties = self::ensureIntArray($values['estate_agreement_properties'] ?? []);
+        $searches   = self::ensureIntArray($values['estate_agreement_searches'] ?? []);
+
+        self::syncRelations($postId, $previousClients, $clients, ClientRegister::POST_TYPE, ClientMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($postId, $previousProperties, $properties, PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($postId, $previousSearches, $searches, SearchRegister::POST_TYPE, SearchMeta::AGREEMENTS_META_KEY);
+
+        $stage = $options['stage'] ?? null;
+        if ($stage !== null) {
+            $stage = self::sanitizeEnum((string) $stage, self::STAGES);
+        } else {
+            $stage = self::sanitizeEnum(
+                (string) get_post_meta($postId, 'estate_agreement_stage', true),
+                self::STAGES
+            );
+        }
+
+        if ($stage === '') {
+            $stage = self::DEFAULT_STAGE;
+        }
+
+        update_post_meta($postId, 'estate_agreement_stage', $stage);
+
+        $stageDate = $options['stage_date'] ?? null;
+        if ($stageDate !== null) {
+            $stageDate = self::sanitizeDate((string) $stageDate);
+        } else {
+            $stageDate = self::sanitizeDate((string) get_post_meta($postId, 'estate_agreement_start_date', true));
+        }
+
+        if ($stageDate === '') {
+            $stageDate = gmdate('Y-m-d');
+        }
+
+        $history = $options['stage_history'] ?? null;
+        if ($history !== null) {
+            $history = self::sanitizeStageHistory($history);
+        } else {
+            $history = get_post_meta($postId, 'estate_agreement_stage_history', true);
+            if (!is_array($history)) {
+                $history = [];
+            }
+
+            $history = self::sanitizeStageHistory($history);
+        }
+
+        if (empty($history)) {
+            $history[] = [
+                'stage' => $stage,
+                'date'  => $stageDate,
+            ];
+        }
+
+        update_post_meta($postId, 'estate_agreement_stage_history', $history);
+
+        self::synchroniseTitle($postId, $values['estate_agreement_number'] ?? '');
+    }
+
+    public static function syncAgreementRelations(int $agreementId, array $clients, array $properties, array $searches): void
+    {
+        $clients    = self::ensureIntArray($clients);
+        $properties = self::ensureIntArray($properties);
+        $searches   = self::ensureIntArray($searches);
+
+        $previousClients    = self::ensureIntArray(get_post_meta($agreementId, 'estate_agreement_clients', true));
+        $previousProperties = self::ensureIntArray(get_post_meta($agreementId, 'estate_agreement_properties', true));
+        $previousSearches   = self::ensureIntArray(get_post_meta($agreementId, 'estate_agreement_searches', true));
+
+        self::syncRelations($agreementId, $previousClients, $clients, ClientRegister::POST_TYPE, ClientMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($agreementId, $previousProperties, $properties, PropertyRegister::POST_TYPE, PropertyMeta::AGREEMENTS_META_KEY);
+        self::syncRelations($agreementId, $previousSearches, $searches, SearchRegister::POST_TYPE, SearchMeta::AGREEMENTS_META_KEY);
+
+        update_post_meta($agreementId, 'estate_agreement_clients', $clients);
+        update_post_meta($agreementId, 'estate_agreement_properties', $properties);
+        update_post_meta($agreementId, 'estate_agreement_searches', $searches);
+    }
+
+    public static function isNumberTaken(string $number, ?int $excludeId = null): bool
+    {
+        $number = self::sanitizeLine($number);
+
+        if ($number === '') {
+            return false;
+        }
+
+        $query = get_posts([
+            'post_type'      => AgreementRegister::POST_TYPE,
+            'post_status'    => ['publish', 'draft', 'pending'],
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_query'     => [
+                [
+                    'key'   => 'estate_agreement_number',
+                    'value' => $number,
+                ],
+            ],
+        ]);
+
+        foreach ($query as $postId) {
+            if ($excludeId !== null && (int) $postId === (int) $excludeId) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public static function save(int $postId, WP_Post $post): void

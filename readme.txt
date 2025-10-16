@@ -24,6 +24,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Profil agenta wzbogacony o zdjęcie, szczegóły kontaktowe, biografię oraz listy specjalizacji i obsługiwanych obszarów wykorzystywane w CRM i na stronie.
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
+* Kreator frontowy umów prowadzący przez dodawanie danych i klientów bez opuszczania panelu CRM.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
@@ -66,6 +67,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
 * Rozszerzenie przypomnień follow-up o integrację z kalendarzami, zadaniami i wieloetapowymi sekwencjami.
 * Rozbudowa widoków map o klastry wyników, tryb pełnoekranowy oraz filtrowanie po promieniu lokalizacji.
+* Dokończenie kreatora umów o etapy dodawania nieruchomości i poszukiwań.
 
 == Installation ==
 1. Skopiuj katalog `estate-office` do folderu `wp-content/plugins/`.
@@ -110,3 +112,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano notatki leadów wraz z przypomnieniami follow-up i formularzem dodawania dostępnym w kokpicie i panelu CRM na froncie.
 * Dodano automatyczne przypomnienia follow-up leadów z harmonogramem cron, konfiguracją czasu wysyłki i wyboru odbiorców.
 * Rozszerzono integrację Map Google o interaktywne podglądy lokalizacji w CRM, katalogu i stronach ofertowych wraz z fallbackiem dla braku klucza API oraz dedykowanym skryptem map.
+* Dodano kreator tworzenia umów w panelu frontowego CRM z obsługą przypisywania klientów i finalizacją procesu.

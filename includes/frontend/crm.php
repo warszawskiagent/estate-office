@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EstateOffice\Frontend;
 
+use EstateOffice\Frontend\AgreementCreator;
 use EstateOffice\Frontend\LeadActions;
 use EstateOffice\Frontend\Maps;
 use EstateOffice\PostTypes\AgreementMeta;
@@ -87,9 +88,9 @@ final class CRM
 {
     private const SHORTCODE = 'estate_office_crm';
     private const SEARCH_PARAM = 'estate_office_search';
-    private const SECTION_PARAM = 'estate_office_section';
-    private const RECORD_PARAM = 'estate_office_record';
-    private const RECORD_ID_PARAM = 'estate_office_record_id';
+    public const SECTION_PARAM = 'estate_office_section';
+    public const RECORD_PARAM = 'estate_office_record';
+    public const RECORD_ID_PARAM = 'estate_office_record_id';
 
     /**
      * @var array<string,string>
@@ -152,6 +153,10 @@ final class CRM
         wp_enqueue_style('estate-office-frontend-crm');
         wp_enqueue_script('estate-office-frontend-crm');
 
+        if (current_user_can('publish_estate_agreements')) {
+            AgreementCreator::enqueueAssets();
+        }
+
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
         $canAccess  = self::userCanAccessSection($section);
@@ -194,9 +199,17 @@ final class CRM
             }
         }
 
+        if (current_user_can('publish_estate_agreements')) {
+            AgreementCreator::renderModal();
+        }
         echo '</div>';
 
         return (string) ob_get_clean();
+    }
+
+    public static function getCrmBaseUrl(): string
+    {
+        return self::getBaseUrl();
     }
 
     private static function currentUserCanAccessCrm(): bool
@@ -317,7 +330,7 @@ final class CRM
         echo '<header class="estate-office-crm__header">';
         echo '<div class="estate-office-crm__header-actions">';
         if (current_user_can('publish_estate_agreements')) {
-            echo '<a class="estate-office-crm__primary" href="' . esc_url(admin_url('post-new.php?post_type=' . AgreementRegister::POST_TYPE)) . '">' . esc_html__('Dodaj nową umowę', 'estate-office') . '</a>';
+            echo '<button type="button" class="estate-office-crm__primary" data-eo-agreement-open>' . esc_html__('Dodaj nową umowę', 'estate-office') . '</button>';
         }
         echo '</div>';
         echo '<nav class="estate-office-crm__nav">';
