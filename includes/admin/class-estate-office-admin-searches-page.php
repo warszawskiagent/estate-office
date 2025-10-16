@@ -24,12 +24,20 @@ class Estate_Office_Admin_Searches_Page {
     private Estate_Office_Search_Repository $repository;
 
     /**
+     * Repozytorium umów.
+     *
+     * @var Estate_Office_Contract_Repository
+     */
+    private Estate_Office_Contract_Repository $contracts_repository;
+
+    /**
      * Konstruktor.
      *
      * @param Estate_Office_Search_Repository|null $repository Opcjonalne repozytorium.
      */
-    public function __construct( ?Estate_Office_Search_Repository $repository = null ) {
-        $this->repository = $repository ?? new Estate_Office_Search_Repository();
+    public function __construct( ?Estate_Office_Search_Repository $repository = null, ?Estate_Office_Contract_Repository $contracts_repository = null ) {
+        $this->repository            = $repository ?? new Estate_Office_Search_Repository();
+        $this->contracts_repository  = $contracts_repository ?? new Estate_Office_Contract_Repository();
     }
 
     /**
@@ -321,6 +329,12 @@ JS
             esc_html__( 'Pozostaw pole puste aby numer został nadany automatycznie.', 'estate-office' )
         );
         echo '</div>';
+        $this->render_select_field(
+            'contract_id',
+            __( 'Powiązana umowa', 'estate-office' ),
+            (string) $data['contract_id'],
+            $this->get_contract_select_options( (int) $data['contract_id'] )
+        );
         $this->render_select_field( 'transaction_type', __( 'Typ transakcji', 'estate-office' ), $data['transaction_type'], $this->get_transaction_types(), true );
         $this->render_select_field( 'property_type', __( 'Rodzaj nieruchomości', 'estate-office' ), $data['property_type'], $this->get_property_types(), true );
         echo '</div>';
@@ -482,6 +496,7 @@ JS
         $defaults = [
             'id'               => 0,
             'search_number'    => '',
+            'contract_id'      => 0,
             'generated_number' => $this->repository->generate_search_number(),
             'transaction_type' => 'SPRZEDAŻ',
             'property_type'    => 'MIESZKANIE',
@@ -532,6 +547,10 @@ JS
         ];
 
         if ( null === $search ) {
+            if ( isset( $_GET['contract_id'] ) ) {
+                $defaults['contract_id'] = absint( $_GET['contract_id'] );
+            }
+
             return $defaults;
         }
 
@@ -550,6 +569,7 @@ JS
         }
 
         $defaults['generated_number'] = $this->repository->generate_search_number();
+        $defaults['contract_id']      = absint( $defaults['contract_id'] );
 
         return $defaults;
     }
@@ -563,6 +583,7 @@ JS
         $data = [];
 
         $data['search_number']    = sanitize_text_field( wp_unslash( $_POST['search_number'] ?? '' ) );
+        $data['contract_id']      = isset( $_POST['contract_id'] ) ? absint( $_POST['contract_id'] ) : 0;
         $data['transaction_type'] = $this->sanitize_choice( $_POST['transaction_type'] ?? '', array_keys( $this->get_transaction_types() ) );
         $data['property_type']    = $this->sanitize_choice( $_POST['property_type'] ?? '', array_keys( $this->get_property_types() ) );
         $data['location_city']    = sanitize_text_field( wp_unslash( $_POST['location_city'] ?? '' ) );
@@ -878,6 +899,53 @@ JS
         }
 
         return $data;
+    }
+
+    /**
+     * Zwraca listę dostępnych umów dla pola wyboru.
+     *
+     * @param int $selected Aktualnie wybrana umowa.
+     *
+     * @return array<string,string>
+     */
+    private function get_contract_select_options( int $selected ) : array {
+        $options = [ '0' => __( 'Brak powiązanej umowy', 'estate-office' ) ];
+
+        $contracts = $this->contracts_repository->paginate(
+            [
+                'per_page' => 100,
+            ]
+        );
+
+        $transaction_labels = [
+            'sprzedaz' => __( 'Sprzedaż', 'estate-office' ),
+            'kupno'    => __( 'Kupno', 'estate-office' ),
+            'wynajem'  => __( 'Wynajem', 'estate-office' ),
+            'najem'    => __( 'Najem', 'estate-office' ),
+        ];
+
+        if ( isset( $contracts['items'] ) && is_array( $contracts['items'] ) ) {
+            foreach ( $contracts['items'] as $contract ) {
+                $options[ (string) $contract['id'] ] = sprintf(
+                    '%1$s – %2$s',
+                    $contract['contract_number'],
+                    $transaction_labels[ $contract['transaction_type'] ] ?? strtoupper( (string) $contract['transaction_type'] )
+                );
+            }
+        }
+
+        if ( $selected > 0 && ! isset( $options[ (string) $selected ] ) ) {
+            $contract = $this->contracts_repository->find( $selected );
+            if ( $contract ) {
+                $options[ (string) $selected ] = sprintf(
+                    '%1$s – %2$s',
+                    $contract['contract_number'],
+                    $transaction_labels[ $contract['transaction_type'] ] ?? strtoupper( (string) $contract['transaction_type'] )
+                );
+            }
+        }
+
+        return $options;
     }
 
     /**

@@ -60,7 +60,10 @@ class Estate_Office_Roles {
             'read'                          => true,
             'upload_files'                  => true,
             'manage_estate_office_crm'      => true,
+            'access_estate_office_portal'   => true,
             'manage_estate_office_properties' => true,
+            'manage_estate_office_clients'  => true,
+            'manage_estate_office_contracts' => true,
             'edit_estate_office_records'    => true,
             'view_estate_office_dashboard'  => true,
             'read_estate_office_properties' => true,
@@ -68,6 +71,10 @@ class Estate_Office_Roles {
             'manage_estate_office_searches' => true,
             'read_estate_office_searches'   => true,
             'edit_estate_office_searches'   => true,
+            'read_estate_office_clients'    => true,
+            'edit_estate_office_clients'    => true,
+            'read_estate_office_contracts'  => true,
+            'edit_estate_office_contracts'  => true,
         ];
     }
 
@@ -83,6 +90,8 @@ class Estate_Office_Roles {
             'manage_estate_office_settings',
             'manage_estate_office_properties',
             'manage_estate_office_searches',
+            'manage_estate_office_clients',
+            'manage_estate_office_contracts',
             'edit_estate_office_records',
             'delete_estate_office_records',
             'view_estate_office_dashboard',
@@ -92,6 +101,13 @@ class Estate_Office_Roles {
             'read_estate_office_searches',
             'edit_estate_office_searches',
             'delete_estate_office_searches',
+            'read_estate_office_clients',
+            'edit_estate_office_clients',
+            'delete_estate_office_clients',
+            'read_estate_office_contracts',
+            'edit_estate_office_contracts',
+            'delete_estate_office_contracts',
+            'access_estate_office_portal',
         ];
 
         $administrator_role = get_role( 'administrator' );

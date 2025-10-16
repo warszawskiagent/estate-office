@@ -43,6 +43,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Roles $roles = null;
 
     /**
+     * Kontroler portalu frontendowego.
+     *
+     * @var Estate_Office_Frontend_Portal|null
+     */
+    private ?Estate_Office_Frontend_Portal $frontend = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -99,6 +106,7 @@ final class Estate_Office_Plugin {
         $this->get_roles()->ensure_capabilities();
         $this->get_installer()->maybe_upgrade();
         $this->init_admin();
+        $this->init_frontend();
 
         add_action( 'admin_init', [ $this, 'register_settings_placeholders' ] );
     }
@@ -117,6 +125,8 @@ final class Estate_Office_Plugin {
         $instance = self::instance();
         $instance->get_roles()->register_roles();
         $instance->get_installer()->install();
+        Estate_Office_Frontend_Portal::ensure_portal_page();
+        flush_rewrite_rules();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
     }
@@ -149,6 +159,19 @@ final class Estate_Office_Plugin {
             $this->admin_menu = new Estate_Office_Admin_Menu();
             $this->admin_menu->hooks();
         }
+    }
+
+    /**
+     * Inicjalizuje komponent frontendowy.
+     *
+     * @return void
+     */
+    private function init_frontend() : void {
+        if ( null === $this->frontend ) {
+            $this->frontend = new Estate_Office_Frontend_Portal();
+        }
+
+        $this->frontend->hooks();
     }
 
     /**

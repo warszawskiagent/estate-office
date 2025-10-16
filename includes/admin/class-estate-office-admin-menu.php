@@ -15,6 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Estate_Office_Admin_Menu {
 
     /**
+     * Pulpit CRM.
+     *
+     * @var Estate_Office_Admin_Dashboard_Page
+     */
+    private Estate_Office_Admin_Dashboard_Page $dashboard_page;
+
+    /**
      * Ekran agentów.
      *
      * @var Estate_Office_Admin_Agents_Page
@@ -43,12 +50,29 @@ class Estate_Office_Admin_Menu {
     private Estate_Office_Admin_Searches_Page $searches_page;
 
     /**
+     * Ekran klientów.
+     *
+     * @var Estate_Office_Admin_Clients_Page
+     */
+    private Estate_Office_Admin_Clients_Page $clients_page;
+
+    /**
+     * Ekran umów.
+     *
+     * @var Estate_Office_Admin_Contracts_Page
+     */
+    private Estate_Office_Admin_Contracts_Page $contracts_page;
+
+    /**
      * Konstruktor.
      */
     public function __construct() {
+        $this->dashboard_page   = new Estate_Office_Admin_Dashboard_Page();
         $this->agents_page      = new Estate_Office_Admin_Agents_Page();
         $this->properties_page  = new Estate_Office_Admin_Properties_Page();
         $this->searches_page    = new Estate_Office_Admin_Searches_Page();
+        $this->clients_page     = new Estate_Office_Admin_Clients_Page();
+        $this->contracts_page   = new Estate_Office_Admin_Contracts_Page();
         $this->settings_page    = new Estate_Office_Admin_Settings_Page();
     }
 
@@ -59,9 +83,12 @@ class Estate_Office_Admin_Menu {
      */
     public function hooks() : void {
         add_action( 'admin_menu', [ $this, 'register_menu_pages' ] );
+        $this->dashboard_page->hooks();
         $this->agents_page->hooks();
         $this->properties_page->hooks();
         $this->searches_page->hooks();
+        $this->clients_page->hooks();
+        $this->contracts_page->hooks();
         $this->settings_page->hooks();
     }
 
@@ -75,13 +102,15 @@ class Estate_Office_Admin_Menu {
         $capability_settings    = 'manage_estate_office_settings';
         $capability_properties  = 'manage_estate_office_properties';
         $capability_searches    = 'manage_estate_office_searches';
+        $capability_clients     = 'manage_estate_office_clients';
+        $capability_contracts   = 'manage_estate_office_contracts';
 
         $parent_slug = add_menu_page(
             __( 'Estate Office CRM', 'estate-office' ),
             __( 'Estate Office CRM', 'estate-office' ),
             $capability_main,
             'estate-office-crm',
-            [ $this, 'render_dashboard_placeholder' ],
+            [ $this->dashboard_page, 'render_page' ],
             'dashicons-admin-multisite',
             56
         );
@@ -102,6 +131,24 @@ class Estate_Office_Admin_Menu {
             $capability_searches,
             'estate-office-searches',
             [ $this->searches_page, 'render_page' ]
+        );
+
+        add_submenu_page(
+            $parent_slug,
+            __( 'Umowy', 'estate-office' ),
+            __( 'Umowy', 'estate-office' ),
+            $capability_contracts,
+            'estate-office-contracts',
+            [ $this->contracts_page, 'render_page' ]
+        );
+
+        add_submenu_page(
+            $parent_slug,
+            __( 'Klienci', 'estate-office' ),
+            __( 'Klienci', 'estate-office' ),
+            $capability_clients,
+            'estate-office-clients',
+            [ $this->clients_page, 'render_page' ]
         );
 
         add_submenu_page(
@@ -138,18 +185,6 @@ class Estate_Office_Admin_Menu {
             $capability_main,
             'estate-office-about',
             [ $this, 'render_about_page' ]
-        );
-    }
-
-    /**
-     * Placeholder pulpitu CRM do czasu wdrożenia wersji 0.7.0.
-     *
-     * @return void
-     */
-    public function render_dashboard_placeholder() : void {
-        $this->render_placeholder(
-            __( 'Pulpit CRM będzie dostępny w wersji 0.7.0.', 'estate-office' ),
-            'dashboard'
         );
     }
 
