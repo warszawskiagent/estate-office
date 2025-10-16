@@ -28,6 +28,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
 * Automatyczny zapis leadów z formularzy kontaktowych z przypisaniami agentów, statusami i historią zgłoszeń.
 * Powiadomienia e-mail o nowych leadach dla biura i przypisanych agentów z konfigurowalnymi tematami i treścią.
+* Automatyczne przypomnienia follow-up leadów z konfigurowalnym terminem wysyłki, adresatami i tematami wiadomości.
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
@@ -63,7 +64,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Mechanizmy archiwizacji i audytu powiązań (log zmian relacji, odzyskiwanie rekordów).
 * Rozbudowa leadów o automatyczne powiadomienia e-mail, sekwencje follow-up, raportowanie skuteczności i automatyczną zmianę statusów.
 * Wzbogacenie katalogu agentów o widoki mapy, sortowanie według aktywności oraz szybkie formularze kontaktowe.
-* Automatyczne przypomnienia follow-up dla leadów (powiadomienia e-mail, integracja z kalendarzami i zadaniami).
+* Rozszerzenie przypomnień follow-up o integrację z kalendarzami, zadaniami i wieloetapowymi sekwencjami.
 
 == Installation ==
 1. Skopiuj katalog `estate-office` do folderu `wp-content/plugins/`.
@@ -106,3 +107,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano pola dynamiczne poszukiwań konfigurowane w ustawieniach z obsługą meta boksów, REST API i prezentacją w panelu CRM.
 * Dodano moduł powiadomień leadów wysyłający e-maile do agentów i biura wraz z konfigurowalnymi tematami i treścią wiadomości.
 * Dodano notatki leadów wraz z przypomnieniami follow-up i formularzem dodawania dostępnym w kokpicie i panelu CRM na froncie.
+* Dodano automatyczne przypomnienia follow-up leadów z harmonogramem cron, konfiguracją czasu wysyłki i wyboru odbiorców.

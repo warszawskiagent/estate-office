@@ -39,6 +39,7 @@ use EstateOffice\Frontend\OfferSingle;
 use EstateOffice\Frontend\ContactForms;
 use EstateOffice\Leads\LeadCollector;
 use EstateOffice\Leads\LeadNotifications;
+use EstateOffice\Leads\LeadReminders;
 
 final class Plugin
 {
@@ -64,10 +65,12 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [ClientRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadRegister::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadMeta::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'activate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'deactivate']);
+        register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'deactivate']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
@@ -99,6 +102,7 @@ final class Plugin
         ContactForms::bootstrap();
         LeadCollector::bootstrap();
         LeadNotifications::bootstrap();
+        LeadReminders::bootstrap();
         add_action('admin_menu', [Menu::class, 'register']);
         add_action('admin_init', [GeneralSettings::class, 'register']);
         add_action('admin_enqueue_scripts', [SettingsPage::class, 'enqueueAssets']);

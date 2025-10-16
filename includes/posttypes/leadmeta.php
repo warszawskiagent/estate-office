@@ -66,8 +66,9 @@ final class LeadMeta
     public const META_RECIPIENT_NAME = 'estate_lead_recipient_name';
     public const META_SUBJECT        = 'estate_lead_subject';
     public const META_STATUS_HISTORY = 'estate_lead_status_history';
-    public const META_NOTES          = 'estate_lead_notes';
-    public const META_FOLLOW_UP      = 'estate_lead_follow_up';
+    public const META_NOTES              = 'estate_lead_notes';
+    public const META_FOLLOW_UP          = 'estate_lead_follow_up';
+    public const META_FOLLOW_UP_REMINDER = 'estate_lead_follow_up_reminded';
 
     private const NONCE_ACTION = 'estate_office_save_lead';
     private const NONCE_NAME   = 'estate_office_lead_nonce';
@@ -117,6 +118,7 @@ final class LeadMeta
             self::META_STATUS_HISTORY => ['type' => 'array', 'sanitize_callback' => [self::class, 'sanitizeStatusHistory']],
             self::META_NOTES => ['type' => 'array', 'sanitize_callback' => [self::class, 'sanitizeNotes']],
             self::META_FOLLOW_UP => ['type' => 'string', 'sanitize_callback' => [self::class, 'sanitizeFollowUp']],
+            self::META_FOLLOW_UP_REMINDER => ['type' => 'string', 'sanitize_callback' => [self::class, 'sanitizeFollowUp']],
         ];
 
         foreach ($definitions as $metaKey => $args) {
@@ -522,8 +524,10 @@ final class LeadMeta
 
         if ($followUp !== '') {
             update_post_meta($postId, self::META_FOLLOW_UP, $followUp);
+            delete_post_meta($postId, self::META_FOLLOW_UP_REMINDER);
         } else {
             delete_post_meta($postId, self::META_FOLLOW_UP);
+            delete_post_meta($postId, self::META_FOLLOW_UP_REMINDER);
         }
     }
 
@@ -532,6 +536,29 @@ final class LeadMeta
         $value = (string) get_post_meta($postId, self::META_FOLLOW_UP, true);
 
         return self::sanitizeFollowUp($value);
+    }
+
+    public static function getFollowUpReminder(int $postId): string
+    {
+        $value = (string) get_post_meta($postId, self::META_FOLLOW_UP_REMINDER, true);
+
+        return self::sanitizeFollowUp($value);
+    }
+
+    public static function markFollowUpReminded(int $postId, string $followUp): void
+    {
+        if ($postId <= 0) {
+            return;
+        }
+
+        $followUp = self::sanitizeFollowUp($followUp);
+        if ($followUp === '') {
+            delete_post_meta($postId, self::META_FOLLOW_UP_REMINDER);
+
+            return;
+        }
+
+        update_post_meta($postId, self::META_FOLLOW_UP_REMINDER, $followUp);
     }
 
     private static function formatFollowUpInputValue(string $value): string

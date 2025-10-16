@@ -147,6 +147,38 @@ final class GeneralSettings
             'estate-office-settings',
             'estate_office_notifications'
         );
+
+        add_settings_field(
+            'estate_office_lead_reminder_enabled',
+            __('Przypomnienia follow-up', 'estate-office'),
+            [self::class, 'renderReminderEnabledField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_reminder_hours',
+            __('Wyślij przed terminem', 'estate-office'),
+            [self::class, 'renderReminderHoursField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_reminder_subject',
+            __('Temat przypomnienia', 'estate-office'),
+            [self::class, 'renderReminderSubjectField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
+
+        add_settings_field(
+            'estate_office_lead_reminder_recipients',
+            __('Adresaci przypomnień', 'estate-office'),
+            [self::class, 'renderReminderRecipientsField'],
+            'estate-office-settings',
+            'estate_office_notifications'
+        );
     }
 
     public static function sanitize($value): array
@@ -342,6 +374,73 @@ final class GeneralSettings
         echo '<p class="description">' . esc_html__('Pozostaw puste, aby użyć domyślnego tematu „Nowe zgłoszenie leadu”.', 'estate-office') . '</p>';
     }
 
+    public static function renderReminderEnabledField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][reminder_enabled]');
+
+        printf(
+            '<label><input type="checkbox" name="%1$s" value="1" %2$s /> %3$s</label>',
+            $field,
+            checked(!empty($notifications['reminder_enabled']), true, false),
+            esc_html__('Wyślij automatyczne przypomnienia e-mail przed terminem follow-up.', 'estate-office')
+        );
+        echo '<p class="description">' . esc_html__('Przypomnienia są wysyłane cyklicznie na podstawie zaplanowanych terminów follow-up leadów.', 'estate-office') . '</p>';
+    }
+
+    public static function renderReminderHoursField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][reminder_hours]');
+        $value         = isset($notifications['reminder_hours']) ? (int) $notifications['reminder_hours'] : 24;
+
+        printf(
+            '<input type="number" id="estate_office_lead_reminder_hours" name="%1$s" value="%2$d" class="small-text" min="1" max="168" step="1" />',
+            $field,
+            $value
+        );
+        echo '<p class="description">' . esc_html__('Określ liczbę godzin przed terminem follow-up (zakres 1–168), w których zostanie wysłane przypomnienie.', 'estate-office') . '</p>';
+    }
+
+    public static function renderReminderSubjectField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $field         = esc_attr(self::OPTION . '[lead_notifications][reminder_subject]');
+
+        printf(
+            '<input type="text" id="estate_office_lead_reminder_subject" name="%1$s" value="%2$s" class="regular-text" />',
+            $field,
+            esc_attr($notifications['reminder_subject'])
+        );
+        echo '<p class="description">' . esc_html__('Pozostaw puste, aby użyć domyślnego tematu „Przypomnienie follow-up: {nazwa leadu}”.', 'estate-office') . '</p>';
+    }
+
+    public static function renderReminderRecipientsField(): void
+    {
+        $notifications = self::getNotificationsOption();
+        $agentField    = esc_attr(self::OPTION . '[lead_notifications][reminder_notify_agent]');
+        $officeField   = esc_attr(self::OPTION . '[lead_notifications][reminder_notify_office]');
+
+        echo '<label style="display:block">';
+        printf(
+            '<input type="checkbox" name="%1$s" value="1" %2$s /> %3$s',
+            $agentField,
+            checked(!empty($notifications['reminder_notify_agent']), true, false),
+            esc_html__('Powiadom agenta przypisanego do leadu.', 'estate-office')
+        );
+        echo '</label>';
+
+        echo '<label style="display:block">';
+        printf(
+            '<input type="checkbox" name="%1$s" value="1" %2$s /> %3$s',
+            $officeField,
+            checked(!empty($notifications['reminder_notify_office']), true, false),
+            esc_html__('Wyślij kopię przypomnienia na adres biura.', 'estate-office')
+        );
+        echo '</label>';
+        echo '<p class="description">' . esc_html__('Adres biura jest pobierany z pola „Kopia do biura”.', 'estate-office') . '</p>';
+    }
+
     /**
      * @return array<int,array{key:string,label:string}>
      */
@@ -420,12 +519,25 @@ final class GeneralSettings
     {
         $value = is_array($value) ? $value : [];
 
+        $hours = isset($value['reminder_hours']) ? absint($value['reminder_hours']) : 24;
+        if ($hours < 1) {
+            $hours = 1;
+        }
+        if ($hours > 168) {
+            $hours = 168;
+        }
+
         return [
-            'notify_agent'    => ! empty($value['notify_agent']),
-            'include_message' => ! empty($value['include_message']),
-            'office_email'    => isset($value['office_email']) ? sanitize_email((string) $value['office_email']) : '',
-            'office_subject'  => isset($value['office_subject']) ? sanitize_text_field((string) $value['office_subject']) : '',
-            'agent_subject'   => isset($value['agent_subject']) ? sanitize_text_field((string) $value['agent_subject']) : '',
+            'notify_agent'           => ! empty($value['notify_agent']),
+            'include_message'        => ! empty($value['include_message']),
+            'office_email'           => isset($value['office_email']) ? sanitize_email((string) $value['office_email']) : '',
+            'office_subject'         => isset($value['office_subject']) ? sanitize_text_field((string) $value['office_subject']) : '',
+            'agent_subject'          => isset($value['agent_subject']) ? sanitize_text_field((string) $value['agent_subject']) : '',
+            'reminder_enabled'       => ! empty($value['reminder_enabled']),
+            'reminder_hours'         => $hours,
+            'reminder_subject'       => isset($value['reminder_subject']) ? sanitize_text_field((string) $value['reminder_subject']) : '',
+            'reminder_notify_agent'  => ! empty($value['reminder_notify_agent']),
+            'reminder_notify_office' => ! empty($value['reminder_notify_office']),
         ];
     }
 
@@ -440,11 +552,16 @@ final class GeneralSettings
     private static function getDefaultNotifications(): array
     {
         return [
-            'notify_agent'    => true,
-            'include_message' => true,
-            'office_email'    => '',
-            'office_subject'  => '',
-            'agent_subject'   => '',
+            'notify_agent'           => true,
+            'include_message'        => true,
+            'office_email'           => '',
+            'office_subject'         => '',
+            'agent_subject'          => '',
+            'reminder_enabled'       => false,
+            'reminder_hours'         => 24,
+            'reminder_subject'       => '',
+            'reminder_notify_agent'  => true,
+            'reminder_notify_office' => false,
         ];
     }
 
@@ -461,6 +578,30 @@ final class GeneralSettings
             'office_email'    => (string) $option['office_email'],
             'office_subject'  => (string) $option['office_subject'],
             'agent_subject'   => (string) $option['agent_subject'],
+        ];
+    }
+
+    /**
+     * @return array{enabled:bool,hours:int,subject:string,notify_agent:bool,notify_office:bool}
+     */
+    public static function getLeadReminderSettings(): array
+    {
+        $option = self::getNotificationsOption();
+
+        $hours = isset($option['reminder_hours']) ? (int) $option['reminder_hours'] : 24;
+        if ($hours < 1) {
+            $hours = 1;
+        }
+        if ($hours > 168) {
+            $hours = 168;
+        }
+
+        return [
+            'enabled'       => !empty($option['reminder_enabled']),
+            'hours'         => $hours,
+            'subject'       => (string) ($option['reminder_subject'] ?? ''),
+            'notify_agent'  => !empty($option['reminder_notify_agent']),
+            'notify_office' => !empty($option['reminder_notify_office']),
         ];
     }
 }
