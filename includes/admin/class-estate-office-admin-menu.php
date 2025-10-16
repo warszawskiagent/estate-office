@@ -15,6 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Estate_Office_Admin_Menu {
 
     /**
+     * Menedżer licencji.
+     *
+     * @var Estate_Office_License_Manager
+     */
+    private Estate_Office_License_Manager $license_manager;
+
+    /**
      * Pulpit CRM.
      *
      * @var Estate_Office_Admin_Dashboard_Page
@@ -64,9 +71,19 @@ class Estate_Office_Admin_Menu {
     private Estate_Office_Admin_Contracts_Page $contracts_page;
 
     /**
-     * Konstruktor.
+     * Ekran licencji.
+     *
+     * @var Estate_Office_Admin_License_Page
      */
-    public function __construct() {
+    private Estate_Office_Admin_License_Page $license_page;
+
+    /**
+     * Konstruktor.
+     *
+     * @param Estate_Office_License_Manager $license_manager Menedżer licencji.
+     */
+    public function __construct( Estate_Office_License_Manager $license_manager ) {
+        $this->license_manager = $license_manager;
         $this->dashboard_page   = new Estate_Office_Admin_Dashboard_Page();
         $this->agents_page      = new Estate_Office_Admin_Agents_Page();
         $this->properties_page  = new Estate_Office_Admin_Properties_Page();
@@ -74,6 +91,7 @@ class Estate_Office_Admin_Menu {
         $this->clients_page     = new Estate_Office_Admin_Clients_Page();
         $this->contracts_page   = new Estate_Office_Admin_Contracts_Page();
         $this->settings_page    = new Estate_Office_Admin_Settings_Page();
+        $this->license_page     = new Estate_Office_Admin_License_Page( $this->license_manager );
     }
 
     /**
@@ -90,6 +108,7 @@ class Estate_Office_Admin_Menu {
         $this->clients_page->hooks();
         $this->contracts_page->hooks();
         $this->settings_page->hooks();
+        $this->license_page->hooks();
     }
 
     /**
@@ -104,6 +123,7 @@ class Estate_Office_Admin_Menu {
         $capability_searches    = 'manage_estate_office_searches';
         $capability_clients     = 'manage_estate_office_clients';
         $capability_contracts   = 'manage_estate_office_contracts';
+        $capability_license     = 'manage_estate_office_license';
 
         $parent_slug = add_menu_page(
             __( 'Estate Office CRM', 'estate-office' ),
@@ -173,9 +193,9 @@ class Estate_Office_Admin_Menu {
             $parent_slug,
             __( 'Licencja', 'estate-office' ),
             __( 'Licencja', 'estate-office' ),
-            $capability_settings,
+            $capability_license,
             'estate-office-license',
-            [ $this, 'render_license_placeholder' ]
+            [ $this->license_page, 'render_page' ]
         );
 
         add_submenu_page(
@@ -185,18 +205,6 @@ class Estate_Office_Admin_Menu {
             $capability_main,
             'estate-office-about',
             [ $this, 'render_about_page' ]
-        );
-    }
-
-    /**
-     * Placeholder modułu licencji (wersja 0.9.0).
-     *
-     * @return void
-     */
-    public function render_license_placeholder() : void {
-        $this->render_placeholder(
-            __( 'System licencji zostanie dodany w wersji 0.9.0.', 'estate-office' ),
-            'lock'
         );
     }
 

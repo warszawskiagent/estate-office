@@ -57,6 +57,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Frontend_Offers $offers = null;
 
     /**
+     * Menedżer licencji.
+     *
+     * @var Estate_Office_License_Manager|null
+     */
+    private ?Estate_Office_License_Manager $license_manager = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -112,6 +119,9 @@ final class Estate_Office_Plugin {
         $this->load_textdomain();
         $this->get_roles()->ensure_capabilities();
         $this->get_installer()->maybe_upgrade();
+        $license_manager = $this->get_license_manager();
+        $license_manager->hooks();
+        $license_manager->schedule_events();
         $this->init_admin();
         $this->init_frontend();
 
@@ -132,6 +142,7 @@ final class Estate_Office_Plugin {
         $instance = self::instance();
         $instance->get_roles()->register_roles();
         $instance->get_installer()->install();
+        $instance->get_license_manager()->schedule_events();
         Estate_Office_Frontend_Portal::ensure_portal_page();
         Estate_Office_Frontend_Offers::ensure_offer_pages();
         flush_rewrite_rules();
@@ -145,6 +156,7 @@ final class Estate_Office_Plugin {
      * @return void
      */
     public static function deactivate() : void {
+        self::instance()->get_license_manager()->clear_scheduled_events();
         self::log_debug( 'EstateOffice dezaktywowana.' );
     }
 
@@ -164,7 +176,7 @@ final class Estate_Office_Plugin {
      */
     private function init_admin() : void {
         if ( is_admin() ) {
-            $this->admin_menu = new Estate_Office_Admin_Menu();
+            $this->admin_menu = new Estate_Office_Admin_Menu( $this->get_license_manager() );
             $this->admin_menu->hooks();
         }
     }
@@ -186,6 +198,19 @@ final class Estate_Office_Plugin {
         }
 
         $this->offers->hooks();
+    }
+
+    /**
+     * Pobiera menedżera licencji.
+     *
+     * @return Estate_Office_License_Manager
+     */
+    private function get_license_manager() : Estate_Office_License_Manager {
+        if ( null === $this->license_manager ) {
+            $this->license_manager = new Estate_Office_License_Manager();
+        }
+
+        return $this->license_manager;
     }
 
     /**
