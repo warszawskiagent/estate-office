@@ -6,6 +6,7 @@ namespace EstateOffice\Frontend;
 
 use EstateOffice\Admin\AgentProfile;
 use EstateOffice\Frontend\AgentPublic;
+use EstateOffice\Frontend\Maps;
 use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use WP_Post;
@@ -47,6 +48,7 @@ use function wp_list_pluck;
 use function wp_register_script;
 use function wp_register_style;
 use function wp_reset_postdata;
+use function wp_json_encode;
 use function wp_strip_all_tags;
 use function wp_trim_words;
 use function _n;
@@ -64,6 +66,13 @@ final class Offers
 {
     private const SHORTCODE = 'estate_office_offers';
     private const DEFAULT_LIMIT = 12;
+
+    private static bool $requiresInteractiveMap = false;
+
+    /**
+     * @var array<int,array<string,mixed>>
+     */
+    private static array $markers = [];
 
     /**
      * @var array<string,array{label:string,taxonomy:string,query_var:string,placeholder:string}>
@@ -139,6 +148,18 @@ final class Offers
 
         $query = self::buildQuery($filters, $limit > 0 ? $limit : -1);
 
+        self::$markers = [];
+        self::$requiresInteractiveMap = false;
+
+        $groups = [];
+        if ($query->have_posts()) {
+            $groups = self::groupByTransaction($query);
+        }
+
+        if (self::$requiresInteractiveMap) {
+            Maps::enqueue();
+        }
+
         wp_enqueue_style('estate-office-offers');
         wp_enqueue_script('estate-office-offers');
 
@@ -151,9 +172,9 @@ final class Offers
             self::renderLegend();
         }
 
-        if ($query->have_posts()) {
-            $groups = self::groupByTransaction($query);
+        self::renderCatalogueMap();
 
+        if (!empty($groups)) {
             foreach ($groups as $group) {
                 self::renderGroup($group['label'], $group['cards']);
             }
@@ -371,6 +392,31 @@ final class Offers
         echo '</div>';
     }
 
+    private static function renderCatalogueMap(): void
+    {
+        if (empty(self::$markers)) {
+            return;
+        }
+
+        echo '<div class="estate-office-offers__map-wrapper">';
+
+        if (self::$requiresInteractiveMap && Maps::hasApiKey()) {
+            $markers = wp_json_encode(self::$markers, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+            if ($markers !== false) {
+                echo '<div class="estate-office-offers__map">';
+                echo '<div class="estate-office-map" data-markers="' . esc_attr($markers) . '" data-zoom="12"></div>';
+                echo '</div>';
+            } else {
+                echo '<div class="estate-office-offers__map-notice">' . esc_html__('Nie udało się zainicjować mapy wyników.', 'estate-office') . '</div>';
+            }
+        } else {
+            echo '<div class="estate-office-offers__map-notice">' . esc_html(Maps::getMissingApiMessage()) . '</div>';
+        }
+
+        echo '</div>';
+    }
+
     /**
      * @param array<int,array<string,mixed>> $cards
      */
@@ -461,6 +507,23 @@ final class Offers
         }
         echo '</div>';
 
+        if (!empty($card['map']['has_coordinates'])) {
+            $mapClasses = ['estate-office-offers__card-map'];
+            if (empty($card['map']['interactive'])) {
+                $mapClasses[] = 'estate-office-offers__card-map--iframe';
+            }
+
+            echo '<div class="' . esc_attr(implode(' ', $mapClasses)) . '">';
+
+            if (!empty($card['map']['interactive'])) {
+                echo '<div class="estate-office-map" data-lat="' . esc_attr(number_format((float) $card['map']['lat'], 6, '.', '')) . '" data-lng="' . esc_attr(number_format((float) $card['map']['lng'], 6, '.', '')) . '" data-title="' . esc_attr($card['map']['title']) . '" data-address="' . esc_attr($card['map']['address']) . '" data-url="' . esc_attr((string) $card['permalink']) . '" data-zoom="14"></div>';
+            } elseif (!empty($card['map']['embed'])) {
+                echo '<iframe src="' . esc_url((string) $card['map']['embed']) . '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' . esc_attr($card['map']['title']) . '"></iframe>';
+            }
+
+            echo '</div>';
+        }
+
         if ($card['excerpt']) {
             echo '<p class="estate-office-offers__excerpt">' . esc_html((string) $card['excerpt']) . '</p>';
         }
@@ -514,6 +577,28 @@ final class Offers
         $managerId = (int) get_post_meta($postId, 'estate_property_manager', true);
         $manager   = $managerId > 0 ? get_user_by('id', $managerId) : null;
 
+        $mapData = Maps::prepareMapData($postId);
+        $mapTitle = trim($post->post_title);
+        if ($mapTitle === '') {
+            $mapTitle = sprintf(__('Nieruchomość #%d', 'estate-office'), $postId);
+        }
+        $mapData['title'] = $mapTitle;
+
+        if (!empty($mapData['interactive'])) {
+            self::$requiresInteractiveMap = true;
+        }
+
+        if (!empty($mapData['has_coordinates'])) {
+            self::$markers[] = [
+                'lat'     => $mapData['lat'],
+                'lng'     => $mapData['lng'],
+                'title'   => $mapData['title'],
+                'address' => $mapData['address'],
+                'url'     => $permalink,
+                'zoom'    => 13,
+            ];
+        }
+
         $managerData = [];
         if ($manager) {
             $managerData['name']  = $manager->display_name;
@@ -544,6 +629,7 @@ final class Offers
             'badges'        => self::getBadges($postId),
             'excerpt'       => $excerpt,
             'manager'       => $managerData,
+            'map'           => $mapData,
         ];
     }
 

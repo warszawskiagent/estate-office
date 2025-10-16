@@ -6,6 +6,7 @@ namespace EstateOffice\Frontend;
 
 use EstateOffice\Admin\AgentProfile;
 use EstateOffice\Frontend\AgentPublic;
+use EstateOffice\Frontend\Maps;
 use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\Settings\GeneralSettings;
@@ -110,6 +111,10 @@ final class OfferSingle
 
         self::$context = self::buildContext($post);
 
+        if (!empty(self::$context['map']['interactive'])) {
+            Maps::enqueue();
+        }
+
         wp_enqueue_style('estate-office-offer-single');
 
         if ((self::$context['gallery']['count'] ?? 0) > 1) {
@@ -187,6 +192,8 @@ final class OfferSingle
         $floorPlans = self::prepareFloorPlans($post);
         $mediaLinks = self::prepareMediaLinks($post);
 
+        $map = self::buildMap($post);
+
         return [
             'reference'    => $meta('estate_property_reference'),
             'badges'       => self::collectBadges($post),
@@ -199,7 +206,7 @@ final class OfferSingle
             'custom_fields'=> $customFacts,
             'plot'         => $plotDetails,
             'address'      => self::buildAddress($post),
-            'map'          => self::buildMap($post),
+            'map'          => $map,
             'gallery'      => $gallery,
             'floor_plans'  => $floorPlans,
             'media_links'  => $mediaLinks,
@@ -348,55 +355,20 @@ final class OfferSingle
     }
 
     /**
-     * @return array{address:string,url:string}
+     * @return array{address:string,lat:float|null,lng:float|null,embed:string,interactive:bool,has_coordinates:bool,title:string}
      */
     private static function buildMap(WP_Post $post): array
     {
-        $latitude  = trim((string) get_post_meta($post->ID, 'estate_property_latitude', true));
-        $longitude = trim((string) get_post_meta($post->ID, 'estate_property_longitude', true));
-        $address   = trim((string) get_post_meta($post->ID, 'estate_property_map_address', true));
+        $mapData = Maps::prepareMapData($post->ID);
 
-        if ($latitude === '' || $longitude === '') {
-            return [
-                'address' => $address,
-                'url'     => '',
-            ];
+        $title = trim((string) get_the_title($post));
+        if ($title === '') {
+            $title = sprintf(__('Nieruchomość #%d', 'estate-office'), $post->ID);
         }
 
-        $lat = (float) $latitude;
-        $lng = (float) $longitude;
+        $mapData['title'] = $title;
 
-        $settings = get_option(GeneralSettings::OPTION);
-        $apiKey   = '';
-
-        if (is_array($settings) && ! empty($settings['google_maps_api_key'])) {
-            $apiKey = (string) $settings['google_maps_api_key'];
-        }
-
-        if ($apiKey !== '') {
-            $url = sprintf(
-                'https://www.google.com/maps/embed/v1/view?key=%s&center=%s,%s&zoom=15&maptype=roadmap',
-                rawurlencode($apiKey),
-                rawurlencode(self::formatCoordinate($lat)),
-                rawurlencode(self::formatCoordinate($lng))
-            );
-        } else {
-            $url = sprintf(
-                'https://www.google.com/maps?q=%s,%s&z=15&output=embed',
-                rawurlencode(self::formatCoordinate($lat)),
-                rawurlencode(self::formatCoordinate($lng))
-            );
-        }
-
-        return [
-            'address' => $address,
-            'url'     => $url,
-        ];
-    }
-
-    private static function formatCoordinate(float $value): string
-    {
-        return sprintf('%.6f', $value);
+        return $mapData;
     }
 
     /**

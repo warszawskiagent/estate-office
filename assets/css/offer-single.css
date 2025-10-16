@@ -420,12 +420,57 @@
     overflow: hidden;
     border-radius: 18px;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+    background: #e2e8f0;
+}
+
+.estate-office-offer__map .estate-office-map {
+    width: 100%;
+    min-height: 320px;
+}
+
+.estate-office-offer__map--iframe {
+    background: transparent;
 }
 
 .estate-office-offer__map iframe {
     width: 100%;
     min-height: 320px;
     border: 0;
+    display: block;
+}
+
+.estate-office-map--empty {
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+}
+
+.estate-office-map__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #0f172a;
+}
+
+.estate-office-map__info strong {
+    font-weight: 700;
+}
+
+.estate-office-map__info a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.estate-office-map__info a:hover,
+.estate-office-map__info a:focus {
+    text-decoration: underline;
 }
 
 @media (min-width: 960px) {

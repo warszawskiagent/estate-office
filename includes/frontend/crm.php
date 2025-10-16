@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\Frontend;
 
 use EstateOffice\Frontend\LeadActions;
+use EstateOffice\Frontend\Maps;
 use EstateOffice\PostTypes\AgreementMeta;
 use EstateOffice\PostTypes\AgreementRegister;
 use EstateOffice\PostTypes\ClientMeta;
@@ -1401,6 +1402,31 @@ final class CRM
 
         self::renderDetailCards($cards);
 
+        $mapData = Maps::prepareMapData($postId);
+        if (!empty($mapData['interactive'])) {
+            Maps::enqueue();
+        }
+
+        if (!empty($mapData['has_coordinates'])) {
+            $mapClasses = ['estate-office-crm__map'];
+            if (empty($mapData['interactive'])) {
+                $mapClasses[] = 'estate-office-crm__map--iframe';
+            }
+
+            echo '<section class="estate-office-crm__detail-panel">';
+            echo '<h3>' . esc_html__('Mapa lokalizacji', 'estate-office') . '</h3>';
+            echo '<div class="' . esc_attr(implode(' ', $mapClasses)) . '">';
+
+            if (!empty($mapData['interactive'])) {
+                echo '<div class="estate-office-map" data-lat="' . esc_attr(self::formatCoordinateValue($mapData['lat'])) . '" data-lng="' . esc_attr(self::formatCoordinateValue($mapData['lng'])) . '" data-title="' . esc_attr($title) . '" data-address="' . esc_attr($mapData['address']) . '" data-zoom="14"></div>';
+            } elseif (!empty($mapData['embed'])) {
+                echo '<iframe src="' . esc_url($mapData['embed']) . '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' . esc_attr($title) . '"></iframe>';
+            }
+
+            echo '</div>';
+            echo '</section>';
+        }
+
         $content = apply_filters('the_content', $post->post_content);
         if (trim(wp_strip_all_tags((string) $content)) !== '') {
             echo '<section class="estate-office-crm__detail-panel">';
@@ -2625,6 +2651,15 @@ final class CRM
     private static function mapValue(array $map, string $key): string
     {
         return $map[$key] ?? '—';
+    }
+
+    private static function formatCoordinateValue(?float $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return sprintf('%.6f', $value);
     }
 
     /**

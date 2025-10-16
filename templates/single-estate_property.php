@@ -263,15 +263,32 @@ get_header();
                     <span><?php echo esc_html($context['map']['address']); ?></span>
                 <?php endif; ?>
             </div>
-            <?php if (! empty($context['map']['url'])) : ?>
-                <div class="estate-office-offer__map">
-                    <iframe
-                        src="<?php echo esc_url($context['map']['url']); ?>"
-                        allowfullscreen
-                        loading="lazy"
-                        referrerpolicy="no-referrer-when-downgrade"
-                        title="<?php echo esc_attr(get_the_title()); ?>"
-                    ></iframe>
+            <?php if (! empty($context['map']['has_coordinates'])) : ?>
+                <?php
+                $mapClasses = ['estate-office-offer__map'];
+                if (empty($context['map']['interactive'])) {
+                    $mapClasses[] = 'estate-office-offer__map--iframe';
+                }
+                ?>
+                <div class="<?php echo esc_attr(implode(' ', $mapClasses)); ?>">
+                    <?php if (! empty($context['map']['interactive'])) : ?>
+                        <div
+                            class="estate-office-map"
+                            data-lat="<?php echo esc_attr(number_format((float) $context['map']['lat'], 6, '.', '')); ?>"
+                            data-lng="<?php echo esc_attr(number_format((float) $context['map']['lng'], 6, '.', '')); ?>"
+                            data-title="<?php echo esc_attr($context['map']['title'] ?? get_the_title()); ?>"
+                            data-address="<?php echo esc_attr($context['map']['address'] ?? ''); ?>"
+                            data-zoom="15"
+                        ></div>
+                    <?php elseif (! empty($context['map']['embed'])) : ?>
+                        <iframe
+                            src="<?php echo esc_url($context['map']['embed']); ?>"
+                            allowfullscreen
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            title="<?php echo esc_attr(get_the_title()); ?>"
+                        ></iframe>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>
