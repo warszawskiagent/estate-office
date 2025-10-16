@@ -56,7 +56,7 @@ final class ClientRegister
             'labels'             => $labels,
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => 'estate-office-crm',
+            'show_in_menu'       => false,
             'capability_type'    => ['estate_client', 'estate_clients'],
             'map_meta_cap'       => true,
             'supports'           => $supports,

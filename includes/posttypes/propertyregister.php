@@ -66,7 +66,7 @@ final class PropertyRegister
             'labels'             => $labels,
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => 'estate-office-crm',
+            'show_in_menu'       => false,
             'capability_type'    => ['estate_property', 'estate_properties'],
             'map_meta_cap'       => true,
             'supports'           => $supports,

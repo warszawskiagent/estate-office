@@ -35,15 +35,23 @@ final class Pages
         require_once ABSPATH . 'wp-admin/includes/nav-menu.php';
 
         $pages = [
-            'estate-office-crm'    => [
+            'estate-office-crm'           => [
                 'title'     => __('Panel CRM', 'estate-office'),
                 'shortcode' => '[estate_office_crm]',
             ],
-            'estate-office-offers' => [
+            'estate-office-offers'        => [
                 'title'     => __('Oferty nieruchomości', 'estate-office'),
                 'shortcode' => '[estate_office_offers]',
             ],
-            'estate-office-agenci' => [
+            'estate-office-oferty-sprzedaz' => [
+                'title'     => __('Oferty na sprzedaż', 'estate-office'),
+                'shortcode' => '[estate_office_offers transaction="sprzedaz" show_legend="no"]',
+            ],
+            'estate-office-oferty-wynajem' => [
+                'title'     => __('Oferty na wynajem', 'estate-office'),
+                'shortcode' => '[estate_office_offers transaction="wynajem" show_legend="no"]',
+            ],
+            'estate-office-agenci'        => [
                 'title'     => __('Nasi agenci', 'estate-office'),
                 'shortcode' => '[estate_office_agents]',
             ],

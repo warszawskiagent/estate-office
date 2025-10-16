@@ -6,9 +6,10 @@ namespace EstateOffice\Admin;
 
 defined('ABSPATH') || exit;
 
-use EstateOffice\Admin\Dashboard;
 use EstateOffice\Admin\Pages\AboutPage;
 use EstateOffice\Admin\Pages\AgentsPage;
+use EstateOffice\Admin\Pages\LicensePage;
+use EstateOffice\Admin\Pages\OverviewPage;
 use EstateOffice\Admin\Pages\SettingsPage;
 
 final class Menu
@@ -20,21 +21,19 @@ final class Menu
             __('Estate Office CRM', 'estate-office'),
             'edit_estate_properties',
             'estate-office-crm',
-            [self::class, 'render_dashboard'],
+            [OverviewPage::class, 'render'],
             'dashicons-admin-multisite',
             26
         );
 
         add_submenu_page(
             'estate-office-crm',
-            __('Pulpit', 'estate-office'),
-            __('Pulpit', 'estate-office'),
-            'edit_estate_properties',
-            'estate-office-crm',
-            [self::class, 'render_dashboard']
+            __('Licencja', 'estate-office'),
+            __('Licencja', 'estate-office'),
+            'manage_options',
+            'estate-office-license',
+            [LicensePage::class, 'render']
         );
-
-        remove_submenu_page('estate-office-crm', 'estate-office-crm');
 
         add_submenu_page(
             'estate-office-crm',
@@ -62,11 +61,5 @@ final class Menu
             'estate-office-about',
             [AboutPage::class, 'render']
         );
-
-    }
-
-    public static function render_dashboard(): void
-    {
-        Dashboard::render();
     }
 }

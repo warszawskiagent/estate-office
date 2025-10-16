@@ -10,10 +10,9 @@ License URI: http://warszawskiagent.pl
 EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 zawiera podstawową strukturę panelu administracyjnego, zarządzanie rolą agentów oraz sekcję ustawień dla kluczowych integracji.
 
 == Description ==
-* Kompletny szkielet panelu administracyjnego z zakładkami: Agenci, Ustawienia i O wtyczce.
+* Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
 * Moduł licencji jest tymczasowo dezaktywowany do czasu udostępnienia generatora kluczy testowych.
-* Automatyczne tworzenie stron z shortcode'ami CRM i katalogu ofert oraz dedykowanego menu nawigacyjnego podczas aktywacji.
-* Wspólne menu CRM w kokpicie z pulpitem startowym i szybkim dostępem do kluczowych modułów.
+* Automatyczne tworzenie stron z shortcode'ami CRM, katalogu agentów oraz dedykowanych podstron ofert na sprzedaż i wynajem wraz z menu nawigacyjnym podczas aktywacji.
 * Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
@@ -25,7 +24,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Znaczniki marketingowe ofert (Nowa oferta, Wyłączność, Premium, MLS itp.) z automatycznym wygaszaniem statusu "Nowa oferta".
 * Profil agenta wzbogacony o zdjęcie, szczegóły kontaktowe, biografię oraz listy specjalizacji i obsługiwanych obszarów wykorzystywane w CRM i na stronie.
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
-* Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania i Klienci oraz wyszukiwarką w tabelach.
+* Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania, Klienci i Leady oraz wyszukiwarką w tabelach.
 * Frontowe formularze szybkiego dodawania nieruchomości, poszukiwań i klientów dostępne bezpośrednio w CRM.
 * Kreator frontowy umów prowadzący przez dodawanie danych i klientów bez opuszczania panelu CRM.
 * Możliwość wyszukania i przypisania istniejących nieruchomości lub poszukiwań w kreatorze umów oraz zmiany wyboru przed finalizacją.
@@ -104,7 +103,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Wprowadzono typ wpisu klientów z rozbudowanymi metadanymi kontaktowymi, adresowymi i wsparciem dla roli opiekuna.
 * Dodano powiązania umów z klientami, nieruchomościami i poszukiwaniami oraz podsumowania relacji w panelu CRM.
 * Zapewniono automatyczne utrzymanie spójności powiązań CRM podczas usuwania umów, nieruchomości, klientów i poszukiwań.
-* Skonsolidowano menu administracyjne CRM z pulpitem szybkich akcji i podpięciem typów wpisów pod główną sekcję wtyczki.
+* Przebudowano menu administracyjne zgodnie ze specyfikacją – główny wpis „Estate Office CRM” posiada zakładki Licencja, Agenci, Ustawienia i O wtyczce oraz stronę przeglądową odsyłającą do panelu frontowego.
 * Rozbudowano pulpit CRM o zestawienie liczby rekordów modułów i ranking aktywności agentów wraz z dedykowanym stylem.
 * Dodano zakładkę Agenci z wyszukiwarką, kontaktami i licznikami przypisań oraz skrótami do list CRM.
 * Wprowadzono filtr opiekuna na listach nieruchomości, poszukiwań i klientów w kokpicie WordPress.
@@ -145,7 +144,9 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzono publiczny szablon oferty o sekcję rekomendowanych nieruchomości dopasowanych po typie transakcji, rodzaju i lokalizacji.
 * Dodano podpisy zdjęć i wybór zdjęcia głównego w galerii nieruchomości oraz prezentację podpisów w publicznym szablonie oferty.
 * Dodano moduł SEO ofert generujący metadane Open Graph/Twitter, dane strukturalne JSON-LD oraz dedykowany wpis w mapie witryny dla nieruchomości eksportowanych na WWW.
-* Podczas aktywacji wtyczki automatycznie tworzone są strony panelu CRM, katalogu ofert i katalogu agentów wraz z dedykowanym menu nawigacyjnym.
+* Podczas aktywacji wtyczki automatycznie tworzone są strony panelu CRM, katalogu agentów oraz podstrony ofert na sprzedaż i wynajem z odpowiednio skonfigurowanymi shortcode’ami w dedykowanym menu nawigacyjnym.
+* Ukryto typy wpisów CRM z menu kokpitu WordPress, aby zarządzanie odbywało się z poziomu frontowego panelu zgodnego ze specyfikacją.
+* Shortcode katalogu ofert obsługuje atrybuty wstępnych filtrów (transakcja, rodzaj nieruchomości, miasto, dzielnica), co pozwala budować oddzielne widoki sprzedaży i wynajmu.
 * Tymczasowo dezaktywowano moduł licencji do czasu przygotowania generatora kluczy – dotychczasowe akcje i harmonogramy nie są ładowane.
 * Udostępniono moduł QuickCreate z przyciskami w CRM i modalem umożliwiającym tworzenie nieruchomości, klientów i poszukiwań po stronie frontu.
 * Dodano dedykowane style i skrypty obsługujące szybkie formularze wraz z komunikatami oraz przekierowaniami do nowych rekordów.

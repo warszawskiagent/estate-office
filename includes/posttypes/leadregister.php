@@ -49,7 +49,7 @@ final class LeadRegister
             'labels'             => $labels,
             'public'             => false,
             'show_ui'            => true,
-            'show_in_menu'       => 'estate-office-crm',
+            'show_in_menu'       => false,
             'show_in_nav_menus'  => false,
             'show_in_admin_bar'  => false,
             'capability_type'    => ['estate_lead', 'estate_leads'],

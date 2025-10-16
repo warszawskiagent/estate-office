@@ -141,10 +141,15 @@ final class Offers
         $attributes = shortcode_atts([
             'limit'       => (string) self::DEFAULT_LIMIT,
             'show_legend' => 'yes',
+            'transaction' => '',
+            'property'    => '',
+            'city'        => '',
+            'district'    => '',
         ], $attributes, self::SHORTCODE);
 
-        $limit   = absint((string) $attributes['limit']);
-        $filters = self::getFilterValues();
+        $limit          = absint((string) $attributes['limit']);
+        $defaultFilters = self::normaliseAttributeFilters($attributes);
+        $filters        = self::getFilterValues($defaultFilters);
 
         $query = self::buildQuery($filters, $limit > 0 ? $limit : -1);
 
@@ -166,7 +171,7 @@ final class Offers
         ob_start();
 
         echo '<div class="estate-office-offers">';
-        self::renderFilters($filters);
+        self::renderFilters($filters, $defaultFilters);
 
         if ($attributes['show_legend'] !== 'no') {
             self::renderLegend();
@@ -192,14 +197,19 @@ final class Offers
     /**
      * @return array<string,string>
      */
-    private static function getFilterValues(): array
+    private static function getFilterValues(array $defaults = []): array
     {
         $values = [];
 
         foreach (self::FILTERS as $key => $definition) {
             $param         = $definition['query_var'];
-            $rawValue      = $_GET[$param] ?? '';
-            $values[$key]  = is_string($rawValue) ? sanitize_title($rawValue) : '';
+            if (isset($_GET[$param])) {
+                $rawValue     = $_GET[$param];
+                $values[$key] = is_string($rawValue) ? sanitize_title($rawValue) : '';
+                continue;
+            }
+
+            $values[$key] = $defaults[$key] ?? '';
         }
 
         return $values;
@@ -208,7 +218,7 @@ final class Offers
     /**
      * @param array<string,string> $filters
      */
-    private static function renderFilters(array $filters): void
+    private static function renderFilters(array $filters, array $defaults): void
     {
         $filterKeys = array_map(static fn(array $definition): string => $definition['query_var'], self::FILTERS);
         $action     = remove_query_arg($filterKeys);
@@ -235,7 +245,7 @@ final class Offers
         self::renderPreservedQueryArgs();
 
         echo '<button type="submit">' . esc_html__('Filtruj oferty', 'estate-office') . '</button>';
-        if (self::hasActiveFilters($filters)) {
+        if (self::hasActiveFilters($filters, $defaults)) {
             echo '<a class="estate-office-offers__reset" href="' . esc_url($action) . '">' . esc_html__('Wyczyść filtry', 'estate-office') . '</a>';
         }
         echo '</form>';
@@ -259,15 +269,49 @@ final class Offers
         }
     }
 
-    private static function hasActiveFilters(array $filters): bool
+    private static function hasActiveFilters(array $filters, array $defaults): bool
     {
-        foreach ($filters as $value) {
-            if ($value !== '') {
+        foreach ($filters as $key => $value) {
+            $default = $defaults[$key] ?? '';
+
+            if ($value !== $default) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string,string> $attributes
+     * @return array<string,string>
+     */
+    private static function normaliseAttributeFilters(array $attributes): array
+    {
+        $mapping = [
+            'transaction' => 'transaction',
+            'property'    => 'property',
+            'city'        => 'city',
+            'district'    => 'district',
+        ];
+
+        $defaults = [];
+
+        foreach ($mapping as $attribute => $filterKey) {
+            if (empty($attributes[$attribute])) {
+                continue;
+            }
+
+            $value = sanitize_title((string) $attributes[$attribute]);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $defaults[$filterKey] = $value;
+        }
+
+        return $defaults;
     }
 
     /**
