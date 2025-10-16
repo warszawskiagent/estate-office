@@ -27,6 +27,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Kreator frontowy umów prowadzący przez dodawanie danych i klientów bez opuszczania panelu CRM.
 * Możliwość wyszukania i przypisania istniejących nieruchomości lub poszukiwań w kreatorze umów oraz zmiany wyboru przed finalizacją.
 * Walidacja finalizacji kreatora umów wymagająca przypisania nieruchomości lub poszukiwania zgodnie z typem transakcji.
+* Obsługa dynamicznych pól nieruchomości i poszukiwań bezpośrednio w kreatorze umów.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
@@ -71,6 +72,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzenie przypomnień follow-up o integrację z kalendarzami, zadaniami i wieloetapowymi sekwencjami.
 * Rozbudowa widoków map o klastry wyników, tryb pełnoekranowy oraz filtrowanie po promieniu lokalizacji.
 * Rozszerzenie kreatora umów o edycję i dodawanie kolejnych nieruchomości lub poszukiwań po utworzeniu rekordu.
+* Rozbudowa kreatora umów o walidację typów danych pól dynamicznych i raportowanie braków konfiguracji.
 * Testy integracyjne kreatora umów i przepływu leadów (scenariusze E2E i jednostkowe dla krytycznych ścieżek).
 
 == Installation ==
@@ -120,3 +122,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzono kreator umów o etap dodawania nieruchomości lub poszukiwań z automatycznym powiązaniem w CRM i przekierowaniem do nowego rekordu.
 * Umożliwiono wyszukiwanie i przypisywanie istniejących nieruchomości lub poszukiwań w kreatorze umów oraz ponowne otwieranie formularzy bezpośrednio z podsumowania.
 * Dodano walidację finalizacji kreatora umów, która wymaga powiązania nieruchomości lub poszukiwania zgodnie z typem transakcji.
+* Dodano obsługę dynamicznych pól nieruchomości i poszukiwań w kreatorze umów na froncie CRM.

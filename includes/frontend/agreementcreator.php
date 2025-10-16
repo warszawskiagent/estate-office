@@ -12,6 +12,7 @@ use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\PostTypes\SearchMeta;
 use EstateOffice\PostTypes\SearchRegister;
+use EstateOffice\Settings\GeneralSettings;
 use WP_Error;
 use WP_Post;
 use WP_Query;
@@ -267,7 +268,9 @@ final class AgreementCreator
 
     private static function renderStepSummary(): void
     {
-        $propertyTypes = self::getPropertyTypes();
+        $propertyTypes       = self::getPropertyTypes();
+        $propertyDynamic     = GeneralSettings::getPropertyDynamicFields();
+        $searchDynamic       = GeneralSettings::getSearchDynamicFields();
 
         echo '<div class="estate-office-agreement-creator__form" data-eo-agreement-step="3" hidden>';
         echo '<h2 data-eo-agreement-step3-heading>' . esc_html__('Dodaj nieruchomość lub poszukiwanie', 'estate-office') . '</h2>';
@@ -308,6 +311,19 @@ final class AgreementCreator
         echo '<label class="estate-office-agreement-creator__textarea">' . esc_html__('Opis nieruchomości', 'estate-office');
         echo '<textarea name="property[description]" rows="4"></textarea>';
         echo '</label>';
+        if (!empty($propertyDynamic)) {
+            echo '<div class="estate-office-agreement-creator__dynamic">';
+            echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe nieruchomości', 'estate-office') . '</p>';
+            echo '<div class="estate-office-agreement-creator__grid">';
+            foreach ($propertyDynamic as $field) {
+                $key   = (string) $field['key'];
+                $label = (string) $field['label'];
+                echo '<label>' . esc_html($label) . '<input type="text" name="property[dynamic][' . esc_attr($key) . ']" autocomplete="off" /></label>';
+            }
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Lista pól jest edytowalna w ustawieniach wtyczki.', 'estate-office') . '</p>';
+            echo '</div>';
+        }
         echo '<div class="estate-office-agreement-creator__actions">';
         echo '<button type="submit" class="estate-office-agreement-creator__primary">' . esc_html__('Dodaj nieruchomość', 'estate-office') . '</button>';
         echo '</div>';
@@ -347,6 +363,19 @@ final class AgreementCreator
         echo '<label class="estate-office-agreement-creator__textarea">' . esc_html__('Opis poszukiwania', 'estate-office');
         echo '<textarea name="search[estate_search_description]" rows="4"></textarea>';
         echo '</label>';
+        if (!empty($searchDynamic)) {
+            echo '<div class="estate-office-agreement-creator__dynamic">';
+            echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe poszukiwania', 'estate-office') . '</p>';
+            echo '<div class="estate-office-agreement-creator__grid">';
+            foreach ($searchDynamic as $field) {
+                $key   = (string) $field['key'];
+                $label = (string) $field['label'];
+                echo '<label>' . esc_html($label) . '<input type="text" name="search[dynamic][' . esc_attr($key) . ']" autocomplete="off" /></label>';
+            }
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Lista pól jest edytowalna w ustawieniach wtyczki.', 'estate-office') . '</p>';
+            echo '</div>';
+        }
         echo '<div class="estate-office-agreement-creator__actions">';
         echo '<button type="submit" class="estate-office-agreement-creator__primary">' . esc_html__('Dodaj poszukiwanie', 'estate-office') . '</button>';
         echo '</div>';
