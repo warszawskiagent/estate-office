@@ -246,6 +246,8 @@ final class AgreementCreator
 
     private static function renderStepClients(): void
     {
+        $clientDynamic = GeneralSettings::getClientDynamicFields();
+
         echo '<div class="estate-office-agreement-creator__form" data-eo-agreement-step="2" hidden>';
         echo '<h2>' . esc_html__('Klienci powiązani z umową', 'estate-office') . '</h2>';
         echo '<p class="description">' . esc_html__('Wyszukaj istniejących klientów lub dodaj nowych. Co najmniej jeden klient jest wymagany.', 'estate-office') . '</p>';
@@ -273,6 +275,24 @@ final class AgreementCreator
         echo '<label>' . esc_html__('E-mail', 'estate-office') . '<input type="email" name="estate_client_email" /></label>';
         echo '<label>' . esc_html__('Strona WWW', 'estate-office') . '<input type="url" name="estate_client_website" /></label>';
         echo '</div>';
+        if (!empty($clientDynamic)) {
+            echo '<div class="estate-office-agreement-creator__dynamic">';
+            echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe klienta', 'estate-office') . '</p>';
+            echo '<div class="estate-office-agreement-creator__grid">';
+            foreach ($clientDynamic as $field) {
+                $key   = (string) ($field['key'] ?? '');
+                $label = (string) ($field['label'] ?? '');
+
+                if ($key === '' || $label === '') {
+                    continue;
+                }
+
+                echo '<label>' . esc_html($label) . '<input type="text" name="dynamic[' . esc_attr($key) . ']" autocomplete="off" /></label>';
+            }
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Zarządzaj listą pól w sekcji „Pola klientów” ustawień wtyczki.', 'estate-office') . '</p>';
+            echo '</div>';
+        }
         echo '<div class="estate-office-agreement-creator__actions">';
         echo '<button type="submit" class="estate-office-agreement-creator__secondary">' . esc_html__('Zapisz klienta', 'estate-office') . '</button>';
         echo '</div>';

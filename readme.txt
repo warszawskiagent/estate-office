@@ -28,6 +28,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Możliwość wyszukania i przypisania istniejących nieruchomości lub poszukiwań w kreatorze umów oraz zmiany wyboru przed finalizacją.
 * Walidacja finalizacji kreatora umów wymagająca przypisania nieruchomości lub poszukiwania zgodnie z typem transakcji.
 * Obsługa dynamicznych pól umów, nieruchomości i poszukiwań bezpośrednio w kreatorze umów.
+* Formularz dodawania klientów w kreatorze umów uwzględnia dynamiczne pola konfigurowane w ustawieniach CRM.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
@@ -74,6 +75,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Rozszerzenie kreatora umów o edycję i dodawanie kolejnych nieruchomości lub poszukiwań po utworzeniu rekordu.
 * Rozbudowa kreatora umów o walidację typów danych pól dynamicznych i raportowanie braków konfiguracji.
 * Umożliwienie edycji oraz podglądu dynamicznych pól umów w kreatorze po utworzeniu rekordu.
+* Integracja dynamicznych pól klientów z raportami, eksportami i automatyzacjami marketingowymi.
 * Testy integracyjne kreatora umów i przepływu leadów (scenariusze E2E i jednostkowe dla krytycznych ścieżek).
 
 == Installation ==
@@ -125,3 +127,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano walidację finalizacji kreatora umów, która wymaga powiązania nieruchomości lub poszukiwania zgodnie z typem transakcji.
 * Dodano obsługę dynamicznych pól nieruchomości i poszukiwań w kreatorze umów na froncie CRM.
 * Dodano obsługę dynamicznych pól umów w kreatorze frontowego CRM, aby zbierać niestandardowe dane od pierwszego kroku.
+* Dodano obsługę dynamicznych pól klientów w kreatorze frontowego CRM, dzięki czemu nowe kontakty mogą być uzupełniane o dodatkowe informacje.

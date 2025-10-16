@@ -863,6 +863,11 @@
             payload.append('agreement_id', String(state.agreementId));
 
             formData.forEach((value, key) => {
+                if (typeof key === 'string' && key.startsWith('dynamic[')) {
+                    payload.append('client[dynamic]' + key.substring('dynamic'.length), value);
+                    return;
+                }
+
                 payload.append('client[' + key + ']', value);
             });
 
