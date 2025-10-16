@@ -14,6 +14,8 @@ final class Manager
     private const OPTION_EXPIRATION = 'estate_office_license_expires_at';
     private const OPTION_LAST_CHECK = 'estate_office_license_last_check';
     private const TRANSIENT_NOTICE  = 'estate_office_license_notice';
+    private const TRANSIENT_CRON    = 'estate_office_license_cron_error';
+    private const CRON_HOOK         = 'estate_office_license_status_check';
     private const API_ENDPOINT      = 'https://warszawskiagent.pl/wp-json/estate-office/v1/license/';
 
     private function __construct()
@@ -24,6 +26,24 @@ final class Manager
     {
         add_action('admin_init', [self::class, 'handleRequest']);
         add_action('admin_notices', [self::class, 'renderNotice']);
+        add_action('admin_notices', [self::class, 'renderStatusAlert']);
+        add_action(self::CRON_HOOK, [self::class, 'runScheduledCheck']);
+    }
+
+    public static function activatePlugin(): void
+    {
+        if (!wp_next_scheduled(self::CRON_HOOK)) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'twicedaily', self::CRON_HOOK);
+        }
+    }
+
+    public static function deactivatePlugin(): void
+    {
+        while (($timestamp = wp_next_scheduled(self::CRON_HOOK)) !== false) {
+            wp_unschedule_event((int) $timestamp, self::CRON_HOOK);
+        }
+
+        delete_transient(self::TRANSIENT_CRON);
     }
 
     public static function getData(): array
@@ -34,6 +54,7 @@ final class Manager
             'status'     => (string) get_option(self::OPTION_STATUS, 'inactive'),
             'expires_at' => (string) get_option(self::OPTION_EXPIRATION, ''),
             'last_check' => (string) get_option(self::OPTION_LAST_CHECK, ''),
+            'next_check' => self::getNextCheckDate(),
         ];
     }
 
@@ -150,15 +171,7 @@ final class Manager
 
     private static function refresh(string $key, string $email): void
     {
-        if ($key === '') {
-            throw new \RuntimeException(__('Wprowadź klucz licencyjny, aby sprawdzić status.', 'estate-office'));
-        }
-
-        $response = self::remoteRequest('status', $key, $email);
-        self::persist($key, $email, $response);
-
-        $message = isset($response['message']) ? (string) $response['message'] : __('Status licencji został odświeżony.', 'estate-office');
-        self::addNotice('success', $message);
+        self::refreshStatus($key, $email, false);
     }
 
     private static function deactivate(): void
@@ -255,6 +268,25 @@ final class Manager
         }
     }
 
+    private static function refreshStatus(string $key, string $email, bool $silent): void
+    {
+        if ($key === '') {
+            if ($silent) {
+                return;
+            }
+
+            throw new \RuntimeException(__('Wprowadź klucz licencyjny, aby sprawdzić status.', 'estate-office'));
+        }
+
+        $response = self::remoteRequest('status', $key, $email);
+        self::persist($key, $email, $response);
+
+        if (!$silent) {
+            $message = isset($response['message']) ? (string) $response['message'] : __('Status licencji został odświeżony.', 'estate-office');
+            self::addNotice('success', $message);
+        }
+    }
+
     private static function normalizeStatus(string $status): string
     {
         $status = sanitize_key($status);
@@ -274,5 +306,93 @@ final class Manager
             ],
             MINUTE_IN_SECONDS
         );
+    }
+
+    public static function runScheduledCheck(): void
+    {
+        $key   = (string) get_option(self::OPTION_KEY, '');
+        $email = (string) get_option(self::OPTION_EMAIL, '');
+
+        if ($key === '') {
+            delete_transient(self::TRANSIENT_CRON);
+            return;
+        }
+
+        try {
+            self::refreshStatus($key, $email, true);
+            delete_transient(self::TRANSIENT_CRON);
+        } catch (\RuntimeException $exception) {
+            set_transient(self::TRANSIENT_CRON, $exception->getMessage(), DAY_IN_SECONDS);
+        }
+    }
+
+    public static function renderStatusAlert(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $cronError = get_transient(self::TRANSIENT_CRON);
+        if ($cronError) {
+            printf('<div class="notice notice-warning"><p>%s</p></div>', esc_html(sprintf(
+                /* translators: %s: error message */
+                __('Ostatnie automatyczne sprawdzenie licencji zakończyło się błędem: %s', 'estate-office'),
+                (string) $cronError
+            )));
+        }
+
+        if (isset($_GET['page']) && sanitize_key((string) $_GET['page']) === 'estate-office-license') { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            return;
+        }
+
+        $data   = self::getData();
+        $status = self::normalizeStatus($data['status']);
+
+        if ($status === 'valid') {
+            if ($data['expires_at'] === '') {
+                return;
+            }
+
+            $timestamp = strtotime($data['expires_at']);
+            if ($timestamp === false) {
+                return;
+            }
+
+            $daysLeft = (int) floor(($timestamp - time()) / DAY_IN_SECONDS);
+            if ($daysLeft < 0) {
+                printf('<div class="notice notice-error"><p>%s</p></div>', esc_html__('Licencja EstateOffice wygasła. Odśwież status w zakładce Licencja, aby utrzymać dostęp do aktualizacji.', 'estate-office'));
+                return;
+            }
+
+            if ($daysLeft <= 14) {
+                printf('<div class="notice notice-warning"><p>%s</p></div>', esc_html(sprintf(
+                    /* translators: %d: number of days */
+                    __('Licencja EstateOffice wygaśnie za %d dni. Odnów ją w panelu klienta, aby zachować wsparcie i aktualizacje.', 'estate-office'),
+                    max(1, $daysLeft)
+                )));
+            }
+
+            return;
+        }
+
+        if ($status === 'expired') {
+            printf('<div class="notice notice-error"><p>%s</p></div>', esc_html__('Licencja EstateOffice wygasła. Odnów ją, aby odzyskać dostęp do aktualizacji i modułów premium.', 'estate-office'));
+            return;
+        }
+
+        if ($status === 'invalid' || $status === 'inactive') {
+            printf('<div class="notice notice-error"><p>%s</p></div>', esc_html__('Licencja EstateOffice nie jest aktywna. Przejdź do zakładki Licencja i zweryfikuj klucz, aby korzystać z pełnej funkcjonalności.', 'estate-office'));
+        }
+    }
+
+    private static function getNextCheckDate(): string
+    {
+        $timestamp = wp_next_scheduled(self::CRON_HOOK);
+
+        if (!$timestamp) {
+            return '';
+        }
+
+        return wp_date('Y-m-d H:i:s', (int) $timestamp);
     }
 }

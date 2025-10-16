@@ -39,6 +39,10 @@ final class LicensePage extends BasePage
             echo '<p><strong>' . esc_html__('Ostatnie sprawdzenie:', 'estate-office') . '</strong> ' . esc_html($data['last_check']) . '</p>';
         }
 
+        if (!empty($data['next_check'])) {
+            echo '<p><strong>' . esc_html__('Planowane sprawdzenie:', 'estate-office') . '</strong> ' . esc_html($data['next_check']) . '</p>';
+        }
+
         echo '</div>';
 
         echo '<form method="post" action="" class="eo-license-form">';

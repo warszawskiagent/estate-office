@@ -71,10 +71,12 @@ final class Plugin
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadMeta::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'activate']);
         register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'activate']);
+        register_activation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LicenseManager::class, 'activatePlugin']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [RolesManager::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [PropertyMeta::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [AgentPublic::class, 'deactivate']);
         register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LeadReminders::class, 'deactivate']);
+        register_deactivation_hook(ESTATE_OFFICE_PLUGIN_FILE, [LicenseManager::class, 'deactivatePlugin']);
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [RolesManager::class, 'register']);
