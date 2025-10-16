@@ -120,6 +120,11 @@
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.estate-office-gallery-item.is-primary {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
 .estate-office-gallery-item.is-dragging {
     opacity: 0.75;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
@@ -149,6 +154,40 @@
     text-align: center;
 }
 
+.estate-office-gallery-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    padding: 0.75em 0.75em 0.65em;
+    border-bottom: 1px solid #e2e4e7;
+    background: #fff;
+}
+
+.estate-office-gallery-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.estate-office-gallery-primary input {
+    margin: 0;
+}
+
+.estate-office-gallery-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+    font-size: 12px;
+    color: #50575e;
+}
+
+.estate-office-gallery-caption input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .estate-office-gallery-actions {
     display: flex;
     justify-content: flex-end;
@@ -173,6 +212,12 @@
     margin-top: 0.75em;
     font-style: italic;
     color: #50575e;
+}
+
+.estate-office-media-box .description.primary {
+    margin: 0.75em 0 0;
+    font-weight: 500;
+    color: #1d2327;
 }
 
 .estate-office-gallery-add {

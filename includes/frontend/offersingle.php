@@ -384,12 +384,25 @@ final class OfferSingle
     {
         $ids = get_post_meta($post->ID, 'estate_property_gallery', true);
         $ids = is_array($ids) ? $ids : (array) $ids;
+        $ids = array_values(array_unique(array_filter(array_map('absint', $ids))));
+
+        $primary = (int) get_post_meta($post->ID, PropertyMeta::GALLERY_PRIMARY_META_KEY, true);
+
+        if ($primary > 0) {
+            $primaryIndex = array_search($primary, $ids, true);
+
+            if ($primaryIndex !== false) {
+                unset($ids[$primaryIndex]);
+                array_unshift($ids, $primary);
+            }
+        }
+
+        $captions = get_post_meta($post->ID, PropertyMeta::GALLERY_CAPTIONS_META_KEY, true);
+        $captions = is_array($captions) ? $captions : [];
 
         $items = [];
 
-        foreach ($ids as $id) {
-            $attachmentId = absint($id);
-
+        foreach ($ids as $attachmentId) {
             if ($attachmentId <= 0) {
                 continue;
             }
@@ -407,10 +420,18 @@ final class OfferSingle
                 $alt = wp_strip_all_tags(get_the_title($attachmentId));
             }
 
+            $caption = '';
+
+            if (isset($captions[(string) $attachmentId])) {
+                $caption = trim((string) $captions[(string) $attachmentId]);
+            }
+
             $items[] = [
-                'url'   => $full,
-                'alt'   => $alt,
-                'thumb' => $thumb,
+                'id'      => $attachmentId,
+                'url'     => $full,
+                'alt'     => $alt,
+                'thumb'   => $thumb,
+                'caption' => $caption,
             ];
         }
 
@@ -429,9 +450,11 @@ final class OfferSingle
                     }
 
                     $items[] = [
+                        'id'      => $featured,
                         'url'   => $full,
                         'alt'   => $alt,
                         'thumb' => $thumb,
+                        'caption' => '',
                     ];
                 }
             }

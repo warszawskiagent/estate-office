@@ -27,6 +27,8 @@ use function get_post_mime_type;
 use function get_posts;
 use function get_the_title;
 use function get_user_by;
+use function sanitize_key;
+use function sanitize_text_field;
 use function plugins_url;
 use function rawurlencode;
 use function time;
@@ -61,6 +63,8 @@ final class PropertyMeta
 {
     public const AGREEMENTS_META_KEY = 'estate_property_agreements';
     private const DYNAMIC_FIELDS_META_KEY = 'estate_property_dynamic_fields';
+    public const GALLERY_CAPTIONS_META_KEY = 'estate_property_gallery_captions';
+    public const GALLERY_PRIMARY_META_KEY = 'estate_property_gallery_primary';
     private const NEW_OFFER_EXPIRY_META_KEY = 'estate_property_new_offer_expires';
     private const NEW_OFFER_CRON_HOOK = 'estate_office_expire_new_offer_flags';
     private const NEW_OFFER_DURATION = 7 * DAY_IN_SECONDS;
@@ -114,6 +118,7 @@ final class PropertyMeta
         'estate_property_flag_export_www'     => ['type' => 'boolean'],
         'estate_property_flag_export_portals' => ['type' => 'boolean'],
         'estate_property_gallery'             => ['type' => 'array', 'items' => 'attachment'],
+        self::GALLERY_PRIMARY_META_KEY        => ['type' => 'integer'],
         'estate_property_materials'          => ['type' => 'array', 'items' => 'attachment'],
         'estate_property_floor_plan_2d'       => ['type' => 'integer'],
         'estate_property_floor_plan_3d'       => ['type' => 'integer'],
@@ -223,6 +228,25 @@ final class PropertyMeta
                 ],
                 'auth_callback'     => [self::class, 'canEditMeta'],
                 'sanitize_callback' => [self::class, 'sanitizeDynamicFields'],
+            ]
+        );
+
+        register_post_meta(
+            PropertyRegister::POST_TYPE,
+            self::GALLERY_CAPTIONS_META_KEY,
+            [
+                'type'              => 'object',
+                'single'            => true,
+                'show_in_rest'      => [
+                    'schema' => [
+                        'type'                 => 'object',
+                        'additionalProperties' => [
+                            'type' => 'string',
+                        ],
+                    ],
+                ],
+                'auth_callback'     => [self::class, 'canEditMeta'],
+                'sanitize_callback' => [self::class, 'sanitizeGalleryCaptions'],
             ]
         );
     }
@@ -732,6 +756,9 @@ final class PropertyMeta
                     'downloadsTitle' => esc_html__('Wybierz materiały do pobrania', 'estate-office'),
                     'downloadsButton'=> esc_html__('Dodaj materiały', 'estate-office'),
                     'downloadsEmpty' => esc_html__('Nie dodano jeszcze materiałów do pobrania.', 'estate-office'),
+                    'primaryLabel'   => esc_html__('Zdjęcie główne', 'estate-office'),
+                    'captionLabel'   => esc_html__('Podpis zdjęcia', 'estate-office'),
+                    'captionPlaceholder' => esc_html__('Opcjonalny podpis zdjęcia…', 'estate-office'),
                 ],
             ]
         );
@@ -878,9 +905,16 @@ final class PropertyMeta
         $gallery = is_array($gallery) ? array_values(array_filter(array_map('absint', $gallery))) : [];
         $watermarkId = self::getWatermarkAttachment();
         $hasWatermark = $watermarkId > 0;
+        $captions = get_post_meta($post->ID, self::GALLERY_CAPTIONS_META_KEY, true);
+        $captions = is_array($captions) ? $captions : [];
+        $primary = (int) get_post_meta($post->ID, self::GALLERY_PRIMARY_META_KEY, true);
+
+        if ($primary <= 0 && !empty($gallery)) {
+            $primary = (int) $gallery[0];
+        }
 
         echo '<div class="estate-office-media-box">';
-        echo '<p class="description">' . esc_html__('Dodaj multimedia oferty. Pierwsze zdjęcie będzie wykorzystywane jako główna miniatura.', 'estate-office') . '</p>';
+        echo '<p class="description">' . esc_html__('Dodaj multimedia oferty. Możesz wybrać zdjęcie główne i uzupełnić podpisy, aby wyróżnić ofertę.', 'estate-office') . '</p>';
 
         if ($hasWatermark) {
             echo '<p class="description status">' . esc_html__('Po zapisaniu wpisu na obrazy zostanie nałożony skonfigurowany znak wodny.', 'estate-office') . '</p>';
@@ -888,12 +922,15 @@ final class PropertyMeta
             echo '<p class="description warning">' . esc_html__('Aby nakładać znak wodny, wgraj plik w ustawieniach wtyczki w sekcji Integracje.', 'estate-office') . '</p>';
         }
 
-        $emptyLabel   = esc_attr__('Nie dodano jeszcze zdjęć.', 'estate-office');
-        $removeLabel  = esc_attr__('Usuń', 'estate-office');
-        $frameTitle   = esc_attr__('Galeria nieruchomości', 'estate-office');
-        $frameButton  = esc_attr__('Dodaj do galerii', 'estate-office');
+        $emptyLabel          = esc_attr__('Nie dodano jeszcze zdjęć.', 'estate-office');
+        $removeLabel         = esc_attr__('Usuń', 'estate-office');
+        $frameTitle          = esc_attr__('Galeria nieruchomości', 'estate-office');
+        $frameButton         = esc_attr__('Dodaj do galerii', 'estate-office');
+        $primaryLabel        = esc_html__('Zdjęcie główne', 'estate-office');
+        $captionLabel        = esc_html__('Podpis zdjęcia', 'estate-office');
+        $captionPlaceholder  = esc_attr__('Opcjonalny podpis zdjęcia…', 'estate-office');
 
-        echo '<div class="estate-office-gallery" data-input="estate_property_gallery" data-empty-label="' . $emptyLabel . '" data-remove-label="' . $removeLabel . '" data-frame-title="' . $frameTitle . '" data-frame-button="' . $frameButton . '">';
+        echo '<div class="estate-office-gallery" data-input="estate_property_gallery" data-caption-input="estate_property_gallery_captions" data-primary-input="' . esc_attr(self::GALLERY_PRIMARY_META_KEY) . '" data-empty-label="' . $emptyLabel . '" data-remove-label="' . $removeLabel . '" data-frame-title="' . $frameTitle . '" data-frame-button="' . $frameButton . '" data-primary-label="' . esc_attr($primaryLabel) . '" data-caption-label="' . esc_attr($captionLabel) . '" data-caption-placeholder="' . $captionPlaceholder . '">';
         $emptyClass = empty($gallery) ? '' : ' hidden';
         echo '<p class="estate-office-gallery-empty' . $emptyClass . '">' . esc_html__('Nie dodano jeszcze zdjęć.', 'estate-office') . '</p>';
         echo '<ul class="estate-office-gallery-list">';
@@ -909,13 +946,35 @@ final class PropertyMeta
 
             $thumbAttr = $thumb ? esc_url($thumb) : '';
 
-            echo '<li class="estate-office-gallery-item" data-id="' . esc_attr((string) $attachmentId) . '" draggable="true">';
+            $captionValue = isset($captions[(string) $attachmentId]) ? esc_attr((string) $captions[(string) $attachmentId]) : '';
+            $isPrimary    = $primary > 0 ? $primary === (int) $attachmentId : false;
+
+            echo '<li class="estate-office-gallery-item' . ($isPrimary ? ' is-primary' : '') . '" data-id="' . esc_attr((string) $attachmentId) . '" draggable="true">';
 
             if ($thumbAttr !== '') {
                 echo '<div class="estate-office-gallery-thumb"><img src="' . $thumbAttr . '" alt="" /></div>';
             } else {
                 echo '<div class="estate-office-gallery-thumb is-placeholder"><span>' . esc_html__('Brak podglądu', 'estate-office') . '</span></div>';
             }
+
+            echo '<div class="estate-office-gallery-meta">';
+            printf(
+                '<label class="estate-office-gallery-primary"><input type="radio" name="%1$s" value="%2$d" %3$s /> <span>%4$s</span></label>',
+                esc_attr(self::GALLERY_PRIMARY_META_KEY),
+                $attachmentId,
+                checked($isPrimary, true, false),
+                $primaryLabel
+            );
+            echo '<label class="estate-office-gallery-caption">';
+            echo '<span>' . $captionLabel . '</span>';
+            printf(
+                '<input type="text" name="estate_property_gallery_captions[%1$d]" value="%2$s" class="regular-text" maxlength="200" placeholder="%3$s" autocomplete="off" />',
+                $attachmentId,
+                $captionValue,
+                $captionPlaceholder
+            );
+            echo '</label>';
+            echo '</div>';
 
             echo '<div class="estate-office-gallery-actions">';
             echo '<button type="button" class="button-link estate-office-gallery-remove">' . esc_html__('Usuń', 'estate-office') . '</button>';
@@ -925,6 +984,7 @@ final class PropertyMeta
         }
 
         echo '</ul>';
+        echo '<p class="description primary">' . esc_html__('Wybierz zdjęcie główne prezentowane w katalogach i na stronie oferty. Jeśli nie wskażesz innego, wyróżnione zostanie pierwsze zdjęcie z listy.', 'estate-office') . '</p>';
         echo '<p class="description reorder">' . esc_html__('Przeciągnij elementy, aby ustawić kolejność prezentacji. Pierwsze zdjęcie będzie wyróżnione w listach.', 'estate-office') . '</p>';
         echo '<button type="button" class="button estate-office-gallery-add">' . esc_html__('Dodaj zdjęcia', 'estate-office') . '</button>';
         echo '</div>';
@@ -1161,6 +1221,24 @@ final class PropertyMeta
 
         $dynamicValues = self::sanitizeDynamicInput($_POST['estate_property_dynamic'] ?? []);
 
+        $galleryIds = $values['estate_property_gallery'] ?? [];
+        $galleryIds = is_array($galleryIds) ? array_values(array_filter(array_map('absint', $galleryIds))) : [];
+
+        $captionsInput = $_POST['estate_property_gallery_captions'] ?? [];
+        $captions      = self::sanitizeGalleryCaptionsInput($captionsInput, $galleryIds);
+
+        $primary = isset($values[self::GALLERY_PRIMARY_META_KEY]) ? (int) $values[self::GALLERY_PRIMARY_META_KEY] : 0;
+
+        if ($primary > 0 && !in_array($primary, $galleryIds, true)) {
+            $primary = 0;
+        }
+
+        if ($primary === 0 && !empty($galleryIds)) {
+            $primary = (int) $galleryIds[0];
+        }
+
+        $values[self::GALLERY_PRIMARY_META_KEY] = $primary > 0 ? (string) $primary : '';
+
         $price = $values['estate_property_price'] ?? '';
         $area  = $values['estate_property_area'] ?? '';
 
@@ -1192,6 +1270,7 @@ final class PropertyMeta
         }
 
         self::persistDynamicFields($postId, $dynamicValues);
+        self::persistGalleryCaptions($postId, $captions);
 
         self::maybeApplyWatermarks($attachmentsForWatermark);
     }
@@ -1472,6 +1551,95 @@ final class PropertyMeta
         }
 
         return array_values(array_unique($sanitized));
+    }
+
+    private static function sanitizeGalleryCaptionsInput($value, array $galleryIds): array
+    {
+        if (empty($galleryIds) || !is_array($value)) {
+            return [];
+        }
+
+        $allowed = array_values(array_unique(array_filter(array_map('absint', $galleryIds))));
+
+        if (empty($allowed)) {
+            return [];
+        }
+
+        $captions = [];
+
+        foreach ($value as $key => $caption) {
+            $id = is_numeric($key) ? absint((string) $key) : absint((string) sanitize_key((string) $key));
+
+            if ($id <= 0 || !in_array($id, $allowed, true) || is_array($caption)) {
+                continue;
+            }
+
+            $text = self::sanitizeCaption((string) wp_unslash($caption));
+
+            if ($text === '') {
+                continue;
+            }
+
+            $captions[(string) $id] = $text;
+        }
+
+        return $captions;
+    }
+
+    private static function sanitizeGalleryCaptions($value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $captions = [];
+
+        foreach ($value as $key => $caption) {
+            $id = is_numeric($key) ? absint((string) $key) : absint((string) sanitize_key((string) $key));
+
+            if ($id <= 0 || is_array($caption)) {
+                continue;
+            }
+
+            $text = self::sanitizeCaption((string) wp_unslash($caption));
+
+            if ($text === '') {
+                continue;
+            }
+
+            $captions[(string) $id] = $text;
+        }
+
+        return $captions;
+    }
+
+    private static function sanitizeCaption(string $caption): string
+    {
+        $caption = sanitize_text_field($caption);
+        $caption = trim($caption);
+
+        if ($caption === '') {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            $caption = mb_substr($caption, 0, 200);
+        } else {
+            $caption = substr($caption, 0, 200);
+        }
+
+        return $caption;
+    }
+
+    private static function persistGalleryCaptions(int $postId, array $captions): void
+    {
+        if (empty($captions)) {
+            delete_post_meta($postId, self::GALLERY_CAPTIONS_META_KEY);
+
+            return;
+        }
+
+        update_post_meta($postId, self::GALLERY_CAPTIONS_META_KEY, $captions);
     }
 
     private static function getWatermarkAttachment(): int

@@ -30,9 +30,56 @@
             downloadsTitle: '',
             downloadsButton: '',
             downloadsEmpty: '',
+            primaryLabel: '',
+            captionLabel: '',
+            captionPlaceholder: '',
         },
         settings.media || {}
     );
+
+    function stripTags(value) {
+        if (!value) {
+            return '';
+        }
+
+        const tmp = document.createElement('div');
+        tmp.innerHTML = value;
+        return (tmp.textContent || tmp.innerText || '').trim();
+    }
+
+    function resolveDefaultCaption(attachment) {
+        if (!attachment) {
+            return '';
+        }
+
+        if (attachment.caption) {
+            if (typeof attachment.caption === 'string') {
+                return stripTags(attachment.caption);
+            }
+
+            if (typeof attachment.caption === 'object') {
+                if (attachment.caption.raw) {
+                    return stripTags(attachment.caption.raw);
+                }
+
+                if (attachment.caption.rendered) {
+                    return stripTags(attachment.caption.rendered);
+                }
+            }
+        }
+
+        if (attachment.title) {
+            if (typeof attachment.title === 'string') {
+                return stripTags(attachment.title);
+            }
+
+            if (typeof attachment.title === 'object' && attachment.title.rendered) {
+                return stripTags(attachment.title.rendered);
+            }
+        }
+
+        return '';
+    }
 
     function updateStatus(wrapper, message) {
         const status = wrapper.querySelector('.estate-office-map-status');
@@ -263,6 +310,50 @@
         }
     }
 
+    function refreshPrimaryStyles(wrapper) {
+        const items = wrapper.querySelectorAll('.estate-office-gallery-item');
+
+        items.forEach(function (item) {
+            const radio = item.querySelector('.estate-office-gallery-primary input[type="radio"]');
+
+            if (radio && radio.checked) {
+                item.classList.add('is-primary');
+            } else {
+                item.classList.remove('is-primary');
+            }
+        });
+    }
+
+    function ensurePrimarySelection(wrapper) {
+        const radios = wrapper.querySelectorAll('.estate-office-gallery-primary input[type="radio"]');
+
+        if (radios.length === 0) {
+            return;
+        }
+
+        const hasChecked = Array.from(radios).some(function (radio) {
+            return radio.checked;
+        });
+
+        if (!hasChecked) {
+            radios[0].checked = true;
+        }
+
+        refreshPrimaryStyles(wrapper);
+    }
+
+    function bindPrimaryRadio(radio, wrapper) {
+        if (!radio) {
+            return;
+        }
+
+        radio.addEventListener('change', function () {
+            if (radio.checked) {
+                refreshPrimaryStyles(wrapper);
+            }
+        });
+    }
+
     function getDragAfterElement(list, y) {
         const items = Array.from(list.querySelectorAll('.estate-office-gallery-item:not(.is-dragging)'));
 
@@ -311,6 +402,12 @@
             return;
         }
 
+        const primaryInputName = wrapper.dataset.primaryInput || 'estate_property_gallery_primary';
+        const captionInputName = wrapper.dataset.captionInput || 'estate_property_gallery_captions';
+        const primaryLabelText = wrapper.dataset.primaryLabel || mediaStrings.primaryLabel || '';
+        const captionLabelText = wrapper.dataset.captionLabel || mediaStrings.captionLabel || '';
+        const captionPlaceholder = wrapper.dataset.captionPlaceholder || mediaStrings.captionPlaceholder || '';
+
         const item = document.createElement('li');
         item.className = 'estate-office-gallery-item';
         item.dataset.id = id;
@@ -334,6 +431,55 @@
 
         item.appendChild(thumb);
 
+        const meta = document.createElement('div');
+        meta.className = 'estate-office-gallery-meta';
+
+        const primaryLabel = document.createElement('label');
+        primaryLabel.className = 'estate-office-gallery-primary';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = primaryInputName;
+        radio.value = id;
+        primaryLabel.appendChild(radio);
+
+        if (primaryLabelText) {
+            const radioText = document.createElement('span');
+            radioText.textContent = primaryLabelText;
+            primaryLabel.appendChild(radioText);
+        }
+
+        meta.appendChild(primaryLabel);
+
+        const captionWrapper = document.createElement('label');
+        captionWrapper.className = 'estate-office-gallery-caption';
+
+        if (captionLabelText) {
+            const captionLabel = document.createElement('span');
+            captionLabel.textContent = captionLabelText;
+            captionWrapper.appendChild(captionLabel);
+        }
+
+        const captionInput = document.createElement('input');
+        captionInput.type = 'text';
+        captionInput.name = captionInputName + '[' + id + ']';
+        captionInput.className = 'regular-text';
+        captionInput.setAttribute('maxlength', '200');
+        captionInput.setAttribute('autocomplete', 'off');
+
+        if (captionPlaceholder) {
+            captionInput.setAttribute('placeholder', captionPlaceholder);
+        }
+
+        const defaultCaption = resolveDefaultCaption(attachment);
+        if (defaultCaption) {
+            captionInput.value = defaultCaption.substring(0, 200);
+        }
+
+        captionWrapper.appendChild(captionInput);
+        meta.appendChild(captionWrapper);
+
+        item.appendChild(meta);
+
         const actions = document.createElement('div');
         actions.className = 'estate-office-gallery-actions';
         const removeButton = document.createElement('button');
@@ -343,6 +489,7 @@
         removeButton.addEventListener('click', function () {
             item.remove();
             updateGalleryEmptyState(wrapper);
+            ensurePrimarySelection(wrapper);
         });
         actions.appendChild(removeButton);
         item.appendChild(actions);
@@ -356,7 +503,9 @@
 
         list.appendChild(item);
         enableDragForItem(item, list);
+        bindPrimaryRadio(radio, wrapper);
         updateGalleryEmptyState(wrapper);
+        ensurePrimarySelection(wrapper);
     }
 
     function initGallery(wrapper) {
@@ -379,8 +528,12 @@
                 removeButton.addEventListener('click', function () {
                     item.remove();
                     updateGalleryEmptyState(wrapper);
+                    ensurePrimarySelection(wrapper);
                 });
             }
+
+            const radio = item.querySelector('.estate-office-gallery-primary input[type="radio"]');
+            bindPrimaryRadio(radio, wrapper);
         });
 
         list.addEventListener('dragover', function (event) {
@@ -432,6 +585,7 @@
         });
 
         updateGalleryEmptyState(wrapper);
+        ensurePrimarySelection(wrapper);
     }
 
     function updateDownloadsEmptyState(wrapper) {

@@ -87,6 +87,9 @@ get_header();
                         alt="<?php echo esc_attr($context['gallery']['main']['alt']); ?>"
                         data-estate-office-offer-main
                     />
+                    <figcaption class="estate-office-offer__gallery-caption" data-estate-office-offer-caption>
+                        <?php echo isset($context['gallery']['main']['caption']) ? esc_html($context['gallery']['main']['caption']) : ''; ?>
+                    </figcaption>
                 </figure>
             <?php else : ?>
                 <div class="estate-office-offer__gallery-empty">
@@ -103,6 +106,7 @@ get_header();
                             data-estate-office-offer-thumb
                             data-full="<?php echo esc_url($item['url']); ?>"
                             data-alt="<?php echo esc_attr($item['alt']); ?>"
+                            data-caption="<?php echo isset($item['caption']) ? esc_attr($item['caption']) : ''; ?>"
                             aria-pressed="<?php echo $index === 0 ? 'true' : 'false'; ?>"
                         >
                             <img src="<?php echo esc_url($item['thumb']); ?>" alt="<?php echo esc_attr($item['alt']); ?>" loading="lazy" />
