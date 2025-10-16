@@ -14,6 +14,7 @@ use function get_post_meta;
 use function get_the_title;
 use function get_user_by;
 use function wp_dropdown_users;
+use function wp_unslash;
 
 defined('ABSPATH') || exit;
 
@@ -608,6 +609,50 @@ final class SearchMeta
                 esc_html((string) $label)
             );
         }
+    }
+
+    public static function prepareValues(array $source): array
+    {
+        $values = [];
+
+        foreach (self::META_FIELDS as $key => $definition) {
+            $type = $definition['type'] ?? 'string';
+
+            if ($type === 'boolean') {
+                $values[$key] = self::sanitizeBoolean(!empty($source[$key]) ? '1' : '0');
+                continue;
+            }
+
+            if ($type === 'set') {
+                $values[$key] = self::sanitizeSet($source[$key] ?? [], (array) ($definition['values'] ?? []));
+                continue;
+            }
+
+            $raw = $source[$key] ?? '';
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $values[$key] = self::sanitizeValue(wp_unslash(is_scalar($raw) ? (string) $raw : ''), $definition);
+        }
+
+        return $values;
+    }
+
+    public static function prepareDynamicValues($raw): array
+    {
+        return self::sanitizeDynamicInput($raw);
+    }
+
+    public static function persistValues(int $postId, array $values, array $dynamicValues = []): void
+    {
+        $values = array_intersect_key($values, self::META_FIELDS);
+
+        foreach ($values as $key => $value) {
+            self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
+        }
+
+        self::persistDynamicFields($postId, is_array($dynamicValues) ? $dynamicValues : []);
     }
 
     public static function save(int $postId, WP_Post $post): void

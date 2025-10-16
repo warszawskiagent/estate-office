@@ -21,12 +21,38 @@
     const backButton = overlay.querySelector('[data-eo-agreement-back]');
     const finishButton = overlay.querySelector('[data-eo-agreement-finish]');
     const summaryBox = overlay.querySelector('[data-eo-agreement-summary]');
+    const propertyForm = overlay.querySelector('[data-eo-agreement-property]');
+    const propertyTransactionInput = overlay.querySelector('[data-eo-agreement-property-transaction]');
+    const propertyMessage = overlay.querySelector('[data-eo-agreement-property-message]');
+    const propertySearchInput = overlay.querySelector('[data-eo-agreement-property-search]');
+    const propertyResults = overlay.querySelector('[data-eo-agreement-property-results]');
+    const searchForm = overlay.querySelector('[data-eo-agreement-search]');
+    const searchTransactionInput = overlay.querySelector('[data-eo-agreement-search-transaction]');
+    const searchMessage = overlay.querySelector('[data-eo-agreement-search-message]');
+    const searchSearchInput = overlay.querySelector('[data-eo-agreement-search-search]');
+    const searchResults = overlay.querySelector('[data-eo-agreement-search-results]');
+    const step3Heading = overlay.querySelector('[data-eo-agreement-step3-heading]');
+    const step3Description = overlay.querySelector('[data-eo-agreement-step3-description]');
+    const prevButton = overlay.querySelector('[data-eo-agreement-prev]');
 
     const state = {
         agreementId: 0,
         clients: [],
         redirect: '',
+        transactionType: '',
+        record: null,
     };
+
+    if (propertySearchInput && config.placeholders?.propertySearch) {
+        propertySearchInput.setAttribute('placeholder', config.placeholders.propertySearch);
+    }
+
+    if (searchSearchInput && config.placeholders?.searchSearch) {
+        searchSearchInput.setAttribute('placeholder', config.placeholders.searchSearch);
+    }
+
+    const propertyTransactions = Array.isArray(config.propertyTransactions) ? config.propertyTransactions : [];
+    const searchTransactions = Array.isArray(config.searchTransactions) ? config.searchTransactions : [];
 
     const setMessage = (container, type, text) => {
         if (!container) {
@@ -73,12 +99,39 @@
         state.agreementId = 0;
         state.clients = [];
         state.redirect = '';
+        state.transactionType = '';
+        state.record = null;
         if (agreementForm) {
             agreementForm.reset();
         }
         if (clientForm) {
             clientForm.reset();
         }
+        if (propertyForm) {
+            propertyForm.reset();
+            propertyForm.setAttribute('hidden', 'hidden');
+        }
+        if (searchForm) {
+            searchForm.reset();
+            searchForm.setAttribute('hidden', 'hidden');
+        }
+        if (propertySearchInput) {
+            propertySearchInput.value = '';
+        }
+        if (searchSearchInput) {
+            searchSearchInput.value = '';
+        }
+        if (propertyResults) {
+            propertyResults.innerHTML = '';
+        }
+        if (searchResults) {
+            searchResults.innerHTML = '';
+        }
+        if (finishButton) {
+            finishButton.setAttribute('disabled', 'disabled');
+        }
+        setMessage(propertyMessage, '', '');
+        setMessage(searchMessage, '', '');
         renderClients();
         renderSummary();
         if (clientResults) {
@@ -123,6 +176,9 @@
         const payload = new FormData();
         payload.append('action', 'estate_office_create_agreement');
         payload.append('nonce', config.nonce);
+
+        const transactionValue = formData.get('estate_agreement_transaction_type');
+        state.transactionType = typeof transactionValue === 'string' ? transactionValue : '';
 
         formData.forEach((value, key) => {
             payload.append(key, value);
@@ -169,19 +225,92 @@
             return;
         }
 
+        summaryBox.innerHTML = '';
+
         if (!state.agreementId) {
-            summaryBox.innerHTML = '';
             return;
         }
 
+        const appendParagraph = (text, className) => {
+            if (!text) {
+                return;
+            }
+            const paragraph = document.createElement('p');
+            if (className) {
+                paragraph.className = className;
+            }
+            paragraph.textContent = text;
+            summaryBox.appendChild(paragraph);
+        };
+
         const clientsCount = state.clients.length;
-        let summaryHtml = '';
-        summaryHtml += '<p><strong>' + clientsCount + '</strong> ' + (clientsCount === 1 ? 'klient przypisany do umowy.' : 'klientów przypisanych do umowy.') + '</p>';
-        if (state.redirect) {
-            const label = config.messages?.viewAgreement || 'Przejdź do szczegółów';
-            summaryHtml += '<p><a class="estate-office-agreement-creator__primary" href="' + state.redirect + '">' + label + '</a></p>';
+        const singularTemplate = config.messages?.clientsSummarySingular || '%d klient przypisany do umowy.';
+        const pluralTemplate = config.messages?.clientsSummaryPlural || '%d klientów przypisanych do umowy.';
+        const template = clientsCount === 1 ? singularTemplate : pluralTemplate;
+        appendParagraph(template.replace('%d', String(clientsCount)));
+
+        if (state.record) {
+            const recordLabel = state.record.type === 'search'
+                ? (config.messages?.recordLabelSearch || 'Poszukiwanie')
+                : (config.messages?.recordLabelProperty || 'Nieruchomość');
+
+            const infoParagraph = document.createElement('p');
+            const strong = document.createElement('strong');
+            strong.textContent = recordLabel + ':';
+            infoParagraph.appendChild(strong);
+            if (state.record.title) {
+                infoParagraph.appendChild(document.createTextNode(' ' + state.record.title));
+            }
+            summaryBox.appendChild(infoParagraph);
+
+            appendParagraph(state.record.reference || '');
+            appendParagraph(state.record.propertyType || '');
+            appendParagraph(state.record.location || '');
+            appendParagraph(state.record.manager || '');
+
+            if (state.record.url) {
+                const linkParagraph = document.createElement('p');
+                const link = document.createElement('a');
+                link.href = state.record.url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = config.messages?.viewRecord || 'Otwórz rekord w CRM';
+                link.className = 'estate-office-agreement-creator__link';
+                linkParagraph.appendChild(link);
+                summaryBox.appendChild(linkParagraph);
+            }
+
+            const changeParagraph = document.createElement('p');
+            const changeButton = document.createElement('button');
+            changeButton.type = 'button';
+            changeButton.className = 'estate-office-agreement-creator__ghost';
+            changeButton.dataset.eoAgreementClearRecord = '1';
+            changeButton.textContent = config.messages?.recordChange || 'Wybierz inny rekord';
+            changeParagraph.appendChild(changeButton);
+            summaryBox.appendChild(changeParagraph);
+        } else {
+            const propertyTransactions = Array.isArray(config.propertyTransactions) ? config.propertyTransactions : [];
+            const searchTransactions = Array.isArray(config.searchTransactions) ? config.searchTransactions : [];
+            let pendingMessage = '';
+
+            if (propertyTransactions.includes(state.transactionType)) {
+                pendingMessage = config.messages?.recordMissingProperty || '';
+            } else if (searchTransactions.includes(state.transactionType)) {
+                pendingMessage = config.messages?.recordMissingSearch || '';
+            }
+
+            appendParagraph(pendingMessage);
         }
-        summaryBox.innerHTML = summaryHtml;
+
+        if (state.redirect) {
+            const linkParagraph = document.createElement('p');
+            const link = document.createElement('a');
+            link.className = 'estate-office-agreement-creator__primary';
+            link.href = state.redirect;
+            link.textContent = config.messages?.viewAgreement || 'Przejdź do szczegółów umowy';
+            linkParagraph.appendChild(link);
+            summaryBox.appendChild(linkParagraph);
+        }
     };
 
     const handleAgreementSubmit = (event) => {
@@ -205,6 +334,8 @@
                 }
 
                 state.agreementId = parseInt(body.data?.agreementId || 0, 10) || 0;
+                state.record = null;
+                state.redirect = '';
                 setMessage(message, 'success', config.messages?.step1Success || '');
                 switchStep(2);
                 renderSummary();
@@ -284,6 +415,364 @@
         clientSearchInput.addEventListener('input', (event) => {
             const value = event.target.value || '';
             searchClients(value);
+        });
+    }
+
+    const attachPropertyRecord = (propertyId) => {
+        if (!state.agreementId || !propertyId) {
+            return;
+        }
+
+        setMessage(propertyMessage, '', '');
+
+        const payload = new FormData();
+        payload.append('action', 'estate_office_attach_property');
+        payload.append('nonce', config.nonce);
+        payload.append('agreement_id', String(state.agreementId));
+        payload.append('property_id', String(propertyId));
+
+        fetch(config.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: payload,
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    setMessage(propertyMessage, 'error', body?.data?.message || config.messages?.propertyError || config.messages?.genericError || '');
+                    return;
+                }
+
+                state.record = body.data?.record || null;
+                state.redirect = body.data?.redirect || state.redirect;
+
+                if (propertyForm) {
+                    propertyForm.setAttribute('hidden', 'hidden');
+                }
+                if (propertyResults) {
+                    propertyResults.innerHTML = '';
+                }
+                if (propertySearchInput) {
+                    propertySearchInput.value = '';
+                }
+                if (step3Heading) {
+                    step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
+                }
+                if (step3Description) {
+                    step3Description.textContent = '';
+                }
+
+                setMessage(propertyMessage, 'success', config.messages?.propertyAttached || config.messages?.propertySuccess || '');
+
+                if (!state.redirect) {
+                    fetchFinalizeRedirect()
+                        .then((redirect) => {
+                            state.redirect = redirect;
+                            if (finishButton && state.redirect) {
+                                finishButton.removeAttribute('disabled');
+                            }
+                            renderSummary();
+                        })
+                        .catch(() => {
+                            setMessage(propertyMessage, 'error', config.messages?.genericError || '');
+                        });
+                } else if (finishButton) {
+                    finishButton.removeAttribute('disabled');
+                }
+
+                renderSummary();
+            })
+            .catch(() => {
+                setMessage(propertyMessage, 'error', config.messages?.propertyError || config.messages?.genericError || '');
+            });
+    };
+
+    const renderPropertyResults = (records) => {
+        if (!propertyResults) {
+            return;
+        }
+
+        propertyResults.innerHTML = '';
+
+        if (!records || !records.length) {
+            if ((propertySearchInput?.value || '').trim() !== '') {
+                const empty = document.createElement('p');
+                empty.textContent = config.messages?.noResults || '';
+                propertyResults.appendChild(empty);
+            }
+            return;
+        }
+
+        records.forEach((record) => {
+            if (!record || typeof record.id === 'undefined') {
+                return;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'estate-office-agreement-creator__search-item';
+
+            const info = document.createElement('div');
+            const title = document.createElement('strong');
+            title.textContent = record.title || '';
+            info.appendChild(title);
+
+            if (record.reference) {
+                const reference = document.createElement('span');
+                reference.textContent = record.reference;
+                info.appendChild(reference);
+            }
+
+            if (record.location) {
+                const location = document.createElement('span');
+                location.textContent = record.location;
+                info.appendChild(location);
+            }
+
+            if (record.manager) {
+                const manager = document.createElement('span');
+                manager.textContent = record.manager;
+                info.appendChild(manager);
+            }
+
+            row.appendChild(info);
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = config.messages?.recordSelect || 'Wybierz';
+            button.addEventListener('click', () => attachPropertyRecord(record.id));
+            row.appendChild(button);
+
+            propertyResults.appendChild(row);
+        });
+    };
+
+    const searchProperties = debounce((term) => {
+        if (!state.agreementId || !propertyTransactions.includes(state.transactionType || '')) {
+            if (propertyResults) {
+                propertyResults.innerHTML = '';
+            }
+            return;
+        }
+
+        const trimmed = (term || '').trim();
+        if (trimmed.length < 2) {
+            if (propertyResults) {
+                propertyResults.innerHTML = '';
+            }
+            return;
+        }
+
+        const params = new URLSearchParams({
+            action: 'estate_office_search_properties',
+            nonce: config.nonce,
+            agreement_id: String(state.agreementId),
+            transaction_type: state.transactionType || '',
+            term: trimmed,
+        });
+
+        fetch(config.ajaxUrl + '?' + params.toString(), {
+            credentials: 'same-origin',
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    renderPropertyResults([]);
+                    return;
+                }
+
+                renderPropertyResults(body.data?.records || []);
+            })
+            .catch(() => {
+                renderPropertyResults([]);
+            });
+    }, 250);
+
+    if (propertySearchInput) {
+        propertySearchInput.addEventListener('input', (event) => {
+            const value = event.target.value || '';
+            searchProperties(value);
+        });
+    }
+
+    const attachSearchRecord = (searchId) => {
+        if (!state.agreementId || !searchId) {
+            return;
+        }
+
+        setMessage(searchMessage, '', '');
+
+        const payload = new FormData();
+        payload.append('action', 'estate_office_attach_search');
+        payload.append('nonce', config.nonce);
+        payload.append('agreement_id', String(state.agreementId));
+        payload.append('search_id', String(searchId));
+
+        fetch(config.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: payload,
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    setMessage(searchMessage, 'error', body?.data?.message || config.messages?.searchError || config.messages?.genericError || '');
+                    return;
+                }
+
+                state.record = body.data?.record || null;
+                state.redirect = body.data?.redirect || state.redirect;
+
+                if (searchForm) {
+                    searchForm.setAttribute('hidden', 'hidden');
+                }
+                if (searchResults) {
+                    searchResults.innerHTML = '';
+                }
+                if (searchSearchInput) {
+                    searchSearchInput.value = '';
+                }
+                if (step3Heading) {
+                    step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
+                }
+                if (step3Description) {
+                    step3Description.textContent = '';
+                }
+
+                setMessage(searchMessage, 'success', config.messages?.searchAttached || config.messages?.searchSuccess || '');
+
+                if (!state.redirect) {
+                    fetchFinalizeRedirect()
+                        .then((redirect) => {
+                            state.redirect = redirect;
+                            if (finishButton && state.redirect) {
+                                finishButton.removeAttribute('disabled');
+                            }
+                            renderSummary();
+                        })
+                        .catch(() => {
+                            setMessage(searchMessage, 'error', config.messages?.genericError || '');
+                        });
+                } else if (finishButton) {
+                    finishButton.removeAttribute('disabled');
+                }
+
+                renderSummary();
+            })
+            .catch(() => {
+                setMessage(searchMessage, 'error', config.messages?.searchError || config.messages?.genericError || '');
+            });
+    };
+
+    const renderSearchRecords = (records) => {
+        if (!searchResults) {
+            return;
+        }
+
+        searchResults.innerHTML = '';
+
+        if (!records || !records.length) {
+            if ((searchSearchInput?.value || '').trim() !== '') {
+                const empty = document.createElement('p');
+                empty.textContent = config.messages?.noResults || '';
+                searchResults.appendChild(empty);
+            }
+            return;
+        }
+
+        records.forEach((record) => {
+            if (!record || typeof record.id === 'undefined') {
+                return;
+            }
+
+            const row = document.createElement('div');
+            row.className = 'estate-office-agreement-creator__search-item';
+
+            const info = document.createElement('div');
+            const title = document.createElement('strong');
+            title.textContent = record.title || '';
+            info.appendChild(title);
+
+            if (record.reference) {
+                const reference = document.createElement('span');
+                reference.textContent = record.reference;
+                info.appendChild(reference);
+            }
+
+            if (record.location) {
+                const location = document.createElement('span');
+                location.textContent = record.location;
+                info.appendChild(location);
+            }
+
+            if (record.propertyType) {
+                const type = document.createElement('span');
+                type.textContent = record.propertyType;
+                info.appendChild(type);
+            }
+
+            if (record.manager) {
+                const manager = document.createElement('span');
+                manager.textContent = record.manager;
+                info.appendChild(manager);
+            }
+
+            row.appendChild(info);
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = config.messages?.recordSelect || 'Wybierz';
+            button.addEventListener('click', () => attachSearchRecord(record.id));
+            row.appendChild(button);
+
+            searchResults.appendChild(row);
+        });
+    };
+
+    const searchSearchRecords = debounce((term) => {
+        if (!state.agreementId || !searchTransactions.includes(state.transactionType || '')) {
+            if (searchResults) {
+                searchResults.innerHTML = '';
+            }
+            return;
+        }
+
+        const trimmed = (term || '').trim();
+        if (trimmed.length < 2) {
+            if (searchResults) {
+                searchResults.innerHTML = '';
+            }
+            return;
+        }
+
+        const params = new URLSearchParams({
+            action: 'estate_office_search_searches',
+            nonce: config.nonce,
+            agreement_id: String(state.agreementId),
+            transaction_type: state.transactionType || '',
+            term: trimmed,
+        });
+
+        fetch(config.ajaxUrl + '?' + params.toString(), {
+            credentials: 'same-origin',
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    renderSearchRecords([]);
+                    return;
+                }
+
+                renderSearchRecords(body.data?.records || []);
+            })
+            .catch(() => {
+                renderSearchRecords([]);
+            });
+    }, 250);
+
+    if (searchSearchInput) {
+        searchSearchInput.addEventListener('input', (event) => {
+            const value = event.target.value || '';
+            searchSearchRecords(value);
         });
     }
 
@@ -401,19 +890,116 @@
         });
     }
 
-    const finalizeAgreement = () => {
-        const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
-        setMessage(message, '', '');
+    if (propertyForm) {
+        propertyForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!state.agreementId) {
+                return;
+            }
 
-        if (!state.clients.length) {
-            setMessage(message, 'error', config.messages?.missingClients || '');
+            setMessage(propertyMessage, '', '');
+
+            const payload = new FormData(propertyForm);
+            payload.append('action', 'estate_office_create_property');
+            payload.append('nonce', config.nonce);
+            payload.append('agreement_id', String(state.agreementId));
+
+            fetch(config.ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: payload,
+            })
+                .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+                .then(({ ok, body }) => {
+                    if (!ok || !body?.success) {
+                        setMessage(propertyMessage, 'error', body?.data?.message || config.messages?.propertyError || config.messages?.genericError || '');
+                        return;
+                    }
+
+                    state.record = body.data?.record || null;
+                    state.redirect = body.data?.redirect || state.redirect;
+                    setMessage(propertyMessage, 'success', config.messages?.propertySuccess || '');
+                    if (propertyForm) {
+                        propertyForm.setAttribute('hidden', 'hidden');
+                    }
+                    if (step3Heading) {
+                        step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
+                    }
+                    if (step3Description) {
+                        step3Description.textContent = '';
+                    }
+                    if (finishButton && state.redirect) {
+                        finishButton.removeAttribute('disabled');
+                    }
+                    renderSummary();
+                })
+                .catch(() => {
+                    setMessage(propertyMessage, 'error', config.messages?.propertyError || config.messages?.genericError || '');
+                });
+        });
+    }
+
+    if (searchForm) {
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!state.agreementId) {
+                return;
+            }
+
+            setMessage(searchMessage, '', '');
+
+            const payload = new FormData(searchForm);
+            payload.append('action', 'estate_office_create_search');
+            payload.append('nonce', config.nonce);
+            payload.append('agreement_id', String(state.agreementId));
+
+            fetch(config.ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: payload,
+            })
+                .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+                .then(({ ok, body }) => {
+                    if (!ok || !body?.success) {
+                        setMessage(searchMessage, 'error', body?.data?.message || config.messages?.searchError || config.messages?.genericError || '');
+                        return;
+                    }
+
+                    state.record = body.data?.record || null;
+                    state.redirect = body.data?.redirect || state.redirect;
+                    setMessage(searchMessage, 'success', config.messages?.searchSuccess || '');
+                    if (searchForm) {
+                        searchForm.setAttribute('hidden', 'hidden');
+                    }
+                    if (step3Heading) {
+                        step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
+                    }
+                    if (step3Description) {
+                        step3Description.textContent = '';
+                    }
+                    if (finishButton && state.redirect) {
+                        finishButton.removeAttribute('disabled');
+                    }
+                    renderSummary();
+                })
+                .catch(() => {
+                    setMessage(searchMessage, 'error', config.messages?.searchError || config.messages?.genericError || '');
+                });
+        });
+    }
+
+    const detachRecord = () => {
+        if (!state.agreementId || !state.record) {
             return;
         }
 
+        const currentType = state.record.type === 'search' ? 'search' : 'property';
         const payload = new FormData();
-        payload.append('action', 'estate_office_finalize_agreement');
+        payload.append('action', 'estate_office_detach_record');
         payload.append('nonce', config.nonce);
         payload.append('agreement_id', String(state.agreementId));
+        payload.append('record_id', String(state.record.id || 0));
+        payload.append('record_type', currentType);
 
         fetch(config.ajaxUrl, {
             method: 'POST',
@@ -423,22 +1009,175 @@
             .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
             .then(({ ok, body }) => {
                 if (!ok || !body?.success) {
-                    setMessage(message, 'error', body?.data?.message || config.messages?.genericError || '');
+                    const targetMessage = currentType === 'search' ? searchMessage : propertyMessage;
+                    setMessage(targetMessage, 'error', body?.data?.message || config.messages?.genericError || '');
                     return;
                 }
 
-                state.redirect = body.data?.redirect || '';
-                setMessage(message, 'success', config.messages?.finalizeSuccess || '');
-                switchStep(3);
-                renderSummary();
+                state.record = null;
+                state.redirect = '';
+
+                if (finishButton) {
+                    finishButton.setAttribute('disabled', 'disabled');
+                }
+
+                prepareStepThree();
+
+                const successText = currentType === 'search'
+                    ? (config.messages?.searchDetached || '')
+                    : (config.messages?.propertyDetached || '');
+
+                const targetMessage = currentType === 'search' ? searchMessage : propertyMessage;
+                if (successText) {
+                    setMessage(targetMessage, 'success', successText);
+                }
             })
             .catch(() => {
-                setMessage(message, 'error', config.messages?.genericError || '');
+                const targetMessage = currentType === 'search' ? searchMessage : propertyMessage;
+                setMessage(targetMessage, 'error', config.messages?.genericError || '');
             });
     };
 
+    const fetchFinalizeRedirect = () => {
+        const payload = new FormData();
+        payload.append('action', 'estate_office_finalize_agreement');
+        payload.append('nonce', config.nonce);
+        payload.append('agreement_id', String(state.agreementId));
+
+        return fetch(config.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: payload,
+        })
+            .then((response) => response.json().then((data) => ({ ok: response.ok, body: data })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    throw new Error(body?.data?.message || config.messages?.genericError || '');
+                }
+
+                return body.data?.redirect || '';
+            });
+    };
+
+    const prepareStepThree = () => {
+        if (!state.record) {
+            state.redirect = '';
+            if (finishButton) {
+                finishButton.setAttribute('disabled', 'disabled');
+            }
+        } else if (finishButton && state.redirect) {
+            finishButton.removeAttribute('disabled');
+        }
+        setMessage(propertyMessage, '', '');
+        setMessage(searchMessage, '', '');
+
+        if (propertyForm) {
+            propertyForm.reset();
+            propertyForm.setAttribute('hidden', 'hidden');
+        }
+
+        if (searchForm) {
+            searchForm.reset();
+            searchForm.setAttribute('hidden', 'hidden');
+        }
+
+        if (propertyResults) {
+            propertyResults.innerHTML = '';
+        }
+
+        if (searchResults) {
+            searchResults.innerHTML = '';
+        }
+
+        if (propertySearchInput) {
+            propertySearchInput.value = '';
+        }
+
+        if (searchSearchInput) {
+            searchSearchInput.value = '';
+        }
+
+        renderSummary();
+
+        const type = state.transactionType;
+
+        if (propertyTransactions.includes(type) && propertyForm && !state.record) {
+            propertyForm.removeAttribute('hidden');
+            if (propertyTransactionInput) {
+                propertyTransactionInput.value = type;
+            }
+            if (step3Heading) {
+                step3Heading.textContent = config.step3?.propertyTitle || step3Heading.textContent;
+            }
+            if (step3Description) {
+                step3Description.textContent = config.step3?.propertyDescription || '';
+            }
+            return;
+        }
+
+        if (searchTransactions.includes(type) && searchForm && !state.record) {
+            searchForm.removeAttribute('hidden');
+            if (searchTransactionInput) {
+                searchTransactionInput.value = type;
+            }
+            if (step3Heading) {
+                step3Heading.textContent = config.step3?.searchTitle || step3Heading.textContent;
+            }
+            if (step3Description) {
+                step3Description.textContent = config.step3?.searchDescription || '';
+            }
+            return;
+        }
+
+        if (step3Heading) {
+            step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
+        }
+        if (step3Description) {
+            step3Description.textContent = '';
+        }
+
+        if (!state.record) {
+            fetchFinalizeRedirect()
+                .then((redirect) => {
+                    state.redirect = redirect;
+                    renderSummary();
+                    if (finishButton && state.redirect) {
+                        finishButton.removeAttribute('disabled');
+                    }
+                })
+                .catch((error) => {
+                    setMessage(propertyMessage || searchMessage, 'error', error.message || config.messages?.genericError || '');
+                });
+        } else {
+            renderSummary();
+        }
+    };
+
+    if (summaryBox) {
+        summaryBox.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target && target.matches('[data-eo-agreement-clear-record]')) {
+                event.preventDefault();
+                detachRecord();
+            }
+        });
+    }
+
+    const goToStepThree = () => {
+        const message = overlay.querySelector('[data-eo-agreement-step="2"] [data-eo-agreement-message]');
+        setMessage(message, '', '');
+
+        if (!state.clients.length) {
+            setMessage(message, 'error', config.messages?.missingClients || '');
+            return;
+        }
+
+        switchStep(3);
+        prepareStepThree();
+    };
+
     if (nextButton) {
-        nextButton.addEventListener('click', finalizeAgreement);
+        nextButton.addEventListener('click', goToStepThree);
     }
 
     if (backButton) {
@@ -447,12 +1186,20 @@
         });
     }
 
+    if (prevButton) {
+        prevButton.addEventListener('click', () => {
+            switchStep(2);
+        });
+    }
+
     if (finishButton) {
         finishButton.addEventListener('click', () => {
             if (state.redirect) {
                 window.location.href = state.redirect;
-            } else {
-                closeOverlay();
+            } else if (propertyForm && !propertyForm.hasAttribute('hidden')) {
+                setMessage(propertyMessage, 'error', config.messages?.propertyError || config.messages?.genericError || '');
+            } else if (searchForm && !searchForm.hasAttribute('hidden')) {
+                setMessage(searchMessage, 'error', config.messages?.searchError || config.messages?.genericError || '');
             }
         });
     }

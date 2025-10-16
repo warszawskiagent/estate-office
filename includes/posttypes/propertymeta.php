@@ -48,6 +48,7 @@ use function wp_register_script;
 use function wp_register_style;
 use function wp_schedule_event;
 use function wp_script_is;
+use function wp_unslash;
 use function wp_update_attachment_metadata;
 use function wp_upload_dir;
 
@@ -982,6 +983,84 @@ final class PropertyMeta
         echo '</div>';
         echo '<p class="description">' . esc_html($description) . '</p>';
         echo '</div>';
+    }
+
+    public static function prepareValues(array $source): array
+    {
+        $values = [];
+
+        foreach (self::META_FIELDS as $key => $definition) {
+            $type = $definition['type'] ?? 'string';
+
+            if ($type === 'boolean') {
+                $values[$key] = self::sanitizeBoolean(!empty($source[$key]) ? '1' : '0');
+                continue;
+            }
+
+            if ($type === 'array') {
+                $values[$key] = self::sanitizeArrayInput($source[$key] ?? [], $definition);
+                continue;
+            }
+
+            $raw = $source[$key] ?? '';
+            if (is_array($raw)) {
+                $raw = '';
+            }
+
+            $values[$key] = self::sanitizeValue(wp_unslash(is_scalar($raw) ? (string) $raw : ''), $definition);
+        }
+
+        $price = $values['estate_property_price'] ?? '';
+        $area  = $values['estate_property_area'] ?? '';
+
+        if ($price !== '' && $area !== '' && (float) $area > 0.0) {
+            $values['estate_property_price_per_sqm'] = number_format((float) $price / (float) $area, 2, '.', '');
+        } else {
+            $values['estate_property_price_per_sqm'] = '';
+        }
+
+        if (!empty($values['estate_property_flag_new_offer'])) {
+            $values[self::NEW_OFFER_EXPIRY_META_KEY] = (string) ((int) current_time('timestamp') + self::NEW_OFFER_DURATION);
+        } else {
+            $values[self::NEW_OFFER_EXPIRY_META_KEY] = '';
+        }
+
+        return $values;
+    }
+
+    public static function prepareDynamicValues($raw): array
+    {
+        return self::sanitizeDynamicInput($raw);
+    }
+
+    public static function persistValues(int $postId, array $values, array $dynamicValues = []): void
+    {
+        $values = array_intersect_key($values, self::META_FIELDS);
+
+        $attachmentsForWatermark = [];
+        if (!empty($values['estate_property_gallery']) && is_array($values['estate_property_gallery'])) {
+            $attachmentsForWatermark = array_map('intval', $values['estate_property_gallery']);
+        }
+
+        if (!empty($values['estate_property_floor_plan_2d'])) {
+            $attachmentsForWatermark[] = (int) $values['estate_property_floor_plan_2d'];
+        }
+
+        if (!empty($values['estate_property_floor_plan_3d'])) {
+            $attachmentsForWatermark[] = (int) $values['estate_property_floor_plan_3d'];
+        }
+
+        $attachmentsForWatermark = array_values(array_filter(array_unique($attachmentsForWatermark)));
+
+        foreach ($values as $key => $value) {
+            self::persistMeta($postId, $key, $value, self::META_FIELDS[$key]);
+        }
+
+        self::persistDynamicFields($postId, is_array($dynamicValues) ? $dynamicValues : []);
+
+        if (!empty($attachmentsForWatermark)) {
+            self::maybeApplyWatermarks($attachmentsForWatermark);
+        }
     }
 
     public static function save(int $postId, WP_Post $post): void

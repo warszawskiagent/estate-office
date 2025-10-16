@@ -78,6 +78,10 @@
     display: block;
 }
 
+.estate-office-agreement-creator__block {
+    margin-bottom: 24px;
+}
+
 .estate-office-agreement-creator__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -119,6 +123,25 @@
 
 .estate-office-agreement-creator__checkbox input {
     width: auto;
+}
+
+.estate-office-agreement-creator__textarea {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2933;
+    margin-bottom: 16px;
+}
+
+.estate-office-agreement-creator__textarea textarea {
+    border: 1px solid #c9d3df;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 400;
+    min-height: 96px;
 }
 
 .estate-office-agreement-creator__actions {
@@ -237,6 +260,50 @@
     font-size: 13px;
 }
 
+.estate-office-agreement-creator__existing {
+    background: #f8fbff;
+    border: 1px solid #dce4f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.estate-office-agreement-creator__existing h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__existing .description {
+    margin: 0 0 12px;
+    color: #4a5563;
+    font-size: 13px;
+}
+
+.estate-office-agreement-creator__divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8a94a6;
+}
+
+.estate-office-agreement-creator__divider::before,
+.estate-office-agreement-creator__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #dce4f0;
+}
+
+.estate-office-agreement-creator__divider span {
+    padding: 0 6px;
+}
+
 .estate-office-agreement-creator__new-client summary {
     cursor: pointer;
     font-weight: 600;
@@ -254,6 +321,20 @@
 
 .estate-office-agreement-creator__summary strong {
     color: #1f2933;
+}
+
+.estate-office-agreement-creator__summary .estate-office-agreement-creator__ghost {
+    padding-inline: 16px;
+}
+
+.estate-office-agreement-creator__link {
+    color: #2c7be5;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.estate-office-agreement-creator__link:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 640px) {
