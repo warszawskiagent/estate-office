@@ -19,8 +19,10 @@ use function add_filter;
 use function esc_url;
 use function __;
 use function get_404_template;
+use function get_attached_file;
 use function get_avatar_url;
 use function get_option;
+use function get_permalink;
 use function get_post_meta;
 use function get_post_thumbnail_id;
 use function get_post_type_archive_link;
@@ -35,13 +37,15 @@ use function number_format_i18n;
 use function rawurlencode;
 use function status_header;
 use function trim;
+use function wp_basename;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_get_attachment_image_url;
 use function wp_get_attachment_url;
-use function plugins_url;
+use function wp_get_post_terms;
 use function wp_register_script;
 use function wp_register_style;
+use function wp_reset_postdata;
 use function wp_strip_all_tags;
 
 use const ESTATE_OFFICE_PLUGIN_DIR;
@@ -210,9 +214,11 @@ final class OfferSingle
             'gallery'      => $gallery,
             'floor_plans'  => $floorPlans,
             'media_links'  => $mediaLinks,
+            'downloads'    => self::prepareDownloads($post),
             'manager'      => self::buildManager($post),
             'logo'         => self::getOfficeLogo(),
             'archive_link' => get_post_type_archive_link(PropertyRegister::POST_TYPE) ?: '',
+            'recommendations' => self::buildRecommendations($post),
         ];
     }
 
@@ -501,6 +507,48 @@ final class OfferSingle
     }
 
     /**
+     * @return array<int,array{label:string,url:string,meta:string}>
+     */
+    private static function prepareDownloads(WP_Post $post): array
+    {
+        $ids = get_post_meta($post->ID, 'estate_property_materials', true);
+        $ids = is_array($ids) ? $ids : (array) $ids;
+
+        $downloads = [];
+
+        foreach ($ids as $id) {
+            $attachmentId = absint($id);
+
+            if ($attachmentId <= 0) {
+                continue;
+            }
+
+            $url = wp_get_attachment_url($attachmentId);
+
+            if (! $url) {
+                continue;
+            }
+
+            $label = trim((string) get_the_title($attachmentId));
+            if ($label === '') {
+                $label = sprintf(__('Materiał #%d', 'estate-office'), $attachmentId);
+            }
+
+            $filePath = get_attached_file($attachmentId) ?: '';
+            $meta     = $filePath !== '' ? wp_basename($filePath) : '';
+
+            $downloads[] = [
+                'label'    => $label,
+                'url'      => $url,
+                'meta'     => $meta,
+                'download' => $meta,
+            ];
+        }
+
+        return $downloads;
+    }
+
+    /**
      * @return array<string,mixed>
      */
     private static function buildManager(WP_Post $post): array
@@ -624,6 +672,131 @@ final class OfferSingle
         $url = wp_get_attachment_image_url($logoId, 'medium');
 
         return $url ?: '';
+    }
+
+    /**
+     * @return array<int,array{title:string,permalink:string,thumbnail:string,price:string,area:string,address:string,badges:array<int,array{label:string,slug:string}>,reference:string}>
+     */
+    private static function buildRecommendations(WP_Post $post): array
+    {
+        $taxQuery = [];
+
+        $transactionTerms = wp_get_post_terms($post->ID, 'estate_transaction_type', ['fields' => 'ids']);
+        if (! is_wp_error($transactionTerms) && ! empty($transactionTerms)) {
+            $taxQuery[] = [
+                'taxonomy' => 'estate_transaction_type',
+                'field'    => 'term_id',
+                'terms'    => array_map('absint', $transactionTerms),
+            ];
+        }
+
+        $propertyTerms = wp_get_post_terms($post->ID, 'estate_property_type', ['fields' => 'ids']);
+        if (! is_wp_error($propertyTerms) && ! empty($propertyTerms)) {
+            $taxQuery[] = [
+                'taxonomy' => 'estate_property_type',
+                'field'    => 'term_id',
+                'terms'    => array_map('absint', $propertyTerms),
+            ];
+        }
+
+        $cityTerms = wp_get_post_terms($post->ID, 'estate_city', ['fields' => 'ids']);
+        if (! is_wp_error($cityTerms) && ! empty($cityTerms)) {
+            $taxQuery[] = [
+                'taxonomy' => 'estate_city',
+                'field'    => 'term_id',
+                'terms'    => array_map('absint', $cityTerms),
+            ];
+        }
+
+        $args = [
+            'post_type'           => PropertyRegister::POST_TYPE,
+            'post_status'         => 'publish',
+            'posts_per_page'      => 3,
+            'post__not_in'        => [$post->ID],
+            'ignore_sticky_posts' => true,
+            'no_found_rows'       => true,
+            'orderby'             => 'date',
+            'order'               => 'DESC',
+            'meta_query'          => [
+                [
+                    'key'   => 'estate_property_flag_export_www',
+                    'value' => '1',
+                ],
+            ],
+        ];
+
+        if (! empty($taxQuery)) {
+            if (count($taxQuery) > 1) {
+                $taxQuery = array_merge(['relation' => 'AND'], $taxQuery);
+            }
+
+            $args['tax_query'] = $taxQuery;
+        }
+
+        $query = new WP_Query($args);
+
+        if (! $query->have_posts()) {
+            return [];
+        }
+
+        $recommendations = [];
+
+        while ($query->have_posts()) {
+            $query->the_post();
+
+            $related = $query->post;
+
+            if (! $related instanceof WP_Post) {
+                continue;
+            }
+
+            $title = trim((string) get_the_title($related));
+            if ($title === '') {
+                $title = sprintf(__('Oferta #%d', 'estate-office'), $related->ID);
+            }
+
+            $thumbnail = '';
+            $thumbId   = get_post_thumbnail_id($related);
+            if ($thumbId) {
+                $thumbnail = wp_get_attachment_image_url($thumbId, 'medium_large') ?: (wp_get_attachment_image_url($thumbId, 'medium') ?: '');
+            }
+
+            $reference = trim((string) get_post_meta($related->ID, 'estate_property_reference', true));
+
+            $recommendations[] = [
+                'title'      => $title,
+                'permalink'  => get_permalink($related),
+                'thumbnail'  => $thumbnail,
+                'price'      => self::formatMoney((string) get_post_meta($related->ID, 'estate_property_price', true)),
+                'area'       => self::formatMeasurement((string) get_post_meta($related->ID, 'estate_property_area', true), 'm²'),
+                'address'    => self::summarizeAddress(self::buildAddress($related)),
+                'badges'     => self::collectBadges($related),
+                'reference'  => $reference,
+            ];
+        }
+
+        wp_reset_postdata();
+
+        return $recommendations;
+    }
+
+    private static function summarizeAddress(array $address): string
+    {
+        $parts = [];
+
+        if (! empty($address['line1'])) {
+            $parts[] = $address['line1'];
+        }
+
+        if (! empty($address['line2'])) {
+            $parts[] = $address['line2'];
+        }
+
+        if (! empty($address['district'])) {
+            $parts[] = $address['district'];
+        }
+
+        return implode(', ', array_filter($parts, static fn(string $part) => $part !== ''));
     }
 
     /**

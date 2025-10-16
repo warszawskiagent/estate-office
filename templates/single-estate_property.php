@@ -111,7 +111,7 @@ get_header();
                 </div>
             <?php endif; ?>
 
-            <?php if (! empty($context['floor_plans']) || ! empty($context['media_links'])) : ?>
+            <?php if (! empty($context['floor_plans']) || ! empty($context['media_links']) || ! empty($context['downloads'])) : ?>
                 <div class="estate-office-offer__resources">
                     <?php foreach ($context['floor_plans'] as $plan) : ?>
                         <a class="estate-office-offer__resource" href="<?php echo esc_url($plan['url']); ?>" target="_blank" rel="noopener">
@@ -121,6 +121,20 @@ get_header();
                     <?php foreach ($context['media_links'] as $link) : ?>
                         <a class="estate-office-offer__resource" href="<?php echo esc_url($link['url']); ?>" target="_blank" rel="noopener">
                             <?php echo esc_html($link['label']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php foreach ($context['downloads'] as $download) : ?>
+                        <a
+                            class="estate-office-offer__resource estate-office-offer__resource--download"
+                            href="<?php echo esc_url($download['url']); ?>"
+                            target="_blank"
+                            rel="noopener"
+                            <?php if (! empty($download['download'])) : ?>download="<?php echo esc_attr($download['download']); ?>"<?php endif; ?>
+                        >
+                            <span class="estate-office-offer__resource-label"><?php echo esc_html($download['label']); ?></span>
+                            <?php if (! empty($download['meta'])) : ?>
+                                <span class="estate-office-offer__resource-meta"><?php echo esc_html($download['meta']); ?></span>
+                            <?php endif; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -293,6 +307,51 @@ get_header();
             <?php endif; ?>
         </div>
     </section>
+
+    <?php if (! empty($context['recommendations'])) : ?>
+        <section class="estate-office-offer__section estate-office-offer__section--recommendations">
+            <h2 class="estate-office-offer__section-title"><?php esc_html_e('Zobacz również', 'estate-office'); ?></h2>
+            <div class="estate-office-offer__recommendations">
+                <?php foreach ($context['recommendations'] as $offer) : ?>
+                    <article class="estate-office-offer__recommendation">
+                        <a class="estate-office-offer__recommendation-link" href="<?php echo esc_url($offer['permalink']); ?>">
+                            <div class="estate-office-offer__recommendation-thumb">
+                                <?php if (! empty($offer['thumbnail'])) : ?>
+                                    <img src="<?php echo esc_url($offer['thumbnail']); ?>" alt="" loading="lazy" />
+                                <?php else : ?>
+                                    <span><?php esc_html_e('Brak zdjęcia', 'estate-office'); ?></span>
+                                <?php endif; ?>
+                                <?php if (! empty($offer['badges'])) : ?>
+                                    <div class="estate-office-offer__recommendation-badges">
+                                        <?php foreach ($offer['badges'] as $badge) : ?>
+                                            <span class="estate-office-offer__recommendation-badge estate-office-offer__recommendation-badge--<?php echo esc_attr($badge['slug']); ?>"><?php echo esc_html($badge['label']); ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="estate-office-offer__recommendation-body">
+                                <?php if (! empty($offer['reference'])) : ?>
+                                    <span class="estate-office-offer__recommendation-reference"><?php echo esc_html($offer['reference']); ?></span>
+                                <?php endif; ?>
+                                <h3 class="estate-office-offer__recommendation-title"><?php echo esc_html($offer['title']); ?></h3>
+                                <?php if (! empty($offer['address'])) : ?>
+                                    <p class="estate-office-offer__recommendation-address"><?php echo esc_html($offer['address']); ?></p>
+                                <?php endif; ?>
+                                <div class="estate-office-offer__recommendation-meta">
+                                    <?php if (! empty($offer['price'])) : ?>
+                                        <span class="estate-office-offer__recommendation-price"><?php echo esc_html($offer['price']); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (! empty($offer['area'])) : ?>
+                                        <span class="estate-office-offer__recommendation-area"><?php echo esc_html($offer['area']); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 </main>
 
 <?php get_footer(); ?>

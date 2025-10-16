@@ -27,6 +27,9 @@
             remove: '',
             emptyGallery: '',
             dragHint: '',
+            downloadsTitle: '',
+            downloadsButton: '',
+            downloadsEmpty: '',
         },
         settings.media || {}
     );
@@ -431,6 +434,131 @@
         updateGalleryEmptyState(wrapper);
     }
 
+    function updateDownloadsEmptyState(wrapper) {
+        const empty = wrapper.querySelector('.estate-office-downloads-empty');
+        const list = wrapper.querySelector('.estate-office-downloads-list');
+
+        if (!empty || !list) {
+            return;
+        }
+
+        if (list.children.length === 0) {
+            empty.classList.remove('hidden');
+            empty.removeAttribute('hidden');
+        } else {
+            empty.classList.add('hidden');
+            empty.setAttribute('hidden', 'hidden');
+        }
+    }
+
+    function addDownloadAttachment(wrapper, attachment) {
+        const list = wrapper.querySelector('.estate-office-downloads-list');
+
+        if (!list || !attachment || !attachment.id) {
+            return;
+        }
+
+        const id = attachment.id;
+
+        if (list.querySelector('[data-id="' + id + '"]')) {
+            return;
+        }
+
+        const item = document.createElement('li');
+        item.className = 'estate-office-downloads-item';
+        item.dataset.id = id;
+
+        const icon = document.createElement('span');
+        icon.className = 'estate-office-downloads-icon dashicons dashicons-media-default';
+        icon.setAttribute('aria-hidden', 'true');
+        item.appendChild(icon);
+
+        const title = document.createElement('span');
+        title.className = 'estate-office-downloads-title';
+        title.textContent = attachment.title || attachment.filename || '#' + id;
+        item.appendChild(title);
+
+        if (attachment.filename) {
+            const meta = document.createElement('span');
+            meta.className = 'estate-office-downloads-meta';
+            meta.textContent = attachment.filename;
+            item.appendChild(meta);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'estate-office-downloads-actions';
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'button-link estate-office-downloads-remove';
+        removeButton.textContent = wrapper.dataset.removeLabel || mediaStrings.remove || '';
+        removeButton.addEventListener('click', function () {
+            item.remove();
+            updateDownloadsEmptyState(wrapper);
+        });
+        actions.appendChild(removeButton);
+        item.appendChild(actions);
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        const inputName = wrapper.dataset.input ? wrapper.dataset.input + '[]' : 'estate_property_materials[]';
+        input.name = inputName;
+        input.value = id;
+        item.appendChild(input);
+
+        list.appendChild(item);
+        updateDownloadsEmptyState(wrapper);
+    }
+
+    function initDownloads(wrapper) {
+        const list = wrapper.querySelector('.estate-office-downloads-list');
+        const addButton = wrapper.querySelector('.estate-office-downloads-add');
+
+        if (!list || !addButton || !window.wp || !wp.media) {
+            return;
+        }
+
+        Array.from(list.querySelectorAll('.estate-office-downloads-remove')).forEach(function (button) {
+            button.addEventListener('click', function () {
+                const item = button.closest('.estate-office-downloads-item');
+                if (item) {
+                    item.remove();
+                    updateDownloadsEmptyState(wrapper);
+                }
+            });
+        });
+
+        let frame;
+
+        addButton.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            if (!frame) {
+                frame = wp.media({
+                    title: wrapper.dataset.frameTitle || mediaStrings.downloadsTitle || '',
+                    button: {
+                        text: wrapper.dataset.frameButton || mediaStrings.downloadsButton || '',
+                    },
+                    multiple: true,
+                });
+
+                frame.on('select', function () {
+                    const selection = frame.state().get('selection');
+                    if (!selection) {
+                        return;
+                    }
+
+                    selection.each(function (model) {
+                        addDownloadAttachment(wrapper, model.toJSON());
+                    });
+                });
+            }
+
+            frame.open();
+        });
+
+        updateDownloadsEmptyState(wrapper);
+    }
+
     function renderPlaceholder(preview, text) {
         if (!preview) {
             return;
@@ -560,6 +688,17 @@
         });
     }
 
+    function initDownloadFields() {
+        const wrappers = document.querySelectorAll('.estate-office-downloads');
+        if (!wrappers.length) {
+            return;
+        }
+
+        wrappers.forEach(function (wrapper) {
+            initDownloads(wrapper);
+        });
+    }
+
     function initSingleMediaFields() {
         const wrappers = document.querySelectorAll('.estate-office-single-media');
         if (!wrappers.length) {
@@ -574,6 +713,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         initMapField();
         initGalleries();
+        initDownloadFields();
         initSingleMediaFields();
     });
 })(window, document);

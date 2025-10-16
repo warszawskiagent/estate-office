@@ -32,6 +32,7 @@ use function rawurlencode;
 use function time;
 use function trailingslashit;
 use function update_post_meta;
+use function wp_basename;
 use function wp_check_filetype;
 use function wp_clear_scheduled_hook;
 use function wp_dropdown_users;
@@ -113,6 +114,7 @@ final class PropertyMeta
         'estate_property_flag_export_www'     => ['type' => 'boolean'],
         'estate_property_flag_export_portals' => ['type' => 'boolean'],
         'estate_property_gallery'             => ['type' => 'array', 'items' => 'attachment'],
+        'estate_property_materials'          => ['type' => 'array', 'items' => 'attachment'],
         'estate_property_floor_plan_2d'       => ['type' => 'integer'],
         'estate_property_floor_plan_3d'       => ['type' => 'integer'],
         'estate_property_video_url'           => ['type' => 'url'],
@@ -727,6 +729,9 @@ final class PropertyMeta
                     'remove'         => esc_html__('Usuń', 'estate-office'),
                     'emptyGallery'   => esc_html__('Nie dodano jeszcze zdjęć.', 'estate-office'),
                     'dragHint'       => esc_html__('Przeciągnij elementy, aby ustawić kolejność prezentacji. Pierwsze zdjęcie będzie wyróżnione w listach.', 'estate-office'),
+                    'downloadsTitle' => esc_html__('Wybierz materiały do pobrania', 'estate-office'),
+                    'downloadsButton'=> esc_html__('Dodaj materiały', 'estate-office'),
+                    'downloadsEmpty' => esc_html__('Nie dodano jeszcze materiałów do pobrania.', 'estate-office'),
                 ],
             ]
         );
@@ -922,6 +927,53 @@ final class PropertyMeta
         echo '</ul>';
         echo '<p class="description reorder">' . esc_html__('Przeciągnij elementy, aby ustawić kolejność prezentacji. Pierwsze zdjęcie będzie wyróżnione w listach.', 'estate-office') . '</p>';
         echo '<button type="button" class="button estate-office-gallery-add">' . esc_html__('Dodaj zdjęcia', 'estate-office') . '</button>';
+        echo '</div>';
+
+        $materials = get_post_meta($post->ID, 'estate_property_materials', true);
+        $materials = is_array($materials) ? array_values(array_filter(array_map('absint', $materials))) : [];
+
+        $materialsEmpty  = esc_attr__('Nie dodano jeszcze materiałów do pobrania.', 'estate-office');
+        $materialsRemove = esc_attr__('Usuń', 'estate-office');
+        $materialsTitle  = esc_attr__('Materiały do pobrania', 'estate-office');
+        $materialsButton = esc_attr__('Dodaj materiały', 'estate-office');
+
+        echo '<div class="estate-office-downloads" data-input="estate_property_materials" data-empty-label="' . $materialsEmpty . '" data-remove-label="' . $materialsRemove . '" data-frame-title="' . $materialsTitle . '" data-frame-button="' . $materialsButton . '">';
+        $downloadsEmptyClass = empty($materials) ? '' : ' hidden';
+        echo '<p class="estate-office-downloads-empty' . $downloadsEmptyClass . '">' . esc_html__('Nie dodano jeszcze materiałów do pobrania.', 'estate-office') . '</p>';
+        echo '<ul class="estate-office-downloads-list">';
+
+        foreach ($materials as $attachmentId) {
+            $attachmentId = absint($attachmentId);
+
+            if ($attachmentId <= 0) {
+                continue;
+            }
+
+            $title = trim((string) get_the_title($attachmentId));
+            if ($title === '') {
+                $title = sprintf(esc_html__('Materiał #%d', 'estate-office'), $attachmentId);
+            }
+
+            $filePath = get_attached_file($attachmentId) ?: '';
+            $filename = $filePath !== '' ? wp_basename($filePath) : '';
+
+            echo '<li class="estate-office-downloads-item" data-id="' . esc_attr((string) $attachmentId) . '">';
+            echo '<span class="estate-office-downloads-icon dashicons dashicons-media-default" aria-hidden="true"></span>';
+            echo '<span class="estate-office-downloads-title">' . esc_html($title) . '</span>';
+
+            if ($filename !== '') {
+                echo '<span class="estate-office-downloads-meta">' . esc_html($filename) . '</span>';
+            }
+
+            echo '<div class="estate-office-downloads-actions">';
+            echo '<button type="button" class="button-link estate-office-downloads-remove">' . esc_html__('Usuń', 'estate-office') . '</button>';
+            echo '</div>';
+            printf('<input type="hidden" name="estate_property_materials[]" value="%d" />', $attachmentId);
+            echo '</li>';
+        }
+
+        echo '</ul>';
+        echo '<button type="button" class="button estate-office-downloads-add">' . esc_html__('Dodaj materiały', 'estate-office') . '</button>';
         echo '</div>';
 
         $floor2d = (int) get_post_meta($post->ID, 'estate_property_floor_plan_2d', true);

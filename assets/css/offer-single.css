@@ -250,6 +250,39 @@
     color: #fff;
 }
 
+.estate-office-offer__resource--download {
+    border-color: #0f172a;
+    color: #0f172a;
+    background: rgba(15, 23, 42, 0.05);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    border-radius: 14px;
+    padding: 0.65rem 1rem;
+    min-width: 180px;
+}
+
+.estate-office-offer__resource--download:hover,
+.estate-office-offer__resource--download:focus {
+    background: #0f172a;
+    color: #fff;
+}
+
+.estate-office-offer__resource--download:hover .estate-office-offer__resource-meta,
+.estate-office-offer__resource--download:focus .estate-office-offer__resource-meta {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.estate-office-offer__resource-label {
+    font-weight: 600;
+}
+
+.estate-office-offer__resource-meta {
+    font-size: 0.75rem;
+    color: rgba(15, 23, 42, 0.65);
+}
+
 .estate-office-offer__contact {
     background: #0b1f33;
     color: #fff;
@@ -317,6 +350,127 @@
 .estate-office-offer__contact-mail {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
+}
+
+.estate-office-offer__section--recommendations {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(37, 99, 235, 0.08));
+    border-radius: 24px;
+    padding: 2.5rem 2.75rem;
+}
+
+.estate-office-offer__recommendations {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.75rem;
+}
+
+.estate-office-offer__recommendation {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.estate-office-offer__recommendation-link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.estate-office-offer__recommendation:hover,
+.estate-office-offer__recommendation:focus-within {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+}
+
+.estate-office-offer__recommendation-thumb {
+    position: relative;
+    background: #e2e8f0;
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estate-office-offer__recommendation-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-offer__recommendation-thumb span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.estate-office-offer__recommendation-badges {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.estate-office-offer__recommendation-badge {
+    background: rgba(37, 99, 235, 0.9);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.estate-office-offer__recommendation-body {
+    padding: 1.25rem 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.estate-office-offer__recommendation-reference {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2563eb;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.estate-office-offer__recommendation-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.estate-office-offer__recommendation-address {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.estate-office-offer__recommendation-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.estate-office-offer__recommendation-price {
+    font-size: 1rem;
+}
+
+.estate-office-offer__recommendation-area {
+    font-size: 0.9rem;
+    color: #1e293b;
 }
 
 .estate-office-offer__contact-mail:hover,
@@ -506,5 +660,9 @@
     .estate-office-offer__contact-avatar {
         width: 90px;
         height: 90px;
+    }
+
+    .estate-office-offer__section--recommendations {
+        padding: 1.75rem 1.5rem;
     }
 }

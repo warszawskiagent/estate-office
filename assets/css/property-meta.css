@@ -179,6 +179,71 @@
     margin-top: 0.5em;
 }
 
+.estate-office-downloads {
+    margin-top: 1.5em;
+    padding: 1em;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.estate-office-downloads-empty {
+    margin: 0 0 0.75em;
+    color: #6c7781;
+    font-style: italic;
+}
+
+.estate-office-downloads-empty.hidden {
+    display: none;
+}
+
+.estate-office-downloads-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75em;
+}
+
+.estate-office-downloads-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75em;
+    padding: 0.75em 0.9em;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    background: #fdfdfd;
+}
+
+.estate-office-downloads-icon {
+    font-size: 20px;
+    color: #3858e9;
+}
+
+.estate-office-downloads-title {
+    font-weight: 600;
+}
+
+.estate-office-downloads-meta {
+    grid-column: 2 / 3;
+    font-size: 0.85em;
+    color: #6c7781;
+}
+
+.estate-office-downloads-actions {
+    display: flex;
+    gap: 0.5em;
+}
+
+.estate-office-downloads-actions .button-link {
+    color: #d63638;
+}
+
+.estate-office-downloads-add {
+    margin-top: 0.75em;
+}
+
 .estate-office-single-media {
     margin-top: 1.5em;
     padding: 1em;

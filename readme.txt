@@ -33,6 +33,8 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Konfigurowalne role klientów definiowane w ustawieniach CRM i wykorzystywane w umowach, kreatorze oraz raportach.
 * Publiczny katalog ofert z filtrowaniem po transakcji, rodzaju, mieście i dzielnicy oraz odznakami marketingowymi.
 * Publiczny szablon strony oferty z galerią, mapą, kartami danych i bezpośrednim kontaktem do opiekuna.
+* Materiały do pobrania zarządzane w panelu nieruchomości oraz prezentowane na stronach ofertowych.
+* Rekomendacje podobnych ofert na stronach nieruchomości ułatwiające użytkownikom odkrywanie alternatyw.
 * Formularze kontaktowe na stronach ofert i profilach agentów z wysyłką AJAX oraz kontrolą zgód RODO.
 * Automatyczny zapis leadów z formularzy kontaktowych z przypisaniami agentów, statusami i historią zgłoszeń.
 * Konfigurowalne statusy leadów zarządzane w ustawieniach CRM, wykorzystywane w kokpicie, na froncie i w powiadomieniach.
@@ -57,7 +59,6 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 == Roadmap ==
 * Integracja modułu licencji wraz z panelem aktywacji i walidacją kluczy.
 * Rozbudowa pulpitu CRM o konfigurowalne widżety, wykresy oraz historię aktywności.
-* Rozbudowa strony oferty o formularze kontaktowe, rekomendowane oferty i dodatkowe materiały do pobrania.
 * Automatyzacja generowania stron ofertowych z SEO i indeksacją w sitemapie.
 * Automatyzacje workflow: logi aktywności oraz powiązania na froncie użytkownika.
 * Rozbudowa galerii nieruchomości o podpisy zdjęć, oznaczanie zdjęcia głównego i integrację z eksportem portali.
@@ -137,3 +138,5 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano możliwość przypisywania ról klientom w umowach z obsługą w kreatorze, kokpicie CRM oraz profilach klientów.
 * Wprowadzono konfigurator ról klientów w ustawieniach CRM wraz z integracją w kreatorze umów i panelach CRM.
 * Dodano konfigurator statusów leadów w ustawieniach oraz dynamiczne etykiety wykorzystywane w CRM, powiadomieniach i kreatorach.
+* Dodano materiały do pobrania w metadanych nieruchomości z obsługą w panelu, CRM i publicznym szablonie oferty.
+* Rozszerzono publiczny szablon oferty o sekcję rekomendowanych nieruchomości dopasowanych po typie transakcji, rodzaju i lokalizacji.
