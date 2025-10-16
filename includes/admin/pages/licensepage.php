@@ -86,5 +86,45 @@ final class LicensePage extends BasePage
 
         echo '</p>';
         echo '</form>';
+
+        $history = LicenseManager::getHistory();
+
+        echo '<h2>' . esc_html__('Historia sprawdzeń licencji', 'estate-office') . '</h2>';
+
+        if (empty($history)) {
+            echo '<p>' . esc_html__('Brak zapisanych zdarzeń. Po weryfikacji licencji lub automatycznym sprawdzeniu historia pojawi się w tym miejscu.', 'estate-office') . '</p>';
+
+            return;
+        }
+
+        echo '<table class="widefat striped eo-license-history">';
+        echo '<thead><tr>';
+        echo '<th scope="col">' . esc_html__('Data i czas', 'estate-office') . '</th>';
+        echo '<th scope="col">' . esc_html__('Typ zdarzenia', 'estate-office') . '</th>';
+        echo '<th scope="col">' . esc_html__('Wynik', 'estate-office') . '</th>';
+        echo '<th scope="col">' . esc_html__('Komunikat', 'estate-office') . '</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
+
+        foreach ($history as $entry) {
+            $time    = !empty($entry['time']) ? esc_html($entry['time']) : esc_html__('Brak danych', 'estate-office');
+            $context = esc_html(LicenseManager::describeContext((string) ($entry['context'] ?? 'manage')));
+
+            $result = isset($entry['result']) && $entry['result'] === 'error'
+                ? '<span class="eo-status-badge eo-status-error">' . esc_html__('Błąd', 'estate-office') . '</span>'
+                : '<span class="eo-status-badge eo-status-success">' . esc_html__('Sukces', 'estate-office') . '</span>';
+
+            $message = !empty($entry['message']) ? wp_kses_post($entry['message']) : '&mdash;';
+
+            echo '<tr>';
+            echo '<td>' . $time . '</td>';
+            echo '<td>' . $context . '</td>';
+            echo '<td>' . $result . '</td>';
+            echo '<td>' . $message . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody>';
+        echo '</table>';
     }
 }

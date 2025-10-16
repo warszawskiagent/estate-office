@@ -13,10 +13,12 @@ final class Manager
     private const OPTION_STATUS     = 'estate_office_license_status';
     private const OPTION_EXPIRATION = 'estate_office_license_expires_at';
     private const OPTION_LAST_CHECK = 'estate_office_license_last_check';
+    private const OPTION_HISTORY    = 'estate_office_license_history';
     private const TRANSIENT_NOTICE  = 'estate_office_license_notice';
     private const TRANSIENT_CRON    = 'estate_office_license_cron_error';
     private const CRON_HOOK         = 'estate_office_license_status_check';
     private const API_ENDPOINT      = 'https://warszawskiagent.pl/wp-json/estate-office/v1/license/';
+    private const HISTORY_LIMIT     = 10;
 
     private function __construct()
     {
@@ -102,6 +104,13 @@ final class Manager
         $key    = sanitize_text_field(wp_unslash((string) ($_POST['license_key'] ?? '')));
         $email  = sanitize_text_field(wp_unslash((string) ($_POST['license_email'] ?? '')));
 
+        $context = match ($action) {
+            'activate'   => 'activate',
+            'refresh'    => 'refresh',
+            'deactivate' => 'deactivate',
+            default      => 'manage',
+        };
+
         try {
             switch ($action) {
                 case 'activate':
@@ -118,6 +127,7 @@ final class Manager
                     break;
             }
         } catch (\RuntimeException $exception) {
+            self::recordEvent('error', $exception->getMessage(), $context);
             self::addNotice('error', $exception->getMessage());
         }
 
@@ -163,15 +173,17 @@ final class Manager
         self::validateKeyAndEmail($key, $email);
 
         $response = self::remoteRequest('activate', $key, $email);
-        self::persist($key, $email, $response);
+        $message  = isset($response['message']) ? (string) $response['message'] : __('Licencja została pomyślnie zweryfikowana.', 'estate-office');
 
-        $message = isset($response['message']) ? (string) $response['message'] : __('Licencja została pomyślnie zweryfikowana.', 'estate-office');
+        self::persist($key, $email, $response);
+        self::recordEvent('success', $message, 'activate');
+
         self::addNotice('success', $message);
     }
 
     private static function refresh(string $key, string $email): void
     {
-        self::refreshStatus($key, $email, false);
+        self::refreshStatus($key, $email, false, 'refresh');
     }
 
     private static function deactivate(): void
@@ -193,7 +205,10 @@ final class Manager
         delete_option(self::OPTION_EXPIRATION);
         update_option(self::OPTION_LAST_CHECK, current_time('mysql'));
 
-        self::addNotice('success', __('Licencja została dezaktywowana na tej stronie.', 'estate-office'));
+        $message = __('Licencja została dezaktywowana na tej stronie.', 'estate-office');
+        self::recordEvent('success', $message, 'deactivate');
+
+        self::addNotice('success', $message);
     }
 
     private static function validateKeyAndEmail(string $key, string $email): void
@@ -268,7 +283,7 @@ final class Manager
         }
     }
 
-    private static function refreshStatus(string $key, string $email, bool $silent): void
+    private static function refreshStatus(string $key, string $email, bool $silent, string $context): void
     {
         if ($key === '') {
             if ($silent) {
@@ -279,10 +294,12 @@ final class Manager
         }
 
         $response = self::remoteRequest('status', $key, $email);
+        $message  = isset($response['message']) ? (string) $response['message'] : __('Status licencji został odświeżony.', 'estate-office');
+
         self::persist($key, $email, $response);
+        self::recordEvent('success', $message, $context);
 
         if (!$silent) {
-            $message = isset($response['message']) ? (string) $response['message'] : __('Status licencji został odświeżony.', 'estate-office');
             self::addNotice('success', $message);
         }
     }
@@ -319,11 +336,73 @@ final class Manager
         }
 
         try {
-            self::refreshStatus($key, $email, true);
+            self::refreshStatus($key, $email, true, 'cron');
             delete_transient(self::TRANSIENT_CRON);
         } catch (\RuntimeException $exception) {
             set_transient(self::TRANSIENT_CRON, $exception->getMessage(), DAY_IN_SECONDS);
+            self::recordEvent('error', $exception->getMessage(), 'cron');
         }
+    }
+
+    public static function getHistory(): array
+    {
+        $history = get_option(self::OPTION_HISTORY, []);
+
+        if (!is_array($history)) {
+            return [];
+        }
+
+        return array_map(static function (array $item): array {
+            $result = isset($item['result']) ? sanitize_key((string) $item['result']) : 'success';
+
+            if (!in_array($result, ['success', 'error'], true)) {
+                $result = 'success';
+            }
+
+            $context = isset($item['context']) ? sanitize_key((string) $item['context']) : 'manage';
+
+            return [
+                'time'    => isset($item['time']) ? sanitize_text_field((string) $item['time']) : '',
+                'result'  => $result,
+                'context' => $context,
+                'message' => isset($item['message']) ? wp_kses_post((string) $item['message']) : '',
+            ];
+        }, $history);
+    }
+
+    public static function describeContext(string $context): string
+    {
+        return match (sanitize_key($context)) {
+            'activate'   => __('Aktywacja ręczna', 'estate-office'),
+            'refresh'    => __('Ręczne sprawdzenie statusu', 'estate-office'),
+            'cron'       => __('Automatyczne sprawdzenie', 'estate-office'),
+            'deactivate' => __('Dezaktywacja licencji', 'estate-office'),
+            default      => __('Akcja licencyjna', 'estate-office'),
+        };
+    }
+
+    private static function recordEvent(string $result, string $message, string $context): void
+    {
+        $result = sanitize_key($result) === 'error' ? 'error' : 'success';
+        $context = sanitize_key($context);
+
+        $history = get_option(self::OPTION_HISTORY, []);
+        if (!is_array($history)) {
+            $history = [];
+        }
+
+        array_unshift($history, [
+            'time'    => current_time('mysql'),
+            'result'  => $result,
+            'context' => $context !== '' ? $context : 'manage',
+            'message' => wp_strip_all_tags($message),
+        ]);
+
+        if (count($history) > self::HISTORY_LIMIT) {
+            $history = array_slice($history, 0, self::HISTORY_LIMIT);
+        }
+
+        update_option(self::OPTION_HISTORY, $history, false);
     }
 
     public static function renderStatusAlert(): void

@@ -145,3 +145,4 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 * Dodano moduł SEO ofert generujący metadane Open Graph/Twitter, dane strukturalne JSON-LD oraz dedykowany wpis w mapie witryny dla nieruchomości eksportowanych na WWW.
 * Dodano moduł zarządzania licencją umożliwiający weryfikację, odświeżanie statusu oraz dezaktywację klucza licencyjnego.
 * Zaimplementowano harmonogram automatycznego sprawdzania statusu licencji wraz z powiadomieniami o błędach i zbliżającym się terminie ważności.
+* Dodano historię sprawdzeń licencji z logowaniem wyników i podglądem zdarzeń w panelu administracyjnym.
