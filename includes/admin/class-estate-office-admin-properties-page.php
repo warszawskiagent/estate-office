@@ -288,41 +288,115 @@ jQuery(function($){
         toggleOwnershipCustom();
     }
 
+    const mapContainer = document.getElementById('estate-office-property-map');
+    const mapTrigger = $('[data-map-trigger]');
+    const latField = $('input[name="latitude"]');
+    const lngField = $('input[name="longitude"]');
+    let mapInstance = null;
+    let mapMarker = null;
+    let mapInitialized = false;
+
+    function parseCoordinate(field, fallback){
+        if ( ! field || ! field.length ) {
+            return fallback;
+        }
+        const raw = (field.val() || '').toString().replace(',', '.');
+        const numeric = parseFloat(raw);
+        return isFinite(numeric) ? numeric : fallback;
+    }
+
+    function markMapActive(){
+        if (!mapContainer){
+            return;
+        }
+        const wrapper = $(mapContainer).closest('[data-map-wrapper]');
+        if (wrapper.length){
+            wrapper.addClass('is-map-active');
+        }
+    }
+
+    function focusMapContainer(){
+        if (!mapContainer){
+            return;
+        }
+        if (typeof mapContainer.scrollIntoView === 'function'){
+            mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        try {
+            mapContainer.focus({ preventScroll: true });
+        } catch (error) {
+            mapContainer.focus();
+        }
+    }
+
     function initMap(){
-        const mapContainer = document.getElementById('estate-office-property-map');
         if (!mapContainer || !EstateOfficePropertyMap.hasMap || typeof google === 'undefined' || !google.maps){
             return;
         }
-        const latField = $('input[name="latitude"]');
-        const lngField = $('input[name="longitude"]');
         const initialLat = parseFloat(mapContainer.dataset.lat) || EstateOfficePropertyMap.defaultLat;
         const initialLng = parseFloat(mapContainer.dataset.lng) || EstateOfficePropertyMap.defaultLng;
         const zoom = parseInt(mapContainer.dataset.zoom || '14', 10);
-        const map = new google.maps.Map(mapContainer, {
+
+        if ( mapInitialized ) {
+            const currentLat = parseCoordinate(latField, initialLat);
+            const currentLng = parseCoordinate(lngField, initialLng);
+            const position = { lat: currentLat, lng: currentLng };
+            google.maps.event.trigger(mapInstance, 'resize');
+            mapInstance.setCenter(position);
+            if ( mapMarker ) {
+                mapMarker.setPosition(position);
+            }
+            return;
+        }
+
+        mapInstance = new google.maps.Map(mapContainer, {
             center: { lat: initialLat, lng: initialLng },
             zoom: zoom
         });
-        let marker = new google.maps.Marker({
+        mapMarker = new google.maps.Marker({
             position: { lat: initialLat, lng: initialLng },
-            map: map,
+            map: mapInstance,
             draggable: true
         });
+
         const updateFields = function(lat, lng){
-            latField.val(lat.toFixed(6));
-            lngField.val(lng.toFixed(6));
+            if ( latField.length ) {
+                latField.val(lat.toFixed(6));
+            }
+            if ( lngField.length ) {
+                lngField.val(lng.toFixed(6));
+            }
         };
-        marker.addListener('dragend', function(event){
+
+        mapMarker.addListener('dragend', function(event){
             updateFields(event.latLng.lat(), event.latLng.lng());
         });
-        map.addListener('click', function(event){
-            marker.setPosition(event.latLng);
+        mapInstance.addListener('click', function(event){
+            if ( mapMarker ) {
+                mapMarker.setPosition(event.latLng);
+            }
             updateFields(event.latLng.lat(), event.latLng.lng());
         });
+
+        mapInitialized = true;
     }
+
     if ( document.readyState === 'complete' ) {
         initMap();
     } else {
         $(window).on('load', initMap);
+    }
+
+    if ( mapTrigger.length ) {
+        mapTrigger.on('click', function(event){
+            event.preventDefault();
+            if ( ! EstateOfficePropertyMap.hasMap ) {
+                return;
+            }
+            markMapActive();
+            initMap();
+            focusMapContainer();
+        });
     }
 });
 JS
@@ -2468,10 +2542,14 @@ JS
         echo '<label>' . esc_html__( 'Lokalizacja na mapie', 'estate-office' ) . '</label>';
 
         if ( '' !== $this->get_google_maps_api_key() ) {
+            echo '<p class="field-actions">';
+            echo '<button type="button" class="button button-secondary" data-map-trigger="1">' . esc_html__( 'Zaznacz na mapie', 'estate-office' ) . '</button>';
+            echo '</p>';
             printf(
-                '<div id="estate-office-property-map" class="estate-office-property-map" data-lat="%1$s" data-lng="%2$s" data-zoom="14"></div>',
+                '<div id="estate-office-property-map" class="estate-office-property-map" data-lat="%1$s" data-lng="%2$s" data-zoom="14" tabindex="-1" aria-label="%3$s"></div>',
                 esc_attr( (string) $data['latitude'] ),
-                esc_attr( (string) $data['longitude'] )
+                esc_attr( (string) $data['longitude'] ),
+                esc_attr__( 'Mapa lokalizacji nieruchomości.', 'estate-office' )
             );
             echo '<p class="description">' . esc_html__( 'Kliknij na mapie lub przeciągnij znacznik, aby ustawić współrzędne.', 'estate-office' ) . '</p>';
         } else {
