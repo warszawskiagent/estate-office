@@ -1,0 +1,592 @@
+:root {
+    --estate-office-primary: #2271b1;
+    --estate-office-primary-hover: #1b5d94;
+    --estate-office-neutral: #1d2327;
+    --estate-office-border: #dcdcde;
+    --estate-office-border-strong: #c3c4c7;
+    --estate-office-surface: #ffffff;
+    --estate-office-surface-muted: #f6f7f7;
+    --estate-office-shadow: rgba(0, 0, 0, 0.06);
+}
+
+.estate-office-crm-portal {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 24px;
+    background: var(--estate-office-surface);
+    border: 1px solid var(--estate-office-border);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px var(--estate-office-shadow);
+    color: var(--estate-office-neutral);
+}
+
+.estate-office-crm-portal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.estate-office-crm-portal__header h1 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.estate-office-crm-portal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0 12px;
+}
+
+.estate-office-crm-portal__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.estate-office-crm-portal__section-header h2 {
+    margin: 0;
+}
+
+.estate-office-crm-portal__section-header .button {
+    border-radius: 6px;
+}
+
+.estate-office-crm-portal__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 30px;
+    border: 1px solid var(--estate-office-border);
+    background: var(--estate-office-surface);
+    color: var(--estate-office-neutral);
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.estate-office-crm-portal__action:hover,
+.estate-office-crm-portal__action:focus {
+    border-color: var(--estate-office-primary);
+    color: var(--estate-office-primary);
+}
+
+.estate-office-crm-portal__action.is-primary {
+    background: var(--estate-office-primary);
+    border-color: var(--estate-office-primary);
+    color: #fff;
+}
+
+.estate-office-crm-portal__action.is-primary:hover,
+.estate-office-crm-portal__action.is-primary:focus {
+    background: var(--estate-office-primary-hover);
+    border-color: var(--estate-office-primary-hover);
+    color: #fff;
+}
+
+.estate-office-crm-portal__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0 24px;
+    border-bottom: 1px solid var(--estate-office-border);
+    padding-bottom: 6px;
+}
+
+.estate-office-crm-portal__nav a {
+    padding: 10px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--estate-office-neutral);
+    border: 1px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.estate-office-crm-portal__nav a:hover,
+.estate-office-crm-portal__nav a:focus {
+    border-color: var(--estate-office-border);
+    background: var(--estate-office-surface-muted);
+}
+
+.estate-office-crm-portal__nav a.is-active {
+    background: var(--estate-office-primary);
+    border-color: var(--estate-office-primary);
+    color: #fff;
+}
+
+.estate-office-crm-portal__body {
+    margin-top: 24px;
+}
+
+.estate-office-crm-portal__filters,
+.estate-office-crm-portal__search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--estate-office-surface-muted);
+    border: 1px solid var(--estate-office-border);
+    border-radius: 8px;
+}
+
+.estate-office-crm-portal__filters label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--estate-office-neutral);
+}
+
+.estate-office-crm-portal__filters input,
+.estate-office-crm-portal__filters select,
+.estate-office-crm-portal__search input {
+    margin-top: 6px;
+    width: 200px;
+    padding: 8px 10px;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 6px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.estate-office-crm-portal__filters input:focus,
+.estate-office-crm-portal__filters select:focus,
+.estate-office-crm-portal__search input:focus {
+    border-color: var(--estate-office-primary);
+    box-shadow: 0 0 0 1px var(--estate-office-primary);
+    outline: none;
+}
+
+.estate-office-crm-portal__filters button,
+.estate-office-crm-portal__search button {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--estate-office-primary);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.estate-office-crm-portal__filters button:hover,
+.estate-office-crm-portal__filters button:focus,
+.estate-office-crm-portal__search button:hover,
+.estate-office-crm-portal__search button:focus {
+    background: var(--estate-office-primary-hover);
+}
+
+.estate-office-crm-portal__filters-reset {
+    margin-left: auto;
+    color: var(--estate-office-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.estate-office-crm-portal__table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 8px;
+    background: var(--estate-office-surface);
+}
+
+.estate-office-crm-portal__table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+
+.estate-office-crm-portal__table thead {
+    background: var(--estate-office-surface-muted);
+}
+
+.estate-office-crm-portal__table th,
+.estate-office-crm-portal__table td {
+    padding: 12px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 1px solid var(--estate-office-border);
+}
+
+.estate-office-crm-portal__table tbody tr:nth-child(even) {
+    background: #fbfbfb;
+}
+
+.estate-office-crm-portal__table a {
+    color: var(--estate-office-primary);
+    text-decoration: none;
+}
+
+.estate-office-crm-portal__table a:hover,
+.estate-office-crm-portal__table a:focus {
+    text-decoration: underline;
+}
+
+.estate-office-crm-portal__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.estate-office-crm-portal__card {
+    background: #f0f6fc;
+    border: 1px solid #d7e6f6;
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.estate-office-crm-portal__card span {
+    font-size: 13px;
+    color: #3c434a;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.estate-office-crm-portal__card strong {
+    font-size: 28px;
+    color: var(--estate-office-neutral);
+}
+
+.estate-office-crm-portal__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.estate-office-crm-portal__panel {
+    padding: 18px;
+    background: var(--estate-office-surface-muted);
+    border: 1px solid var(--estate-office-border);
+    border-radius: 10px;
+}
+
+.estate-office-crm-portal__panel h2,
+.estate-office-crm-portal__panel h3 {
+    margin-top: 0;
+}
+
+.estate-office-crm-portal__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.estate-office-crm-portal__list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--estate-office-border);
+    font-size: 14px;
+}
+
+.estate-office-crm-portal__list li:last-child {
+    border-bottom: none;
+}
+
+.estate-office-crm-portal__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.estate-office-crm-portal__timeline li {
+    position: relative;
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 3px solid var(--estate-office-primary);
+    margin-bottom: 14px;
+}
+
+.estate-office-crm-portal__timeline li::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--estate-office-primary);
+}
+
+.estate-office-crm-portal__timeline strong {
+    display: block;
+    font-size: 14px;
+}
+
+.estate-office-crm-portal__timeline span {
+    color: var(--estate-office-primary);
+    font-size: 13px;
+}
+
+.estate-office-crm-portal__timeline time {
+    display: block;
+    font-size: 12px;
+    color: #6c7781;
+    margin-top: 4px;
+}
+
+.estate-office-crm-portal__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.estate-office-crm-portal__detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.estate-office-crm-portal__detail-description {
+    background: var(--estate-office-surface);
+    border: 1px solid var(--estate-office-border);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.estate-office-crm-portal__detail-description p:first-child {
+    margin-top: 0;
+}
+
+.estate-office-crm-portal__summary {
+    margin: 16px 0;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--estate-office-border);
+    background: var(--estate-office-surface-muted);
+}
+
+.estate-office-crm-portal__summary p {
+    margin: 0;
+}
+
+.estate-office-crm-portal__summary p + p {
+    margin-top: 6px;
+}
+
+.estate-office-crm-portal__columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.estate-office-crm-portal__back {
+    align-self: flex-start;
+    text-decoration: none;
+    color: var(--estate-office-primary);
+    font-weight: 600;
+}
+
+.estate-office-crm-portal__notice {
+    padding: 20px;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 8px;
+    background: var(--estate-office-surface);
+}
+
+.estate-office-crm-portal__pagination {
+    margin: 24px 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.estate-office-crm-portal__pagination .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--estate-office-border);
+    color: var(--estate-office-neutral);
+    text-decoration: none;
+}
+
+.estate-office-crm-portal__pagination .page-numbers.current {
+    background: var(--estate-office-primary);
+    border-color: var(--estate-office-primary);
+    color: #fff;
+}
+
+.estate-office-crm-portal__pagination .page-numbers:hover,
+.estate-office-crm-portal__pagination .page-numbers:focus {
+    border-color: var(--estate-office-primary);
+    color: var(--estate-office-primary);
+}
+
+.estate-office-crm-portal__form {
+    margin-top: 12px;
+}
+
+.estate-office-crm-portal__form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.estate-office-crm-portal__form-grid label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.estate-office-crm-portal__form-grid input,
+.estate-office-crm-portal__form-grid select,
+.estate-office-crm-portal__form-grid textarea {
+    margin-top: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 6px;
+    background: #fff;
+}
+
+.estate-office-crm-portal__form-grid textarea {
+    min-height: 120px;
+}
+
+.estate-office-crm-portal__form-fieldset {
+    border: 1px solid var(--estate-office-border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 0 0 16px;
+    background: var(--estate-office-surface-muted);
+}
+
+.estate-office-crm-portal__form-fieldset legend {
+    padding: 0 8px;
+    font-weight: 600;
+}
+
+.estate-office-crm-portal__form-fieldset label {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 18px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.estate-office-contract-client-results {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+    display: grid;
+    gap: 12px;
+}
+
+.estate-office-contract-client-results li {
+    padding: 12px;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 8px;
+    background: var(--estate-office-surface);
+}
+
+.estate-office-inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.estate-office-inline-form input,
+.estate-office-inline-form select {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--estate-office-border);
+}
+
+.estate-office-inline-form button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background: var(--estate-office-primary);
+    color: #fff;
+    cursor: pointer;
+}
+
+.estate-office-crm-portal__wizard {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.estate-office-crm-portal__wizard-steps {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.estate-office-crm-portal__wizard-steps span {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--estate-office-border);
+    background: var(--estate-office-surface-muted);
+    font-size: 13px;
+}
+
+.estate-office-crm-portal__wizard-nav,
+.estate-office-crm-portal__wizard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.estate-office-crm-portal__wizard-actions .button,
+.estate-office-crm-portal__wizard-nav .button {
+    border-radius: 6px;
+}
+
+@media (max-width: 960px) {
+    .estate-office-crm-portal {
+        margin: 20px;
+        padding: 18px;
+    }
+
+    .estate-office-crm-portal__table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 782px) {
+    .estate-office-crm-portal {
+        margin: 12px;
+        padding: 16px;
+    }
+
+    .estate-office-crm-portal__filters,
+    .estate-office-crm-portal__search {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .estate-office-crm-portal__filters input,
+    .estate-office-crm-portal__filters select,
+    .estate-office-crm-portal__search input {
+        width: 100%;
+    }
+
+    .estate-office-crm-portal__actions {
+        flex-direction: column;
+    }
+
+    .estate-office-crm-portal__actions a {
+        width: 100%;
+        justify-content: center;
+    }
+}

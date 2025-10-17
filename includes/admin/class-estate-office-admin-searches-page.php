@@ -458,6 +458,7 @@ JS
         check_admin_referer( 'estate_office_save_search', 'estate_office_nonce' );
 
         $search_id = isset( $_POST['search_id'] ) ? absint( $_POST['search_id'] ) : 0;
+        $redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
         $data      = $this->collect_search_input();
 
         $errors = [];
@@ -469,7 +470,7 @@ JS
         }
 
         if ( ! empty( $errors ) ) {
-            $this->redirect_with_message( $search_id, implode( ' ', $errors ), 'error' );
+            $this->redirect_with_message( $search_id, implode( ' ', $errors ), 'error', $redirect_to );
         }
 
         if ( empty( $data['search_number'] ) ) {
@@ -477,7 +478,7 @@ JS
         } else {
             $existing = $this->repository->find_by_search_number( $data['search_number'] );
             if ( $existing && (int) $existing['id'] !== $search_id ) {
-                $this->redirect_with_message( $search_id, __( 'Podany numer poszukiwania jest już w użyciu.', 'estate-office' ), 'error' );
+                $this->redirect_with_message( $search_id, __( 'Podany numer poszukiwania jest już w użyciu.', 'estate-office' ), 'error', $redirect_to );
             }
         }
 
@@ -486,16 +487,17 @@ JS
             $this->redirect_with_message(
                 $search_id,
                 $result ? __( 'Poszukiwanie zostało zaktualizowane.', 'estate-office' ) : __( 'Nie udało się zapisać zmian.', 'estate-office' ),
-                $result ? 'success' : 'error'
+                $result ? 'success' : 'error',
+                $redirect_to
             );
         }
 
         $new_id = $this->repository->create( $data );
         if ( $new_id ) {
-            $this->redirect_with_message( (int) $new_id, __( 'Dodano nowe poszukiwanie.', 'estate-office' ), 'success' );
+            $this->redirect_with_message( (int) $new_id, __( 'Dodano nowe poszukiwanie.', 'estate-office' ), 'success', $redirect_to );
         }
 
-        $this->redirect_with_message( 0, __( 'Nie udało się dodać poszukiwania.', 'estate-office' ), 'error' );
+        $this->redirect_with_message( 0, __( 'Nie udało się dodać poszukiwania.', 'estate-office' ), 'error', $redirect_to );
     }
 
     /**
@@ -1016,7 +1018,32 @@ JS
      *
      * @return void
      */
-    private function redirect_with_message( int $search_id, string $message, string $status ) : void {
+    private function redirect_with_message( int $search_id, string $message, string $status, string $redirect_to = '' ) : void {
+        if ( ! empty( $redirect_to ) ) {
+            $redirect_url = wp_validate_redirect( $redirect_to, admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+
+            if ( $search_id ) {
+                $redirect_url = add_query_arg(
+                    [
+                        'view'    => 'search',
+                        'item_id' => $search_id,
+                    ],
+                    $redirect_url
+                );
+            }
+
+            $redirect_url = add_query_arg(
+                [
+                    'estate-office-message' => $message,
+                    'estate-office-status'  => $status,
+                ],
+                $redirect_url
+            );
+
+            wp_safe_redirect( $redirect_url );
+            exit;
+        }
+
         $args = [
             'page'                   => self::PAGE_SLUG,
             'estate-office-message' => $message,

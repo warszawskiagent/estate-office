@@ -577,13 +577,14 @@ JS
         check_admin_referer( 'estate_office_save_property', 'estate_office_nonce' );
 
         $property_id = isset( $_POST['property_id'] ) ? absint( $_POST['property_id'] ) : 0;
+        $redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
 
         $existing_property     = null;
         $previous_contract_id  = 0;
         if ( $property_id > 0 ) {
             $existing_property = $this->repository->find( $property_id );
             if ( null === $existing_property ) {
-                $this->redirect_with_message( 0, __( 'Nie znaleziono wskazanej nieruchomości.', 'estate-office' ), 'error' );
+                $this->redirect_with_message( 0, __( 'Nie znaleziono wskazanej nieruchomości.', 'estate-office' ), 'error', $redirect_to );
             }
 
             $previous_contract_id = (int) ( $existing_property['contract_id'] ?? 0 );
@@ -594,19 +595,19 @@ JS
         if ( $data['contract_id'] > 0 ) {
             $contract = $this->contracts_repository->find( (int) $data['contract_id'] );
             if ( null === $contract ) {
-                $this->redirect_with_message( $property_id, __( 'Nie znaleziono powiązanej umowy.', 'estate-office' ), 'error' );
+                $this->redirect_with_message( $property_id, __( 'Nie znaleziono powiązanej umowy.', 'estate-office' ), 'error', $redirect_to );
             }
 
             $mapped_type = $this->map_contract_transaction_type( (string) ( $contract['transaction_type'] ?? '' ) );
             if ( '' === $mapped_type ) {
-                $this->redirect_with_message( $property_id, __( 'Typ transakcji powiązanej umowy jest nieobsługiwany.', 'estate-office' ), 'error' );
+                $this->redirect_with_message( $property_id, __( 'Typ transakcji powiązanej umowy jest nieobsługiwany.', 'estate-office' ), 'error', $redirect_to );
             }
 
             $data['transaction_type'] = $mapped_type;
         }
 
         if ( empty( $data['title'] ) || empty( $data['transaction_type'] ) || empty( $data['property_type'] ) ) {
-            $this->redirect_with_message( $property_id, __( 'Uzupełnij wymagane pola: tytuł, typ transakcji i rodzaj nieruchomości.', 'estate-office' ), 'error' );
+            $this->redirect_with_message( $property_id, __( 'Uzupełnij wymagane pola: tytuł, typ transakcji i rodzaj nieruchomości.', 'estate-office' ), 'error', $redirect_to );
         }
 
         if ( empty( $data['listing_number'] ) ) {
@@ -614,7 +615,7 @@ JS
         } else {
             $existing = $this->repository->find_by_listing_number( $data['listing_number'] );
             if ( $existing && (int) $existing['id'] !== $property_id ) {
-                $this->redirect_with_message( $property_id, __( 'Podany numer oferty jest już przypisany do innej nieruchomości.', 'estate-office' ), 'error' );
+                $this->redirect_with_message( $property_id, __( 'Podany numer oferty jest już przypisany do innej nieruchomości.', 'estate-office' ), 'error', $redirect_to );
             }
         }
 
@@ -626,16 +627,16 @@ JS
 
             $message = $result ? __( 'Nieruchomość została zaktualizowana.', 'estate-office' ) : __( 'Nie udało się zapisać zmian.', 'estate-office' );
             $status  = $result ? 'success' : 'error';
-            $this->redirect_with_message( $property_id, $message, $status );
+            $this->redirect_with_message( $property_id, $message, $status, $redirect_to );
         }
 
         $new_id = $this->repository->create( $data );
         if ( $new_id ) {
             $this->sync_property_contract_relation( (int) $new_id, (int) $data['contract_id'], 0 );
-            $this->redirect_with_message( (int) $new_id, __( 'Dodano nową nieruchomość.', 'estate-office' ), 'success' );
+            $this->redirect_with_message( (int) $new_id, __( 'Dodano nową nieruchomość.', 'estate-office' ), 'success', $redirect_to );
         }
 
-        $this->redirect_with_message( 0, __( 'Nie udało się dodać nieruchomości.', 'estate-office' ), 'error' );
+        $this->redirect_with_message( 0, __( 'Nie udało się dodać nieruchomości.', 'estate-office' ), 'error', $redirect_to );
     }
 
     /**
@@ -1153,7 +1154,32 @@ JS
      *
      * @return void
      */
-    private function redirect_with_message( int $property_id, string $message, string $status ) : void {
+    private function redirect_with_message( int $property_id, string $message, string $status, string $redirect_to = '' ) : void {
+        if ( ! empty( $redirect_to ) ) {
+            $redirect_url = wp_validate_redirect( $redirect_to, admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+
+            if ( $property_id > 0 ) {
+                $redirect_url = add_query_arg(
+                    [
+                        'view'    => 'property',
+                        'item_id' => $property_id,
+                    ],
+                    $redirect_url
+                );
+            }
+
+            $redirect_url = add_query_arg(
+                [
+                    'estate-office-message' => $message,
+                    'estate-office-status'  => $status,
+                ],
+                $redirect_url
+            );
+
+            wp_safe_redirect( $redirect_url );
+            exit;
+        }
+
         $args = [
             'page'                  => self::PAGE_SLUG,
             'estate-office-message' => $message,
