@@ -89,6 +89,7 @@ class Estate_Office_Roles {
             'manage_estate_office_agents',
             'manage_estate_office_settings',
             'manage_estate_office_license',
+            'manage_estate_office_exports',
             'manage_estate_office_properties',
             'manage_estate_office_searches',
             'manage_estate_office_clients',

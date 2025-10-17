@@ -202,6 +202,82 @@
     margin-top: 0;
 }
 
+.estate-office-export-layout {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    margin-top: 32px;
+    margin-bottom: 30px;
+}
+
+.estate-office-export-card {
+    background: #fff;
+    border: 1px solid var(--estate-office-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.estate-office-export-card h2 {
+    margin-top: 0;
+}
+
+.estate-office-export-card .form-table th {
+    width: 200px;
+}
+
+.estate-office-export-card .form-table td {
+    vertical-align: top;
+}
+
+.estate-office-export-table input[type="text"] {
+    width: 100%;
+}
+
+.estate-office-export-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--estate-office-surface-alt);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.estate-office-export-status.status-active {
+    color: #198754;
+}
+
+.estate-office-export-status.status-paused {
+    color: #d63638;
+}
+
+.estate-office-export-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.estate-office-export-actions .button {
+    width: 100%;
+}
+
+.estate-office-export-actions .inline-form {
+    display: inline;
+}
+
+.estate-office-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 12px;
+    font-size: 13px;
+}
+
+.error-message {
+    color: #d63638;
+    font-size: 12px;
+}
+
 @media (max-width: 782px) {
     .estate-office-admin-form .form-table th,
     .estate-office-admin-form .form-table td {

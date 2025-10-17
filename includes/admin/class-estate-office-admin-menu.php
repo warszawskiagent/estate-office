@@ -22,6 +22,13 @@ class Estate_Office_Admin_Menu {
     private Estate_Office_License_Manager $license_manager;
 
     /**
+     * Menedżer eksportu.
+     *
+     * @var Estate_Office_Portal_Export_Manager
+     */
+    private Estate_Office_Portal_Export_Manager $portal_export_manager;
+
+    /**
      * Pulpit CRM.
      *
      * @var Estate_Office_Admin_Dashboard_Page
@@ -78,20 +85,33 @@ class Estate_Office_Admin_Menu {
     private Estate_Office_Admin_License_Page $license_page;
 
     /**
+     * Ekran eksportów.
+     *
+     * @var Estate_Office_Admin_Exports_Page
+     */
+    private Estate_Office_Admin_Exports_Page $exports_page;
+
+    /**
      * Konstruktor.
      *
-     * @param Estate_Office_License_Manager $license_manager Menedżer licencji.
+     * @param Estate_Office_License_Manager        $license_manager      Menedżer licencji.
+     * @param Estate_Office_Portal_Export_Manager   $portal_export_manager Menedżer eksportu.
      */
-    public function __construct( Estate_Office_License_Manager $license_manager ) {
-        $this->license_manager = $license_manager;
-        $this->dashboard_page   = new Estate_Office_Admin_Dashboard_Page();
-        $this->agents_page      = new Estate_Office_Admin_Agents_Page();
-        $this->properties_page  = new Estate_Office_Admin_Properties_Page();
-        $this->searches_page    = new Estate_Office_Admin_Searches_Page();
-        $this->clients_page     = new Estate_Office_Admin_Clients_Page();
-        $this->contracts_page   = new Estate_Office_Admin_Contracts_Page();
-        $this->settings_page    = new Estate_Office_Admin_Settings_Page();
-        $this->license_page     = new Estate_Office_Admin_License_Page( $this->license_manager );
+    public function __construct(
+        Estate_Office_License_Manager $license_manager,
+        Estate_Office_Portal_Export_Manager $portal_export_manager
+    ) {
+        $this->license_manager       = $license_manager;
+        $this->portal_export_manager = $portal_export_manager;
+        $this->dashboard_page        = new Estate_Office_Admin_Dashboard_Page();
+        $this->agents_page           = new Estate_Office_Admin_Agents_Page();
+        $this->properties_page       = new Estate_Office_Admin_Properties_Page();
+        $this->searches_page         = new Estate_Office_Admin_Searches_Page();
+        $this->clients_page          = new Estate_Office_Admin_Clients_Page();
+        $this->contracts_page        = new Estate_Office_Admin_Contracts_Page();
+        $this->settings_page         = new Estate_Office_Admin_Settings_Page();
+        $this->license_page          = new Estate_Office_Admin_License_Page( $this->license_manager );
+        $this->exports_page          = new Estate_Office_Admin_Exports_Page( $this->portal_export_manager );
     }
 
     /**
@@ -110,6 +130,7 @@ class Estate_Office_Admin_Menu {
         $this->contracts_page->hooks();
         $this->settings_page->hooks();
         $this->license_page->hooks();
+        $this->exports_page->hooks();
     }
 
     /**
@@ -145,6 +166,7 @@ class Estate_Office_Admin_Menu {
         $capability_clients     = 'manage_estate_office_clients';
         $capability_contracts   = 'manage_estate_office_contracts';
         $capability_license     = 'manage_estate_office_license';
+        $capability_exports     = 'manage_estate_office_exports';
 
         $menu_slug = 'estate-office-crm';
 
@@ -219,6 +241,15 @@ class Estate_Office_Admin_Menu {
             $capability_license,
             'estate-office-license',
             [ $this->license_page, 'render_page' ]
+        );
+
+        add_submenu_page(
+            $menu_slug,
+            __( 'Eksporty', 'estate-office' ),
+            __( 'Eksporty', 'estate-office' ),
+            $capability_exports,
+            'estate-office-exports',
+            [ $this->exports_page, 'render_page' ]
         );
 
         add_submenu_page(

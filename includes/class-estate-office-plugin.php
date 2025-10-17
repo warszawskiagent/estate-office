@@ -64,6 +64,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_License_Manager $license_manager = null;
 
     /**
+     * Menedżer eksportu na portale.
+     *
+     * @var Estate_Office_Portal_Export_Manager|null
+     */
+    private ?Estate_Office_Portal_Export_Manager $portal_export_manager = null;
+
+    /**
      * Singleton – prywatny konstruktor.
      */
     private function __construct() {}
@@ -122,6 +129,9 @@ final class Estate_Office_Plugin {
         $license_manager = $this->get_license_manager();
         $license_manager->hooks();
         $license_manager->schedule_events();
+        $portal_export_manager = $this->get_portal_export_manager();
+        $portal_export_manager->hooks();
+        $portal_export_manager->schedule_events();
         $this->init_admin();
         $this->init_frontend();
 
@@ -143,6 +153,8 @@ final class Estate_Office_Plugin {
         $instance->get_roles()->register_roles();
         $instance->get_installer()->install();
         $instance->get_license_manager()->schedule_events();
+        $instance->get_portal_export_manager()->schedule_events();
+        $instance->get_portal_export_manager()->generate_exports();
         Estate_Office_Frontend_Portal::ensure_portal_page();
         Estate_Office_Frontend_Offers::ensure_offer_pages();
         flush_rewrite_rules();
@@ -156,7 +168,9 @@ final class Estate_Office_Plugin {
      * @return void
      */
     public static function deactivate() : void {
-        self::instance()->get_license_manager()->clear_scheduled_events();
+        $instance = self::instance();
+        $instance->get_license_manager()->clear_scheduled_events();
+        $instance->get_portal_export_manager()->clear_scheduled_events();
         self::log_debug( 'EstateOffice dezaktywowana.' );
     }
 
@@ -176,7 +190,10 @@ final class Estate_Office_Plugin {
      */
     private function init_admin() : void {
         if ( is_admin() ) {
-            $this->admin_menu = new Estate_Office_Admin_Menu( $this->get_license_manager() );
+            $this->admin_menu = new Estate_Office_Admin_Menu(
+                $this->get_license_manager(),
+                $this->get_portal_export_manager()
+            );
             $this->admin_menu->hooks();
         }
     }
@@ -211,6 +228,19 @@ final class Estate_Office_Plugin {
         }
 
         return $this->license_manager;
+    }
+
+    /**
+     * Pobiera menedżera eksportu na portale.
+     *
+     * @return Estate_Office_Portal_Export_Manager
+     */
+    private function get_portal_export_manager() : Estate_Office_Portal_Export_Manager {
+        if ( null === $this->portal_export_manager ) {
+            $this->portal_export_manager = new Estate_Office_Portal_Export_Manager();
+        }
+
+        return $this->portal_export_manager;
     }
 
     /**

@@ -228,6 +228,53 @@ class Estate_Office_Property_Repository {
     }
 
     /**
+     * Zwraca dane przeznaczone do eksportu na portale.
+     *
+     * @param array<string,mixed> $filters Filtry portalu.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_portal_export_payload( array $filters = [] ) : array {
+        $defaults = [
+            'transaction_types' => [],
+            'property_types'    => [],
+            'cities'            => [],
+            'districts'         => [],
+        ];
+
+        $filters = wp_parse_args( $filters, $defaults );
+
+        $conditions = [ 'export_portals = 1' ];
+        $params     = [];
+
+        $map_filters = [
+            'transaction_types' => 'transaction_type',
+            'property_types'    => 'property_type',
+            'cities'            => 'city',
+            'districts'         => 'district',
+        ];
+
+        foreach ( $map_filters as $filter_key => $column ) {
+            $values = $this->sanitize_filter_values( $filters[ $filter_key ] ?? [] );
+            if ( ! empty( $values ) ) {
+                $placeholders  = implode( ',', array_fill( 0, count( $values ), '%s' ) );
+                $conditions[]  = "{$column} IN ({$placeholders})";
+                $params        = array_merge( $params, $values );
+            }
+        }
+
+        $where_sql = 'WHERE ' . implode( ' AND ', $conditions );
+        $query     = "SELECT * FROM {$this->table} {$where_sql} ORDER BY COALESCE(updated_at, created_at) DESC, id DESC";
+
+        $items = $this->wpdb->get_results( $this->prepare_query( $query, $params ), ARRAY_A );
+        if ( ! is_array( $items ) ) {
+            return [];
+        }
+
+        return array_map( [ $this, 'normalize_portal_property' ], $items );
+    }
+
+    /**
      * Zwraca ofertę przeznaczoną do publikacji na WWW.
      *
      * @param int $property_id ID nieruchomości.
@@ -537,5 +584,270 @@ class Estate_Office_Property_Repository {
         $where_sql = 'WHERE ' . implode( ' AND ', $conditions );
 
         return [ $where_sql, $params ];
+    }
+
+    /**
+     * Normalizuje rekord nieruchomości do struktury eksportowej.
+     *
+     * @param array<string,mixed> $row Rekord bazy.
+     *
+     * @return array<string,mixed>
+     */
+    private function normalize_portal_property( array $row ) : array {
+        foreach ( [ 'building_details', 'media', 'amenities', 'equipment', 'additional_areas', 'gallery', 'labels' ] as $field ) {
+            if ( isset( $row[ $field ] ) && is_string( $row[ $field ] ) ) {
+                $decoded = json_decode( $row[ $field ], true );
+                if ( null !== $decoded && JSON_ERROR_NONE === json_last_error() ) {
+                    $row[ $field ] = $decoded;
+                }
+            }
+        }
+
+        $building  = is_array( $row['building_details'] ?? null ) ? $row['building_details'] : [];
+        $media     = is_array( $row['media'] ?? null ) ? $row['media'] : [];
+        $equipment = is_array( $row['equipment'] ?? null ) ? $row['equipment'] : [];
+        $areas     = is_array( $row['additional_areas'] ?? null ) ? $row['additional_areas'] : [];
+        $amenities = is_array( $row['amenities'] ?? null ) ? $row['amenities'] : [];
+        $labels    = is_array( $row['labels'] ?? null ) ? $row['labels'] : [];
+
+        $gallery_ids   = is_array( $row['gallery'] ?? null ) ? array_map( 'absint', $row['gallery'] ) : [];
+        $gallery_items = [];
+        foreach ( $gallery_ids as $attachment_id ) {
+            $attachment = $this->normalize_attachment( $attachment_id );
+            if ( null !== $attachment ) {
+                $gallery_items[] = $attachment;
+            }
+        }
+
+        $floor_plan_2d = $this->normalize_attachment( isset( $row['floor_plan_2d'] ) ? (int) $row['floor_plan_2d'] : 0 );
+        $floor_plan_3d = $this->normalize_attachment( isset( $row['floor_plan_3d'] ) ? (int) $row['floor_plan_3d'] : 0 );
+
+        $flags = [
+            'new_offer'        => ! empty( $row['new_offer'] ),
+            'exclusive_offer'  => ! empty( $row['exclusive_offer'] ),
+            'sold_offer'       => ! empty( $row['sold_offer'] ),
+            'rented_offer'     => ! empty( $row['rented_offer'] ),
+            'new_price'        => ! empty( $row['new_price'] ),
+            'commission_free'  => ! empty( $row['commission_free'] ),
+            'mls_offer'        => ! empty( $row['mls_offer'] ),
+            'premium_offer'    => ! empty( $row['premium_offer'] ),
+            'export_web'       => ! empty( $row['export_web'] ),
+            'export_portals'   => ! empty( $row['export_portals'] ),
+        ];
+
+        $pricing = [
+            'amount'             => $this->to_float( $row['price'] ?? null ),
+            'currency'           => (string) ( $row['price_currency'] ?? 'PLN' ),
+            'period'             => (string) ( $row['price_period'] ?? '' ),
+            'administrative_rent'=> $this->to_float( $row['administrative_rent'] ?? null ),
+            'price_per_sqm'      => $this->to_float( $row['price_per_sqm'] ?? null ),
+        ];
+
+        $dimensions = [
+            'area_total'   => $this->to_float( $row['area_total'] ?? null ),
+            'area_plot'    => $this->to_float( $row['area_plot'] ?? null ),
+            'rooms'        => $this->to_int( $row['rooms'] ?? null ),
+            'bedrooms'     => $this->to_int( $row['bedrooms'] ?? null ),
+            'bathrooms'    => $this->to_int( $row['bathrooms'] ?? null ),
+            'toilets'      => $this->to_int( $row['toilets'] ?? null ),
+            'floor'        => $this->to_int( $row['floor'] ?? null ),
+            'total_floors' => $this->to_int( $row['total_floors'] ?? null ),
+            'year_built'   => $this->to_int( $row['year_built'] ?? null ),
+            'plot_shape'   => (string) ( $row['plot_shape'] ?? '' ),
+            'plot_length'  => $this->to_float( $row['plot_length'] ?? null ),
+            'plot_width'   => $this->to_float( $row['plot_width'] ?? null ),
+        ];
+
+        $address = [
+            'street'           => (string) ( $row['street'] ?? '' ),
+            'street_number'    => (string) ( $row['street_number'] ?? '' ),
+            'apartment_number' => (string) ( $row['apartment_number'] ?? '' ),
+            'postal_code'      => (string) ( $row['postal_code'] ?? '' ),
+            'district'         => (string) ( $row['district'] ?? '' ),
+            'city'             => (string) ( $row['city'] ?? '' ),
+            'voivodeship'      => (string) ( $row['voivodeship'] ?? '' ),
+            'county'           => (string) ( $row['county'] ?? '' ),
+            'precinct'         => (string) ( $row['precinct'] ?? '' ),
+            'plot_number'      => (string) ( $row['plot_number'] ?? '' ),
+            'latitude'         => $this->to_float( $row['latitude'] ?? null ),
+            'longitude'        => $this->to_float( $row['longitude'] ?? null ),
+        ];
+
+        $legal = [
+            'land_register_number' => (string) ( $row['land_register_number'] ?? '' ),
+            'land_register_missing'=> empty( $row['land_register_number'] ),
+            'ownership_status'     => (string) ( $row['ownership_status'] ?? '' ),
+        ];
+
+        return [
+            'id'               => (int) $row['id'],
+            'contract_id'      => (int) $row['contract_id'],
+            'listing_number'   => (string) ( $row['listing_number'] ?? '' ),
+            'title'            => (string) ( $row['title'] ?: $row['listing_number'] ?? '' ),
+            'transaction_type' => (string) ( $row['transaction_type'] ?? '' ),
+            'property_type'    => (string) ( $row['property_type'] ?? '' ),
+            'description'      => wp_strip_all_tags( (string) ( $row['description'] ?? '' ) ),
+            'building'         => [
+                'finish_state' => (string) ( $building['finish_state'] ?? '' ),
+                'exposure'     => $this->sanitize_filter_values( $building['exposure'] ?? [] ),
+                'view'         => $this->sanitize_filter_values( $building['view'] ?? [] ),
+                'attic'        => ! empty( $building['attic'] ),
+                'multi_level'  => ! empty( $building['multi_level'] ),
+                'layout'       => $this->sanitize_filter_values( $building['layout'] ?? [] ),
+                'kitchen_type' => (string) ( $building['kitchen_type'] ?? '' ),
+                'parking'      => [
+                    'available' => ! empty( $building['parking']['available'] ?? false ),
+                    'types'     => $this->sanitize_filter_values( $building['parking']['types'] ?? [] ),
+                ],
+            ],
+            'media'            => [
+                'heating' => (string) ( $media['heating'] ?? '' ),
+                'water'   => (string) ( $media['water'] ?? '' ),
+                'sewage'  => (string) ( $media['sewage'] ?? '' ),
+                'gas'     => ! empty( $media['gas'] ),
+            ],
+            'amenities'        => $this->sanitize_filter_values( $amenities ),
+            'equipment'        => [
+                'level' => (string) ( $equipment['level'] ?? '' ),
+                'items' => $this->sanitize_filter_values( $equipment['items'] ?? [] ),
+            ],
+            'additional_areas' => $this->normalize_additional_areas( $areas ),
+            'gallery'          => $gallery_items,
+            'floor_plans'      => [
+                'plan_2d' => $floor_plan_2d,
+                'plan_3d' => $floor_plan_3d,
+            ],
+            'media_links'      => [
+                'video'        => esc_url_raw( (string) ( $row['video_url'] ?? '' ) ),
+                'virtual_tour' => esc_url_raw( (string) ( $row['virtual_tour_url'] ?? '' ) ),
+            ],
+            'pricing'          => $pricing,
+            'dimensions'       => $dimensions,
+            'address'          => $address,
+            'legal'            => $legal,
+            'flags'            => $flags,
+            'flags_meta'       => [
+                'new_offer_until' => (string) ( $row['new_offer_until'] ?? '' ),
+            ],
+            'labels'           => $this->sanitize_filter_values( $labels ),
+            'google_place_id'  => (string) ( $row['google_place_id'] ?? '' ),
+            'created_at'       => (string) ( $row['created_at'] ?? '' ),
+            'updated_at'       => (string) ( $row['updated_at'] ?? '' ),
+        ];
+    }
+
+    /**
+     * Normalizuje strukturę powierzchni dodatkowych.
+     *
+     * @param array<string,mixed> $areas Dane powierzchni.
+     *
+     * @return array<string,mixed>
+     */
+    private function normalize_additional_areas( array $areas ) : array {
+        $defaults = [
+            'balcony' => [ 'enabled' => false, 'count' => '', 'area' => '' ],
+            'terrace' => [ 'enabled' => false, 'count' => '', 'area' => '' ],
+            'cellar'  => [ 'enabled' => false, 'area' => '' ],
+            'storage' => [ 'enabled' => false, 'area' => '' ],
+            'garden'  => [ 'enabled' => false, 'area' => '' ],
+        ];
+
+        $normalized = [];
+        foreach ( $defaults as $key => $default ) {
+            $current = is_array( $areas[ $key ] ?? null ) ? $areas[ $key ] : [];
+            $merged  = wp_parse_args( $current, $default );
+            $merged['enabled'] = ! empty( $merged['enabled'] );
+            foreach ( [ 'count', 'area' ] as $sub_key ) {
+                if ( isset( $merged[ $sub_key ] ) && '' !== $merged[ $sub_key ] ) {
+                    $merged[ $sub_key ] = is_numeric( $merged[ $sub_key ] ) ? $merged[ $sub_key ] + 0 : sanitize_text_field( (string) $merged[ $sub_key ] );
+                }
+            }
+            $normalized[ $key ] = $merged;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Konwertuje wartości filtrów do listy stringów.
+     *
+     * @param mixed $values Wartości.
+     *
+     * @return array<int,string>
+     */
+    private function sanitize_filter_values( $values ) : array {
+        if ( is_string( $values ) ) {
+            $values = [ $values ];
+        }
+
+        if ( ! is_array( $values ) ) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ( $values as $value ) {
+            $value = trim( (string) $value );
+            if ( '' !== $value ) {
+                $clean[] = $value;
+            }
+        }
+
+        return array_values( array_unique( $clean ) );
+    }
+
+    /**
+     * Konwertuje wartość do liczby zmiennoprzecinkowej.
+     *
+     * @param mixed $value Wartość wejściowa.
+     *
+     * @return float|null
+     */
+    private function to_float( $value ) : ?float {
+        if ( null === $value || '' === $value ) {
+            return null;
+        }
+
+        return (float) $value;
+    }
+
+    /**
+     * Konwertuje wartość do liczby całkowitej.
+     *
+     * @param mixed $value Wartość wejściowa.
+     *
+     * @return int|null
+     */
+    private function to_int( $value ) : ?int {
+        if ( null === $value || '' === $value ) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * Normalizuje załącznik na potrzeby eksportu.
+     *
+     * @param int $attachment_id ID załącznika.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function normalize_attachment( int $attachment_id ) : ?array {
+        if ( $attachment_id <= 0 ) {
+            return null;
+        }
+
+        $url = wp_get_attachment_url( $attachment_id );
+        if ( ! $url ) {
+            return null;
+        }
+
+        $attachment = get_post( $attachment_id );
+
+        return [
+            'id'    => $attachment_id,
+            'url'   => esc_url_raw( $url ),
+            'title' => $attachment instanceof WP_Post ? $attachment->post_title : '',
+        ];
     }
 }
