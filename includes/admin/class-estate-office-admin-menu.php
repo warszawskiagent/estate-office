@@ -269,7 +269,14 @@ class Estate_Office_Admin_Menu {
      * @return void
      */
     public function hide_management_submenus() : void {
+        $should_hide = apply_filters( 'estate_office_hide_management_submenus', false );
+
+        if ( ! $should_hide ) {
+            return;
+        }
+
         $menu_slug = 'estate-office-crm';
+
         foreach ( [
             'estate-office-properties',
             'estate-office-searches',
