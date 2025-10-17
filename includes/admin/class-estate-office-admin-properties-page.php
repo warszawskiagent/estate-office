@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once ESTATE_OFFICE_PATH . 'includes/admin/class-estate-office-admin-agent-assignment.php';
+require_once ESTATE_OFFICE_PATH . 'includes/properties/class-estate-office-property-watermark-service.php';
 
 /**
  * Class Estate_Office_Admin_Properties_Page
@@ -42,20 +43,30 @@ class Estate_Office_Admin_Properties_Page {
     private ?string $google_maps_api_key = null;
 
     /**
+     * Serwis znakowania zdjęć znakiem wodnym.
+     *
+     * @var Estate_Office_Property_Watermark_Service
+     */
+    private Estate_Office_Property_Watermark_Service $watermark_service;
+
+    /**
      * Konstruktor.
      *
-     * @param Estate_Office_Property_Repository|null $repository           Repozytorium nieruchomości.
-     * @param Estate_Office_Contract_Repository|null $contracts_repository Repozytorium umów.
-     * @param Estate_Office_Agent_Repository|null    $agent_repository     Repozytorium agentów.
+     * @param Estate_Office_Property_Repository|null         $repository           Repozytorium nieruchomości.
+     * @param Estate_Office_Contract_Repository|null         $contracts_repository Repozytorium umów.
+     * @param Estate_Office_Agent_Repository|null            $agent_repository     Repozytorium agentów.
+     * @param Estate_Office_Property_Watermark_Service|null  $watermark_service    Serwis znakowania zdjęć.
      */
     public function __construct(
         ?Estate_Office_Property_Repository $repository = null,
         ?Estate_Office_Contract_Repository $contracts_repository = null,
-        ?Estate_Office_Agent_Repository $agent_repository = null
+        ?Estate_Office_Agent_Repository $agent_repository = null,
+        ?Estate_Office_Property_Watermark_Service $watermark_service = null
     ) {
         $this->repository            = $repository ?? new Estate_Office_Property_Repository();
         $this->contracts_repository  = $contracts_repository ?? new Estate_Office_Contract_Repository();
         $this->init_agent_repository( $agent_repository );
+        $this->watermark_service     = $watermark_service ?? new Estate_Office_Property_Watermark_Service();
     }
 
     /**
@@ -831,6 +842,7 @@ JS
         }
 
         $data = $this->collect_property_input();
+        $data['gallery'] = $this->watermark_service->process_gallery( $data['gallery'] );
 
         if ( $data['contract_id'] > 0 ) {
             $contract = $this->contracts_repository->find( (int) $data['contract_id'] );
