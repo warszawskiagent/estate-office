@@ -395,86 +395,62 @@ JS
 
         check_admin_referer( 'estate-office-save-client' );
 
-        $client_id   = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
-        $client_type = isset( $_POST['client_type'] ) ? sanitize_text_field( wp_unslash( $_POST['client_type'] ) ) : 'person';
-
-        $base_address = [
-            'address_street'       => sanitize_text_field( wp_unslash( $_POST['address_street'] ?? '' ) ),
-            'address_number'       => sanitize_text_field( wp_unslash( $_POST['address_number'] ?? '' ) ),
-            'address_unit'         => sanitize_text_field( wp_unslash( $_POST['address_unit'] ?? '' ) ),
-            'address_postal_code'  => sanitize_text_field( wp_unslash( $_POST['address_postal_code'] ?? '' ) ),
-            'address_city'         => sanitize_text_field( wp_unslash( $_POST['address_city'] ?? '' ) ),
-            'address_district'     => sanitize_text_field( wp_unslash( $_POST['address_district'] ?? '' ) ),
-            'address_country'      => sanitize_text_field( wp_unslash( $_POST['address_country'] ?? '' ) ),
-        ];
-
-        $correspondence_same = isset( $_POST['correspondence_same'] ) ? 1 : 0;
-        $correspondence      = $correspondence_same ? [
-            'correspondence_street'      => $base_address['address_street'],
-            'correspondence_number'      => $base_address['address_number'],
-            'correspondence_unit'        => $base_address['address_unit'],
-            'correspondence_postal_code' => $base_address['address_postal_code'],
-            'correspondence_city'        => $base_address['address_city'],
-            'correspondence_country'     => $base_address['address_country'],
-        ] : [
-            'correspondence_street'      => sanitize_text_field( wp_unslash( $_POST['correspondence_street'] ?? '' ) ),
-            'correspondence_number'      => sanitize_text_field( wp_unslash( $_POST['correspondence_number'] ?? '' ) ),
-            'correspondence_unit'        => sanitize_text_field( wp_unslash( $_POST['correspondence_unit'] ?? '' ) ),
-            'correspondence_postal_code' => sanitize_text_field( wp_unslash( $_POST['correspondence_postal_code'] ?? '' ) ),
-            'correspondence_city'        => sanitize_text_field( wp_unslash( $_POST['correspondence_city'] ?? '' ) ),
-            'correspondence_country'     => sanitize_text_field( wp_unslash( $_POST['correspondence_country'] ?? '' ) ),
-        ];
-
-        $data = array_merge(
-            [
-                'client_type'         => in_array( $client_type, [ 'person', 'company' ], true ) ? $client_type : 'person',
-                'first_name'          => sanitize_text_field( wp_unslash( $_POST['first_name'] ?? '' ) ),
-                'last_name'           => sanitize_text_field( wp_unslash( $_POST['last_name'] ?? '' ) ),
-                'company_name'        => sanitize_text_field( wp_unslash( $_POST['company_name'] ?? '' ) ),
-                'representative_name' => sanitize_text_field( wp_unslash( $_POST['representative_name'] ?? '' ) ),
-                'phone'               => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
-                'email'               => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
-                'website'             => esc_url_raw( wp_unslash( $_POST['website'] ?? '' ) ),
-                'document_type'       => sanitize_key( wp_unslash( $_POST['document_type'] ?? '' ) ),
-                'document_number'     => sanitize_text_field( wp_unslash( $_POST['document_number'] ?? '' ) ),
-                'pesel'               => sanitize_text_field( wp_unslash( $_POST['pesel'] ?? '' ) ),
-                'nip'                 => sanitize_text_field( wp_unslash( $_POST['nip'] ?? '' ) ),
-                'krs'                 => sanitize_text_field( wp_unslash( $_POST['krs'] ?? '' ) ),
-                'regon'               => sanitize_text_field( wp_unslash( $_POST['regon'] ?? '' ) ),
-                'notes'               => wp_kses_post( wp_unslash( $_POST['notes'] ?? '' ) ),
-                'correspondence_same' => $correspondence_same,
-            ],
-            $base_address,
-            $correspondence
-        );
+        $client_id  = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
+        $redirect   = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
+        $data       = Estate_Office_Client_Request_Helper::sanitize_from_array( $_POST );
+        $is_portal  = ! empty( $redirect );
+        $message    = '';
+        $status     = '';
 
         if ( $client_id ) {
-            $this->repository->update( $client_id, $data );
-            $redirect = add_query_arg(
-                [
-                    'page'                  => self::PAGE_SLUG,
-                    'action'                => 'view',
-                    'client_id'             => $client_id,
-                    'estate-office-message' => __( 'Klient został zaktualizowany.', 'estate-office' ),
-                    'estate-office-status'  => 'updated',
-                ],
-                admin_url( 'admin.php' )
-            );
+            $updated = $this->repository->update( $client_id, $data );
+            if ( $updated ) {
+                $message = __( 'Klient został zaktualizowany.', 'estate-office' );
+                $status  = 'updated';
+            } else {
+                $message = __( 'Nie udało się zaktualizować klienta.', 'estate-office' );
+                $status  = 'error';
+            }
         } else {
             $client_id = $this->repository->create( $data );
-            $redirect  = add_query_arg(
-                [
-                    'page'                  => self::PAGE_SLUG,
-                    'action'                => 'view',
-                    'client_id'             => $client_id,
-                    'estate-office-message' => __( 'Klient został dodany.', 'estate-office' ),
-                    'estate-office-status'  => 'updated',
-                ],
-                admin_url( 'admin.php' )
-            );
+            if ( $client_id ) {
+                $message = __( 'Klient został dodany.', 'estate-office' );
+                $status  = 'updated';
+            } else {
+                $message = __( 'Nie udało się dodać klienta.', 'estate-office' );
+                $status  = 'error';
+            }
         }
 
-        wp_safe_redirect( $redirect );
+        if ( $is_portal && $redirect ) {
+            $redirect_url = wp_validate_redirect( $redirect, admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+            if ( $client_id ) {
+                $redirect_url = add_query_arg( 'client_id', $client_id, $redirect_url );
+            }
+            $redirect_url = add_query_arg(
+                [
+                    'estate-office-message' => $message,
+                    'estate-office-status'  => $status,
+                ],
+                $redirect_url
+            );
+
+            wp_safe_redirect( $redirect_url );
+            exit;
+        }
+
+        $redirect_args = [
+            'page'                  => self::PAGE_SLUG,
+            'estate-office-message' => $message,
+            'estate-office-status'  => $status,
+        ];
+
+        if ( $client_id && 'error' !== $status ) {
+            $redirect_args['action']    = 'view';
+            $redirect_args['client_id'] = $client_id;
+        }
+
+        wp_safe_redirect( add_query_arg( $redirect_args, admin_url( 'admin.php' ) ) );
         exit;
     }
 

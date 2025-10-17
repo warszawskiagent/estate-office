@@ -22,6 +22,7 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 | Dashboard CRM | Pulpit podsumowań i wskaźników | 0.7.0 | 100% |
 | Frontend CRM (po zalogowaniu) | Widoki list i szczegółów dla użytkowników | 0.7.0 | 100% |
 | Publiczne oferty nieruchomości | Strony ofert z kategoryzacją | 0.8.0 | 100% |
+| Portal CRM – szybkie dodawanie | Formularze dodawania klienta na froncie i skróty do kreatora | 1.0.1 | 100% |
 | System licencyjny | Aktywacja licencji i ograniczenia | 0.9.0 | 90% |
 | Integracje z portalami | Eksport danych na portale zewnętrzne | 0.9.4 | 90% |
 | Kalkulator notarialny | Kalkulator kosztów notarialnych | 1.0.0 | 100% |
@@ -37,14 +38,16 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 0.6.0 (zakończona)**: Moduł umów i klientów – wieloetapowy kreator umów, zarządzanie etapami, profil klienta i powiązania z nieruchomościami/poszukiwaniami.
 - **Wersja 0.7.0 (zakończona)**: Dashboard CRM i frontend po zalogowaniu.
 - **Wersja 0.8.0 (zakończona)**: Publiczne strony ofert z filtrowaniem i widokiem szczegółowym.
-- **Wersja 1.0.0 (bieżąca)**: Dodanie kalkulatorów notarialnego i kredytowego na frontendzie (osobne strony + integracja z ofertami), finalne przygotowania do testów akceptacyjnych i publikacji.
+- **Wersja 1.0.0 (zakończona)**: Dodanie kalkulatorów notarialnego i kredytowego na frontendzie (osobne strony + integracja z ofertami), finalne przygotowania do testów akceptacyjnych i publikacji.
+- **Wersja 1.0.1 (bieżąca)**: Uporządkowanie portalu CRM – uproszczenie zakładek, szybkie formularze dodawania oraz poprawki kreatora umów z pełnym formularzem klienta.
 - **Wersja 0.9.4 (zrealizowana)**: Stabilizacja modułu eksportów (poprawiony autoloader i aktywacja), aby feedy JSON/XML działały zaraz po włączeniu wtyczki.
 - **Wersja 0.9.3**: Moduł eksportów na portale – konfiguracja feedów, harmonogram generowania plików JSON/XML oraz zabezpieczone endpointy dla integracji zewnętrznych.
 - **Wersja 0.9.2 (zrealizowana)**: Uspójnienie procesu dodawania nieruchomości oraz unifikacja stylów formularzy w całym panelu administracyjnym, aby przyspieszyć pracę agentów przed finalizacją eksportów na portale.
 - **Wersja 1.0.0**: Kalkulatory notarialny i kredytowy, finalne testy akceptacyjne oraz publikacja stabilna.
 
 ## Komunikaty projektowe
-- **Wprowadzone w tej wersji (1.0.0)**: udostępnienie kalkulatorów finansowych (notarialny, kredytowy) jako stron i sekcji w ofertach wraz z warstwą JS, autouzupełnianiem danych i domyślnymi parametrami.
+- **Wprowadzone w tej wersji (1.0.1)**: przebudowa portalu CRM – dodany pełny formularz klienta na froncie, szybkie akcje dodawania elementów (klient/nieruchomość/poszukiwanie) oraz komunikaty prowadzące przez kreator umowy; kreator umów korzysta teraz z rozszerzonego formularza klienta i zachowuje komplet danych w panelu.
+- **Wprowadzone wcześniej (1.0.0)**: udostępnienie kalkulatorów finansowych (notarialny, kredytowy) jako stron i sekcji w ofertach wraz z warstwą JS, autouzupełnianiem danych i domyślnymi parametrami.
 - **Wprowadzone wcześniej (0.9.4)**: poprawa autoloadera i aktywacji modułu eksportów tak, aby klasy były zawsze dostępne podczas inicjalizacji i generowania feedów.
 - **Wprowadzone wcześniej (0.9.3)**: moduł eksportów na portale z zarządzaniem feedami (JSON/XML), harmonogramem generowania, automatycznym zapisem plików w bibliotece oraz zabezpieczonym feedem URL dla partnerów.
 - **Wprowadzone wcześniej (0.9.2)**: finalizacja przepływu dodawania nieruchomości (powiązania z umową, walidacje i synchronizacja relacji) wraz z jednolitym CSS dla wszystkich formularzy administratora, w tym kart licencyjnych oraz kreatorów CRUD.

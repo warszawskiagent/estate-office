@@ -253,13 +253,16 @@ JS
         echo '<div class="estate-office-crm-portal">';
         echo '<div class="estate-office-crm-portal__header">';
         echo '<h1>' . esc_html__( 'Estate Office CRM', 'estate-office' ) . '</h1>';
-        echo '<a class="estate-office-crm-portal__primary" href="' . esc_url( admin_url( 'admin.php?page=estate-office-contracts&action=new' ) ) . '">' . esc_html__( 'Dodaj nową umowę', 'estate-office' ) . '</a>';
         echo '</div>';
+
+        $this->render_primary_actions( $base_url );
 
         $this->render_navigation( $active_tab, $base_url );
 
         echo '<div class="estate-office-crm-portal__body">';
-        if ( $view && $item_id ) {
+        if ( $view && in_array( $view, [ 'new-client', 'new-property', 'new-search' ], true ) ) {
+            echo $this->render_creation_view( $view, $base_url );
+        } elseif ( $view && $item_id ) {
             echo $this->render_detail_view( $view, $item_id, $base_url );
         } else {
             echo $this->render_tab_content( $active_tab, $base_url );
@@ -429,71 +432,11 @@ JS
      * @return string
      */
     private function render_properties_tab( string $base_url ) : string {
-        $search = isset( $_GET['properties_search'] ) ? sanitize_text_field( wp_unslash( $_GET['properties_search'] ) ) : '';
-
-        $results = $this->property_repository->paginate(
-            [
-                'paged'    => 1,
-                'per_page' => 10,
-                'search'   => $search,
-            ]
-        );
-
-        $items = $results['items'] ?? [];
-
         ob_start();
         echo '<section class="estate-office-crm-portal__section is-active" id="crm-properties">';
-        echo $this->render_search_form( $base_url, 'properties', $search );
-
-        if ( empty( $items ) ) {
-            echo '<p>' . esc_html__( 'Brak nieruchomości spełniających kryteria.', 'estate-office' ) . '</p>';
-        } else {
-            echo '<table class="estate-office-crm-portal__table">';
-            echo '<thead><tr>';
-            echo '<th>' . esc_html__( 'Numer oferty', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Adres', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Cena', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Cena za m²', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Metraż', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Liczba pokoi', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Opiekun', 'estate-office' ) . '</th>';
-            echo '</tr></thead><tbody>';
-
-            foreach ( $items as $item ) {
-                $detail_url = add_query_arg(
-                    [
-                        'crm_tab' => 'properties',
-                        'view'    => 'property',
-                        'item_id' => (int) $item['id'],
-                    ],
-                    $base_url
-                );
-
-                $address_parts = array_filter(
-                    [
-                        $item['street'] ?? '',
-                        $item['street_number'] ?? '',
-                        $item['apartment_number'] ?? '',
-                        $item['city'] ?? '',
-                    ]
-                );
-                $address = implode( ' ', $address_parts );
-
-                echo '<tr>';
-                echo '<td><a href="' . esc_url( $detail_url ) . '">' . esc_html( $item['listing_number'] ?? '' ) . '</a></td>';
-                echo '<td>' . esc_html( $address ) . '</td>';
-                $currency = $item['price_currency'] ?? 'PLN';
-                echo '<td>' . esc_html( $this->format_price( $item['price'] ?? null, '', $currency ) ) . '</td>';
-                echo '<td>' . esc_html( $this->format_price( $item['price_per_sqm'] ?? null, __( 'm²', 'estate-office' ), $currency ) ) . '</td>';
-                echo '<td>' . esc_html( $this->format_area( $item['area_total'] ?? null ) ) . '</td>';
-                echo '<td>' . esc_html( $item['rooms'] ?? '—' ) . '</td>';
-                echo '<td>' . esc_html__( 'Nie przypisano', 'estate-office' ) . '</td>';
-                echo '</tr>';
-            }
-
-            echo '</tbody></table>';
-        }
-
+        echo '<h2>' . esc_html__( 'Zarządzanie nieruchomościami', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Widok listy nieruchomości pozostaje w panelu administracyjnym. Z tego miejsca możesz rozpocząć dodawanie nowej oferty w kontekście trwającej umowy.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( add_query_arg( [ 'crm_tab' => 'properties', 'view' => 'new-property' ], $base_url ) ) . '">' . esc_html__( 'Dodaj nieruchomość', 'estate-office' ) . '</a></p>';
         echo '</section>';
 
         return (string) ob_get_clean();
@@ -507,59 +450,11 @@ JS
      * @return string
      */
     private function render_searches_tab( string $base_url ) : string {
-        $search = isset( $_GET['searches_search'] ) ? sanitize_text_field( wp_unslash( $_GET['searches_search'] ) ) : '';
-
-        $results = $this->search_repository->paginate(
-            [
-                'paged'    => 1,
-                'per_page' => 10,
-                'search'   => $search,
-            ]
-        );
-
-        $items = $results['items'] ?? [];
-
         ob_start();
         echo '<section class="estate-office-crm-portal__section is-active" id="crm-searches">';
-        echo $this->render_search_form( $base_url, 'searches', $search );
-
-        if ( empty( $items ) ) {
-            echo '<p>' . esc_html__( 'Brak poszukiwań spełniających kryteria.', 'estate-office' ) . '</p>';
-        } else {
-            echo '<table class="estate-office-crm-portal__table">';
-            echo '<thead><tr>';
-            echo '<th>' . esc_html__( 'Numer poszukiwania', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Rodzaj nieruchomości', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Budżet', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Lokalizacja', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Typ transakcji', 'estate-office' ) . '</th>';
-            echo '</tr></thead><tbody>';
-
-            foreach ( $items as $item ) {
-                $detail_url = add_query_arg(
-                    [
-                        'crm_tab' => 'searches',
-                        'view'    => 'search',
-                        'item_id' => (int) $item['id'],
-                    ],
-                    $base_url
-                );
-
-                $location_parts = array_filter( [ $item['location_city'] ?? '', $item['location_district'] ?? '' ] );
-                $budget         = $this->format_range( $item['price_min'] ?? null, $item['price_max'] ?? null );
-
-                echo '<tr>';
-                echo '<td><a href="' . esc_url( $detail_url ) . '">' . esc_html( $item['search_number'] ?? '' ) . '</a></td>';
-                echo '<td>' . esc_html( $this->map_property_type( $item['property_type'] ?? '' ) ) . '</td>';
-                echo '<td>' . esc_html( $budget ) . '</td>';
-                echo '<td>' . esc_html( implode( ', ', $location_parts ) ) . '</td>';
-                echo '<td>' . esc_html( $this->map_transaction_type( $item['transaction_type'] ?? '' ) ) . '</td>';
-                echo '</tr>';
-            }
-
-            echo '</tbody></table>';
-        }
-
+        echo '<h2>' . esc_html__( 'Poszukiwania klientów', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Zarządzanie poszukiwaniami odbywa się w panelu administracyjnym. Portal prowadzi Cię przez kreator umowy, gdzie po przypisaniu klientów możesz dodać nowe poszukiwanie.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( add_query_arg( [ 'crm_tab' => 'searches', 'view' => 'new-search' ], $base_url ) ) . '">' . esc_html__( 'Dodaj poszukiwanie', 'estate-office' ) . '</a></p>';
         echo '</section>';
 
         return (string) ob_get_clean();
@@ -573,64 +468,11 @@ JS
      * @return string
      */
     private function render_contracts_tab( string $base_url ) : string {
-        $search = isset( $_GET['contracts_search'] ) ? sanitize_text_field( wp_unslash( $_GET['contracts_search'] ) ) : '';
-
-        $results = $this->contract_repository->paginate(
-            [
-                'paged'    => 1,
-                'per_page' => 10,
-                'search'   => $search,
-            ]
-        );
-
-        $items = $results['items'] ?? [];
-
         ob_start();
         echo '<section class="estate-office-crm-portal__section is-active" id="crm-contracts">';
-        echo $this->render_search_form( $base_url, 'contracts', $search );
-
-        if ( empty( $items ) ) {
-            echo '<p>' . esc_html__( 'Brak umów spełniających kryteria.', 'estate-office' ) . '</p>';
-        } else {
-            echo '<table class="estate-office-crm-portal__table">';
-            echo '<thead><tr>';
-            echo '<th>' . esc_html__( 'Numer umowy', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Typ transakcji', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Rodzaj nieruchomości', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Adres', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Data zawarcia', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Data zakończenia', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Aktualny etap', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Opiekun', 'estate-office' ) . '</th>';
-            echo '</tr></thead><tbody>';
-
-            foreach ( $items as $item ) {
-                $detail_url = add_query_arg(
-                    [
-                        'crm_tab' => 'contracts',
-                        'view'    => 'contract',
-                        'item_id' => (int) $item['id'],
-                    ],
-                    $base_url
-                );
-
-                $property_summary = $this->get_primary_property_summary( (int) $item['id'] );
-
-                echo '<tr>';
-                echo '<td><a href="' . esc_url( $detail_url ) . '">' . esc_html( $item['contract_number'] ?? '' ) . '</a></td>';
-                echo '<td>' . esc_html( $this->map_transaction_type( $item['transaction_type'] ?? '' ) ) . '</td>';
-                echo '<td>' . esc_html( $property_summary['type'] ) . '</td>';
-                echo '<td>' . esc_html( $property_summary['address'] ) . '</td>';
-                echo '<td>' . esc_html( $this->format_date( $item['start_date'] ?? '' ) ) . '</td>';
-                echo '<td>' . esc_html( $this->format_date( $item['end_date'] ?? '' ) ) . '</td>';
-                echo '<td>' . esc_html( $this->map_stage( $item['current_stage'] ?? '' ) ) . '</td>';
-                echo '<td>' . esc_html__( 'Nie przypisano', 'estate-office' ) . '</td>';
-                echo '</tr>';
-            }
-
-            echo '</tbody></table>';
-        }
-
+        echo '<h2>' . esc_html__( 'Umowy', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Pełna lista umów znajduje się w panelu administracyjnym. W portalu możesz szybko rozpocząć proces tworzenia nowej umowy z prowadzącym kreatorem.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( add_query_arg( [ 'crm_tab' => 'contracts', 'view' => 'new-contract' ], $base_url ) ) . '">' . esc_html__( 'Dodaj umowę', 'estate-office' ) . '</a></p>';
         echo '</section>';
 
         return (string) ob_get_clean();
@@ -644,64 +486,11 @@ JS
      * @return string
      */
     private function render_clients_tab( string $base_url ) : string {
-        $search = isset( $_GET['clients_search'] ) ? sanitize_text_field( wp_unslash( $_GET['clients_search'] ) ) : '';
-
-        $results = $this->client_repository->paginate(
-            [
-                'paged'    => 1,
-                'per_page' => 10,
-                'search'   => $search,
-            ]
-        );
-
-        $items = $results['items'] ?? [];
-
         ob_start();
         echo '<section class="estate-office-crm-portal__section is-active" id="crm-clients">';
-        echo $this->render_search_form( $base_url, 'clients', $search );
-
-        if ( empty( $items ) ) {
-            echo '<p>' . esc_html__( 'Brak klientów spełniających kryteria.', 'estate-office' ) . '</p>';
-        } else {
-            echo '<table class="estate-office-crm-portal__table">';
-            echo '<thead><tr>';
-            echo '<th>' . esc_html__( 'Imię i nazwisko/Nazwa', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Adres', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Telefon', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'E-mail', 'estate-office' ) . '</th>';
-            echo '<th>' . esc_html__( 'Opiekun', 'estate-office' ) . '</th>';
-            echo '</tr></thead><tbody>';
-
-            foreach ( $items as $item ) {
-                $detail_url = add_query_arg(
-                    [
-                        'crm_tab' => 'clients',
-                        'view'    => 'client',
-                        'item_id' => (int) $item['id'],
-                    ],
-                    $base_url
-                );
-
-                $name    = $this->format_client_name( $item );
-                $address = $this->format_client_address( $item );
-
-                echo '<tr>';
-                echo '<td><a href="' . esc_url( $detail_url ) . '">' . esc_html( $name ) . '</a></td>';
-                echo '<td>' . esc_html( $address ) . '</td>';
-                echo '<td>' . esc_html( $item['phone'] ?? '' ) . '</td>';
-                $email = $item['email'] ?? '';
-                if ( $email ) {
-                    echo '<td><a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a></td>';
-                } else {
-                    echo '<td>—</td>';
-                }
-                echo '<td>' . esc_html__( 'Nie przypisano', 'estate-office' ) . '</td>';
-                echo '</tr>';
-            }
-
-            echo '</tbody></table>';
-        }
-
+        echo '<h2>' . esc_html__( 'Klienci', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Lista klientów jest dostępna w panelu administracyjnym. Użyj przycisku poniżej, aby szybko dodać nowy profil prosto z portalu.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( add_query_arg( [ 'crm_tab' => 'clients', 'view' => 'new-client' ], $base_url ) ) . '">' . esc_html__( 'Dodaj klienta', 'estate-office' ) . '</a></p>';
         echo '</section>';
 
         return (string) ob_get_clean();
@@ -1486,4 +1275,281 @@ JS
 
         return in_array( $tab, $allowed, true ) ? $tab : 'dashboard';
     }
+    /**
+     * Renderuje główne akcje w nagłówku.
+     *
+     * @param string $base_url Bazowy URL portalu.
+     *
+     * @return void
+     */
+    private function render_primary_actions( string $base_url ) : void {
+        $actions = [
+            [
+                'label' => __( 'Dodaj nową umowę', 'estate-office' ),
+                'url'   => add_query_arg( [ 'crm_tab' => 'contracts', 'view' => 'new-contract' ], $base_url ),
+                'class' => 'is-primary',
+            ],
+            [
+                'label' => __( 'Dodaj klienta', 'estate-office' ),
+                'url'   => add_query_arg( [ 'crm_tab' => 'clients', 'view' => 'new-client' ], $base_url ),
+                'class' => '',
+            ],
+            [
+                'label' => __( 'Dodaj nieruchomość', 'estate-office' ),
+                'url'   => add_query_arg( [ 'crm_tab' => 'properties', 'view' => 'new-property' ], $base_url ),
+                'class' => '',
+            ],
+            [
+                'label' => __( 'Dodaj poszukiwanie', 'estate-office' ),
+                'url'   => add_query_arg( [ 'crm_tab' => 'searches', 'view' => 'new-search' ], $base_url ),
+                'class' => '',
+            ],
+        ];
+
+        echo '<div class="estate-office-crm-portal__actions">';
+        foreach ( $actions as $action ) {
+            printf(
+                '<a class="estate-office-crm-portal__action %3$s" href="%1$s">%2$s</a>',
+                esc_url( $action['url'] ),
+                esc_html( $action['label'] ),
+                esc_attr( $action['class'] )
+            );
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Renderuje widok tworzenia nowego rekordu.
+     *
+     * @param string $view     Widok.
+     * @param string $base_url Bazowy URL.
+     *
+     * @return string
+     */
+    private function render_creation_view( string $view, string $base_url ) : string {
+        switch ( $view ) {
+            case 'new-client':
+                return $this->render_client_creation_form( $base_url );
+            case 'new-property':
+                return $this->render_property_creation_guidance( $base_url );
+            case 'new-search':
+                return $this->render_search_creation_guidance( $base_url );
+            case 'new-contract':
+                return $this->render_contract_creation_prompt( $base_url );
+            default:
+                return '<p>' . esc_html__( 'Nie znaleziono wskazanego widoku.', 'estate-office' ) . '</p>';
+        }
+    }
+
+    /**
+     * Formularz dodawania klienta na froncie.
+     *
+     * @param string $base_url Bazowy URL portalu.
+     *
+     * @return string
+     */
+    private function render_client_creation_form( string $base_url ) : string {
+        $redirect = add_query_arg( [ 'crm_tab' => 'clients' ], $base_url );
+        $message  = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : '';
+        $status   = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : 'updated';
+
+        $this->enqueue_portal_client_assets();
+
+        ob_start();
+
+        echo '<section class="estate-office-crm-portal__section is-active">';
+        echo '<h2>' . esc_html__( 'Dodaj klienta', 'estate-office' ) . '</h2>';
+
+        if ( $message ) {
+            printf( '<div class="notice notice-%1$s"><p>%2$s</p></div>', esc_attr( $status ), esc_html( $message ) );
+        }
+
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-client-form">';
+        wp_nonce_field( 'estate-office-save-client' );
+        echo '<input type="hidden" name="action" value="estate_office_save_client" />';
+        echo '<input type="hidden" name="redirect_to" value="' . esc_attr( $redirect ) . '" />';
+
+        echo '<table class="form-table">';
+        echo '<tr><th><label for="portal-client-type">' . esc_html__( 'Typ klienta', 'estate-office' ) . '</label></th><td>';
+        echo '<select name="client_type" id="portal-client-type">';
+        echo '<option value="person">' . esc_html__( 'Osoba fizyczna', 'estate-office' ) . '</option>';
+        echo '<option value="company">' . esc_html__( 'Firma', 'estate-office' ) . '</option>';
+        echo '</select>';
+        echo '</td></tr>';
+
+        echo '<tr class="estate-office-client-type" data-type="person"><th>' . esc_html__( 'Imię i nazwisko', 'estate-office' ) . '</th><td>';
+        echo '<input type="text" name="first_name" class="regular-text" placeholder="' . esc_attr__( 'Imię', 'estate-office' ) . '" /> ';
+        echo '<input type="text" name="last_name" class="regular-text" placeholder="' . esc_attr__( 'Nazwisko', 'estate-office' ) . '" />';
+        echo '</td></tr>';
+
+        echo '<tr class="estate-office-client-type" data-type="company"><th>' . esc_html__( 'Dane firmy', 'estate-office' ) . '</th><td>';
+        echo '<input type="text" name="company_name" class="regular-text" placeholder="' . esc_attr__( 'Nazwa firmy', 'estate-office' ) . '" />';
+        echo '<p><input type="text" name="representative_name" class="regular-text" placeholder="' . esc_attr__( 'Imię i nazwisko reprezentanta', 'estate-office' ) . '" /></p>';
+        echo '</td></tr>';
+
+        echo '<tr><th>' . esc_html__( 'Kontakt', 'estate-office' ) . '</th><td>';
+        echo '<p><label>' . esc_html__( 'Telefon', 'estate-office' ) . '<br /><input type="text" name="phone" class="regular-text" /></label></p>';
+        echo '<p><label>' . esc_html__( 'E-mail', 'estate-office' ) . '<br /><input type="email" name="email" class="regular-text" /></label></p>';
+        echo '<p><label>' . esc_html__( 'Strona WWW', 'estate-office' ) . '<br /><input type="url" name="website" class="regular-text" /></label></p>';
+        echo '</td></tr>';
+
+        echo '<tr><th>' . esc_html__( 'Dane identyfikacyjne', 'estate-office' ) . '</th><td>';
+        echo '<p><label>' . esc_html__( 'Typ dokumentu', 'estate-office' ) . '<br /><select name="document_type">';
+        $doc_types = [
+            ''             => __( 'Wybierz', 'estate-office' ),
+            'dowod'        => __( 'Dowód osobisty', 'estate-office' ),
+            'paszport'     => __( 'Paszport', 'estate-office' ),
+            'karta_pobytu' => __( 'Karta pobytu', 'estate-office' ),
+        ];
+        foreach ( $doc_types as $key => $label ) {
+            echo '<option value="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</option>';
+        }
+        echo '</select></label></p>';
+        echo '<p><label>' . esc_html__( 'Numer dokumentu / NIP', 'estate-office' ) . '<br /><input type="text" name="document_number" class="regular-text" /></label></p>';
+        echo '<p class="estate-office-client-type" data-type="person"><label>' . esc_html__( 'PESEL', 'estate-office' ) . '<br /><input type="text" name="pesel" class="regular-text" /></label></p>';
+        echo '<div class="estate-office-client-type" data-type="company">';
+        echo '<p><label>' . esc_html__( 'NIP', 'estate-office' ) . '<br /><input type="text" name="nip" class="regular-text" /></label></p>';
+        echo '<p><label>' . esc_html__( 'KRS', 'estate-office' ) . '<br /><input type="text" name="krs" class="regular-text" /></label></p>';
+        echo '<p><label>' . esc_html__( 'REGON', 'estate-office' ) . '<br /><input type="text" name="regon" class="regular-text" /></label></p>';
+        echo '</div>';
+        echo '</td></tr>';
+
+        echo '<tr><th>' . esc_html__( 'Adres zamieszkania / rejestrowy', 'estate-office' ) . '</th><td>';
+        echo '<p><input type="text" name="address_street" class="regular-text" placeholder="' . esc_attr__( 'Ulica', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="address_number" class="regular-text" placeholder="' . esc_attr__( 'Numer', 'estate-office' ) . '" /> ';
+        echo '<input type="text" name="address_unit" class="regular-text" placeholder="' . esc_attr__( 'Lokal', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="address_postal_code" class="regular-text" placeholder="' . esc_attr__( 'Kod pocztowy', 'estate-office' ) . '" /> ';
+        echo '<input type="text" name="address_city" class="regular-text" placeholder="' . esc_attr__( 'Miasto', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="address_district" class="regular-text" placeholder="' . esc_attr__( 'Dzielnica', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="address_country" class="regular-text" placeholder="' . esc_attr__( 'Kraj', 'estate-office' ) . '" /></p>';
+        echo '</td></tr>';
+
+        echo '<tr><th>' . esc_html__( 'Adres korespondencyjny', 'estate-office' ) . '</th><td>';
+        echo '<label><input type="checkbox" name="correspondence_same" id="portal-correspondence-same" value="1" checked /> ' . esc_html__( 'Adres korespondencyjny taki sam jak zamieszkania', 'estate-office' ) . '</label>';
+        echo '<div class="estate-office-correspondence-fields" style="display:none;">';
+        echo '<p><input type="text" name="correspondence_street" class="regular-text" placeholder="' . esc_attr__( 'Ulica', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="correspondence_number" class="regular-text" placeholder="' . esc_attr__( 'Numer', 'estate-office' ) . '" /> ';
+        echo '<input type="text" name="correspondence_unit" class="regular-text" placeholder="' . esc_attr__( 'Lokal', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="correspondence_postal_code" class="regular-text" placeholder="' . esc_attr__( 'Kod pocztowy', 'estate-office' ) . '" /> ';
+        echo '<input type="text" name="correspondence_city" class="regular-text" placeholder="' . esc_attr__( 'Miasto', 'estate-office' ) . '" /></p>';
+        echo '<p><input type="text" name="correspondence_country" class="regular-text" placeholder="' . esc_attr__( 'Kraj', 'estate-office' ) . '" /></p>';
+        echo '</div>';
+        echo '</td></tr>';
+
+        echo '<tr><th>' . esc_html__( 'Notatki', 'estate-office' ) . '</th><td>';
+        echo '<textarea name="notes" rows="4" class="large-text"></textarea>';
+        echo '</td></tr>';
+        echo '</table>';
+
+        echo '<p class="submit"><button type="submit" class="button button-primary">' . esc_html__( 'Zapisz klienta', 'estate-office' ) . '</button>';
+        echo ' <a class="button" href="' . esc_url( $redirect ) . '">' . esc_html__( 'Powrót', 'estate-office' ) . '</a></p>';
+        echo '</form>';
+        echo '</section>';
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Informacje o rozpoczynaniu kreatora umowy.
+     *
+     * @param string $base_url Bazowy URL.
+     *
+     * @return string
+     */
+    private function render_contract_creation_prompt( string $base_url ) : string {
+        $admin_link = admin_url( 'admin.php?page=estate-office-contracts&action=new' );
+
+        ob_start();
+        echo '<section class="estate-office-crm-portal__section is-active" id="crm-contracts-create">';
+        echo '<h2>' . esc_html__( 'Nowa umowa', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Kreator prowadzi przez trzy etapy: dane umowy, przypisanie klientów oraz dodanie nieruchomości lub poszukiwania. Rozpocznij proces poniżej.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $admin_link ) . '">' . esc_html__( 'Uruchom kreator w panelu', 'estate-office' ) . '</a></p>';
+        echo '</section>';
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Komunikat dla dodawania nieruchomości.
+     *
+     * @param string $base_url Bazowy URL.
+     *
+     * @return string
+     */
+    private function render_property_creation_guidance( string $base_url ) : string {
+        $contract_url = add_query_arg( [ 'crm_tab' => 'contracts', 'view' => 'new-contract' ], $base_url );
+        $admin_link   = admin_url( 'admin.php?page=estate-office-properties&action=new' );
+
+        ob_start();
+        echo '<section class="estate-office-crm-portal__section is-active">';
+        echo '<h2>' . esc_html__( 'Dodawanie nieruchomości', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Nowa nieruchomość powinna zostać powiązana z umową w trzecim etapie kreatora. Rozpocznij od utworzenia lub wybrania umowy, a następnie przejdź do kroku dodawania nieruchomości.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $contract_url ) . '">' . esc_html__( 'Przejdź do kreatora umowy', 'estate-office' ) . '</a> ';
+        echo '<a class="button" href="' . esc_url( $admin_link ) . '">' . esc_html__( 'Otwórz pełny formularz w panelu', 'estate-office' ) . '</a></p>';
+        echo '</section>';
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Komunikat dla dodawania poszukiwania.
+     *
+     * @param string $base_url Bazowy URL.
+     *
+     * @return string
+     */
+    private function render_search_creation_guidance( string $base_url ) : string {
+        $contract_url = add_query_arg( [ 'crm_tab' => 'contracts', 'view' => 'new-contract' ], $base_url );
+        $admin_link   = admin_url( 'admin.php?page=estate-office-searches&action=new' );
+
+        ob_start();
+        echo '<section class="estate-office-crm-portal__section is-active">';
+        echo '<h2>' . esc_html__( 'Dodawanie poszukiwania', 'estate-office' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Poszukiwania klientów są częścią procesu obsługi umowy typu kupno lub najem. Użyj kreatora umowy, aby po przypisaniu klientów przejść do etapu tworzenia poszukiwania.', 'estate-office' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $contract_url ) . '">' . esc_html__( 'Rozpocznij kreator umowy', 'estate-office' ) . '</a> ';
+        echo '<a class="button" href="' . esc_url( $admin_link ) . '">' . esc_html__( 'Zaawansowany formularz w panelu', 'estate-office' ) . '</a></p>';
+        echo '</section>';
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Dołącza skrypty formularza klienta na froncie.
+     *
+     * @return void
+     */
+    private function enqueue_portal_client_assets() : void {
+        $handle = 'estate-office-portal-client-form';
+
+        if ( wp_script_is( $handle, 'enqueued' ) ) {
+            return;
+        }
+
+        wp_register_script( $handle, false, [ 'jquery' ], ESTATE_OFFICE_VERSION, true );
+        wp_enqueue_script( $handle );
+        wp_add_inline_script(
+            $handle,
+            <<<'JS'
+jQuery(function($){
+    const typeField = $('#portal-client-type');
+    const toggleType = () => {
+        const type = typeField.val();
+        $('.estate-office-client-type').hide();
+        $('.estate-office-client-type[data-type="'+type+'"]').show();
+    };
+    typeField.on('change', toggleType);
+    toggleType();
+
+    const correspondence = $('#portal-correspondence-same');
+    const toggleCorrespondence = () => {
+        $('.estate-office-correspondence-fields').toggle(!correspondence.is(':checked'));
+    };
+    correspondence.on('change', toggleCorrespondence);
+    toggleCorrespondence();
+});
+JS
+        );
+    }
+
+
 }
