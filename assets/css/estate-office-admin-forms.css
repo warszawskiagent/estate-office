@@ -50,10 +50,10 @@
 }
 
 .estate-office-agents-actions {
-    margin: 20px 0 10px;
+    margin: 1.5rem 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 0.75rem;
 }
 
 .estate-office-admin-form .form-table tr:nth-child(odd) td,
@@ -283,6 +283,17 @@
 .error-message {
     color: #d63638;
     font-size: 12px;
+}
+
+.estate-office-agent-form__address {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.estate-office-agent-form__address input {
+    width: 100%;
 }
 
 @media (max-width: 782px) {

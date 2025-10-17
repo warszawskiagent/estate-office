@@ -26,7 +26,7 @@ class Estate_Office_Roles {
 
         add_role(
             self::ROLE_AGENT,
-            __( 'Agent EstateOffice', 'estate-office' ),
+            __( 'Agent', 'estate-office' ),
             $capabilities
         );
 
@@ -42,7 +42,7 @@ class Estate_Office_Roles {
         if ( ! get_role( self::ROLE_AGENT ) ) {
             add_role(
                 self::ROLE_AGENT,
-                __( 'Agent EstateOffice', 'estate-office' ),
+                __( 'Agent', 'estate-office' ),
                 $this->get_agent_capabilities()
             );
         }

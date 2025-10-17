@@ -5,7 +5,7 @@ Strona: http://warszawskiagent.pl  \\
 Docelowe wersje: 0.1 – 1.0  \\
 Minimalne wymagania: PHP 8.3, WordPress 6.8.3
 
-## Status rozwoju (aktualizacja 1.0.3)
+## Status rozwoju (aktualizacja 1.0.4)
 Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki EstateOffice wraz z etapem realizacji, przewidzianą wersją wdrożenia oraz orientacyjnym postępem.
 
 | Moduł / Funkcjonalność | Opis skrócony | Wersja docelowa | Postęp |
@@ -14,6 +14,7 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 | Panel administratora – menu główne | Menu główne CRM i podstrony | 0.1.0 | 100% |
 | Baza danych – tabele customowe | Tabele nieruchomości, klientów, umów, poszukiwań, agentów | 0.2.0 | 100% |
 | Zarządzanie agentami | Profil agenta, rola i ograniczenia uprawnień | 0.3.0 | 100% |
+| Publiczny katalog agentów | Shortcode, strona publiczna i profil agenta | 1.0.4 | 100% |
 | Ustawienia globalne | API Google, branding i dynamiczne pola | 0.3.0 | 100% |
 | Moduł nieruchomości | CRUD nieruchomości, galerie, znaczniki, eksport WWW | 0.4.0 | 100% |
 | Moduł poszukiwań | CRUD poszukiwań klientów | 0.5.0 | 100% |
@@ -39,7 +40,8 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 0.7.0 (zakończona)**: Dashboard CRM i frontend po zalogowaniu.
 - **Wersja 0.8.0 (zakończona)**: Publiczne strony ofert z filtrowaniem i widokiem szczegółowym.
 - **Wersja 1.0.0 (zakończona)**: Dodanie kalkulatorów notarialnego i kredytowego na frontendzie (osobne strony + integracja z ofertami), finalne przygotowania do testów akceptacyjnych i publikacji.
-- **Wersja 1.0.3 (bieżąca)**: Przywrócenie pełnych list w portalu CRM (nieruchomości, umowy, klienci, poszukiwania) z filtrami, paginacją i widokami szczegółowymi, rozbudowa frontowych formularzy (w tym etapów kreatora) oraz nowa warstwa CSS dla portalu.
+- **Wersja 1.0.4 (bieżąca)**: Publiczny katalog agentów z shortcode i dedykowaną stroną, rozbudowane metadane kontaktowe agentów oraz odświeżony formularz w panelu administratora.
+- **Wersja 1.0.3 (zrealizowana)**: Przywrócenie pełnych list w portalu CRM (nieruchomości, umowy, klienci, poszukiwania) z filtrami, paginacją i widokami szczegółowymi, rozbudowa frontowych formularzy (w tym etapów kreatora) oraz nowa warstwa CSS dla portalu.
 - **Wersja 1.0.2 (zrealizowana)**: Frontowy kreator umów z działającymi trzema etapami (dane, klienci, nieruchomość/poszukiwanie), przekierowania po zapisie oraz ukrycie list zarządczych w menu administratora – użytkownicy pracują z poziomu kreatorów i portalu.
 - **Wersja 1.0.1 (zrealizowana)**: Uporządkowanie portalu CRM – uproszczenie zakładek, szybkie formularze dodawania oraz poprawki kreatora umów z pełnym formularzem klienta.
 - **Wersja 0.9.4 (zrealizowana)**: Stabilizacja modułu eksportów (poprawiony autoloader i aktywacja), aby feedy JSON/XML działały zaraz po włączeniu wtyczki.
@@ -48,7 +50,8 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 1.0.0**: Kalkulatory notarialny i kredytowy, finalne testy akceptacyjne oraz publikacja stabilna.
 
 ## Komunikaty projektowe
-- **Wprowadzone w tej wersji (1.0.3)**: przywrócone i odświeżone listy CRM w portalu (filtry, wyszukiwarka, paginacja, widoki szczegółowe), rozszerzone formularze frontowe nieruchomości/poszukiwań wraz z obsługą kreatora umów oraz nowy stylesheet portalu zapewniający spójny wygląd i responsywność.
+- **Wprowadzone w tej wersji (1.0.4)**: publiczny katalog agentów ze stroną główną i widokiem profilu, shortcode `[estate_office_agents]`, rozwinięty formularz agenta (teleadres, strona WWW, lokalizacja) oraz spójny styling w panelu i na froncie.
+- **Wprowadzone wcześniej (1.0.3)**: przywrócone i odświeżone listy CRM w portalu (filtry, wyszukiwarka, paginacja, widoki szczegółowe), rozszerzone formularze frontowe nieruchomości/poszukiwań wraz z obsługą kreatora umów oraz nowy stylesheet portalu zapewniający spójny wygląd i responsywność.
 - **Wprowadzone wcześniej (1.0.2)**: frontowy kreator umów prowadzący przez komplet kroków (dane, klienci, nieruchomość/poszukiwanie), obsługa przekierowań i komunikatów po każdym zapisie oraz przyciski do kontynuacji procesu w portalu lub panelu; ukryto listy zarządcze w menu administratora, aby operatorzy korzystali z kreatorów i widoków kontekstowych.
 - **Wprowadzone wcześniej (1.0.1)**: przebudowa portalu CRM – dodany pełny formularz klienta na froncie, szybkie akcje dodawania elementów (klient/nieruchomość/poszukiwanie) oraz komunikaty prowadzące przez kreator umowy; kreator umów korzysta teraz z rozszerzonego formularza klienta i zachowuje komplet danych w panelu.
 - **Wprowadzone wcześniej (1.0.0)**: udostępnienie kalkulatorów finansowych (notarialny, kredytowy) jako stron i sekcji w ofertach wraz z warstwą JS, autouzupełnianiem danych i domyślnymi parametrami.

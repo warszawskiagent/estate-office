@@ -64,6 +64,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Frontend_Calculators $calculators = null;
 
     /**
+     * Publiczny katalog agentów.
+     *
+     * @var Estate_Office_Frontend_Agents|null
+     */
+    private ?Estate_Office_Frontend_Agents $agents_directory = null;
+
+    /**
      * Menedżer licencji.
      *
      * @var Estate_Office_License_Manager|null
@@ -165,6 +172,7 @@ final class Estate_Office_Plugin {
         Estate_Office_Frontend_Portal::ensure_portal_page();
         Estate_Office_Frontend_Offers::ensure_offer_pages();
         Estate_Office_Frontend_Calculators::ensure_calculator_pages();
+        Estate_Office_Frontend_Agents::ensure_agents_page();
         flush_rewrite_rules();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
@@ -229,6 +237,12 @@ final class Estate_Office_Plugin {
         }
 
         $this->calculators->hooks();
+
+        if ( null === $this->agents_directory ) {
+            $this->agents_directory = new Estate_Office_Frontend_Agents();
+        }
+
+        $this->agents_directory->hooks();
     }
 
     /**

@@ -222,24 +222,17 @@ class Estate_Office_Admin_Agents_Page {
      * @return array<string,mixed>
      */
     private function collect_agent_payload( int $user_id, bool $is_new ) : array {
-        $phone    = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
-        $email    = sanitize_email( wp_unslash( $_POST['contact_email'] ?? '' ) );
-        $title    = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
-        $bio      = wp_kses_post( wp_unslash( $_POST['bio'] ?? '' ) );
-        $meta     = [];
-        $photo_id = $this->maybe_handle_photo_upload( $is_new ? 0 : absint( $_POST['current_photo_id'] ?? 0 ) );
+        $phone     = sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) );
+        $email     = sanitize_email( wp_unslash( $_POST['contact_email'] ?? '' ) );
+        $title     = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
+        $bio       = wp_kses_post( wp_unslash( $_POST['bio'] ?? '' ) );
+        $photo_id  = $this->maybe_handle_photo_upload( $is_new ? 0 : absint( $_POST['current_photo_id'] ?? 0 ) );
+        $meta_data = $this->collect_meta_fields();
 
         $user = get_userdata( $user_id );
         $default_email = $user instanceof WP_User ? $user->user_email : '';
 
-        if ( ! empty( $_POST['phone_secondary'] ) ) {
-            $meta['phone_secondary'] = sanitize_text_field( wp_unslash( $_POST['phone_secondary'] ) );
-        }
-
-        $meta_encoded = wp_json_encode( $meta );
-        if ( false === $meta_encoded ) {
-            $meta_encoded = '';
-        }
+        $meta_encoded = $this->encode_meta( $meta_data );
 
         return [
             'user_id'  => $user_id,
@@ -250,6 +243,30 @@ class Estate_Office_Admin_Agents_Page {
             'bio'      => $bio,
             'meta'     => $meta_encoded,
         ];
+    }
+
+    /**
+     * Zbiera dodatkowe metadane kontaktowe agenta.
+     *
+     * @return array<string,string>
+     */
+    private function collect_meta_fields() : array {
+        $fields = [
+            'phone_secondary' => sanitize_text_field( wp_unslash( $_POST['phone_secondary'] ?? '' ) ),
+            'office_phone'    => sanitize_text_field( wp_unslash( $_POST['office_phone'] ?? '' ) ),
+            'office_website'  => esc_url_raw( wp_unslash( $_POST['office_website'] ?? '' ) ),
+            'office_street'   => sanitize_text_field( wp_unslash( $_POST['office_street'] ?? '' ) ),
+            'office_city'     => sanitize_text_field( wp_unslash( $_POST['office_city'] ?? '' ) ),
+            'office_postcode' => sanitize_text_field( wp_unslash( $_POST['office_postcode'] ?? '' ) ),
+            'office_country'  => sanitize_text_field( wp_unslash( $_POST['office_country'] ?? '' ) ),
+        ];
+
+        return array_filter(
+            $fields,
+            static function ( $value ) {
+                return is_string( $value ) && '' !== trim( $value );
+            }
+        );
     }
 
     /**
@@ -333,6 +350,73 @@ class Estate_Office_Admin_Agents_Page {
     }
 
     /**
+     * Dekoduje metadane agenta do tablicy asocjacyjnej.
+     *
+     * @param string $meta Zakodowane metadane JSON.
+     *
+     * @return array<string,string>
+     */
+    private function decode_agent_meta( string $meta ) : array {
+        if ( '' === $meta ) {
+            return [];
+        }
+
+        $decoded = json_decode( $meta, true );
+
+        if ( ! is_array( $decoded ) ) {
+            return [];
+        }
+
+        return array_map( 'strval', $decoded );
+    }
+
+    /**
+     * Koduje metadane agenta do formatu JSON.
+     *
+     * @param array<string,string> $meta Metadane.
+     *
+     * @return string
+     */
+    private function encode_meta( array $meta ) : string {
+        if ( empty( $meta ) ) {
+            return '';
+        }
+
+        $encoded = wp_json_encode( $meta );
+
+        if ( false === $encoded ) {
+            return '';
+        }
+
+        return $encoded;
+    }
+
+    /**
+     * Buduje etykietę lokalizacji agenta.
+     *
+     * @param array<string,string> $meta Metadane agenta.
+     *
+     * @return string
+     */
+    private function format_agent_location( array $meta ) : string {
+        $parts = array_filter(
+            [
+                $meta['office_city'] ?? '',
+                $meta['office_country'] ?? '',
+            ],
+            static function ( $value ) {
+                return is_string( $value ) && '' !== trim( $value );
+            }
+        );
+
+        if ( empty( $parts ) ) {
+            return __( 'Brak danych', 'estate-office' );
+        }
+
+        return implode( ', ', array_map( 'trim', $parts ) );
+    }
+
+    /**
      * Renderuje pasek akcji nad tabelą/formularzem.
      *
      * @param bool $show_back Czy wyświetlić przycisk powrotu.
@@ -379,6 +463,15 @@ class Estate_Office_Admin_Agents_Page {
         $photo_id = $is_edit ? (int) $agent->photo_id : 0;
         $photo_tag = $photo_id ? wp_get_attachment_image( $photo_id, 'thumbnail', false, [ 'style' => 'max-width:120px;height:auto;' ] ) : '';
 
+        $meta = $is_edit ? $this->decode_agent_meta( $agent->meta ?? '' ) : [];
+        $secondary_phone = $meta['phone_secondary'] ?? '';
+        $office_phone    = $meta['office_phone'] ?? '';
+        $office_website  = $meta['office_website'] ?? '';
+        $office_street   = $meta['office_street'] ?? '';
+        $office_city     = $meta['office_city'] ?? '';
+        $office_postcode = $meta['office_postcode'] ?? '';
+        $office_country  = $meta['office_country'] ?? '';
+
         echo '<div class="estate-office-agent-form">';
         echo '<h2>' . esc_html( $is_edit ? __( 'Edytuj agenta', 'estate-office' ) : __( 'Dodaj nowego agenta', 'estate-office' ) ) . '</h2>';
 
@@ -421,14 +514,31 @@ class Estate_Office_Admin_Agents_Page {
         echo '<input name="contact_email" id="contact_email" type="email" class="regular-text" value="' . esc_attr( $contact_email ) . '" />';
         echo '</td></tr>';
 
-        echo '<tr><th scope="row"><label for="phone">' . esc_html__( 'Telefon', 'estate-office' ) . '</label></th><td>';
+        echo '<tr><th scope="row"><label for="phone">' . esc_html__( 'Telefon główny', 'estate-office' ) . '</label></th><td>';
         echo '<input name="phone" id="phone" type="text" class="regular-text" value="' . esc_attr( $is_edit ? $agent->phone : '' ) . '" />';
         echo '</td></tr>';
 
         echo '<tr><th scope="row"><label for="phone_secondary">' . esc_html__( 'Telefon dodatkowy', 'estate-office' ) . '</label></th><td>';
-        $meta = $is_edit && ! empty( $agent->meta ) ? json_decode( (string) $agent->meta, true ) : [];
-        $secondary_phone = is_array( $meta ) && isset( $meta['phone_secondary'] ) ? $meta['phone_secondary'] : '';
         echo '<input name="phone_secondary" id="phone_secondary" type="text" class="regular-text" value="' . esc_attr( $secondary_phone ) . '" />';
+        echo '</td></tr>';
+
+        echo '<tr><th scope="row"><label for="office_phone">' . esc_html__( 'Telefon biurowy', 'estate-office' ) . '</label></th><td>';
+        echo '<input name="office_phone" id="office_phone" type="text" class="regular-text" value="' . esc_attr( $office_phone ) . '" />';
+        echo '</td></tr>';
+
+        echo '<tr><th scope="row"><label for="office_website">' . esc_html__( 'Strona WWW agenta', 'estate-office' ) . '</label></th><td>';
+        echo '<input name="office_website" id="office_website" type="url" class="regular-text" value="' . esc_attr( $office_website ) . '" placeholder="https://" />';
+        echo '</td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__( 'Adres biura', 'estate-office' ) . '</th><td class="estate-office-agent-form__address">';
+        echo '<label for="office_street" class="screen-reader-text">' . esc_html__( 'Ulica i numer', 'estate-office' ) . '</label>';
+        echo '<input name="office_street" id="office_street" type="text" class="regular-text" value="' . esc_attr( $office_street ) . '" placeholder="' . esc_attr__( 'Ulica i numer', 'estate-office' ) . '" />';
+        echo '<label for="office_postcode" class="screen-reader-text">' . esc_html__( 'Kod pocztowy', 'estate-office' ) . '</label>';
+        echo '<input name="office_postcode" id="office_postcode" type="text" class="regular-text" value="' . esc_attr( $office_postcode ) . '" placeholder="' . esc_attr__( 'Kod pocztowy', 'estate-office' ) . '" />';
+        echo '<label for="office_city" class="screen-reader-text">' . esc_html__( 'Miasto', 'estate-office' ) . '</label>';
+        echo '<input name="office_city" id="office_city" type="text" class="regular-text" value="' . esc_attr( $office_city ) . '" placeholder="' . esc_attr__( 'Miasto', 'estate-office' ) . '" />';
+        echo '<label for="office_country" class="screen-reader-text">' . esc_html__( 'Kraj', 'estate-office' ) . '</label>';
+        echo '<input name="office_country" id="office_country" type="text" class="regular-text" value="' . esc_attr( $office_country ) . '" placeholder="' . esc_attr__( 'Kraj', 'estate-office' ) . '" />';
         echo '</td></tr>';
 
         echo '<tr><th scope="row"><label for="title">' . esc_html__( 'Tytuł/Stanowisko', 'estate-office' ) . '</label></th><td>';
@@ -487,6 +597,7 @@ class Estate_Office_Admin_Agents_Page {
         echo '<th>' . esc_html__( 'Telefon', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'E-mail', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Tytuł', 'estate-office' ) . '</th>';
+        echo '<th>' . esc_html__( 'Lokalizacja', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Ostatnia aktualizacja', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th>';
         echo '</tr></thead>';
@@ -498,6 +609,8 @@ class Estate_Office_Admin_Agents_Page {
                 continue;
             }
 
+            $meta      = $this->decode_agent_meta( $agent->meta ?? '' );
+            $location  = $this->format_agent_location( $meta );
             $edit_url = add_query_arg(
                 [
                     'page'     => self::PAGE_SLUG,
@@ -510,8 +623,13 @@ class Estate_Office_Admin_Agents_Page {
             echo '<tr>';
             echo '<td><strong>' . esc_html( $user->display_name ) . '</strong></td>';
             echo '<td>' . esc_html( $agent->phone ) . '</td>';
-            echo '<td><a href="mailto:' . esc_attr( $agent->email ) . '">' . esc_html( $agent->email ) . '</a></td>';
+            if ( ! empty( $agent->email ) ) {
+                echo '<td><a href="mailto:' . esc_attr( antispambot( $agent->email ) ) . '">' . esc_html( antispambot( $agent->email ) ) . '</a></td>';
+            } else {
+                echo '<td>' . esc_html__( 'Brak danych', 'estate-office' ) . '</td>';
+            }
             echo '<td>' . esc_html( $agent->title ) . '</td>';
+            echo '<td>' . esc_html( $location ) . '</td>';
             echo '<td>' . esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $agent->updated_at ?: $agent->created_at ) ) . '</td>';
             echo '<td><a class="button button-secondary" href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edytuj', 'estate-office' ) . '</a></td>';
             echo '</tr>';
