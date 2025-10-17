@@ -39,6 +39,7 @@ class Estate_Office_Property_Repository {
         'title'                 => '%s',
         'transaction_type'      => '%s',
         'property_type'         => '%s',
+        'house_type'            => '%s',
         'ownership_status'      => '%s',
         'price'                 => '%f',
         'price_per_sqm'         => '%f',

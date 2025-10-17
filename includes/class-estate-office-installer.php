@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Estate_Office_Installer {
 
     private const DB_VERSION_OPTION = 'estate_office_db_version';
-    private const DB_VERSION        = '0.5.0';
+    private const DB_VERSION        = '0.5.1';
 
     /**
      * Definicje schematu.

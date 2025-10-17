@@ -125,6 +125,7 @@ class Estate_Office_Database_Schema {
             title VARCHAR(200) NOT NULL DEFAULT '',
             transaction_type VARCHAR(20) NOT NULL,
             property_type VARCHAR(30) NOT NULL,
+            house_type VARCHAR(30) NOT NULL DEFAULT '',
             ownership_status VARCHAR(60) NOT NULL DEFAULT '',
             price DECIMAL(15,2) NULL,
             price_per_sqm DECIMAL(15,2) NULL,

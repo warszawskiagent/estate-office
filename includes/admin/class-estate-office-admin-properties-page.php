@@ -31,6 +31,13 @@ class Estate_Office_Admin_Properties_Page {
     private Estate_Office_Contract_Repository $contracts_repository;
 
     /**
+     * Buforowany klucz API Map Google.
+     *
+     * @var string|null
+     */
+    private ?string $google_maps_api_key = null;
+
+    /**
      * Konstruktor.
      *
      * @param Estate_Office_Property_Repository|null $repository Opcjonalne repozytorium.
@@ -70,8 +77,40 @@ class Estate_Office_Admin_Properties_Page {
         wp_register_style( $handle, false, [ 'estate-office-admin-forms' ], ESTATE_OFFICE_VERSION );
         wp_enqueue_style( $handle );
 
-        wp_register_script( $handle, false, [ 'jquery' ], ESTATE_OFFICE_VERSION, true );
+        $deps    = [ 'jquery' ];
+        $api_key = $this->get_google_maps_api_key();
+        if ( '' !== $api_key ) {
+            $google_handle = 'estate-office-google-maps';
+            wp_enqueue_script(
+                $google_handle,
+                add_query_arg(
+                    [
+                        'key'       => $api_key,
+                        'libraries' => 'places',
+                    ],
+                    'https://maps.googleapis.com/maps/api/js'
+                ),
+                [],
+                null,
+                true
+            );
+            $deps[] = $google_handle;
+        }
+
+        wp_register_script( $handle, false, $deps, ESTATE_OFFICE_VERSION, true );
         wp_enqueue_script( $handle );
+
+        wp_localize_script(
+            $handle,
+            'EstateOfficePropertyMap',
+            [
+                'hasMap'     => '' !== $api_key,
+                'defaultLat' => 52.2296756,
+                'defaultLng' => 21.0122287,
+                'locale'     => get_locale(),
+            ]
+        );
+
         wp_add_inline_script(
             $handle,
             <<<'JS'
@@ -89,6 +128,28 @@ jQuery(function($){
 
     const galleryButton = $('#estate-office-select-gallery');
     const galleryField = $('#estate-office-gallery');
+    const galleryPreview = $('#estate-office-gallery-preview');
+    const escapeHtml = function(string){
+        return String(string || '').replace(/[&<>"']/g, function(char){
+            const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return entities[char] || char;
+        });
+    };
+    function renderGalleryPreview(items){
+        if (!galleryPreview.length){
+            return;
+        }
+        if (!items.length){
+            const emptyMessage = escapeHtml(galleryPreview.data('empty') || '');
+            galleryPreview.addClass('is-empty').html(emptyMessage ? '<p class="description">' + emptyMessage + '</p>' : '');
+            return;
+        }
+        let html = '';
+        items.forEach(function(item){
+            html += '<figure><img src="' + escapeHtml(item.url) + '" alt="' + escapeHtml(item.alt) + '" /><figcaption>' + escapeHtml(item.title) + '</figcaption></figure>';
+        });
+        galleryPreview.removeClass('is-empty').html(html);
+    }
     if ( galleryButton.length ) {
         galleryButton.on('click', function(event){
             event.preventDefault();
@@ -98,14 +159,32 @@ jQuery(function($){
                 library: { type: 'image' }
             });
             frame.on('select', function(){
-                const ids = frame.state().get('selection').map(function(attachment){
+                const selection = frame.state().get('selection');
+                const ids = selection.map(function(attachment){
                     return attachment.id;
                 }).toArray();
                 galleryField.val(ids.join(','));
+                const items = [];
+                selection.each(function(attachment){
+                    const data = attachment.toJSON();
+                    const thumb = data.sizes && data.sizes.thumbnail ? data.sizes.thumbnail.url : (data.icon || data.url || '');
+                    items.push({
+                        url: thumb,
+                        title: data.title || ('ID ' + data.id),
+                        alt: data.alt || data.title || ''
+                    });
+                });
+                renderGalleryPreview(items);
             });
             frame.open();
         });
     }
+
+    galleryField.on('change', function(){
+        if ( ! $(this).val() ) {
+            renderGalleryPreview([]);
+        }
+    });
 
     const plan2dButton = $('#estate-office-select-plan-2d');
     const plan2dField = $('#estate-office-plan-2d');
@@ -133,6 +212,95 @@ jQuery(function($){
             });
             frame.open();
         });
+    }
+
+    const landRegisterCheckbox = $('#land_register_missing');
+    const landRegisterField = $('#land_register_number');
+    function toggleLandRegister(){
+        const disabled = landRegisterCheckbox.is(':checked');
+        landRegisterField.prop('disabled', disabled);
+        if ( disabled ) {
+            landRegisterField.val('');
+        }
+    }
+    landRegisterCheckbox.on('change', toggleLandRegister);
+    toggleLandRegister();
+
+    const priceField = $('input[name="price"]');
+    const areaField = $('input[name="area_total"]');
+    const currencyField = $('select[name="price_currency"]');
+    const pricePerField = $('input[data-price-per-sqm="display"]');
+    function updatePricePer(){
+        if (!pricePerField.length){
+            return;
+        }
+        const price = parseFloat((priceField.val() || '').toString().replace(',', '.'));
+        const area = parseFloat((areaField.val() || '').toString().replace(',', '.'));
+        if (price > 0 && area > 0){
+            const computed = price / Math.max(area, 0.01);
+            const formatter = new Intl.NumberFormat(EstateOfficePropertyMap.locale || 'pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            pricePerField.val(formatter.format(computed) + ' ' + (currencyField.val() || ''));
+        } else {
+            pricePerField.val('');
+        }
+    }
+    priceField.on('input change', updatePricePer);
+    areaField.on('input change', updatePricePer);
+    currencyField.on('change', updatePricePer);
+    updatePricePer();
+
+    const ownershipSelect = $('#ownership_status');
+    const ownershipCustom = $('#ownership_status_custom').closest('.field');
+    function toggleOwnershipCustom(){
+        if (!ownershipSelect.length || !ownershipCustom.length){
+            return;
+        }
+        const show = ownershipSelect.val() === 'INNE';
+        ownershipCustom.toggleClass('is-hidden', ! show);
+        if ( ! show ) {
+            $('#ownership_status_custom').val('');
+        }
+    }
+    if ( ownershipSelect.length && ownershipCustom.length ) {
+        ownershipSelect.on('change', toggleOwnershipCustom);
+        toggleOwnershipCustom();
+    }
+
+    function initMap(){
+        const mapContainer = document.getElementById('estate-office-property-map');
+        if (!mapContainer || !EstateOfficePropertyMap.hasMap || typeof google === 'undefined' || !google.maps){
+            return;
+        }
+        const latField = $('input[name="latitude"]');
+        const lngField = $('input[name="longitude"]');
+        const initialLat = parseFloat(mapContainer.dataset.lat) || EstateOfficePropertyMap.defaultLat;
+        const initialLng = parseFloat(mapContainer.dataset.lng) || EstateOfficePropertyMap.defaultLng;
+        const zoom = parseInt(mapContainer.dataset.zoom || '14', 10);
+        const map = new google.maps.Map(mapContainer, {
+            center: { lat: initialLat, lng: initialLng },
+            zoom: zoom
+        });
+        let marker = new google.maps.Marker({
+            position: { lat: initialLat, lng: initialLng },
+            map: map,
+            draggable: true
+        });
+        const updateFields = function(lat, lng){
+            latField.val(lat.toFixed(6));
+            lngField.val(lng.toFixed(6));
+        };
+        marker.addListener('dragend', function(event){
+            updateFields(event.latLng.lat(), event.latLng.lng());
+        });
+        map.addListener('click', function(event){
+            marker.setPosition(event.latLng);
+            updateFields(event.latLng.lat(), event.latLng.lng());
+        });
+    }
+    if ( document.readyState === 'complete' ) {
+        initMap();
+    } else {
+        $(window).on('load', initMap);
     }
 });
 JS
@@ -407,12 +575,32 @@ JS
             printf( '<input type="hidden" name="transaction_type" value="%s" />', esc_attr( $data['transaction_type'] ) );
         }
         $this->render_select_field( 'property_type', __( 'Rodzaj nieruchomości', 'estate-office' ), $data['property_type'], $this->get_property_types(), true );
-        $this->render_input_field( 'ownership_status', __( 'Stan prawny', 'estate-office' ), $data['ownership_status'], 'text' );
+        $this->render_select_field( 'house_type', __( 'Typ domu', 'estate-office' ), $data['house_type'], $this->get_house_types(), false, [ 'data-property-type' => 'DOM' ] );
+        $this->render_select_field( 'ownership_status', __( 'Stan prawny', 'estate-office' ), $data['ownership_status'], $this->get_ownership_status_options(), true );
+        $ownership_wrapper_attr = [];
+        if ( 'INNE' !== $data['ownership_status'] ) {
+            $ownership_wrapper_attr['class'] = 'is-hidden';
+        }
+        $this->render_input_field(
+            'ownership_status_custom',
+            __( 'Stan prawny – opis', 'estate-office' ),
+            $data['ownership_status_custom'],
+            'text',
+            [ 'data-ownership-custom' => '1', 'placeholder' => __( 'Podaj stan prawny', 'estate-office' ) ],
+            $ownership_wrapper_attr
+        );
         $this->render_input_field( 'price', __( 'Cena', 'estate-office' ), $data['price'], 'number', [ 'step' => '0.01', 'min' => '0' ] );
         $this->render_select_field( 'price_currency', __( 'Waluta', 'estate-office' ), $data['price_currency'], $this->get_currency_options(), false );
         $this->render_input_field( 'price_period', __( 'Okres rozliczeniowy', 'estate-office' ), $data['price_period'], 'text' );
         $this->render_input_field( 'administrative_rent', __( 'Czynsz administracyjny', 'estate-office' ), $data['administrative_rent'], 'number', [ 'step' => '0.01', 'min' => '0' ] );
         $this->render_input_field( 'area_total', __( 'Powierzchnia (m²)', 'estate-office' ), $data['area_total'], 'number', [ 'step' => '0.01', 'min' => '0' ] );
+        $this->render_readonly_field(
+            'price_per_sqm_display',
+            __( 'Cena za m²', 'estate-office' ),
+            $data['price_per_sqm_display'],
+            [ 'data-price-per-sqm' => 'display' ],
+            __( 'Wyliczana automatycznie na podstawie ceny i metrażu.', 'estate-office' )
+        );
         $this->render_input_field( 'area_plot', __( 'Powierzchnia działki (m²)', 'estate-office' ), $data['area_plot'], 'number', [ 'step' => '0.01', 'min' => '0' ], [ 'data-property-type' => 'DOM,DZIAŁKA' ] );
         $this->render_input_field( 'rooms', __( 'Liczba pokoi', 'estate-office' ), $data['rooms'], 'number', [ 'min' => '0' ], [ 'data-property-type' => 'MIESZKANIE,DOM,LOKAL' ] );
         $this->render_input_field( 'bedrooms', __( 'Liczba sypialni', 'estate-office' ), $data['bedrooms'], 'number', [ 'min' => '0' ], [ 'data-property-type' => 'MIESZKANIE,DOM' ] );
@@ -444,11 +632,7 @@ JS
         $this->render_input_field( 'latitude', __( 'Szerokość geogr.', 'estate-office' ), $data['latitude'], 'text' );
         $this->render_input_field( 'longitude', __( 'Długość geogr.', 'estate-office' ), $data['longitude'], 'text' );
         $this->render_input_field( 'google_place_id', __( 'Google Place ID', 'estate-office' ), $data['google_place_id'], 'text' );
-        echo '<div class="field">';
-        echo '<label>' . esc_html__( 'Zaznacz na mapie', 'estate-office' ) . '</label>';
-        $maps_url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( trim( $data['street'] . ' ' . $data['street_number'] . ' ' . $data['city'] ) );
-        printf( '<a class="button" href="%s" target="_blank" rel="noopener noreferrer">%s</a>', esc_url( $maps_url ), esc_html__( 'Otwórz Google Maps', 'estate-office' ) );
-        echo '</div>';
+        $this->render_map_field( $data );
         echo '</div>';
 
         echo '<h2>' . esc_html__( 'Opis oferty', 'estate-office' ) . '</h2>';
@@ -511,6 +695,7 @@ JS
         printf( '<input type="text" id="estate-office-plan-3d" name="floor_plan_3d" value="%s" />', esc_attr( $data['floor_plan_3d'] ) );
         printf( '<button id="estate-office-select-plan-3d" class="button" data-title="%s">%s</button>', esc_attr__( 'Wybierz rzut 3D', 'estate-office' ), esc_html__( 'Biblioteka mediów', 'estate-office' ) );
         echo '</div>';
+        $this->render_gallery_preview( $data['gallery'] );
         $this->render_input_field( 'video_url', __( 'Link do filmu', 'estate-office' ), $data['video_url'], 'url' );
         $this->render_input_field( 'virtual_tour_url', __( 'Link do wirtualnego spaceru', 'estate-office' ), $data['virtual_tour_url'], 'url' );
         echo '</div>';
@@ -682,8 +867,12 @@ JS
             'transaction_type'      => 'SPRZEDAŻ',
             'transaction_type_locked' => false,
             'property_type'         => 'MIESZKANIE',
+            'house_type'            => '',
             'ownership_status'      => '',
+            'ownership_status_custom' => '',
             'price'                 => '',
+            'price_per_sqm'         => '',
+            'price_per_sqm_display' => '',
             'price_currency'        => 'PLN',
             'price_period'          => '',
             'administrative_rent'   => '',
@@ -813,6 +1002,27 @@ JS
             $defaults['gallery'] = array_map( 'absint', $defaults['gallery'] );
         }
 
+        if ( 'DOM' !== $defaults['property_type'] ) {
+            $defaults['house_type'] = '';
+        }
+
+        $ownership_options = $this->get_ownership_status_options();
+        if ( '' !== $defaults['ownership_status'] && ! isset( $ownership_options[ $defaults['ownership_status'] ] ) ) {
+            $defaults['ownership_status_custom'] = $defaults['ownership_status'];
+            $defaults['ownership_status']        = 'INNE';
+        }
+
+        $price_value      = '' !== $defaults['price'] ? (float) $defaults['price'] : 0.0;
+        $area_value       = '' !== $defaults['area_total'] ? (float) $defaults['area_total'] : 0.0;
+        $currency_display = $defaults['price_currency'] ?: 'PLN';
+
+        if ( '' !== $defaults['price_per_sqm'] ) {
+            $defaults['price_per_sqm_display'] = number_format_i18n( (float) $defaults['price_per_sqm'], 2 ) . ' ' . $currency_display;
+        } elseif ( $price_value > 0 && $area_value > 0 ) {
+            $computed                             = $price_value / max( 0.01, $area_value );
+            $defaults['price_per_sqm_display'] = number_format_i18n( $computed, 2 ) . ' ' . $currency_display;
+        }
+
         return $defaults;
     }
 
@@ -829,7 +1039,19 @@ JS
         $data['title']           = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
         $data['transaction_type'] = $this->sanitize_choice( $_POST['transaction_type'] ?? '', array_keys( $this->get_transaction_types() ) );
         $data['property_type']    = $this->sanitize_choice( $_POST['property_type'] ?? '', array_keys( $this->get_property_types() ) );
-        $data['ownership_status'] = sanitize_text_field( wp_unslash( $_POST['ownership_status'] ?? '' ) );
+        $data['house_type']        = $this->sanitize_choice( $_POST['house_type'] ?? '', array_keys( $this->get_house_types() ) );
+        $ownership_choice          = $this->sanitize_choice( $_POST['ownership_status'] ?? '', array_keys( $this->get_ownership_status_options() ) );
+        $ownership_custom_input    = sanitize_text_field( wp_unslash( $_POST['ownership_status_custom'] ?? '' ) );
+        if ( 'INNE' === $ownership_choice ) {
+            $data['ownership_status'] = '' !== $ownership_custom_input ? $ownership_custom_input : 'INNE';
+        } elseif ( '' === $ownership_choice && '' !== $ownership_custom_input ) {
+            $data['ownership_status'] = $ownership_custom_input;
+        } else {
+            $data['ownership_status'] = $ownership_choice;
+        }
+        if ( 'DOM' !== $data['property_type'] ) {
+            $data['house_type'] = '';
+        }
         $data['price_currency']   = $this->sanitize_choice( $_POST['price_currency'] ?? 'PLN', array_keys( $this->get_currency_options() ) );
         $data['price_period']     = sanitize_text_field( wp_unslash( $_POST['price_period'] ?? '' ) );
         $data['administrative_rent'] = $this->get_request_float( 'administrative_rent' );
@@ -1303,6 +1525,41 @@ JS
     }
 
     /**
+     * Renderuje pole tylko do odczytu.
+     *
+     * @param string              $name        Nazwa pola.
+     * @param string              $label       Etykieta.
+     * @param string              $value       Wartość.
+     * @param array<string,mixed> $attributes  Atrybuty inputa.
+     * @param string              $description Opis pola.
+     *
+     * @return void
+     */
+    private function render_readonly_field( string $name, string $label, string $value, array $attributes = [], string $description = '' ) : void {
+        $attributes = array_merge(
+            [
+                'type'     => 'text',
+                'id'       => $name,
+                'name'     => $name,
+                'readonly' => 'readonly',
+            ],
+            $attributes
+        );
+
+        if ( '' !== $value ) {
+            $attributes['value'] = $value;
+        }
+
+        echo '<div' . $this->format_wrapper_attributes() . '>';
+        echo '<label for="' . esc_attr( $name ) . '">' . esc_html( $label ) . '</label>';
+        echo '<input' . $this->format_attributes( $attributes ) . ' />';
+        if ( '' !== $description ) {
+            echo '<p class="description">' . esc_html( $description ) . '</p>';
+        }
+        echo '</div>';
+    }
+
+    /**
      * Renderuje pojedynczy checkbox.
      *
      * @param string               $name         Nazwa.
@@ -1370,6 +1627,83 @@ JS
     }
 
     /**
+     * Renderuje mapę wyboru lokalizacji.
+     *
+     * @param array<string,mixed> $data Dane nieruchomości.
+     *
+     * @return void
+     */
+    private function render_map_field( array $data ) : void {
+        $wrapper_attr = [
+            'class'            => 'estate-office-property-map-wrapper',
+            'data-map-wrapper' => '1',
+        ];
+
+        echo '<div' . $this->format_wrapper_attributes( $wrapper_attr ) . '>';
+        echo '<label>' . esc_html__( 'Lokalizacja na mapie', 'estate-office' ) . '</label>';
+
+        if ( '' !== $this->get_google_maps_api_key() ) {
+            printf(
+                '<div id="estate-office-property-map" class="estate-office-property-map" data-lat="%1$s" data-lng="%2$s" data-zoom="14"></div>',
+                esc_attr( (string) $data['latitude'] ),
+                esc_attr( (string) $data['longitude'] )
+            );
+            echo '<p class="description">' . esc_html__( 'Kliknij na mapie lub przeciągnij znacznik, aby ustawić współrzędne.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<p class="description">' . esc_html__( 'Dodaj klucz API Map Google w ustawieniach, aby aktywować mapę wyboru lokalizacji.', 'estate-office' ) . '</p>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * Renderuje podgląd galerii zdjęć.
+     *
+     * @param array<int,int> $ids Lista ID załączników.
+     *
+     * @return void
+     */
+    private function render_gallery_preview( array $ids ) : void {
+        $message     = __( 'Brak wybranych zdjęć. Dodaj je przyciskiem powyżej.', 'estate-office' );
+        $classes     = 'estate-office-gallery-preview';
+        $has_gallery = ! empty( $ids );
+
+        if ( ! $has_gallery ) {
+            $classes .= ' is-empty';
+        }
+
+        $attributes = [
+            'class'      => $classes,
+            'id'         => 'estate-office-gallery-preview',
+            'data-empty' => $message,
+        ];
+
+        echo '<div' . $this->format_wrapper_attributes( $attributes ) . '>';
+
+        if ( ! $has_gallery ) {
+            echo '<p class="description">' . esc_html( $message ) . '</p>';
+        } else {
+            foreach ( $ids as $attachment_id ) {
+                $attachment_id = (int) $attachment_id;
+                $image         = wp_get_attachment_image( $attachment_id, 'thumbnail', false, [ 'loading' => 'lazy' ] );
+
+                if ( ! $image ) {
+                    continue;
+                }
+
+                $title = get_the_title( $attachment_id );
+
+                echo '<figure>';
+                echo $image; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- zweryfikowane wyjście z WP.
+                echo '<figcaption>' . esc_html( $title ? $title : '#' . $attachment_id ) . '</figcaption>';
+                echo '</figure>';
+            }
+        }
+
+        echo '</div>';
+    }
+
+    /**
      * Formatuje atrybuty kontenera pola.
      *
      * @param array<string,string> $attributes Atrybuty.
@@ -1410,6 +1744,26 @@ JS
     }
 
     /**
+     * Zwraca klucz API Map Google.
+     *
+     * @return string
+     */
+    private function get_google_maps_api_key() : string {
+        if ( null !== $this->google_maps_api_key ) {
+            return $this->google_maps_api_key;
+        }
+
+        $settings = get_option( 'estate_office_settings', [] );
+        if ( is_array( $settings ) && ! empty( $settings['google_maps_api_key'] ) ) {
+            $this->google_maps_api_key = (string) $settings['google_maps_api_key'];
+        } else {
+            $this->google_maps_api_key = '';
+        }
+
+        return $this->google_maps_api_key;
+    }
+
+    /**
      * Dostępne typy transakcji.
      *
      * @return array<string,string>
@@ -1434,6 +1788,35 @@ JS
             'DOM'        => __( 'Dom', 'estate-office' ),
             'DZIAŁKA'    => __( 'Działka', 'estate-office' ),
             'LOKAL'      => __( 'Lokal handlowo-usługowy', 'estate-office' ),
+        ];
+    }
+
+    /**
+     * Dostępne typy domów.
+     *
+     * @return array<string,string>
+     */
+    private function get_house_types() : array {
+        return [
+            'WOLNOSTOJĄCY' => __( 'Wolnostojący', 'estate-office' ),
+            'BLIŹNIAK'      => __( 'Bliźniak', 'estate-office' ),
+            'SZEREGOWIEC'   => __( 'Szeregowiec', 'estate-office' ),
+            'WIELORODZINNY' => __( 'Wielorodzinny', 'estate-office' ),
+        ];
+    }
+
+    /**
+     * Dostępne stany prawne.
+     *
+     * @return array<string,string>
+     */
+    private function get_ownership_status_options() : array {
+        return [
+            'WŁASNOŚĆ'                          => __( 'Własność', 'estate-office' ),
+            'WSPÓŁWŁASNOŚĆ'                     => __( 'Współwłasność', 'estate-office' ),
+            'SPÓŁDZIELCZE_WŁASNOŚCIOWE'         => __( 'Spółdzielcze własnościowe prawo do lokalu', 'estate-office' ),
+            'DZIERŻAWA'                         => __( 'Dzierżawa', 'estate-office' ),
+            'INNE'                              => __( 'Inne', 'estate-office' ),
         ];
     }
 

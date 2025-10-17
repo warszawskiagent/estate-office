@@ -140,6 +140,10 @@
     border: 1px solid var(--estate-office-border);
 }
 
+.estate-office-property-form .field.is-hidden {
+    display: none;
+}
+
 .estate-office-property-form .estate-office-property-grid .field label {
     font-weight: 600;
     color: var(--estate-office-muted);
@@ -147,6 +151,65 @@
 
 .estate-office-property-form .estate-office-property-media input[type="text"] {
     width: 100%;
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-property-map-wrapper {
+    grid-column: 1 / -1;
+    display: block;
+    background: none;
+    padding: 0;
+    border: none;
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-property-map {
+    width: 100%;
+    min-height: 320px;
+    border-radius: 12px;
+    border: 1px solid var(--estate-office-border-strong, rgba(0,0,0,0.1));
+    overflow: hidden;
+    background: var(--estate-office-surface, #f9fafc);
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-gallery-preview {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    background: none;
+    padding: 0;
+    border: none;
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-gallery-preview.is-empty {
+    display: block;
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-gallery-preview figure {
+    position: relative;
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--estate-office-border);
+    background: var(--estate-office-surface);
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-gallery-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.estate-office-property-form .estate-office-property-grid .estate-office-gallery-preview figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.3;
+    background: linear-gradient(180deg, rgba(8,14,38,0) 0%, rgba(8,14,38,0.75) 100%);
+    color: #fff;
 }
 
 .estate-office-property-form .estate-office-flags {
