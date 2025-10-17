@@ -121,6 +121,7 @@ class Estate_Office_Admin_Menu {
      */
     public function hooks() : void {
         add_action( 'admin_menu', [ $this, 'register_menu_pages' ] );
+        add_action( 'admin_menu', [ $this, 'hide_management_submenus' ], 1000 );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
         $this->dashboard_page->hooks();
         $this->agents_page->hooks();
@@ -260,6 +261,23 @@ class Estate_Office_Admin_Menu {
             'estate-office-about',
             [ $this, 'render_about_page' ]
         );
+    }
+
+    /**
+     * Usuwa z menu głównego zakładki zarządzania zasobami, które są dostępne tylko z kreatorów.
+     *
+     * @return void
+     */
+    public function hide_management_submenus() : void {
+        $menu_slug = 'estate-office-crm';
+        foreach ( [
+            'estate-office-properties',
+            'estate-office-searches',
+            'estate-office-contracts',
+            'estate-office-clients',
+        ] as $submenu_slug ) {
+            remove_submenu_page( $menu_slug, $submenu_slug );
+        }
     }
 
     /**

@@ -897,19 +897,21 @@ JS
 
         $contract_id     = isset( $_POST['contract_id'] ) ? absint( $_POST['contract_id'] ) : 0;
         $contract_number = sanitize_text_field( wp_unslash( $_POST['contract_number'] ?? '' ) );
+        $redirect_to     = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
+        $is_portal       = ! empty( $redirect_to );
 
         if ( empty( $contract_number ) ) {
-            $this->redirect_with_message( __( 'Numer umowy jest wymagany.', 'estate-office' ), 'error', $contract_id );
+            $this->redirect_with_message( __( 'Numer umowy jest wymagany.', 'estate-office' ), 'error', $contract_id, $redirect_to );
         }
 
         if ( ! $contract_id && $this->repository->exists_by_number( $contract_number ) ) {
-            $this->redirect_with_message( __( 'Umowa o podanym numerze już istnieje.', 'estate-office' ), 'error', $contract_id );
+            $this->redirect_with_message( __( 'Umowa o podanym numerze już istnieje.', 'estate-office' ), 'error', $contract_id, $redirect_to );
         }
 
         if ( $contract_id ) {
             $existing = $this->repository->find_by_number( $contract_number );
             if ( $existing && (int) $existing['id'] !== $contract_id ) {
-                $this->redirect_with_message( __( 'Umowa o podanym numerze już istnieje.', 'estate-office' ), 'error', $contract_id );
+                $this->redirect_with_message( __( 'Umowa o podanym numerze już istnieje.', 'estate-office' ), 'error', $contract_id, $redirect_to );
             }
         }
 
@@ -931,33 +933,58 @@ JS
 
         if ( $contract_id ) {
             $this->repository->update( $contract_id, $data );
-            $redirect = add_query_arg(
-                [
-                    'page'                  => self::PAGE_SLUG,
-                    'action'                => 'view',
-                    'contract_id'           => $contract_id,
-                    'estate-office-message' => __( 'Umowa została zaktualizowana.', 'estate-office' ),
-                    'estate-office-status'  => 'updated',
-                ],
-                admin_url( 'admin.php' )
-            );
+
+            if ( $is_portal && $redirect_to ) {
+                $redirect = wp_validate_redirect( $redirect_to, $this->get_contracts_list_url() );
+                $redirect = add_query_arg(
+                    [
+                        'contract_id'           => $contract_id,
+                        'estate-office-message' => __( 'Umowa została zaktualizowana.', 'estate-office' ),
+                        'estate-office-status'  => 'updated',
+                    ],
+                    $redirect
+                );
+            } else {
+                $redirect = add_query_arg(
+                    [
+                        'page'                  => self::PAGE_SLUG,
+                        'action'                => 'view',
+                        'contract_id'           => $contract_id,
+                        'estate-office-message' => __( 'Umowa została zaktualizowana.', 'estate-office' ),
+                        'estate-office-status'  => 'updated',
+                    ],
+                    admin_url( 'admin.php' )
+                );
+            }
         } else {
             $contract_id = $this->repository->create( $data );
 
             if ( $contract_id <= 0 ) {
-                $this->redirect_with_message( __( 'Nie udało się utworzyć umowy.', 'estate-office' ), 'error', 0 );
+                $this->redirect_with_message( __( 'Nie udało się utworzyć umowy.', 'estate-office' ), 'error', 0, $redirect_to );
             }
 
-            $redirect = add_query_arg(
-                [
-                    'page'        => self::PAGE_SLUG,
-                    'action'      => 'manage-clients',
-                    'contract_id' => $contract_id,
-                    'estate-office-message' => __( 'Umowa została utworzona. Dodaj klientów do umowy.', 'estate-office' ),
-                    'estate-office-status'  => 'updated',
-                ],
-                admin_url( 'admin.php' )
-            );
+            if ( $is_portal && $redirect_to ) {
+                $redirect = wp_validate_redirect( $redirect_to, $this->get_contracts_list_url() );
+                $redirect = add_query_arg(
+                    [
+                        'contract_id'           => $contract_id,
+                        'estate-office-message' => __( 'Umowa została utworzona. Dodaj klientów do umowy.', 'estate-office' ),
+                        'estate-office-status'  => 'updated',
+                    ],
+                    $redirect
+                );
+            } else {
+                $redirect = add_query_arg(
+                    [
+                        'page'        => self::PAGE_SLUG,
+                        'action'      => 'manage-clients',
+                        'contract_id' => $contract_id,
+                        'estate-office-message' => __( 'Umowa została utworzona. Dodaj klientów do umowy.', 'estate-office' ),
+                        'estate-office-status'  => 'updated',
+                    ],
+                    admin_url( 'admin.php' )
+                );
+            }
         }
 
         wp_safe_redirect( $redirect );
@@ -1045,22 +1072,35 @@ JS
 
         $contract_id = isset( $_GET['contract_id'] ) ? absint( $_GET['contract_id'] ) : 0;
         $client_id   = isset( $_GET['client_id'] ) ? absint( $_GET['client_id'] ) : 0;
+        $redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : '';
         check_admin_referer( 'estate-office-contract-remove-client-' . $contract_id . '-' . $client_id );
 
         if ( $contract_id && $client_id ) {
             $this->repository->detach_client( $contract_id, $client_id );
         }
 
-        $redirect = add_query_arg(
-            [
-                'page'        => self::PAGE_SLUG,
-                'action'      => 'manage-clients',
-                'contract_id' => $contract_id,
-                'estate-office-message' => __( 'Klient został usunięty z umowy.', 'estate-office' ),
-                'estate-office-status'  => 'updated',
-            ],
-            admin_url( 'admin.php' )
-        );
+        if ( $redirect_to ) {
+            $redirect = wp_validate_redirect( $redirect_to, admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+            $redirect = add_query_arg(
+                [
+                    'contract_id'           => $contract_id,
+                    'estate-office-message' => __( 'Klient został usunięty z umowy.', 'estate-office' ),
+                    'estate-office-status'  => 'updated',
+                ],
+                $redirect
+            );
+        } else {
+            $redirect = add_query_arg(
+                [
+                    'page'        => self::PAGE_SLUG,
+                    'action'      => 'manage-clients',
+                    'contract_id' => $contract_id,
+                    'estate-office-message' => __( 'Klient został usunięty z umowy.', 'estate-office' ),
+                    'estate-office-status'  => 'updated',
+                ],
+                admin_url( 'admin.php' )
+            );
+        }
 
         wp_safe_redirect( $redirect );
         exit;
@@ -1144,7 +1184,25 @@ JS
      *
      * @return void
      */
-    private function redirect_with_message( string $message, string $status, int $contract_id = 0 ) : void {
+    private function redirect_with_message( string $message, string $status, int $contract_id = 0, string $redirect_to = '' ) : void {
+        if ( ! empty( $redirect_to ) ) {
+            $redirect = wp_validate_redirect( $redirect_to, $this->get_contracts_list_url() );
+            $redirect = add_query_arg(
+                [
+                    'estate-office-message' => $message,
+                    'estate-office-status'  => $status,
+                ],
+                $redirect
+            );
+
+            if ( $contract_id ) {
+                $redirect = add_query_arg( 'contract_id', $contract_id, $redirect );
+            }
+
+            wp_safe_redirect( $redirect );
+            exit;
+        }
+
         $args = [
             'page'                  => self::PAGE_SLUG,
             'estate-office-message' => $message,
