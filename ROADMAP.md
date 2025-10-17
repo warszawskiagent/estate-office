@@ -5,7 +5,7 @@ Strona: http://warszawskiagent.pl  \\
 Docelowe wersje: 0.1 – 1.0  \\
 Minimalne wymagania: PHP 8.3, WordPress 6.8.3
 
-## Status rozwoju (aktualizacja 0.9.0)
+## Status rozwoju (aktualizacja 0.9.1)
 Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki EstateOffice wraz z etapem realizacji, przewidzianą wersją wdrożenia oraz orientacyjnym postępem.
 
 | Moduł / Funkcjonalność | Opis skrócony | Wersja docelowa | Postęp |
@@ -15,7 +15,7 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 | Baza danych – tabele customowe | Tabele nieruchomości, klientów, umów, poszukiwań, agentów | 0.2.0 | 85% |
 | Zarządzanie agentami | Profil agenta, rola i ograniczenia uprawnień | 0.3.0 | 80% |
 | Ustawienia globalne | API Google, branding i dynamiczne pola | 0.3.0 | 80% |
-| Moduł nieruchomości | CRUD nieruchomości, galerie, znaczniki, eksport WWW | 0.4.0 | 80% |
+| Moduł nieruchomości | CRUD nieruchomości, galerie, znaczniki, eksport WWW | 0.4.0 | 90% |
 | Moduł poszukiwań | CRUD poszukiwań klientów | 0.5.0 | 80% |
 | Moduł umów | Proces dodawania i etapy umowy | 0.6.0 | 75% |
 | Moduł klientów | Profil klienta i powiązania danych | 0.6.0 | 75% |
@@ -37,11 +37,12 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 0.6.0 (zakończona)**: Moduł umów i klientów – wieloetapowy kreator umów, zarządzanie etapami, profil klienta i powiązania z nieruchomościami/poszukiwaniami.
 - **Wersja 0.7.0 (zakończona)**: Dashboard CRM i frontend po zalogowaniu.
 - **Wersja 0.8.0 (zakończona)**: Publiczne strony ofert z filtrowaniem i widokiem szczegółowym.
-- **Wersja 0.9.0 (bieżąca)**: System licencji, przygotowanie integracji portali i automatyczne testy cykliczne.
+- **Wersja 0.9.1 (bieżąca)**: Integracja dodawania nieruchomości z umowami (blokada typu transakcji, autouzupełnianie danych, synchronizacja relacji) oraz stabilizacja modułu ofert.
 - **Wersja 1.0.0**: Kalkulatory notarialny i kredytowy, finalne testy akceptacyjne oraz publikacja stabilna.
 
 ## Komunikaty projektowe
-- **Wprowadzone w tej wersji (0.9.0)**: moduł zarządzania licencją z aktywacją, dezaktywacją i harmonogramem kontroli, a także wstępna konfiguracja integracji portali.
+- **Wprowadzone w tej wersji (0.9.1)**: powiązanie formularza nieruchomości z umowami (automatyczny dobór typu transakcji, blokada edycji, synchronizacja relacji w bazie) oraz poprawione przekierowania w procesie dodawania ofert.
+- **Wprowadzone wcześniej (0.9.0)**: moduł zarządzania licencją z aktywacją, dezaktywacją i harmonogramem kontroli, a także wstępna konfiguracja integracji portali.
 - **Wprowadzone wcześniej (0.8.0)**: automatyczne tworzenie publicznych stron „Oferty na sprzedaż” i „Oferty na wynajem” z filtrowaniem według typu transakcji, typu nieruchomości, miasta i dzielnicy, widokiem kart ofert, paginacją oraz sekcją szczegółów ze zdjęciami.
 - **Wprowadzone wcześniej (0.7.0)**: interaktywny pulpit administratora z metrykami, rankingiem agentów i historią etapów oraz portal frontendowy CRM dla zalogowanych użytkowników z zakładkami (pulpit, nieruchomości, poszukiwania, umowy, klienci) i widokami szczegółowymi.
 - **Wprowadzone wcześniej (0.6.0)**: kreator umów z etapami i historią, przypisywanie klientów (wyszukiwanie + szybkie tworzenie), widok profilu umowy oraz pełny moduł klientów (lista, formularz, profil, powiązania). Integracja nieruchomości i poszukiwań z umowami.

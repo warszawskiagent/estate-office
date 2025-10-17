@@ -374,7 +374,20 @@ JS
             (string) $data['contract_id'],
             $this->get_contract_select_options( (int) $data['contract_id'] )
         );
-        $this->render_select_field( 'transaction_type', __( 'Typ transakcji', 'estate-office' ), $data['transaction_type'], $this->get_transaction_types(), true );
+        $transaction_locked = ! empty( $data['transaction_type_locked'] );
+        $this->render_select_field(
+            'transaction_type',
+            __( 'Typ transakcji', 'estate-office' ),
+            $data['transaction_type'],
+            $this->get_transaction_types(),
+            true,
+            [],
+            $transaction_locked ? [ 'disabled' => 'disabled' ] : [],
+            $transaction_locked ? __( 'Typ transakcji wynika z powiązanej umowy i nie może być zmieniony.', 'estate-office' ) : ''
+        );
+        if ( $transaction_locked ) {
+            printf( '<input type="hidden" name="transaction_type" value="%s" />', esc_attr( $data['transaction_type'] ) );
+        }
         $this->render_select_field( 'property_type', __( 'Rodzaj nieruchomości', 'estate-office' ), $data['property_type'], $this->get_property_types(), true );
         $this->render_input_field( 'ownership_status', __( 'Stan prawny', 'estate-office' ), $data['ownership_status'], 'text' );
         $this->render_input_field( 'price', __( 'Cena', 'estate-office' ), $data['price'], 'number', [ 'step' => '0.01', 'min' => '0' ] );
@@ -531,7 +544,32 @@ JS
 
         $property_id = isset( $_POST['property_id'] ) ? absint( $_POST['property_id'] ) : 0;
 
+        $existing_property     = null;
+        $previous_contract_id  = 0;
+        if ( $property_id > 0 ) {
+            $existing_property = $this->repository->find( $property_id );
+            if ( null === $existing_property ) {
+                $this->redirect_with_message( 0, __( 'Nie znaleziono wskazanej nieruchomości.', 'estate-office' ), 'error' );
+            }
+
+            $previous_contract_id = (int) ( $existing_property['contract_id'] ?? 0 );
+        }
+
         $data = $this->collect_property_input();
+
+        if ( $data['contract_id'] > 0 ) {
+            $contract = $this->contracts_repository->find( (int) $data['contract_id'] );
+            if ( null === $contract ) {
+                $this->redirect_with_message( $property_id, __( 'Nie znaleziono powiązanej umowy.', 'estate-office' ), 'error' );
+            }
+
+            $mapped_type = $this->map_contract_transaction_type( (string) ( $contract['transaction_type'] ?? '' ) );
+            if ( '' === $mapped_type ) {
+                $this->redirect_with_message( $property_id, __( 'Typ transakcji powiązanej umowy jest nieobsługiwany.', 'estate-office' ), 'error' );
+            }
+
+            $data['transaction_type'] = $mapped_type;
+        }
 
         if ( empty( $data['title'] ) || empty( $data['transaction_type'] ) || empty( $data['property_type'] ) ) {
             $this->redirect_with_message( $property_id, __( 'Uzupełnij wymagane pola: tytuł, typ transakcji i rodzaj nieruchomości.', 'estate-office' ), 'error' );
@@ -548,6 +586,10 @@ JS
 
         if ( $property_id ) {
             $result = $this->repository->update( $property_id, $data );
+            if ( $result ) {
+                $this->sync_property_contract_relation( $property_id, (int) $data['contract_id'], $previous_contract_id );
+            }
+
             $message = $result ? __( 'Nieruchomość została zaktualizowana.', 'estate-office' ) : __( 'Nie udało się zapisać zmian.', 'estate-office' );
             $status  = $result ? 'success' : 'error';
             $this->redirect_with_message( $property_id, $message, $status );
@@ -555,6 +597,7 @@ JS
 
         $new_id = $this->repository->create( $data );
         if ( $new_id ) {
+            $this->sync_property_contract_relation( (int) $new_id, (int) $data['contract_id'], 0 );
             $this->redirect_with_message( (int) $new_id, __( 'Dodano nową nieruchomość.', 'estate-office' ), 'success' );
         }
 
@@ -602,6 +645,7 @@ JS
             'contract_id'           => 0,
             'title'                 => '',
             'transaction_type'      => 'SPRZEDAŻ',
+            'transaction_type_locked' => false,
             'property_type'         => 'MIESZKANIE',
             'ownership_status'      => '',
             'price'                 => '',
@@ -690,6 +734,10 @@ JS
                 $defaults['contract_id'] = absint( $_GET['contract_id'] );
             }
 
+            if ( $defaults['contract_id'] > 0 ) {
+                $this->apply_contract_constraints( $defaults );
+            }
+
             return $defaults;
         }
 
@@ -700,6 +748,10 @@ JS
         }
 
         $defaults['contract_id'] = absint( $defaults['contract_id'] );
+
+        if ( $defaults['contract_id'] > 0 ) {
+            $this->apply_contract_constraints( $defaults );
+        }
 
         foreach ( [ 'building_details', 'media', 'amenities', 'equipment', 'additional_areas', 'gallery' ] as $json_field ) {
             if ( isset( $property[ $json_field ] ) ) {
@@ -865,6 +917,68 @@ JS
         }
 
         return $data;
+    }
+
+    /**
+     * Modyfikuje dane formularza na podstawie powiązanej umowy.
+     *
+     * @param array<string,mixed> $defaults Dane formularza.
+     *
+     * @return void
+     */
+    private function apply_contract_constraints( array &$defaults ) : void {
+        $contract = $this->contracts_repository->find( (int) $defaults['contract_id'] );
+        if ( null === $contract ) {
+            return;
+        }
+
+        $mapped_type = $this->map_contract_transaction_type( (string) ( $contract['transaction_type'] ?? '' ) );
+        if ( '' === $mapped_type ) {
+            return;
+        }
+
+        $defaults['transaction_type']        = $mapped_type;
+        $defaults['transaction_type_locked'] = true;
+    }
+
+    /**
+     * Mapuje typ transakcji z umowy na wartość formularza nieruchomości.
+     *
+     * @param string $transaction_type Typ transakcji z umowy.
+     *
+     * @return string
+     */
+    private function map_contract_transaction_type( string $transaction_type ) : string {
+        $normalized = function_exists( 'mb_strtolower' ) ? mb_strtolower( $transaction_type ) : strtolower( $transaction_type );
+
+        $map = [
+            'sprzedaz' => 'SPRZEDAŻ',
+            'kupno'    => 'KUPNO',
+            'wynajem'  => 'WYNAJEM',
+            'najem'    => 'NAJEM',
+        ];
+
+        return $map[ $normalized ] ?? '';
+    }
+
+    /**
+     * Synchronizuje relację nieruchomości z umową.
+     *
+     * @param int $property_id          ID nieruchomości.
+     * @param int $new_contract_id      Aktualny ID umowy.
+     * @param int $previous_contract_id Poprzedni ID umowy.
+     *
+     * @return void
+     */
+    private function sync_property_contract_relation( int $property_id, int $new_contract_id, int $previous_contract_id ) : void {
+        if ( $previous_contract_id > 0 && $previous_contract_id !== $new_contract_id ) {
+            $this->contracts_repository->detach_property( $previous_contract_id, $property_id );
+        }
+
+        if ( $new_contract_id > 0 && $previous_contract_id !== $new_contract_id ) {
+            $this->contracts_repository->attach_property( $new_contract_id, $property_id );
+        }
+
     }
 
     /**
@@ -1083,15 +1197,30 @@ JS
      *
      * @return void
      */
-    private function render_select_field( string $name, string $label, string $value, array $options, bool $required = false, array $wrapper_attr = [] ) : void {
+    private function render_select_field( string $name, string $label, string $value, array $options, bool $required = false, array $wrapper_attr = [], array $select_attr = [], string $description = '' ) : void {
         echo '<div' . $this->format_wrapper_attributes( $wrapper_attr ) . '>';
         echo '<label for="' . esc_attr( $name ) . '">' . esc_html( $label ) . '</label>';
-        echo '<select' . $this->format_attributes( [ 'id' => $name, 'name' => $name, 'required' => $required ? 'required' : null ] ) . '>';
+        $attributes = array_merge(
+            [
+                'id'   => $name,
+                'name' => $name,
+            ],
+            $select_attr
+        );
+
+        if ( $required && empty( $attributes['required'] ) ) {
+            $attributes['required'] = 'required';
+        }
+
+        echo '<select' . $this->format_attributes( $attributes ) . '>';
         echo '<option value="">' . esc_html__( 'Wybierz…', 'estate-office' ) . '</option>';
         foreach ( $options as $option_value => $option_label ) {
             printf( '<option value="%s" %s>%s</option>', esc_attr( $option_value ), selected( $value, $option_value, false ), esc_html( $option_label ) );
         }
         echo '</select>';
+        if ( '' !== $description ) {
+            echo '<p class="description">' . esc_html( $description ) . '</p>';
+        }
         echo '</div>';
     }
 
