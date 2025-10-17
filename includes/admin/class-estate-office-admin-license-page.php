@@ -201,9 +201,9 @@ class Estate_Office_Admin_License_Page {
      * @return void
      */
     private function render_forms( array $license ) : void {
-        echo '<div class="estate-office-license__forms" style="display:flex;gap:32px;flex-wrap:wrap;margin-top:2em;">';
+        echo '<div class="estate-office-license__forms">';
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="card" style="flex:1 1 300px;max-width:400px;">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form card estate-office-license-card">';
         echo '<h2>' . esc_html__( 'Aktywacja licencji', 'estate-office' ) . '</h2>';
         wp_nonce_field( 'estate_office_activate_license' );
         echo '<input type="hidden" name="action" value="estate_office_activate_license" />';
@@ -213,7 +213,7 @@ class Estate_Office_Admin_License_Page {
         submit_button( __( 'Aktywuj licencję', 'estate-office' ), 'primary', 'submit', false );
         echo '</form>';
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="card" style="flex:1 1 240px;max-width:320px;">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form card estate-office-license-card">';
         echo '<h2>' . esc_html__( 'Dezaktywacja', 'estate-office' ) . '</h2>';
         wp_nonce_field( 'estate_office_deactivate_license' );
         echo '<input type="hidden" name="action" value="estate_office_deactivate_license" />';
@@ -222,7 +222,7 @@ class Estate_Office_Admin_License_Page {
         submit_button( __( 'Dezaktywuj licencję', 'estate-office' ), 'secondary', 'submit', false, $confirm );
         echo '</form>';
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="card" style="flex:1 1 240px;max-width:320px;">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form card estate-office-license-card">';
         echo '<h2>' . esc_html__( 'Sprawdź status', 'estate-office' ) . '</h2>';
         wp_nonce_field( 'estate_office_check_license' );
         echo '<input type="hidden" name="action" value="estate_office_check_license" />';

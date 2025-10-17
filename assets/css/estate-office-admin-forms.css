@@ -1,0 +1,216 @@
+:root {
+    --estate-office-surface: #ffffff;
+    --estate-office-border: #d7dde3;
+    --estate-office-border-strong: #c0c7d0;
+    --estate-office-muted: #4a5462;
+    --estate-office-primary: #0a4b78;
+    --estate-office-surface-alt: #f6f8fb;
+}
+
+.wrap .estate-office-admin-form,
+.estate-office-admin-form {
+    background: var(--estate-office-surface);
+    border: 1px solid var(--estate-office-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    padding: 24px 28px;
+    margin-top: 20px;
+}
+
+.estate-office-admin-form h2,
+.estate-office-admin-form h3 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    color: var(--estate-office-primary);
+}
+
+.estate-office-admin-form .description,
+.estate-office-admin-form p.description,
+.estate-office-admin-form .subheading {
+    color: var(--estate-office-muted);
+    font-size: 14px;
+    margin: 0 0 18px 0;
+}
+
+.estate-office-admin-form .form-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.estate-office-admin-form .form-table th {
+    width: 230px;
+    padding: 12px 18px;
+    vertical-align: top;
+    font-weight: 600;
+}
+
+.estate-office-admin-form .form-table td {
+    padding: 12px 18px;
+}
+
+.estate-office-admin-form .form-table tr:nth-child(odd) td,
+.estate-office-admin-form .form-table tr:nth-child(odd) th {
+    background: var(--estate-office-surface-alt);
+}
+
+.estate-office-admin-form input[type="text"],
+.estate-office-admin-form input[type="email"],
+.estate-office-admin-form input[type="url"],
+.estate-office-admin-form input[type="number"],
+.estate-office-admin-form input[type="date"],
+.estate-office-admin-form input[type="search"],
+.estate-office-admin-form input[type="password"],
+.estate-office-admin-form textarea,
+.estate-office-admin-form select {
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid var(--estate-office-border-strong);
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: none;
+    background: #fff;
+}
+
+.estate-office-admin-form textarea.large-text {
+    max-width: 100%;
+}
+
+.estate-office-admin-form input[type="checkbox"],
+.estate-office-admin-form input[type="radio"] {
+    transform: scale(1.05);
+    margin-right: 8px;
+}
+
+.estate-office-admin-form .form-row,
+.estate-office-inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.estate-office-inline-form select,
+.estate-office-inline-form input[type="text"],
+.estate-office-inline-form input[type="search"],
+.estate-office-inline-form input[type="email"] {
+    width: auto;
+    min-width: 200px;
+}
+
+.estate-office-admin-form .submit,
+.estate-office-admin-form .form-actions {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.estate-office-property-form .estate-office-property-sections {
+    margin-top: 20px;
+}
+
+.estate-office-property-form .estate-office-property-sections h2 {
+    margin-top: 36px;
+    margin-bottom: 16px;
+}
+
+.estate-office-property-form .estate-office-property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.estate-office-property-form .estate-office-property-grid .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--estate-office-surface-alt);
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--estate-office-border);
+}
+
+.estate-office-property-form .estate-office-property-grid .field label {
+    font-weight: 600;
+    color: var(--estate-office-muted);
+}
+
+.estate-office-property-form .estate-office-property-media input[type="text"] {
+    width: 100%;
+}
+
+.estate-office-property-form .estate-office-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 16px 0 0;
+}
+
+.estate-office-property-form .estate-office-property-flags label,
+.estate-office-property-form .estate-office-flags label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--estate-office-surface-alt);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--estate-office-border);
+}
+
+.estate-office-property-form .estate-office-property-actions {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.estate-office-admin-form .wp-editor-wrap {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--estate-office-border);
+}
+
+.estate-office-admin-form .wp-editor-tools {
+    background: var(--estate-office-surface-alt);
+}
+
+.estate-office-admin-form .card {
+    border-radius: 12px;
+}
+
+.estate-office-license__forms {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 28px;
+}
+
+.estate-office-license-card {
+    flex: 1 1 280px;
+    max-width: 420px;
+    margin-top: 0;
+}
+
+.estate-office-license-card h2 {
+    margin-top: 0;
+}
+
+.estate-office-license-card p {
+    margin-top: 0;
+}
+
+@media (max-width: 782px) {
+    .estate-office-admin-form .form-table th,
+    .estate-office-admin-form .form-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .estate-office-admin-form .form-table tr:nth-child(odd) td,
+    .estate-office-admin-form .form-table tr:nth-child(odd) th {
+        background: transparent;
+    }
+}

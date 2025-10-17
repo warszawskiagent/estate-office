@@ -45,7 +45,7 @@ class Estate_Office_Admin_Settings_Page {
             echo '<div class="notice notice-success"><p>' . esc_html__( 'Ustawienia zostały zapisane.', 'estate-office' ) . '</p></div>';
         }
 
-        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-settings-form">';
         wp_nonce_field( 'estate_office_save_settings' );
         echo '<input type="hidden" name="action" value="estate_office_save_settings" />';
 

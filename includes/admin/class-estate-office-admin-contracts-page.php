@@ -334,7 +334,7 @@ JS
         echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj umowę', 'estate-office' ) : esc_html__( 'Nowa umowa – etap 1/2', 'estate-office' ) ) . '</h1>';
         echo '<p>' . esc_html__( 'Uzupełnij dane umowy. Po zapisaniu przejdziesz do przypisywania klientów.', 'estate-office' ) . '</p>';
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-form">';
         wp_nonce_field( 'estate-office-save-contract' );
         echo '<input type="hidden" name="action" value="estate_office_save_contract" />';
         if ( $is_edit ) {
@@ -473,7 +473,7 @@ JS
         echo '<hr />';
 
         echo '<h2>' . esc_html__( 'Wyszukaj istniejącego klienta', 'estate-office' ) . '</h2>';
-        echo '<form method="get" class="estate-office-contract-client-search">';
+        echo '<form method="get" class="estate-office-contract-client-search estate-office-inline-form">';
         echo '<input type="hidden" name="page" value="' . esc_attr( self::PAGE_SLUG ) . '" />';
         echo '<input type="hidden" name="action" value="manage-clients" />';
         echo '<input type="hidden" name="contract_id" value="' . esc_attr( $contract['id'] ) . '" />';
@@ -491,7 +491,7 @@ JS
                 foreach ( $search_results as $client ) {
                     $name = 'person' === $client['client_type'] ? trim( $client['first_name'] . ' ' . $client['last_name'] ) : $client['company_name'];
                     echo '<li>';
-                    echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
+                    echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-inline-form">';
                     wp_nonce_field( 'estate-office-contract-add-client' );
                     echo '<input type="hidden" name="action" value="estate_office_contract_add_client" />';
                     echo '<input type="hidden" name="contract_id" value="' . esc_attr( $contract['id'] ) . '" />';
@@ -514,7 +514,7 @@ JS
 
         echo '<hr />';
         echo '<h2>' . esc_html__( 'Dodaj nowego klienta', 'estate-office' ) . '</h2>';
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-contract-client-create">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-client-create">';
         wp_nonce_field( 'estate-office-contract-add-client' );
         echo '<input type="hidden" name="action" value="estate_office_contract_add_client" />';
         echo '<input type="hidden" name="contract_id" value="' . esc_attr( $contract['id'] ) . '" />';
@@ -607,7 +607,7 @@ JS
         echo '<section style="flex:1 1 320px;min-width:280px;">';
         echo '<h2>' . esc_html__( 'Bieżący etap', 'estate-office' ) . '</h2>';
         echo '<p><strong>' . esc_html( $this->get_stage_label( $contract['current_stage'] ) ) . '</strong><br />' . esc_html__( 'Data', 'estate-office' ) . ': ' . esc_html( $contract['current_stage_date'] ) . '</p>';
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-stage-form">';
         wp_nonce_field( 'estate-office-contract-update-stage' );
         echo '<input type="hidden" name="action" value="estate_office_contract_update_stage" />';
         echo '<input type="hidden" name="contract_id" value="' . esc_attr( $contract['id'] ) . '" />';

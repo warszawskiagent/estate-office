@@ -307,7 +307,7 @@ JS
             echo '</ul></div>';
         }
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-search-form">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-search-form">';
         wp_nonce_field( 'estate_office_save_search', 'estate_office_nonce' );
         echo '<input type="hidden" name="action" value="estate_office_save_search" />';
         echo '<input type="hidden" name="search_id" value="' . esc_attr( $data['id'] ) . '" />';

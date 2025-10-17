@@ -101,6 +101,7 @@ class Estate_Office_Admin_Menu {
      */
     public function hooks() : void {
         add_action( 'admin_menu', [ $this, 'register_menu_pages' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
         $this->dashboard_page->hooks();
         $this->agents_page->hooks();
         $this->properties_page->hooks();
@@ -109,6 +110,26 @@ class Estate_Office_Admin_Menu {
         $this->contracts_page->hooks();
         $this->settings_page->hooks();
         $this->license_page->hooks();
+    }
+
+    /**
+     * Ładuje wspólne zasoby panelu administratora dla ekranów wtyczki.
+     *
+     * @param string $hook Aktualny hook strony administratora.
+     *
+     * @return void
+     */
+    public function enqueue_admin_assets( string $hook ) : void {
+        if ( 'toplevel_page_estate-office-crm' !== $hook && ! str_starts_with( $hook, 'estate-office-crm_page_' ) ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'estate-office-admin-forms',
+            ESTATE_OFFICE_URL . 'assets/css/estate-office-admin-forms.css',
+            [],
+            ESTATE_OFFICE_VERSION
+        );
     }
 
     /**

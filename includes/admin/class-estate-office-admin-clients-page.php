@@ -295,7 +295,7 @@ JS
 
         echo '<div class="wrap">';
         echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj klienta', 'estate-office' ) : esc_html__( 'Dodaj klienta', 'estate-office' ) ) . '</h1>';
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-client-form">';
         wp_nonce_field( 'estate-office-save-client' );
         echo '<input type="hidden" name="action" value="estate_office_save_client" />';
         if ( $is_edit ) {

@@ -67,12 +67,8 @@ class Estate_Office_Admin_Properties_Page {
         wp_enqueue_media();
 
         $handle = 'estate-office-admin-properties';
-        wp_register_style( $handle, false, [], ESTATE_OFFICE_VERSION );
+        wp_register_style( $handle, false, [ 'estate-office-admin-forms' ], ESTATE_OFFICE_VERSION );
         wp_enqueue_style( $handle );
-        wp_add_inline_style(
-            $handle,
-            '.estate-office-property-sections h2{margin-top:2em}.estate-office-property-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}.estate-office-property-grid .field{display:flex;flex-direction:column}.estate-office-property-grid .field label{font-weight:600;margin-bottom:4px}.estate-office-flags{display:flex;flex-wrap:wrap;gap:1rem;margin:1.5rem 0}.estate-office-flags label{display:flex;align-items:center;gap:.5rem}.estate-office-property-actions{margin-top:1.5rem;display:flex;gap:1rem;align-items:center}.estate-office-property-media input[type="text"]{width:100%}\ntextarea.large-text{width:100%}\n'
-        );
 
         wp_register_script( $handle, false, [ 'jquery' ], ESTATE_OFFICE_VERSION, true );
         wp_enqueue_script( $handle );
@@ -357,7 +353,7 @@ JS
             printf( '<div class="notice notice-%1$s"><p>%2$s</p></div>', esc_attr( $status ), esc_html( $message ) );
         }
 
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-property-form">';
         wp_nonce_field( 'estate_office_save_property', 'estate_office_nonce' );
         echo '<input type="hidden" name="action" value="estate_office_save_property" />';
         echo '<input type="hidden" name="property_id" value="' . esc_attr( $data['id'] ) . '" />';

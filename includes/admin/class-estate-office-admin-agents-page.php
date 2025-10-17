@@ -334,7 +334,7 @@ class Estate_Office_Admin_Agents_Page {
         echo '<div class="estate-office-agent-form">';
         echo '<h2>' . esc_html( $is_edit ? __( 'Edytuj agenta', 'estate-office' ) : __( 'Dodaj nowego agenta', 'estate-office' ) ) . '</h2>';
 
-        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-agent-form">';
         wp_nonce_field( 'estate_office_save_agent' );
         echo '<input type="hidden" name="action" value="estate_office_save_agent" />';
         echo '<input type="hidden" name="agent_id" value="' . esc_attr( $is_edit ? (int) $agent->id : 0 ) . '" />';
