@@ -1270,7 +1270,9 @@ JS
             return '<p>' . esc_html__( 'Nie znaleziono klienta.', 'estate-office' ) . '</p>';
         }
 
-        $contracts = $this->client_repository->get_contracts_for_client( $item_id );
+        $contracts  = $this->client_repository->get_contracts_for_client( $item_id );
+        $properties = $this->client_repository->get_properties_for_client( $item_id );
+        $searches   = $this->client_repository->get_searches_for_client( $item_id );
 
         ob_start();
         echo '<div class="estate-office-crm-portal__detail">';
@@ -1323,6 +1325,75 @@ JS
             echo '</ul>';
         }
         echo '</div>';
+
+        echo '<div class="estate-office-crm-portal__panel">';
+        echo '<h3>' . esc_html__( 'Powiązane nieruchomości', 'estate-office' ) . '</h3>';
+        if ( empty( $properties ) ) {
+            echo '<p>' . esc_html__( 'Klient nie ma przypisanych nieruchomości.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<ul class="estate-office-crm-portal__list">';
+            foreach ( $properties as $property ) {
+                $property_url = add_query_arg(
+                    [
+                        'crm_tab' => 'properties',
+                        'view'    => 'property',
+                        'item_id' => (int) $property['id'],
+                    ],
+                    $base_url
+                );
+
+                $address_parts = array_filter(
+                    [
+                        trim( (string) ( $property['street'] ?? '' ) . ' ' . (string) ( $property['street_number'] ?? '' ) ),
+                        $property['city'] ?? '',
+                    ]
+                );
+
+                $label = (string) ( $property['listing_number'] ?? '' );
+                if ( ! empty( $address_parts ) ) {
+                    $label = trim( $label . ' – ' . implode( ', ', $address_parts ) );
+                }
+
+                echo '<li><a href="' . esc_url( $property_url ) . '">' . esc_html( $label ) . '</a></li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
+        echo '<div class="estate-office-crm-portal__panel">';
+        echo '<h3>' . esc_html__( 'Powiązane poszukiwania', 'estate-office' ) . '</h3>';
+        if ( empty( $searches ) ) {
+            echo '<p>' . esc_html__( 'Klient nie ma przypisanych poszukiwań.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<ul class="estate-office-crm-portal__list">';
+            foreach ( $searches as $search ) {
+                $search_url = add_query_arg(
+                    [
+                        'crm_tab' => 'searches',
+                        'view'    => 'search',
+                        'item_id' => (int) $search['id'],
+                    ],
+                    $base_url
+                );
+
+                $location_parts = array_filter(
+                    [
+                        $search['location_city'] ?? '',
+                        $search['location_district'] ?? '',
+                    ]
+                );
+
+                $label = (string) ( $search['search_number'] ?? '' );
+                if ( ! empty( $location_parts ) ) {
+                    $label = trim( $label . ' – ' . implode( ', ', $location_parts ) );
+                }
+
+                echo '<li><a href="' . esc_url( $search_url ) . '">' . esc_html( $label ) . '</a></li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
         echo '</div>';
 
         return (string) ob_get_clean();

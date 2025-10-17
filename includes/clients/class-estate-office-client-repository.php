@@ -43,6 +43,20 @@ class Estate_Office_Client_Repository {
     private string $contracts_table;
 
     /**
+     * Nazwa tabeli nieruchomości.
+     *
+     * @var string
+     */
+    private string $properties_table;
+
+    /**
+     * Nazwa tabeli poszukiwań.
+     *
+     * @var string
+     */
+    private string $searches_table;
+
+    /**
      * Mapowanie pól na formaty przygotowane do zapisu.
      *
      * @var array<string,string>
@@ -95,6 +109,8 @@ class Estate_Office_Client_Repository {
         $this->table                  = $this->wpdb->prefix . 'estate_office_clients';
         $this->contract_clients_table = $this->wpdb->prefix . 'estate_office_contract_clients';
         $this->contracts_table        = $this->wpdb->prefix . 'estate_office_contracts';
+        $this->properties_table       = $this->wpdb->prefix . 'estate_office_properties';
+        $this->searches_table         = $this->wpdb->prefix . 'estate_office_searches';
     }
 
     /**
@@ -283,6 +299,80 @@ class Estate_Office_Client_Repository {
         $results = $this->wpdb->get_results( $sql, ARRAY_A );
 
         return is_array( $results ) ? $results : [];
+    }
+
+    /**
+     * Zwraca nieruchomości powiązane z klientem.
+     *
+     * @param int $client_id ID klienta.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_properties_for_client( int $client_id ) : array {
+        $sql = $this->wpdb->prepare(
+            "SELECT p.id, p.listing_number, p.transaction_type, p.property_type, p.street, p.street_number, p.city, p.district, p.agent_id,"
+            . ' c.contract_number, c.id AS contract_id '
+            . "FROM {$this->contract_clients_table} cc "
+            . "INNER JOIN {$this->contracts_table} c ON c.id = cc.contract_id "
+            . "INNER JOIN {$this->properties_table} p ON p.contract_id = c.id "
+            . 'WHERE cc.client_id = %d '
+            . 'ORDER BY COALESCE(p.updated_at, p.created_at) DESC, p.id DESC',
+            $client_id
+        );
+
+        $results = $this->wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $results ) ) {
+            return [];
+        }
+
+        return array_map(
+            static function ( array $row ) : array {
+                $row['id']          = (int) ( $row['id'] ?? 0 );
+                $row['contract_id'] = (int) ( $row['contract_id'] ?? 0 );
+                $row['agent_id']    = (int) ( $row['agent_id'] ?? 0 );
+
+                return $row;
+            },
+            $results
+        );
+    }
+
+    /**
+     * Zwraca poszukiwania powiązane z klientem.
+     *
+     * @param int $client_id ID klienta.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_searches_for_client( int $client_id ) : array {
+        $sql = $this->wpdb->prepare(
+            "SELECT s.id, s.search_number, s.transaction_type, s.property_type, s.location_city, s.location_district, s.agent_id,"
+            . ' c.contract_number, c.id AS contract_id '
+            . "FROM {$this->contract_clients_table} cc "
+            . "INNER JOIN {$this->contracts_table} c ON c.id = cc.contract_id "
+            . "INNER JOIN {$this->searches_table} s ON s.contract_id = c.id "
+            . 'WHERE cc.client_id = %d '
+            . 'ORDER BY COALESCE(s.updated_at, s.created_at) DESC, s.id DESC',
+            $client_id
+        );
+
+        $results = $this->wpdb->get_results( $sql, ARRAY_A );
+
+        if ( ! is_array( $results ) ) {
+            return [];
+        }
+
+        return array_map(
+            static function ( array $row ) : array {
+                $row['id']          = (int) ( $row['id'] ?? 0 );
+                $row['contract_id'] = (int) ( $row['contract_id'] ?? 0 );
+                $row['agent_id']    = (int) ( $row['agent_id'] ?? 0 );
+
+                return $row;
+            },
+            $results
+        );
     }
 
     /**

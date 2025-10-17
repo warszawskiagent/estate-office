@@ -572,8 +572,17 @@ JS
      * @return void
      */
     private function render_profile( array $client ) : void {
-        $contracts = $this->repository->get_contracts_for_client( (int) $client['id'] );
-        $this->prime_agent_labels( [ (int) ( $client['agent_id'] ?? 0 ) ] );
+        $contracts  = $this->repository->get_contracts_for_client( (int) $client['id'] );
+        $properties = $this->repository->get_properties_for_client( (int) $client['id'] );
+        $searches   = $this->repository->get_searches_for_client( (int) $client['id'] );
+
+        $agent_ids = array_merge(
+            [ (int) ( $client['agent_id'] ?? 0 ) ],
+            array_map( 'intval', wp_list_pluck( $properties, 'agent_id' ) ),
+            array_map( 'intval', wp_list_pluck( $searches, 'agent_id' ) )
+        );
+
+        $this->prime_agent_labels( $agent_ids );
 
         $name = 'person' === $client['client_type']
             ? trim( $client['first_name'] . ' ' . $client['last_name'] )
@@ -662,6 +671,93 @@ JS
                 echo '<td><a href="' . esc_url( $link ) . '">' . esc_html__( 'Przejdź do umowy', 'estate-office' ) . '</a></td>';
                 echo '</tr>';
             }
+            echo '</tbody></table>';
+        }
+
+        echo '<h2>' . esc_html__( 'Powiązane nieruchomości', 'estate-office' ) . '</h2>';
+        if ( empty( $properties ) ) {
+            echo '<p>' . esc_html__( 'Brak przypisanych nieruchomości.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<table class="widefat fixed striped">';
+            echo '<thead><tr>'
+                . '<th>' . esc_html__( 'Numer oferty', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Adres', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Typ transakcji', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Rodzaj nieruchomości', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th>'
+                . '</tr></thead><tbody>';
+
+            foreach ( $properties as $property ) {
+                $view_link = add_query_arg(
+                    [
+                        'page'        => 'estate-office-properties',
+                        'action'      => 'view',
+                        'property_id' => (int) $property['id'],
+                    ],
+                    admin_url( 'admin.php' )
+                );
+
+                $address_parts = array_filter(
+                    [
+                        trim( (string) ( $property['street'] ?? '' ) . ' ' . (string) ( $property['street_number'] ?? '' ) ),
+                        $property['district'] ?? '',
+                        $property['city'] ?? '',
+                    ]
+                );
+                $address = implode( ', ', $address_parts );
+
+                echo '<tr>';
+                echo '<td><a href="' . esc_url( $view_link ) . '">' . esc_html( (string) ( $property['listing_number'] ?? '' ) ) . '</a></td>';
+                echo '<td>' . esc_html( $address ?: __( 'Brak danych', 'estate-office' ) ) . '</td>';
+                echo '<td>' . esc_html( strtoupper( (string) ( $property['transaction_type'] ?? '' ) ) ) . '</td>';
+                echo '<td>' . esc_html( (string) ( $property['property_type'] ?? '' ) ) . '</td>';
+                echo '<td><a href="' . esc_url( $view_link ) . '" class="button button-small">' . esc_html__( 'Przejdź do oferty', 'estate-office' ) . '</a></td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody></table>';
+        }
+
+        echo '<h2>' . esc_html__( 'Powiązane poszukiwania', 'estate-office' ) . '</h2>';
+        if ( empty( $searches ) ) {
+            echo '<p>' . esc_html__( 'Brak przypisanych poszukiwań.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<table class="widefat fixed striped">';
+            echo '<thead><tr>'
+                . '<th>' . esc_html__( 'Numer poszukiwania', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Lokalizacja', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Typ transakcji', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Rodzaj nieruchomości', 'estate-office' ) . '</th>'
+                . '<th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th>'
+                . '</tr></thead><tbody>';
+
+            foreach ( $searches as $search ) {
+                $view_link = add_query_arg(
+                    [
+                        'page'      => 'estate-office-searches',
+                        'action'    => 'view',
+                        'search_id' => (int) $search['id'],
+                    ],
+                    admin_url( 'admin.php' )
+                );
+
+                $location_parts = array_filter(
+                    [
+                        $search['location_city'] ?? '',
+                        $search['location_district'] ?? '',
+                    ]
+                );
+                $location = implode( ', ', $location_parts );
+
+                echo '<tr>';
+                echo '<td><a href="' . esc_url( $view_link ) . '">' . esc_html( (string) ( $search['search_number'] ?? '' ) ) . '</a></td>';
+                echo '<td>' . esc_html( $location ?: __( 'Brak danych', 'estate-office' ) ) . '</td>';
+                echo '<td>' . esc_html( strtoupper( (string) ( $search['transaction_type'] ?? '' ) ) ) . '</td>';
+                echo '<td>' . esc_html( (string) ( $search['property_type'] ?? '' ) ) . '</td>';
+                echo '<td><a href="' . esc_url( $view_link ) . '" class="button button-small">' . esc_html__( 'Przejdź do poszukiwania', 'estate-office' ) . '</a></td>';
+                echo '</tr>';
+            }
+
             echo '</tbody></table>';
         }
 
