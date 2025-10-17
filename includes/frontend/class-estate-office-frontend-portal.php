@@ -263,7 +263,7 @@ JS
         $this->render_navigation( $active_tab, $base_url );
 
         echo '<div class="estate-office-crm-portal__body">';
-        if ( $view && in_array( $view, [ 'new-client', 'new-property', 'new-search' ], true ) ) {
+        if ( $view && in_array( $view, [ 'new-client', 'new-property', 'new-search', 'new-contract' ], true ) ) {
             echo $this->render_creation_view( $view, $base_url );
         } elseif ( $view && $item_id ) {
             echo $this->render_detail_view( $view, $item_id, $base_url );
