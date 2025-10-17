@@ -129,6 +129,19 @@ JS
             return;
         }
 
+        if ( 'view' === $action && $id ) {
+            $search = $this->repository->find( $id );
+            if ( null === $search ) {
+                $this->render_list( __( 'Nie znaleziono wskazanego poszukiwania.', 'estate-office' ), 'error' );
+
+                return;
+            }
+
+            $this->render_profile( $search );
+
+            return;
+        }
+
         $message = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : '';
         $status  = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : 'success';
 
@@ -268,11 +281,10 @@ JS
                 $updated  = $item['updated_at'] ?: $item['created_at'];
 
                 echo '<tr>';
-                printf(
-                    '<td><a href="%s">%s</a></td>',
-                    esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=edit&search_id=' . absint( $item['id'] ) ) ),
-                    esc_html( $item['search_number'] )
-                );
+                $view_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=view&search_id=' . absint( $item['id'] ) );
+                $edit_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=edit&search_id=' . absint( $item['id'] ) );
+
+                echo '<td><strong><a href="' . esc_url( $view_url ) . '">' . esc_html( $item['search_number'] ) . '</a></strong></td>';
                 printf( '<td>%s</td>', esc_html( $this->get_property_types()[ $item['property_type'] ] ?? $item['property_type'] ) );
                 printf( '<td>%s</td>', esc_html( $budget ) );
                 printf( '<td>%s</td>', esc_html( $location ?: __( 'Nie określono', 'estate-office' ) ) );
@@ -280,7 +292,8 @@ JS
                 printf( '<td>%s</td>', wp_kses_post( $this->format_agent_cell( (int) ( $item['agent_id'] ?? 0 ) ) ) );
                 printf( '<td>%s</td>', esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $updated ) ) );
                 echo '<td class="column-actions">';
-                printf( '<a href="%s" class="button button-small">%s</a> ', esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=edit&search_id=' . absint( $item['id'] ) ) ), esc_html__( 'Edytuj', 'estate-office' ) );
+                printf( '<a href="%s" class="button button-small">%s</a> ', esc_url( $view_url ), esc_html__( 'Podgląd', 'estate-office' ) );
+                printf( '<a href="%s" class="button button-small">%s</a> ', esc_url( $edit_url ), esc_html__( 'Edytuj', 'estate-office' ) );
 
                 if ( current_user_can( 'delete_estate_office_searches' ) ) {
                     $delete_url = wp_nonce_url(
@@ -297,6 +310,346 @@ JS
 
         echo '</tbody>';
         echo '</table>';
+        echo '</div>';
+    }
+
+    /**
+     * Renderuje podgląd poszukiwania.
+     *
+     * @param array<string,mixed> $search Dane poszukiwania.
+     *
+     * @return void
+     */
+    private function render_profile( array $search ) : void {
+        $prepared = $this->prepare_search_for_form( $search );
+        $search_id = (int) ( $search['id'] ?? 0 );
+        $agent_id  = (int) ( $search['agent_id'] ?? 0 );
+
+        if ( $agent_id > 0 ) {
+            $this->prime_agent_labels( [ $agent_id ] );
+        }
+
+        $contract    = null;
+        $contract_id = (int) ( $search['contract_id'] ?? 0 );
+        $clients     = [];
+
+        if ( $contract_id > 0 ) {
+            $contract = $this->contracts_repository->find( $contract_id );
+            if ( $contract ) {
+                $clients = $this->contracts_repository->get_clients( $contract_id );
+            }
+        }
+
+        $message = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : '';
+        $status  = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : 'success';
+
+        $transaction_label = $this->get_transaction_types()[ $prepared['transaction_type'] ] ?? $prepared['transaction_type'];
+        $property_label    = $this->get_property_types()[ $prepared['property_type'] ] ?? $prepared['property_type'];
+
+        $price_min = ( isset( $search['price_min'] ) && '' !== $search['price_min'] && null !== $search['price_min'] ) ? (float) $search['price_min'] : null;
+        $price_max = ( isset( $search['price_max'] ) && '' !== $search['price_max'] && null !== $search['price_max'] ) ? (float) $search['price_max'] : null;
+        $area_min  = ( isset( $search['area_min'] ) && '' !== $search['area_min'] && null !== $search['area_min'] ) ? (float) $search['area_min'] : null;
+        $area_max  = ( isset( $search['area_max'] ) && '' !== $search['area_max'] && null !== $search['area_max'] ) ? (float) $search['area_max'] : null;
+        $rooms_min = ( isset( $search['rooms_min'] ) && null !== $search['rooms_min'] && '' !== $search['rooms_min'] ) ? (int) $search['rooms_min'] : null;
+        $rooms_max = ( isset( $search['rooms_max'] ) && null !== $search['rooms_max'] && '' !== $search['rooms_max'] ) ? (int) $search['rooms_max'] : null;
+
+        $budget_display = $this->format_budget( $price_min, $price_max );
+
+        $area_display = '';
+        if ( null !== $area_min && null !== $area_max ) {
+            $area_display = sprintf( __( '%1$s – %2$s m²', 'estate-office' ), number_format_i18n( $area_min, 2 ), number_format_i18n( $area_max, 2 ) );
+        } elseif ( null !== $area_min ) {
+            $area_display = sprintf( __( 'od %s m²', 'estate-office' ), number_format_i18n( $area_min, 2 ) );
+        } elseif ( null !== $area_max ) {
+            $area_display = sprintf( __( 'do %s m²', 'estate-office' ), number_format_i18n( $area_max, 2 ) );
+        }
+
+        $rooms_display = '';
+        if ( null !== $rooms_min && null !== $rooms_max ) {
+            $rooms_display = sprintf( __( '%1$d – %2$d', 'estate-office' ), $rooms_min, $rooms_max );
+        } elseif ( null !== $rooms_min ) {
+            $rooms_display = sprintf( __( 'od %d', 'estate-office' ), $rooms_min );
+        } elseif ( null !== $rooms_max ) {
+            $rooms_display = sprintf( __( 'do %d', 'estate-office' ), $rooms_max );
+        }
+
+        $location_parts = array_filter(
+            [
+                $prepared['location_city'] ?? '',
+                $prepared['location_district'] ?? '',
+                $prepared['location_voivodeship'] ?? '',
+            ]
+        );
+        $location_display = ! empty( $location_parts ) ? implode( ', ', $location_parts ) : '';
+
+        $criteria = is_array( $prepared['criteria'] ) ? $prepared['criteria'] : [];
+        $building = is_array( $criteria['building'] ?? null ) ? $criteria['building'] : [];
+        $media    = is_array( $criteria['media'] ?? null ) ? $criteria['media'] : [];
+        $amenities = is_array( $criteria['amenities'] ?? null ) ? $criteria['amenities'] : [];
+        $equipment = is_array( $criteria['equipment'] ?? null ) ? $criteria['equipment'] : [];
+        $additional = is_array( $criteria['additional_areas'] ?? null ) ? $criteria['additional_areas'] : [];
+
+        echo '<div class="wrap estate-office-search-profile">';
+        echo '<h1>' . esc_html__( 'Poszukiwanie', 'estate-office' ) . ': ' . esc_html( $prepared['search_number'] ) . '</h1>';
+
+        if ( $message ) {
+            printf( '<div class="notice notice-%1$s"><p>%2$s</p></div>', esc_attr( $status ), esc_html( $message ) );
+        }
+
+        echo '<div class="estate-office-profile-columns" style="display:flex;gap:2rem;flex-wrap:wrap;">';
+
+        echo '<div style="flex:1 1 320px;min-width:280px;">';
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Dane podstawowe', 'estate-office' ) . '</h2>';
+        echo '<table class="widefat fixed striped">';
+        $basic_rows = [
+            [ 'label' => __( 'Numer poszukiwania', 'estate-office' ), 'value' => $prepared['search_number'], 'html' => false ],
+            [ 'label' => __( 'Typ transakcji', 'estate-office' ), 'value' => $transaction_label, 'html' => false ],
+            [ 'label' => __( 'Rodzaj nieruchomości', 'estate-office' ), 'value' => $property_label, 'html' => false ],
+        ];
+        if ( $location_display ) {
+            $basic_rows[] = [ 'label' => __( 'Preferowana lokalizacja', 'estate-office' ), 'value' => $location_display, 'html' => false ];
+        }
+        if ( ! empty( $prepared['location_keywords'] ) ) {
+            $basic_rows[] = [ 'label' => __( 'Słowa kluczowe', 'estate-office' ), 'value' => $prepared['location_keywords'], 'html' => false ];
+        }
+        if ( $agent_id > 0 ) {
+            $basic_rows[] = [ 'label' => __( 'Opiekun', 'estate-office' ), 'value' => $this->format_agent_cell( $agent_id ), 'html' => true ];
+        }
+        if ( $contract ) {
+            $contract_link = add_query_arg(
+                [
+                    'page'        => 'estate-office-contracts',
+                    'action'      => 'view',
+                    'contract_id' => (int) $contract['id'],
+                ],
+                admin_url( 'admin.php' )
+            );
+            $basic_rows[] = [
+                'label' => __( 'Powiązana umowa', 'estate-office' ),
+                'value' => '<a href="' . esc_url( $contract_link ) . '">' . esc_html( $contract['contract_number'] ?? '' ) . '</a>',
+                'html'  => true,
+            ];
+        }
+
+        foreach ( $basic_rows as $row ) {
+            $value = (string) ( $row['value'] ?? '' );
+            if ( '' === trim( $value ) ) {
+                continue;
+            }
+            echo '<tr><th style="width:40%;">' . esc_html( (string) $row['label'] ) . '</th><td>';
+            if ( ! empty( $row['html'] ) ) {
+                echo wp_kses_post( $value );
+            } else {
+                echo esc_html( $value );
+            }
+            echo '</td></tr>';
+        }
+        echo '</table>';
+        echo '</section>';
+
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Parametry poszukiwania', 'estate-office' ) . '</h2>';
+        echo '<table class="widefat fixed striped">';
+        echo '<tr><th style="width:40%;">' . esc_html__( 'Budżet', 'estate-office' ) . '</th><td>' . esc_html( $budget_display ) . '</td></tr>';
+        if ( $area_display ) {
+            echo '<tr><th style="width:40%;">' . esc_html__( 'Metraż', 'estate-office' ) . '</th><td>' . esc_html( $area_display ) . '</td></tr>';
+        }
+        if ( $rooms_display ) {
+            echo '<tr><th style="width:40%;">' . esc_html__( 'Liczba pokoi', 'estate-office' ) . '</th><td>' . esc_html( $rooms_display ) . '</td></tr>';
+        }
+        echo '</table>';
+        echo '</section>';
+
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Preferencje budynku', 'estate-office' ) . '</h2>';
+        $building_rows = [];
+        if ( ! empty( $building['finish_state'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Stan wykończenia', 'estate-office' ), 'value' => $this->get_finish_states()[ $building['finish_state'] ] ?? $building['finish_state'] ];
+        }
+        if ( ! empty( $building['exposure'] ) && is_array( $building['exposure'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Ekspozycja', 'estate-office' ), 'value' => $this->format_list_display( $building['exposure'], $this->get_exposure_options() ) ];
+        }
+        if ( ! empty( $building['view'] ) && is_array( $building['view'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Widok', 'estate-office' ), 'value' => $this->format_list_display( $building['view'], $this->get_view_options() ) ];
+        }
+        if ( array_key_exists( 'attic', $building ) ) {
+            $building_rows[] = [ 'label' => __( 'Poddasze', 'estate-office' ), 'value' => $this->format_boolean_display( ! empty( $building['attic'] ) ) ];
+        }
+        if ( array_key_exists( 'multi_level', $building ) ) {
+            $building_rows[] = [ 'label' => __( 'Wielopoziomowe', 'estate-office' ), 'value' => $this->format_boolean_display( ! empty( $building['multi_level'] ) ) ];
+        }
+        if ( ! empty( $building['layout'] ) && is_array( $building['layout'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Rozkład', 'estate-office' ), 'value' => $this->format_list_display( $building['layout'], $this->get_layout_options() ) ];
+        }
+        if ( ! empty( $building['kitchen_type'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Typ kuchni', 'estate-office' ), 'value' => $this->get_kitchen_types()[ $building['kitchen_type'] ] ?? $building['kitchen_type'] ];
+        }
+        $parking_available = isset( $building['parking']['available'] ) ? (bool) $building['parking']['available'] : false;
+        $building_rows[]   = [ 'label' => __( 'Miejsce parkingowe', 'estate-office' ), 'value' => $this->format_boolean_display( $parking_available ) ];
+        if ( $parking_available && ! empty( $building['parking']['types'] ) && is_array( $building['parking']['types'] ) ) {
+            $building_rows[] = [ 'label' => __( 'Preferowane miejsca parkingowe', 'estate-office' ), 'value' => $this->format_list_display( $building['parking']['types'], $this->get_parking_types() ) ];
+        }
+
+        if ( empty( $building_rows ) ) {
+            echo '<p>' . esc_html__( 'Brak określonych preferencji budynku.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<table class="widefat fixed striped">';
+            foreach ( $building_rows as $row ) {
+                $value = (string) ( $row['value'] ?? '' );
+                if ( '' === trim( $value ) ) {
+                    continue;
+                }
+                echo '<tr><th style="width:40%;">' . esc_html( (string) $row['label'] ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
+            }
+            echo '</table>';
+        }
+        echo '</section>';
+
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Media i udogodnienia', 'estate-office' ) . '</h2>';
+        $media_rows = [];
+        if ( ! empty( $media['heating'] ) ) {
+            $media_rows[] = [ 'label' => __( 'Ogrzewanie', 'estate-office' ), 'value' => $this->get_heating_types()[ $media['heating'] ] ?? $media['heating'] ];
+        }
+        if ( ! empty( $media['water'] ) ) {
+            $media_rows[] = [ 'label' => __( 'Woda', 'estate-office' ), 'value' => $this->get_water_types()[ $media['water'] ] ?? $media['water'] ];
+        }
+        if ( ! empty( $media['sewage'] ) ) {
+            $media_rows[] = [ 'label' => __( 'Kanalizacja', 'estate-office' ), 'value' => $this->get_sewage_types()[ $media['sewage'] ] ?? $media['sewage'] ];
+        }
+        if ( array_key_exists( 'gas', $media ) ) {
+            $media_rows[] = [ 'label' => __( 'Gaz', 'estate-office' ), 'value' => $this->format_boolean_display( ! empty( $media['gas'] ) ) ];
+        }
+
+        $amenities_label = $this->format_list_display( $amenities, $this->get_amenities_options() );
+        $equipment_level = '';
+        if ( ! empty( $equipment['level'] ) ) {
+            $equipment_level = $this->get_equipment_levels()[ $equipment['level'] ] ?? $equipment['level'];
+        }
+        $equipment_items = '';
+        if ( ! empty( $equipment['items'] ) && is_array( $equipment['items'] ) ) {
+            $equipment_items = $this->format_list_display( $equipment['items'], $this->get_equipment_items() );
+        }
+
+        if ( empty( $media_rows ) && '' === $amenities_label && '' === $equipment_level && '' === $equipment_items ) {
+            echo '<p>' . esc_html__( 'Brak dodatkowych preferencji.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<table class="widefat fixed striped">';
+            foreach ( $media_rows as $row ) {
+                echo '<tr><th style="width:40%;">' . esc_html( (string) $row['label'] ) . '</th><td>' . esc_html( (string) $row['value'] ) . '</td></tr>';
+            }
+            if ( $amenities_label ) {
+                echo '<tr><th style="width:40%;">' . esc_html__( 'Udogodnienia', 'estate-office' ) . '</th><td>' . esc_html( $amenities_label ) . '</td></tr>';
+            }
+            if ( $equipment_level ) {
+                echo '<tr><th style="width:40%;">' . esc_html__( 'Umeblowanie', 'estate-office' ) . '</th><td>' . esc_html( $equipment_level ) . '</td></tr>';
+            }
+            if ( $equipment_items ) {
+                echo '<tr><th style="width:40%;">' . esc_html__( 'Wyposażenie', 'estate-office' ) . '</th><td>' . esc_html( $equipment_items ) . '</td></tr>';
+            }
+            echo '</table>';
+        }
+        echo '</section>';
+
+        $additional_rows = $this->format_additional_areas_display( $additional );
+        if ( ! empty( $additional_rows ) ) {
+            echo '<section class="estate-office-card">';
+            echo '<h2>' . esc_html__( 'Powierzchnie dodatkowe', 'estate-office' ) . '</h2>';
+            echo '<table class="widefat fixed striped">';
+            foreach ( $additional_rows as $label => $value ) {
+                echo '<tr><th style="width:40%;">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
+            }
+            echo '</table>';
+            echo '</section>';
+        }
+
+        echo '</div>';
+
+        echo '<div style="flex:1 1 320px;min-width:280px;">';
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Opis poszukiwania', 'estate-office' ) . '</h2>';
+        if ( ! empty( $search['description'] ) ) {
+            echo '<div class="estate-office-search-description">' . wp_kses_post( wpautop( (string) $search['description'] ) ) . '</div>';
+        } else {
+            echo '<p>' . esc_html__( 'Brak dodatkowego opisu.', 'estate-office' ) . '</p>';
+        }
+        echo '</section>';
+
+        echo '<section class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Powiązani klienci', 'estate-office' ) . '</h2>';
+        if ( empty( $clients ) ) {
+            echo '<p>' . esc_html__( 'Brak przypisanych klientów.', 'estate-office' ) . '</p>';
+        } else {
+            echo '<table class="widefat fixed striped">';
+            echo '<thead><tr><th>' . esc_html__( 'Klient', 'estate-office' ) . '</th><th>' . esc_html__( 'Rola', 'estate-office' ) . '</th><th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th></tr></thead><tbody>';
+            foreach ( $clients as $client ) {
+                $client_name = 'person' === ( $client['client_type'] ?? '' )
+                    ? trim( (string) ( $client['first_name'] ?? '' ) . ' ' . ( $client['last_name'] ?? '' ) )
+                    : ( $client['company_name'] ?? '' );
+                $client_name = $client_name ?: __( 'Klient', 'estate-office' );
+                $client_link = add_query_arg(
+                    [
+                        'page'      => 'estate-office-clients',
+                        'action'    => 'view',
+                        'client_id' => (int) $client['id'],
+                    ],
+                    admin_url( 'admin.php' )
+                );
+                echo '<tr>';
+                echo '<td><a href="' . esc_url( $client_link ) . '">' . esc_html( $client_name ) . '</a></td>';
+                echo '<td>' . esc_html( $client['role'] ?? '' ) . '</td>';
+                echo '<td><a href="' . esc_url( $client_link ) . '">' . esc_html__( 'Przejdź do profilu', 'estate-office' ) . '</a></td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        }
+        echo '</section>';
+
+        if ( $contract ) {
+            echo '<section class="estate-office-card">';
+            echo '<h2>' . esc_html__( 'Podsumowanie umowy', 'estate-office' ) . '</h2>';
+            echo '<table class="widefat fixed striped">';
+            echo '<tr><th style="width:40%;">' . esc_html__( 'Numer', 'estate-office' ) . '</th><td>' . esc_html( $contract['contract_number'] ?? '' ) . '</td></tr>';
+            if ( ! empty( $contract['transaction_type'] ) ) {
+                $contract_types = $this->get_transaction_types();
+                $contract_label = $contract_types[ $contract['transaction_type'] ] ?? $contract['transaction_type'];
+                echo '<tr><th style="width:40%;">' . esc_html__( 'Typ transakcji', 'estate-office' ) . '</th><td>' . esc_html( $contract_label ) . '</td></tr>';
+            }
+            if ( ! empty( $contract['current_stage'] ) ) {
+                echo '<tr><th style="width:40%;">' . esc_html__( 'Etap', 'estate-office' ) . '</th><td>' . esc_html( $contract['current_stage'] ) . '</td></tr>';
+            }
+            $contract_link = add_query_arg(
+                [
+                    'page'        => 'estate-office-contracts',
+                    'action'      => 'view',
+                    'contract_id' => (int) $contract['id'],
+                ],
+                admin_url( 'admin.php' )
+            );
+            echo '<tr><th style="width:40%;">' . esc_html__( 'Akcje', 'estate-office' ) . '</th><td><a class="button button-secondary" href="' . esc_url( $contract_link ) . '">' . esc_html__( 'Przejdź do umowy', 'estate-office' ) . '</a></td></tr>';
+            echo '</table>';
+            echo '</section>';
+        }
+
+        echo '</div>';
+
+        echo '</div>';
+
+        echo '<p class="estate-office-profile-actions">';
+        echo '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) ) . '" class="button">' . esc_html__( 'Powrót do listy', 'estate-office' ) . '</a> ';
+        if ( current_user_can( 'edit_estate_office_searches' ) ) {
+            echo '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=edit&search_id=' . $search_id ) ) . '" class="button button-primary">' . esc_html__( 'Edytuj', 'estate-office' ) . '</a> ';
+        }
+        if ( current_user_can( 'delete_estate_office_searches' ) ) {
+            $delete_url = wp_nonce_url(
+                admin_url( 'admin-post.php?action=estate_office_delete_search&search_id=' . $search_id ),
+                'estate_office_delete_search_' . $search_id
+            );
+            echo '<a href="' . esc_url( $delete_url ) . '" class="button button-link-delete">' . esc_html__( 'Usuń', 'estate-office' ) . '</a>';
+        }
+        echo '</p>';
+
         echo '</div>';
     }
 
@@ -1013,6 +1366,88 @@ JS
     }
 
     /**
+     * Formatuje wartość logiczną do prezentacji tekstowej.
+     *
+     * @param bool $value Wartość.
+     *
+     * @return string
+     */
+    private function format_boolean_display( bool $value ) : string {
+        return $value ? __( 'Tak', 'estate-office' ) : __( 'Nie', 'estate-office' );
+    }
+
+    /**
+     * Łączy listę wartości w czytelny ciąg znaków.
+     *
+     * @param array<int|string,mixed> $values  Wartości.
+     * @param array<string,string>    $options Mapowanie opcji.
+     *
+     * @return string
+     */
+    private function format_list_display( array $values, array $options ) : string {
+        $labels = [];
+
+        foreach ( $values as $value ) {
+            if ( is_string( $value ) && '' !== $value ) {
+                $labels[] = $options[ $value ] ?? $value;
+            }
+        }
+
+        return empty( $labels ) ? '' : implode( ', ', $labels );
+    }
+
+    /**
+     * Przygotowuje opis powierzchni dodatkowych.
+     *
+     * @param array<string,mixed> $areas Dane powierzchni.
+     *
+     * @return array<string,string>
+     */
+    private function format_additional_areas_display( array $areas ) : array {
+        $labels = [
+            'balcony' => __( 'Balkon', 'estate-office' ),
+            'terrace' => __( 'Taras', 'estate-office' ),
+            'cellar'  => __( 'Piwnica', 'estate-office' ),
+            'storage' => __( 'Komórka lokatorska', 'estate-office' ),
+            'garden'  => __( 'Ogródek', 'estate-office' ),
+        ];
+
+        $output = [];
+
+        foreach ( $labels as $key => $label ) {
+            if ( ! isset( $areas[ $key ] ) || ! is_array( $areas[ $key ] ) ) {
+                continue;
+            }
+
+            $item    = $areas[ $key ];
+            $enabled = ! empty( $item['enabled'] );
+            $count   = ( isset( $item['count'] ) && null !== $item['count'] ) ? (int) $item['count'] : 0;
+            $area    = ( isset( $item['area'] ) && '' !== $item['area'] && null !== $item['area'] ) ? (float) $item['area'] : null;
+
+            if ( ! $enabled && 0 === $count && ( null === $area || $area <= 0 ) ) {
+                continue;
+            }
+
+            $parts = [];
+            $parts[] = $this->format_boolean_display( $enabled );
+
+            if ( $count > 0 && array_key_exists( 'count', $item ) ) {
+                /* translators: %d: count */
+                $parts[] = sprintf( _n( '%d element', '%d elementy', $count, 'estate-office' ), $count );
+            }
+
+            if ( null !== $area && $area > 0 ) {
+                /* translators: %s: area */
+                $parts[] = sprintf( __( '%s m²', 'estate-office' ), number_format_i18n( $area, 2 ) );
+            }
+
+            $output[ $label ] = implode( ', ', $parts );
+        }
+
+        return $output;
+    }
+
+    /**
      * Zwraca listę dostępnych umów dla pola wyboru.
      *
      * @param int $selected Aktualnie wybrana umowa.
@@ -1122,7 +1557,7 @@ JS
         ];
 
         if ( $search_id ) {
-            $args['action']    = 'edit';
+            $args['action']    = ( 'error' === $status ) ? 'edit' : 'view';
             $args['search_id'] = $search_id;
         }
 
