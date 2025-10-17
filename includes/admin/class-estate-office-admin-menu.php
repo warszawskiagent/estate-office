@@ -125,18 +125,20 @@ class Estate_Office_Admin_Menu {
         $capability_contracts   = 'manage_estate_office_contracts';
         $capability_license     = 'manage_estate_office_license';
 
-        $parent_slug = add_menu_page(
+        $menu_slug = 'estate-office-crm';
+
+        add_menu_page(
             __( 'Estate Office CRM', 'estate-office' ),
             __( 'Estate Office CRM', 'estate-office' ),
             $capability_main,
-            'estate-office-crm',
+            $menu_slug,
             [ $this->dashboard_page, 'render_page' ],
             'dashicons-admin-multisite',
             56
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Nieruchomości', 'estate-office' ),
             __( 'Nieruchomości', 'estate-office' ),
             $capability_properties,
@@ -145,7 +147,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Poszukiwania', 'estate-office' ),
             __( 'Poszukiwania', 'estate-office' ),
             $capability_searches,
@@ -154,7 +156,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Umowy', 'estate-office' ),
             __( 'Umowy', 'estate-office' ),
             $capability_contracts,
@@ -163,7 +165,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Klienci', 'estate-office' ),
             __( 'Klienci', 'estate-office' ),
             $capability_clients,
@@ -172,7 +174,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Agenci', 'estate-office' ),
             __( 'Agenci', 'estate-office' ),
             'manage_estate_office_agents',
@@ -181,7 +183,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Ustawienia', 'estate-office' ),
             __( 'Ustawienia', 'estate-office' ),
             $capability_settings,
@@ -190,7 +192,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'Licencja', 'estate-office' ),
             __( 'Licencja', 'estate-office' ),
             $capability_license,
@@ -199,7 +201,7 @@ class Estate_Office_Admin_Menu {
         );
 
         add_submenu_page(
-            $parent_slug,
+            $menu_slug,
             __( 'O wtyczce', 'estate-office' ),
             __( 'About', 'estate-office' ),
             $capability_main,

@@ -386,9 +386,33 @@ JS
         echo '</table>';
 
         submit_button( $is_edit ? __( 'Zapisz umowę', 'estate-office' ) : __( 'Zapisz i przejdź do klientów', 'estate-office' ) );
-        echo ' <a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) ) . '" class="button-secondary">' . esc_html__( 'Powrót do listy', 'estate-office' ) . '</a>';
+        echo ' <a href="' . esc_url( $this->get_contracts_list_url() ) . '" class="button-secondary">' . esc_html__( 'Powrót do listy', 'estate-office' ) . '</a>';
         echo '</form>';
         echo '</div>';
+    }
+
+    /**
+     * Zwraca adres listy umów w portalu CRM.
+     *
+     * @return string
+     */
+    private function get_contracts_list_url() : string {
+        $portal_page_id = (int) get_option( 'estate_office_portal_page_id', 0 );
+
+        if ( $portal_page_id > 0 ) {
+            $permalink = get_permalink( $portal_page_id );
+
+            if ( $permalink ) {
+                return add_query_arg(
+                    [
+                        'crm_tab' => 'contracts',
+                    ],
+                    $permalink
+                );
+            }
+        }
+
+        return admin_url( 'admin.php?page=' . self::PAGE_SLUG );
     }
 
     /**
