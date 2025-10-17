@@ -148,6 +148,7 @@ final class Estate_Office_Plugin {
         $portal_export_manager->schedule_events();
         $this->init_admin();
         $this->init_frontend();
+        add_action( 'init', [ $this, 'ensure_frontend_pages' ] );
 
         add_action( 'admin_init', [ $this, 'register_settings_placeholders' ] );
     }
@@ -176,6 +177,34 @@ final class Estate_Office_Plugin {
         flush_rewrite_rules();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
+    }
+
+    /**
+     * Upewnia się, że wymagane strony frontowe istnieją nawet po nieudanej aktywacji.
+     *
+     * @return void
+     */
+    public function ensure_frontend_pages() : void {
+        static $checked = false;
+
+        if ( $checked ) {
+            return;
+        }
+
+        $checked = true;
+
+        Estate_Office_Frontend_Portal::ensure_portal_page();
+        Estate_Office_Frontend_Offers::ensure_offer_pages();
+        Estate_Office_Frontend_Calculators::ensure_calculator_pages();
+        Estate_Office_Frontend_Agents::ensure_agents_page();
+
+        $portal_page_id = (int) get_option( 'estate_office_portal_page_id', 0 );
+
+        if ( $portal_page_id <= 0 || ! get_post( $portal_page_id ) ) {
+            self::admin_notice(
+                __( 'EstateOffice nie mogło automatycznie utworzyć strony portalu CRM. Utwórz stronę zawierającą shortcode [estate_office_crm_portal].', 'estate-office' )
+            );
+        }
     }
 
     /**
