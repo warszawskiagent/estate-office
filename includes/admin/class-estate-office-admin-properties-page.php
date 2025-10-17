@@ -344,8 +344,25 @@ JS
         $is_edit = null !== $property;
         $data    = $this->prepare_property_for_form( $property );
 
+        $wizard_mode        = isset( $_GET['wizard'] ) ? sanitize_key( wp_unslash( $_GET['wizard'] ) ) : '';
+        $wizard_step        = isset( $_GET['wizard_step'] ) ? sanitize_key( wp_unslash( $_GET['wizard_step'] ) ) : '';
+        $wizard_contract_id = isset( $_GET['wizard_contract_id'] ) ? absint( $_GET['wizard_contract_id'] ) : 0;
+        $wizard_active      = ! $is_edit && 'contract' === $wizard_mode && 'property' === $wizard_step && $wizard_contract_id > 0;
+
+        if ( $wizard_active && 0 === $data['contract_id'] ) {
+            $data['contract_id'] = $wizard_contract_id;
+        }
+
+        $heading = $is_edit ? __( 'Edytuj nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' );
+        if ( $wizard_active ) {
+            $heading = __( 'Nowa umowa – etap 3/3: Dodaj nieruchomość', 'estate-office' );
+        }
+
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html( $is_edit ? __( 'Edytuj nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ) . '</h1>';
+        echo '<h1>' . esc_html( $heading ) . '</h1>';
+        if ( $wizard_active ) {
+            echo '<p class="description">' . esc_html__( 'Uzupełnij dane nieruchomości, aby zakończyć proces tworzenia umowy.', 'estate-office' ) . '</p>';
+        }
 
         if ( isset( $_GET['estate-office-message'] ) ) {
             $status  = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : 'updated';
@@ -357,6 +374,11 @@ JS
         wp_nonce_field( 'estate_office_save_property', 'estate_office_nonce' );
         echo '<input type="hidden" name="action" value="estate_office_save_property" />';
         echo '<input type="hidden" name="property_id" value="' . esc_attr( $data['id'] ) . '" />';
+        if ( $wizard_active ) {
+            echo '<input type="hidden" name="wizard" value="contract" />';
+            echo '<input type="hidden" name="wizard_step" value="property" />';
+            echo '<input type="hidden" name="wizard_contract_id" value="' . esc_attr( $wizard_contract_id ) . '" />';
+        }
 
         echo '<div class="estate-office-property-sections">';
 
@@ -509,7 +531,23 @@ JS
 
         echo '<div class="estate-office-property-actions">';
         submit_button( $is_edit ? __( 'Zapisz nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ), 'primary', 'submit', false );
-        echo '<a class="button" href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) ) . '">' . esc_html__( 'Powrót do listy', 'estate-office' ) . '</a>';
+
+        $back_url   = admin_url( 'admin.php?page=' . self::PAGE_SLUG );
+        $back_label = __( 'Powrót do listy', 'estate-office' );
+
+        if ( $wizard_active ) {
+            $back_url   = add_query_arg(
+                [
+                    'page'        => 'estate-office-contracts',
+                    'action'      => 'manage-clients',
+                    'contract_id' => $wizard_contract_id,
+                ],
+                admin_url( 'admin.php' )
+            );
+            $back_label = __( 'Powrót do etapu 2 – klienci', 'estate-office' );
+        }
+
+        echo '<a class="button" href="' . esc_url( $back_url ) . '">' . esc_html( $back_label ) . '</a>';
 
         if ( $is_edit && current_user_can( 'delete_estate_office_properties' ) ) {
             $delete_url = wp_nonce_url(
@@ -1125,6 +1163,24 @@ JS
         if ( $property_id > 0 ) {
             $args['action']      = 'edit';
             $args['property_id'] = $property_id;
+        }
+
+        $wizard = isset( $_REQUEST['wizard'] ) ? sanitize_key( wp_unslash( $_REQUEST['wizard'] ) ) : '';
+        if ( 'contract' === $wizard ) {
+            $args['wizard'] = 'contract';
+            $step           = isset( $_REQUEST['wizard_step'] ) ? sanitize_key( wp_unslash( $_REQUEST['wizard_step'] ) ) : '';
+            if ( in_array( $step, [ 'property' ], true ) ) {
+                $args['wizard_step'] = $step;
+            }
+
+            $wizard_contract = isset( $_REQUEST['wizard_contract_id'] ) ? absint( $_REQUEST['wizard_contract_id'] ) : 0;
+            if ( $wizard_contract ) {
+                $args['wizard_contract_id'] = $wizard_contract;
+
+                if ( ! isset( $args['contract_id'] ) ) {
+                    $args['contract_id'] = $wizard_contract;
+                }
+            }
         }
 
         wp_redirect( admin_url( 'admin.php?' . http_build_query( $args ) ) );

@@ -114,7 +114,7 @@ JS
         $step        = isset( $_GET['step'] ) ? sanitize_key( wp_unslash( $_GET['step'] ) ) : 'details';
 
         if ( 'new' === $action ) {
-            if ( 'clients' === $step && $contract_id ) {
+            if ( $contract_id ) {
                 $contract = $this->repository->find( $contract_id );
                 if ( null === $contract ) {
                     $this->render_list( __( 'Nie znaleziono wskazanej umowy.', 'estate-office' ), 'error' );
@@ -122,9 +122,23 @@ JS
                     return;
                 }
 
-                $this->render_clients_step( $contract );
+                if ( 'clients' === $step ) {
+                    $this->render_clients_step( $contract );
 
-                return;
+                    return;
+                }
+
+                if ( in_array( $step, [ 'property', 'search' ], true ) ) {
+                    $redirect = $this->get_step_three_url( $contract, $step );
+                    if ( $redirect ) {
+                        wp_safe_redirect( $redirect );
+                        exit;
+                    }
+
+                    $this->render_clients_step( $contract );
+
+                    return;
+                }
             }
 
             $this->render_form();
@@ -331,7 +345,7 @@ JS
         $data = wp_parse_args( $contract, $defaults );
 
         echo '<div class="wrap estate-office-contract-form">';
-        echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj umowę', 'estate-office' ) : esc_html__( 'Nowa umowa – etap 1/2', 'estate-office' ) ) . '</h1>';
+        echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj umowę', 'estate-office' ) : esc_html__( 'Nowa umowa – etap 1/3', 'estate-office' ) ) . '</h1>';
         echo '<p>' . esc_html__( 'Uzupełnij dane umowy. Po zapisaniu przejdziesz do przypisywania klientów.', 'estate-office' ) . '</p>';
 
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-form">';
@@ -432,7 +446,7 @@ JS
         }
 
         echo '<div class="wrap estate-office-contract-clients">';
-        echo '<h1>' . esc_html__( 'Nowa umowa – etap 2/2', 'estate-office' ) . '</h1>';
+        echo '<h1>' . esc_html__( 'Nowa umowa – etap 2/3', 'estate-office' ) . '</h1>';
         echo '<p>' . esc_html__( 'Przypisz klientów do umowy. Możesz wyszukać istniejące rekordy lub dodać nowego klienta.', 'estate-office' ) . '</p>';
 
         if ( isset( $_GET['estate-office-message'] ) ) {
@@ -514,7 +528,7 @@ JS
 
         echo '<hr />';
         echo '<h2>' . esc_html__( 'Dodaj nowego klienta', 'estate-office' ) . '</h2>';
-        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-client-create">';
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="estate-office-admin-form estate-office-contract-client-create" id="estate-office-contract-add-client">';
         wp_nonce_field( 'estate-office-contract-add-client' );
         echo '<input type="hidden" name="action" value="estate_office_contract_add_client" />';
         echo '<input type="hidden" name="contract_id" value="' . esc_attr( $contract['id'] ) . '" />';
@@ -544,30 +558,95 @@ JS
         submit_button( __( 'Dodaj klienta do umowy', 'estate-office' ) );
         echo '</form>';
 
-        echo '<hr />';
-        echo '<h2>' . esc_html__( 'Kolejne kroki', 'estate-office' ) . '</h2>';
-        $property_link = add_query_arg(
-            [
-                'page'        => 'estate-office-properties',
-                'action'      => 'new',
-                'contract_id' => $contract['id'],
-            ],
-            admin_url( 'admin.php' )
-        );
-        $search_link = add_query_arg(
-            [
-                'page'        => 'estate-office-searches',
-                'action'      => 'new',
-                'contract_id' => $contract['id'],
-            ],
-            admin_url( 'admin.php' )
-        );
-        echo '<p>' . esc_html__( 'Po przypisaniu wszystkich klientów przejdź do utworzenia nieruchomości lub poszukiwania, zgodnie z typem transakcji.', 'estate-office' ) . '</p>';
-        echo '<p><a class="button button-primary" href="' . esc_url( $property_link ) . '">' . esc_html__( 'Dodaj nieruchomość', 'estate-office' ) . '</a> ';
-        echo '<a class="button" href="' . esc_url( $search_link ) . '">' . esc_html__( 'Dodaj poszukiwanie', 'estate-office' ) . '</a></p>';
+        $step_three = $this->determine_step_three( $contract );
+        if ( $step_three ) {
+            $next_url   = $this->get_step_three_url( $contract, $step_three );
+            $next_label = 'property' === $step_three
+                ? __( 'Nie, przejdź do etapu 3 – dodaj nieruchomość', 'estate-office' )
+                : __( 'Nie, przejdź do etapu 3 – dodaj poszukiwanie', 'estate-office' );
 
+            echo '<hr />';
+            echo '<div class="estate-office-contract-step-footer">';
+            echo '<h2>' . esc_html__( 'Co dalej?', 'estate-office' ) . '</h2>';
+            echo '<p>' . esc_html__( 'Czy chcesz dodać kolejnego klienta?', 'estate-office' ) . '</p>';
+            echo '<p>';
+            echo '<a class="button button-secondary" href="#estate-office-contract-add-client">' . esc_html__( 'Tak, dodaj kolejnego klienta', 'estate-office' ) . '</a> ';
+            if ( $next_url ) {
+                echo '<a class="button button-primary" href="' . esc_url( $next_url ) . '">' . esc_html( $next_label ) . '</a>';
+            }
+            echo '</p>';
+            echo '</div>';
+        }
+
+        echo '<hr />';
         echo '<p><a href="' . esc_url( add_query_arg( [ 'page' => self::PAGE_SLUG, 'action' => 'view', 'contract_id' => $contract['id'] ], admin_url( 'admin.php' ) ) ) . '" class="button-secondary">' . esc_html__( 'Przejdź do podsumowania umowy', 'estate-office' ) . '</a></p>';
         echo '</div>';
+    }
+
+    /**
+     * Określa trzeci etap procesu tworzenia umowy.
+     *
+     * @param array<string,mixed> $contract Dane umowy.
+     *
+     * @return string
+     */
+    private function determine_step_three( array $contract ) : string {
+        $type = isset( $contract['transaction_type'] ) ? (string) $contract['transaction_type'] : '';
+        $type = function_exists( 'mb_strtolower' ) ? mb_strtolower( $type ) : strtolower( $type );
+
+        if ( in_array( $type, [ 'sprzedaz', 'wynajem' ], true ) ) {
+            return 'property';
+        }
+
+        if ( in_array( $type, [ 'kupno', 'najem' ], true ) ) {
+            return 'search';
+        }
+
+        return '';
+    }
+
+    /**
+     * Generuje adres trzeciego etapu kreatora.
+     *
+     * @param array<string,mixed> $contract       Dane umowy.
+     * @param string              $requested_step Żądany krok.
+     *
+     * @return string
+     */
+    private function get_step_three_url( array $contract, string $requested_step = '' ) : string {
+        $step        = $requested_step ?: $this->determine_step_three( $contract );
+        $contract_id = isset( $contract['id'] ) ? (int) $contract['id'] : 0;
+
+        if ( ! $contract_id || ! in_array( $step, [ 'property', 'search' ], true ) ) {
+            return '';
+        }
+
+        $base_args = [
+            'action'             => 'new',
+            'contract_id'        => $contract_id,
+            'wizard'             => 'contract',
+            'wizard_contract_id' => $contract_id,
+        ];
+
+        if ( 'property' === $step ) {
+            $args = array_merge(
+                $base_args,
+                [
+                    'page'        => 'estate-office-properties',
+                    'wizard_step' => 'property',
+                ]
+            );
+        } else {
+            $args = array_merge(
+                $base_args,
+                [
+                    'page'        => 'estate-office-searches',
+                    'wizard_step' => 'search',
+                ]
+            );
+        }
+
+        return add_query_arg( $args, admin_url( 'admin.php' ) );
     }
 
     /**
