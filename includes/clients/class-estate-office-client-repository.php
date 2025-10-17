@@ -78,6 +78,7 @@ class Estate_Office_Client_Repository {
         'correspondence_city'      => '%s',
         'correspondence_country'   => '%s',
         'notes'                    => '%s',
+        'custom_fields'            => '%s',
         'meta'                     => '%s',
         'updated_at'               => '%s',
     ];
@@ -311,6 +312,13 @@ class Estate_Office_Client_Repository {
                     break;
                 case 'notes':
                     $prepared[ $field ] = wp_kses_post( (string) $value );
+                    break;
+                case 'custom_fields':
+                    if ( is_array( $value ) ) {
+                        $prepared[ $field ] = wp_json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+                    } else {
+                        $prepared[ $field ] = '';
+                    }
                     break;
                 case 'email':
                     $prepared[ $field ] = sanitize_email( (string) $value );

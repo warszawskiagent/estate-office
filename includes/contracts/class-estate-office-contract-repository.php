@@ -51,6 +51,7 @@ class Estate_Office_Contract_Repository {
         'current_stage'     => '%s',
         'current_stage_date'=> '%s',
         'stage_notes'       => '%s',
+        'custom_fields'     => '%s',
         'updated_at'        => '%s',
     ];
 
@@ -564,6 +565,13 @@ class Estate_Office_Contract_Repository {
                     break;
                 case 'stage_notes':
                     $prepared[ $field ] = wp_kses_post( (string) $value );
+                    break;
+                case 'custom_fields':
+                    if ( is_array( $value ) ) {
+                        $prepared[ $field ] = wp_json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+                    } else {
+                        $prepared[ $field ] = '';
+                    }
                     break;
                 default:
                     $prepared[ $field ] = sanitize_text_field( (string) $value );

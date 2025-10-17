@@ -2233,6 +2233,16 @@ JS
         echo '<p><label for="portal-property-tour">' . esc_html__( 'Link do wirtualnego spaceru', 'estate-office' ) . '<br /><input type="url" name="virtual_tour_url" id="portal-property-tour" class="regular-text" /></label></p>';
         echo '</div>';
 
+        $property_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'property' );
+        if ( ! empty( $property_custom_fields ) ) {
+            echo '<div class="estate-office-crm-portal__form-grid estate-office-property-custom-fields">';
+            echo '<h3>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</h3>';
+            foreach ( $property_custom_fields as $field_key => $label ) {
+                echo '<p><label>' . esc_html( $label ) . '<br /><input type="text" name="custom_fields[' . esc_attr( $field_key ) . ']" class="regular-text" /></label></p>';
+            }
+            echo '</div>';
+        }
+
         echo '<fieldset class="estate-office-crm-portal__form-fieldset">';
         echo '<legend>' . esc_html__( 'Opcje publikacji', 'estate-office' ) . '</legend>';
         $flags = [
@@ -2446,6 +2456,25 @@ JS
             }
         }
 
+        if ( $contract && isset( $contract['custom_fields'] ) && '' !== $contract['custom_fields'] ) {
+            $decoded_custom = json_decode( (string) $contract['custom_fields'], true );
+            if ( is_array( $decoded_custom ) ) {
+                $contract['custom_fields'] = array_filter(
+                    array_map(
+                        static function ( $value ) {
+                            return is_scalar( $value ) ? (string) $value : '';
+                        },
+                        $decoded_custom
+                    ),
+                    static function ( $value ) {
+                        return '' !== $value;
+                    }
+                );
+            } else {
+                $contract['custom_fields'] = [];
+            }
+        }
+
         $defaults = [
             'contract_number'   => $this->contract_repository->generate_contract_number(),
             'transaction_type'  => 'sprzedaz',
@@ -2455,9 +2484,14 @@ JS
             'commission_amount' => '',
             'commission_unit'   => '%',
             'status'            => 'draft',
+            'custom_fields'     => Estate_Office_Dynamic_Fields::merge_defaults( 'contract', [] ),
         ];
 
         $data = wp_parse_args( $contract ?? [], $defaults );
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::merge_defaults(
+            'contract',
+            is_array( $data['custom_fields'] ) ? $data['custom_fields'] : []
+        );
 
         $redirect_args = [
             'crm_tab' => 'contracts',
@@ -2527,6 +2561,16 @@ JS
         }
         echo '</select>';
         echo '</td></tr>';
+
+        $contract_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'contract' );
+        if ( ! empty( $contract_custom_fields ) ) {
+            echo '<tr><th>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</th><td>';
+            foreach ( $contract_custom_fields as $field_key => $label ) {
+                echo '<p><label>' . esc_html( $label ) . '<br /><input type="text" class="regular-text" name="custom_fields[' . esc_attr( $field_key ) . ']" value="' . esc_attr( $data['custom_fields'][ $field_key ] ?? '' ) . '" /></label></p>';
+            }
+            echo '</td></tr>';
+        }
+
         echo '</table>';
 
         $button_label = $is_edit ? __( 'Zapisz zmiany', 'estate-office' ) : __( 'Zapisz i przejdź do klientów', 'estate-office' );
@@ -2977,6 +3021,15 @@ JS
         echo '<tr><th>' . esc_html__( 'Notatki', 'estate-office' ) . '</th><td>';
         echo '<textarea name="notes" rows="4" class="large-text"></textarea>';
         echo '</td></tr>';
+
+        $client_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'client' );
+        if ( ! empty( $client_custom_fields ) ) {
+            echo '<tr><th>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</th><td>';
+            foreach ( $client_custom_fields as $field_key => $label ) {
+                echo '<p><label>' . esc_html( $label ) . '<br /><input type="text" name="custom_fields[' . esc_attr( $field_key ) . ']" class="regular-text" /></label></p>';
+            }
+            echo '</td></tr>';
+        }
 
         if ( $include_role_row ) {
             echo '<tr><th><label for="portal-client-role">' . esc_html__( 'Rola w umowie', 'estate-office' ) . '</label></th><td>';

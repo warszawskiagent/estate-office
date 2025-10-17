@@ -71,6 +71,17 @@ class Estate_Office_Client_Request_Helper {
             'correspondence_same' => $correspondence_same,
         ];
 
+        $custom_fields_input = [];
+        if ( isset( $source['custom_fields'] ) && is_array( $source['custom_fields'] ) ) {
+            foreach ( $source['custom_fields'] as $key => $value ) {
+                if ( is_scalar( $value ) ) {
+                    $custom_fields_input[ (string) $key ] = (string) wp_unslash( $value );
+                }
+            }
+        }
+
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::sanitize_values( 'client', $custom_fields_input );
+
         return array_merge( $data, $base_address, $correspondence );
     }
 }

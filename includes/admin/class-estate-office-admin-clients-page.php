@@ -273,6 +273,25 @@ JS
     private function render_form( array $client = [] ) : void {
         $is_edit = ! empty( $client );
 
+        if ( isset( $client['custom_fields'] ) && '' !== ( $client['custom_fields'] ?? '' ) ) {
+            $decoded = json_decode( (string) $client['custom_fields'], true );
+            if ( is_array( $decoded ) ) {
+                $client['custom_fields'] = array_filter(
+                    array_map(
+                        static function ( $value ) {
+                            return is_scalar( $value ) ? (string) $value : '';
+                        },
+                        $decoded
+                    ),
+                    static function ( $value ) {
+                        return '' !== $value;
+                    }
+                );
+            } else {
+                $client['custom_fields'] = [];
+            }
+        }
+
         $defaults = [
             'client_type'               => 'person',
             'first_name'                => '',
@@ -304,10 +323,15 @@ JS
             'correspondence_country'    => '',
             'notes'                     => '',
             'agent_id'                  => 0,
+            'custom_fields'             => Estate_Office_Dynamic_Fields::merge_defaults( 'client', [] ),
         ];
 
         $data = wp_parse_args( $client, $defaults );
         $data['agent_id'] = isset( $data['agent_id'] ) ? (int) $data['agent_id'] : 0;
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::merge_defaults(
+            'client',
+            is_array( $data['custom_fields'] ) ? $data['custom_fields'] : []
+        );
 
         if ( ! $is_edit && 0 === $data['agent_id'] ) {
             $data['agent_id'] = $this->get_current_user_agent_id();
@@ -420,6 +444,15 @@ JS
             'textarea_rows' => 6,
         ] );
         echo '</td></tr>';
+        $client_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'client' );
+        if ( ! empty( $client_custom_fields ) ) {
+            echo '<tr><th>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</th><td>';
+            foreach ( $client_custom_fields as $field_key => $label ) {
+                $value = $data['custom_fields'][ $field_key ] ?? '';
+                echo '<p><label>' . esc_html( $label ) . '<br /><input type="text" name="custom_fields[' . esc_attr( $field_key ) . ']" value="' . esc_attr( $value ) . '" class="regular-text" /></label></p>';
+            }
+            echo '</td></tr>';
+        }
         echo '</table>';
 
         submit_button( $is_edit ? __( 'Zapisz klienta', 'estate-office' ) : __( 'Dodaj klienta', 'estate-office' ) );
@@ -565,6 +598,22 @@ JS
             __( 'REGON', 'estate-office' ) => $client['regon'],
             __( 'Opiekun', 'estate-office' ) => $agent_cell,
         ];
+        $custom_values = [];
+        if ( isset( $client['custom_fields'] ) && '' !== ( $client['custom_fields'] ?? '' ) ) {
+            $decoded = json_decode( (string) $client['custom_fields'], true );
+            if ( is_array( $decoded ) ) {
+                foreach ( $decoded as $custom_key => $custom_value ) {
+                    if ( is_scalar( $custom_value ) ) {
+                        $custom_values[ (string) $custom_key ] = (string) $custom_value;
+                    }
+                }
+            }
+        }
+
+        foreach ( Estate_Office_Dynamic_Fields::format_for_display( 'client', $custom_values ) as $label => $value ) {
+            $rows[ $label ] = $value;
+        }
+
         foreach ( $rows as $label => $value ) {
             if ( empty( $value ) ) {
                 continue;

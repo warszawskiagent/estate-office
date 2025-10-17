@@ -97,6 +97,7 @@ class Estate_Office_Property_Repository {
         'video_url'             => '%s',
         'virtual_tour_url'      => '%s',
         'google_place_id'       => '%s',
+        'custom_fields'         => '%s',
         'updated_at'            => '%s',
     ];
 
@@ -490,7 +491,7 @@ class Estate_Office_Property_Repository {
                 continue;
             }
 
-            if ( in_array( $field, [ 'building_details', 'media', 'amenities', 'equipment', 'additional_areas', 'gallery', 'labels' ], true ) ) {
+            if ( in_array( $field, [ 'building_details', 'media', 'amenities', 'equipment', 'additional_areas', 'gallery', 'labels', 'custom_fields' ], true ) ) {
                 $filtered[ $field ] = wp_json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
                 continue;
             }

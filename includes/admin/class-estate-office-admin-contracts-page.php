@@ -343,6 +343,25 @@ JS
     private function render_form( array $contract = [] ) : void {
         $is_edit = ! empty( $contract );
 
+        if ( isset( $contract['custom_fields'] ) && '' !== $contract['custom_fields'] ) {
+            $decoded = json_decode( (string) $contract['custom_fields'], true );
+            if ( is_array( $decoded ) ) {
+                $contract['custom_fields'] = array_filter(
+                    array_map(
+                        static function ( $value ) {
+                            return is_scalar( $value ) ? (string) $value : '';
+                        },
+                        $decoded
+                    ),
+                    static function ( $value ) {
+                        return '' !== $value;
+                    }
+                );
+            } else {
+                $contract['custom_fields'] = [];
+            }
+        }
+
         $defaults = [
             'contract_number'   => $this->repository->generate_contract_number(),
             'transaction_type'  => 'sprzedaz',
@@ -356,10 +375,15 @@ JS
             'current_stage_date'=> gmdate( 'Y-m-d' ),
             'stage_notes'       => '',
             'agent_id'          => 0,
+            'custom_fields'     => Estate_Office_Dynamic_Fields::merge_defaults( 'contract', [] ),
         ];
 
         $data = wp_parse_args( $contract, $defaults );
         $data['agent_id'] = isset( $data['agent_id'] ) ? (int) $data['agent_id'] : 0;
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::merge_defaults(
+            'contract',
+            is_array( $data['custom_fields'] ) ? $data['custom_fields'] : []
+        );
 
         if ( ! $is_edit && 0 === $data['agent_id'] ) {
             $data['agent_id'] = $this->get_current_user_agent_id();
@@ -436,6 +460,16 @@ JS
         }
         echo '</select>';
         echo '</td></tr>';
+
+        $contract_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'contract' );
+        if ( ! empty( $contract_custom_fields ) ) {
+            echo '<tr><th>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</th><td>';
+            foreach ( $contract_custom_fields as $field_key => $label ) {
+                $value = $data['custom_fields'][ $field_key ] ?? '';
+                echo '<p><label>' . esc_html( $label ) . '<br /><input type="text" class="regular-text" name="custom_fields[' . esc_attr( $field_key ) . ']" value="' . esc_attr( $value ) . '" /></label></p>';
+            }
+            echo '</td></tr>';
+        }
 
         if ( $is_edit ) {
             echo '<tr><th>' . esc_html__( 'Bieżący etap', 'estate-office' ) . '</th><td>';
@@ -823,6 +857,22 @@ JS
             __( 'Prowizja', 'estate-office' )       => $contract['commission_amount'] ? $contract['commission_amount'] . ' ' . $contract['commission_unit'] : '—',
             __( 'Opiekun', 'estate-office' )        => $this->format_agent_cell( (int) ( $contract['agent_id'] ?? 0 ) ),
         ];
+
+        $custom_values = [];
+        if ( isset( $contract['custom_fields'] ) && '' !== $contract['custom_fields'] ) {
+            $decoded = json_decode( (string) $contract['custom_fields'], true );
+            if ( is_array( $decoded ) ) {
+                foreach ( $decoded as $custom_key => $custom_value ) {
+                    if ( is_scalar( $custom_value ) ) {
+                        $custom_values[ (string) $custom_key ] = (string) $custom_value;
+                    }
+                }
+            }
+        }
+
+        foreach ( Estate_Office_Dynamic_Fields::format_for_display( 'contract', $custom_values ) as $label => $value ) {
+            $rows[ $label ] = $value;
+        }
         foreach ( $rows as $label => $value ) {
             echo '<tr><th style="width:35%;">' . esc_html( $label ) . '</th><td>' . wp_kses_post( (string) $value ) . '</td></tr>';
         }
@@ -982,6 +1032,16 @@ JS
             'status'            => sanitize_key( wp_unslash( $_POST['status'] ?? 'draft' ) ),
             'agent_id'          => $agent_id,
         ];
+
+        $custom_fields_input = [];
+        if ( isset( $_POST['custom_fields'] ) && is_array( $_POST['custom_fields'] ) ) {
+            foreach ( $_POST['custom_fields'] as $custom_key => $custom_value ) {
+                if ( is_scalar( $custom_value ) ) {
+                    $custom_fields_input[ (string) $custom_key ] = (string) wp_unslash( $custom_value );
+                }
+            }
+        }
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::sanitize_values( 'contract', $custom_fields_input );
 
         if ( $contract_id ) {
             $this->repository->update( $contract_id, $data );

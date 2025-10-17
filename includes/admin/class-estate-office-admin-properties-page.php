@@ -736,6 +736,25 @@ JS
         $this->render_input_field( 'virtual_tour_url', __( 'Link do wirtualnego spaceru', 'estate-office' ), $data['virtual_tour_url'], 'url' );
         echo '</div>';
 
+        $property_custom_fields = Estate_Office_Dynamic_Fields::get_field_map( 'property' );
+        if ( ! empty( $property_custom_fields ) ) {
+            echo '<h2>' . esc_html__( 'Dodatkowe pola', 'estate-office' ) . '</h2>';
+            echo '<div class="estate-office-property-grid estate-office-property-custom-fields">';
+            foreach ( $property_custom_fields as $field_key => $label ) {
+                $value = $data['custom_fields'][ $field_key ] ?? '';
+                $this->render_input_field(
+                    'custom_fields_' . $field_key,
+                    $label,
+                    $value,
+                    'text',
+                    [
+                        'name' => 'custom_fields[' . $field_key . ']',
+                    ]
+                );
+            }
+            echo '</div>';
+        }
+
         echo '<h2>' . esc_html__( 'Znaczniki i eksport', 'estate-office' ) . '</h2>';
         echo '<div class="estate-office-flags">';
         $this->render_checkbox_field( 'export_web', __( 'Eksport na WWW', 'estate-office' ), $data['export_web'] );
@@ -997,6 +1016,7 @@ JS
             'gallery'               => [],
             'floor_plan_2d'         => '',
             'floor_plan_3d'         => '',
+            'custom_fields'         => Estate_Office_Dynamic_Fields::merge_defaults( 'property', [] ),
         ];
 
         if ( null === $property ) {
@@ -1042,6 +1062,19 @@ JS
         if ( $defaults['contract_id'] > 0 ) {
             $this->apply_contract_constraints( $defaults );
         }
+
+        $custom_defaults = [];
+        if ( isset( $property['custom_fields'] ) && '' !== $property['custom_fields'] ) {
+            $decoded = json_decode( (string) $property['custom_fields'], true );
+            if ( is_array( $decoded ) ) {
+                foreach ( $decoded as $custom_key => $custom_value ) {
+                    if ( is_scalar( $custom_value ) ) {
+                        $custom_defaults[ (string) $custom_key ] = (string) $custom_value;
+                    }
+                }
+            }
+        }
+        $defaults['custom_fields'] = Estate_Office_Dynamic_Fields::merge_defaults( 'property', $custom_defaults );
 
         foreach ( [ 'building_details', 'media', 'amenities', 'equipment', 'additional_areas', 'gallery' ] as $json_field ) {
             if ( isset( $property[ $json_field ] ) ) {
@@ -1213,6 +1246,16 @@ JS
 
         $data['new_offer_until'] = $data['new_offer'] ? gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) + WEEK_IN_SECONDS ) : null;
 
+        $custom_fields_input = [];
+        if ( isset( $_POST['custom_fields'] ) && is_array( $_POST['custom_fields'] ) ) {
+            foreach ( $_POST['custom_fields'] as $custom_key => $custom_value ) {
+                if ( is_scalar( $custom_value ) ) {
+                    $custom_fields_input[ (string) $custom_key ] = (string) wp_unslash( $custom_value );
+                }
+            }
+        }
+        $data['custom_fields'] = Estate_Office_Dynamic_Fields::sanitize_values( 'property', $custom_fields_input );
+
         return array_filter(
             $data,
             static function ( $value ) {
@@ -1354,6 +1397,7 @@ JS
         return $options;
     }
 
+    /**
      * Sanitizuje pojedynczy wybór.
      *
      * @param mixed        $value   Wartość wejściowa.
