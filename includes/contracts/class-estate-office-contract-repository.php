@@ -39,6 +39,7 @@ class Estate_Office_Contract_Repository {
      * @var array<string,string>
      */
     private array $field_formats = [
+        'agent_id'          => '%d',
         'contract_number'   => '%s',
         'transaction_type'  => '%s',
         'start_date'        => '%s',
@@ -541,6 +542,9 @@ class Estate_Office_Contract_Repository {
             $value = $data[ $field ];
 
             switch ( $field ) {
+                case 'agent_id':
+                    $prepared[ $field ] = (int) $value;
+                    break;
                 case 'is_open_ended':
                     $prepared[ $field ] = ! empty( $value ) ? 1 : 0;
                     break;

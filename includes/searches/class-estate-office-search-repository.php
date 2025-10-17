@@ -34,6 +34,7 @@ class Estate_Office_Search_Repository {
      * @var array<string,string>
      */
     private array $field_formats = [
+        'agent_id'              => '%d',
         'contract_id'           => '%d',
         'search_number'         => '%s',
         'transaction_type'      => '%s',
@@ -269,6 +270,10 @@ class Estate_Office_Search_Repository {
      * @return array<string,mixed>
      */
     private function normalize_record( array $record ) : array {
+        if ( isset( $record['agent_id'] ) ) {
+            $record['agent_id'] = (int) $record['agent_id'];
+        }
+
         if ( isset( $record['criteria'] ) ) {
             $decoded = json_decode( (string) $record['criteria'], true );
             if ( is_array( $decoded ) ) {

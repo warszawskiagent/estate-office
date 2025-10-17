@@ -9,10 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once ESTATE_OFFICE_PATH . 'includes/admin/class-estate-office-admin-agent-assignment.php';
+
 /**
  * Class Estate_Office_Admin_Searches_Page
  */
 class Estate_Office_Admin_Searches_Page {
+
+    use Estate_Office_Admin_Agent_Assignment;
 
     private const PAGE_SLUG = 'estate-office-searches';
 
@@ -33,11 +37,14 @@ class Estate_Office_Admin_Searches_Page {
     /**
      * Konstruktor.
      *
-     * @param Estate_Office_Search_Repository|null $repository Opcjonalne repozytorium.
+     * @param Estate_Office_Search_Repository|null $repository          Opcjonalne repozytorium.
+     * @param Estate_Office_Contract_Repository|null $contracts_repository Repozytorium umów.
+     * @param Estate_Office_Agent_Repository|null    $agent_repository     Repozytorium agentów.
      */
-    public function __construct( ?Estate_Office_Search_Repository $repository = null, ?Estate_Office_Contract_Repository $contracts_repository = null ) {
+    public function __construct( ?Estate_Office_Search_Repository $repository = null, ?Estate_Office_Contract_Repository $contracts_repository = null, ?Estate_Office_Agent_Repository $agent_repository = null ) {
         $this->repository            = $repository ?? new Estate_Office_Search_Repository();
         $this->contracts_repository  = $contracts_repository ?? new Estate_Office_Contract_Repository();
+        $this->init_agent_repository( $agent_repository );
     }
 
     /**
@@ -151,6 +158,12 @@ JS
             ]
         );
 
+        $agent_ids = [];
+        if ( isset( $query['items'] ) && is_array( $query['items'] ) ) {
+            $agent_ids = array_map( 'intval', wp_list_pluck( $query['items'], 'agent_id' ) );
+        }
+        $this->prime_agent_labels( $agent_ids );
+
         echo '<div class="wrap">';
         echo '<h1 class="wp-heading-inline">' . esc_html__( 'Poszukiwania klientów', 'estate-office' ) . '</h1>';
         printf(
@@ -228,6 +241,7 @@ JS
             'budget'           => __( 'Budżet', 'estate-office' ),
             'location'         => __( 'Lokalizacja', 'estate-office' ),
             'transaction_type' => __( 'Typ transakcji', 'estate-office' ),
+            'agent'            => __( 'Opiekun', 'estate-office' ),
             'updated'          => __( 'Aktualizacja', 'estate-office' ),
             'actions'          => __( 'Akcje', 'estate-office' ),
         ];
@@ -239,7 +253,7 @@ JS
         echo '<tbody>';
 
         if ( empty( $query['items'] ) ) {
-            echo '<tr><td colspan="7">' . esc_html__( 'Brak poszukiwań spełniających kryteria.', 'estate-office' ) . '</td></tr>';
+            echo '<tr><td colspan="8">' . esc_html__( 'Brak poszukiwań spełniających kryteria.', 'estate-office' ) . '</td></tr>';
         } else {
             foreach ( $query['items'] as $item ) {
                 $budget = $this->format_budget( $item['price_min'] ?? null, $item['price_max'] ?? null );
@@ -263,6 +277,7 @@ JS
                 printf( '<td>%s</td>', esc_html( $budget ) );
                 printf( '<td>%s</td>', esc_html( $location ?: __( 'Nie określono', 'estate-office' ) ) );
                 printf( '<td>%s</td>', esc_html( $this->get_transaction_types()[ $item['transaction_type'] ] ?? $item['transaction_type'] ) );
+                printf( '<td>%s</td>', wp_kses_post( $this->format_agent_cell( (int) ( $item['agent_id'] ?? 0 ) ) ) );
                 printf( '<td>%s</td>', esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $updated ) ) );
                 echo '<td class="column-actions">';
                 printf( '<a href="%s" class="button button-small">%s</a> ', esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&action=edit&search_id=' . absint( $item['id'] ) ) ), esc_html__( 'Edytuj', 'estate-office' ) );
@@ -359,6 +374,22 @@ JS
         );
         $this->render_select_field( 'transaction_type', __( 'Typ transakcji', 'estate-office' ), $data['transaction_type'], $this->get_transaction_types(), true );
         $this->render_select_field( 'property_type', __( 'Rodzaj nieruchomości', 'estate-office' ), $data['property_type'], $this->get_property_types(), true );
+        $agent_description = '';
+        if ( ! $this->can_assign_all_agents() ) {
+            if ( $this->get_current_user_agent_id() > 0 ) {
+                $agent_description = __( 'Możesz przypisać jedynie siebie jako opiekuna.', 'estate-office' );
+            } else {
+                $agent_description = __( 'Twoje konto nie ma przypisanego profilu agenta. Skontaktuj się z administratorem.', 'estate-office' );
+            }
+        }
+        $this->render_select_field(
+            'agent_id',
+            __( 'Opiekun (agent)', 'estate-office' ),
+            (string) $data['agent_id'],
+            $this->get_agent_select_options(),
+            false,
+            $agent_description
+        );
         echo '</div>';
 
         echo '<h2>' . esc_html__( 'Preferowana lokalizacja', 'estate-office' ) . '</h2>';
@@ -461,6 +492,20 @@ JS
         $redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
         $data      = $this->collect_search_input();
 
+        if ( $data['contract_id'] > 0 && $data['agent_id'] <= 0 ) {
+            $contract = $this->contracts_repository->find( (int) $data['contract_id'] );
+            if ( $contract ) {
+                $contract_agent_id = (int) ( $contract['agent_id'] ?? 0 );
+                if ( $contract_agent_id > 0 ) {
+                    if ( $this->can_assign_all_agents() || $contract_agent_id === $this->get_current_user_agent_id() ) {
+                        if ( $this->agent_repository->exists( $contract_agent_id ) ) {
+                            $data['agent_id'] = $contract_agent_id;
+                        }
+                    }
+                }
+            }
+        }
+
         $errors = [];
         if ( empty( $data['transaction_type'] ) ) {
             $errors[] = __( 'Wybierz typ transakcji.', 'estate-office' );
@@ -551,6 +596,7 @@ JS
             'rooms_min'        => '',
             'rooms_max'        => '',
             'description'      => '',
+            'agent_id'         => 0,
             'criteria'         => [
                 'building' => [
                     'finish_state' => '',
@@ -591,6 +637,21 @@ JS
                 $defaults['contract_id'] = absint( $_GET['contract_id'] );
             }
 
+            if ( $defaults['contract_id'] > 0 ) {
+                $contract = $this->contracts_repository->find( $defaults['contract_id'] );
+                if ( $contract && ! empty( $contract['agent_id'] ) ) {
+                    $defaults['agent_id'] = (int) $contract['agent_id'];
+                }
+            }
+
+            if ( $defaults['agent_id'] <= 0 ) {
+                $defaults['agent_id'] = $this->get_current_user_agent_id();
+            }
+
+            if ( $defaults['agent_id'] > 0 ) {
+                $this->prime_agent_labels( [ $defaults['agent_id'] ] );
+            }
+
             return $defaults;
         }
 
@@ -610,6 +671,11 @@ JS
 
         $defaults['generated_number'] = $this->repository->generate_search_number();
         $defaults['contract_id']      = absint( $defaults['contract_id'] );
+        $defaults['agent_id']         = absint( $defaults['agent_id'] );
+
+        if ( $defaults['agent_id'] > 0 ) {
+            $this->prime_agent_labels( [ $defaults['agent_id'] ] );
+        }
 
         return $defaults;
     }
@@ -624,6 +690,8 @@ JS
 
         $data['search_number']    = sanitize_text_field( wp_unslash( $_POST['search_number'] ?? '' ) );
         $data['contract_id']      = isset( $_POST['contract_id'] ) ? absint( $_POST['contract_id'] ) : 0;
+        $agent_input              = isset( $_POST['agent_id'] ) ? absint( $_POST['agent_id'] ) : 0;
+        $data['agent_id']         = $this->sanitize_agent_selection( $agent_input );
         $data['transaction_type'] = $this->sanitize_choice( $_POST['transaction_type'] ?? '', array_keys( $this->get_transaction_types() ) );
         $data['property_type']    = $this->sanitize_choice( $_POST['property_type'] ?? '', array_keys( $this->get_property_types() ) );
         $data['location_city']    = sanitize_text_field( wp_unslash( $_POST['location_city'] ?? '' ) );
@@ -765,7 +833,7 @@ JS
      *
      * @return void
      */
-    private function render_select_field( string $name, string $label, string $selected, array $options, bool $required ) : void {
+    private function render_select_field( string $name, string $label, string $selected, array $options, bool $required, string $description = '' ) : void {
         echo '<div class="field">';
         printf( '<label for="%1$s">%2$s</label>', esc_attr( $name ), esc_html( $label ) );
         printf( '<select name="%1$s" id="%1$s" %2$s>', esc_attr( $name ), $required ? 'required' : '' );
@@ -779,6 +847,9 @@ JS
             );
         }
         echo '</select>';
+        if ( '' !== $description ) {
+            echo '<p class="description">' . esc_html( $description ) . '</p>';
+        }
         echo '</div>';
     }
 

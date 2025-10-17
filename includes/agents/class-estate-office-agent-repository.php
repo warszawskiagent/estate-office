@@ -46,6 +46,13 @@ class Estate_Office_Agent_Repository {
     ];
 
     /**
+     * Bufor dostępnych opcji wyświetlania agentów.
+     *
+     * @var array<int,string>|null
+     */
+    private ?array $display_name_cache = null;
+
+    /**
      * Konstruktor repozytorium.
      *
      * @param wpdb|null $wpdb Opcjonalna injekcja obiektu bazy danych.
@@ -104,6 +111,92 @@ class Estate_Office_Agent_Repository {
         $result = $this->wpdb->get_row( $query );
 
         return $result ?: null;
+    }
+
+    /**
+     * Sprawdza, czy agent istnieje.
+     *
+     * @param int $agent_id ID agenta.
+     *
+     * @return bool
+     */
+    public function exists( int $agent_id ) : bool {
+        if ( $agent_id <= 0 ) {
+            return false;
+        }
+
+        $query = $this->wpdb->prepare(
+            "SELECT id FROM {$this->table} WHERE id = %d",
+            $agent_id
+        );
+
+        return (bool) $this->wpdb->get_var( $query );
+    }
+
+    /**
+     * Zwraca mapę ID => nazwa do pól wyboru.
+     *
+     * @return array<int,string>
+     */
+    public function get_dropdown_options() : array {
+        if ( null !== $this->display_name_cache ) {
+            return $this->display_name_cache;
+        }
+
+        $users_table = $this->wpdb->users;
+        $query       = "SELECT a.id, a.title, a.user_id, u.display_name, u.user_nicename, u.user_login FROM {$this->table} a "
+            . "LEFT JOIN {$users_table} u ON a.user_id = u.ID ORDER BY COALESCE(NULLIF(a.title,''), u.display_name, u.user_nicename, u.user_login, CONCAT('Agent #', a.id)) ASC";
+
+        $results = $this->wpdb->get_results( $query );
+
+        $options = [];
+
+        if ( is_array( $results ) ) {
+            foreach ( $results as $row ) {
+                $options[ (int) $row->id ] = $this->resolve_display_name( $row );
+            }
+        }
+
+        $this->display_name_cache = $options;
+
+        return $options;
+    }
+
+    /**
+     * Zwraca etykiety dla wskazanych agentów.
+     *
+     * @param array<int,int> $agent_ids Lista ID agentów.
+     *
+     * @return array<int,string>
+     */
+    public function get_display_names_for_ids( array $agent_ids ) : array {
+        $ids = array_values( array_unique( array_filter( array_map( 'absint', $agent_ids ) ) ) );
+
+        if ( empty( $ids ) ) {
+            return [];
+        }
+
+        $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+        $users_table  = $this->wpdb->users;
+        $query        = $this->wpdb->prepare(
+            "SELECT a.id, a.title, a.user_id, u.display_name, u.user_nicename, u.user_login FROM {$this->table} a "
+            . "LEFT JOIN {$users_table} u ON a.user_id = u.ID WHERE a.id IN ({$placeholders})",
+            $ids
+        );
+
+        $results = $this->wpdb->get_results( $query );
+
+        if ( ! is_array( $results ) ) {
+            return [];
+        }
+
+        $labels = [];
+
+        foreach ( $results as $row ) {
+            $labels[ (int) $row->id ] = $this->resolve_display_name( $row );
+        }
+
+        return $labels;
     }
 
     /**
@@ -197,5 +290,29 @@ class Estate_Office_Agent_Repository {
         }
 
         return $formats;
+    }
+
+    /**
+     * Określa nazwę wyświetlaną agenta.
+     *
+     * @param object $row Wiersz z bazy.
+     *
+     * @return string
+     */
+    private function resolve_display_name( object $row ) : string {
+        $candidates = [
+            is_string( $row->title ?? '' ) ? trim( (string) $row->title ) : '',
+            is_string( $row->display_name ?? '' ) ? trim( (string) $row->display_name ) : '',
+            is_string( $row->user_nicename ?? '' ) ? trim( (string) $row->user_nicename ) : '',
+            is_string( $row->user_login ?? '' ) ? trim( (string) $row->user_login ) : '',
+        ];
+
+        foreach ( $candidates as $candidate ) {
+            if ( '' !== $candidate ) {
+                return $candidate;
+            }
+        }
+
+        return sprintf( __( 'Agent #%d', 'estate-office' ), (int) $row->id );
     }
 }

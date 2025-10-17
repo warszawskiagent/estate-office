@@ -34,6 +34,7 @@ class Estate_Office_Property_Repository {
      * @var array<string,string>
      */
     private array $field_formats = [
+        'agent_id'              => '%d',
         'contract_id'           => '%d',
         'listing_number'        => '%s',
         'title'                 => '%s',

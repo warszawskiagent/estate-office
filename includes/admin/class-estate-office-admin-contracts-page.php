@@ -9,10 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once ESTATE_OFFICE_PATH . 'includes/admin/class-estate-office-admin-agent-assignment.php';
+
 /**
  * Class Estate_Office_Admin_Contracts_Page
  */
 class Estate_Office_Admin_Contracts_Page {
+
+    use Estate_Office_Admin_Agent_Assignment;
 
     private const PAGE_SLUG = 'estate-office-contracts';
 
@@ -43,15 +47,18 @@ class Estate_Office_Admin_Contracts_Page {
      * @param Estate_Office_Contract_Repository|null $repository           Repozytorium umów.
      * @param Estate_Office_Client_Repository|null   $clients_repository   Repozytorium klientów.
      * @param Estate_Office_Property_Repository|null $properties_repository Repozytorium nieruchomości.
+     * @param Estate_Office_Agent_Repository|null    $agent_repository     Repozytorium agentów.
      */
     public function __construct(
         ?Estate_Office_Contract_Repository $repository = null,
         ?Estate_Office_Client_Repository $clients_repository = null,
-        ?Estate_Office_Property_Repository $properties_repository = null
+        ?Estate_Office_Property_Repository $properties_repository = null,
+        ?Estate_Office_Agent_Repository $agent_repository = null
     ) {
         $this->repository             = $repository ?? new Estate_Office_Contract_Repository();
         $this->clients_repository     = $clients_repository ?? new Estate_Office_Client_Repository();
         $this->properties_repository  = $properties_repository ?? new Estate_Office_Property_Repository();
+        $this->init_agent_repository( $agent_repository );
     }
 
     /**
@@ -211,6 +218,12 @@ JS
             ]
         );
 
+        $agent_ids = [];
+        if ( isset( $query['items'] ) && is_array( $query['items'] ) ) {
+            $agent_ids = array_map( 'intval', wp_list_pluck( $query['items'], 'agent_id' ) );
+        }
+        $this->prime_agent_labels( $agent_ids );
+
         $message       = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : $notice;
         $message_class = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : $notice_id;
 
@@ -251,11 +264,12 @@ JS
         echo '<th>' . esc_html__( 'Data zakończenia', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Etap', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Status', 'estate-office' ) . '</th>';
+        echo '<th>' . esc_html__( 'Opiekun', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th>';
         echo '</tr></thead><tbody>';
 
         if ( empty( $query['items'] ) ) {
-            echo '<tr><td colspan="7">' . esc_html__( 'Brak umów do wyświetlenia.', 'estate-office' ) . '</td></tr>';
+            echo '<tr><td colspan="8">' . esc_html__( 'Brak umów do wyświetlenia.', 'estate-office' ) . '</td></tr>';
         } else {
             foreach ( $query['items'] as $item ) {
                 $view_link = add_query_arg(
@@ -293,6 +307,7 @@ JS
                 echo '<td>' . esc_html( $item['end_date'] ?: '—' ) . '</td>';
                 echo '<td>' . esc_html( $this->get_stage_label( $item['current_stage'] ) ) . '</td>';
                 echo '<td>' . esc_html( $this->get_statuses()[ $item['status'] ] ?? $item['status'] ) . '</td>';
+                echo '<td>' . wp_kses_post( $this->format_agent_cell( (int) ( $item['agent_id'] ?? 0 ) ) ) . '</td>';
                 echo '<td>' . implode( ' | ', $actions ) . '</td>';
                 echo '</tr>';
             }
@@ -340,9 +355,19 @@ JS
             'current_stage'     => 'umowa_posrednictwa',
             'current_stage_date'=> gmdate( 'Y-m-d' ),
             'stage_notes'       => '',
+            'agent_id'          => 0,
         ];
 
         $data = wp_parse_args( $contract, $defaults );
+        $data['agent_id'] = isset( $data['agent_id'] ) ? (int) $data['agent_id'] : 0;
+
+        if ( ! $is_edit && 0 === $data['agent_id'] ) {
+            $data['agent_id'] = $this->get_current_user_agent_id();
+        }
+
+        if ( $data['agent_id'] > 0 ) {
+            $this->prime_agent_labels( [ $data['agent_id'] ] );
+        }
 
         echo '<div class="wrap estate-office-contract-form">';
         echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj umowę', 'estate-office' ) : esc_html__( 'Nowa umowa – etap 1/3', 'estate-office' ) ) . '</h1>';
@@ -366,6 +391,27 @@ JS
             echo '<option value="' . esc_attr( $key ) . '"' . selected( $data['transaction_type'], $key, false ) . '>' . esc_html( $label ) . '</option>';
         }
         echo '</select>';
+        echo '</td></tr>';
+
+        $agent_options      = $this->get_agent_select_options();
+        $agent_description  = '';
+        if ( ! $this->can_assign_all_agents() ) {
+            if ( $this->get_current_user_agent_id() > 0 ) {
+                $agent_description = __( 'Możesz przypisać jedynie siebie jako opiekuna.', 'estate-office' );
+            } else {
+                $agent_description = __( 'Twoje konto nie ma przypisanego profilu agenta. Skontaktuj się z administratorem.', 'estate-office' );
+            }
+        }
+        echo '<tr><th><label for="agent_id">' . esc_html__( 'Opiekun (agent)', 'estate-office' ) . '</label></th><td>';
+        echo '<select name="agent_id" id="agent_id">';
+        echo '<option value="">' . esc_html__( 'Wybierz…', 'estate-office' ) . '</option>';
+        foreach ( $agent_options as $value => $label ) {
+            echo '<option value="' . esc_attr( $value ) . '"' . selected( (string) $data['agent_id'], (string) $value, false ) . '>' . esc_html( $label ) . '</option>';
+        }
+        echo '</select>';
+        if ( '' !== $agent_description ) {
+            echo '<p class="description">' . esc_html( $agent_description ) . '</p>';
+        }
         echo '</td></tr>';
 
         echo '<tr><th>' . esc_html__( 'Daty', 'estate-office' ) . '</th><td>';
@@ -759,6 +805,8 @@ JS
         $searches   = $this->repository->get_searches( (int) $contract['id'] );
         $stages     = $this->repository->get_stages( (int) $contract['id'] );
 
+        $this->prime_agent_labels( [ (int) ( $contract['agent_id'] ?? 0 ) ] );
+
         echo '<div class="wrap estate-office-contract-profile">';
         echo '<h1>' . esc_html__( 'Umowa', 'estate-office' ) . ': ' . esc_html( $contract['contract_number'] ) . '</h1>';
 
@@ -773,9 +821,10 @@ JS
             __( 'Data zawarcia', 'estate-office' )  => $contract['start_date'],
             __( 'Data zakończenia', 'estate-office' ) => $contract['end_date'] ?: __( 'Bezterminowa', 'estate-office' ),
             __( 'Prowizja', 'estate-office' )       => $contract['commission_amount'] ? $contract['commission_amount'] . ' ' . $contract['commission_unit'] : '—',
+            __( 'Opiekun', 'estate-office' )        => $this->format_agent_cell( (int) ( $contract['agent_id'] ?? 0 ) ),
         ];
         foreach ( $rows as $label => $value ) {
-            echo '<tr><th style="width:35%;">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
+            echo '<tr><th style="width:35%;">' . esc_html( $label ) . '</th><td>' . wp_kses_post( (string) $value ) . '</td></tr>';
         }
         echo '</table>';
         echo '</section>';
@@ -899,6 +948,8 @@ JS
         $contract_number = sanitize_text_field( wp_unslash( $_POST['contract_number'] ?? '' ) );
         $redirect_to     = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
         $is_portal       = ! empty( $redirect_to );
+        $agent_input     = isset( $_POST['agent_id'] ) ? absint( $_POST['agent_id'] ) : 0;
+        $agent_id        = $this->sanitize_agent_selection( $agent_input );
 
         if ( empty( $contract_number ) ) {
             $this->redirect_with_message( __( 'Numer umowy jest wymagany.', 'estate-office' ), 'error', $contract_id, $redirect_to );
@@ -929,6 +980,7 @@ JS
             'commission_amount' => $commission_raw,
             'commission_unit'   => sanitize_text_field( wp_unslash( $_POST['commission_unit'] ?? '%' ) ),
             'status'            => sanitize_key( wp_unslash( $_POST['status'] ?? 'draft' ) ),
+            'agent_id'          => $agent_id,
         ];
 
         if ( $contract_id ) {
@@ -1017,7 +1069,27 @@ JS
         $client_id  = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
 
         if ( isset( $_POST['create_new_client'] ) ) {
-            $payload   = Estate_Office_Client_Request_Helper::sanitize_from_array( $_POST );
+            $payload = Estate_Office_Client_Request_Helper::sanitize_from_array( $_POST );
+
+            $payload['agent_id'] = 0;
+            $contract            = $this->repository->find( $contract_id );
+            if ( $contract ) {
+                $contract_agent_id = (int) ( $contract['agent_id'] ?? 0 );
+                if ( $contract_agent_id > 0 ) {
+                    $can_assign_contract_agent = $this->can_assign_all_agents() || $contract_agent_id === $this->get_current_user_agent_id();
+                    if ( $can_assign_contract_agent && $this->agent_repository->exists( $contract_agent_id ) ) {
+                        $payload['agent_id'] = $contract_agent_id;
+                    }
+                }
+            }
+
+            if ( $payload['agent_id'] <= 0 ) {
+                $current_agent = $this->get_current_user_agent_id();
+                if ( $current_agent > 0 && $this->agent_repository->exists( $current_agent ) ) {
+                    $payload['agent_id'] = $current_agent;
+                }
+            }
+
             $client_id = $this->clients_repository->create( $payload );
         }
 

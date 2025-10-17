@@ -48,6 +48,7 @@ class Estate_Office_Client_Repository {
      * @var array<string,string>
      */
     private array $field_formats = [
+        'agent_id'                 => '%d',
         'client_type'              => '%s',
         'first_name'               => '%s',
         'last_name'                => '%s',
@@ -304,6 +305,9 @@ class Estate_Office_Client_Repository {
             switch ( $field ) {
                 case 'correspondence_same':
                     $prepared[ $field ] = ! empty( $value ) ? 1 : 0;
+                    break;
+                case 'agent_id':
+                    $prepared[ $field ] = (int) $value;
                     break;
                 case 'notes':
                     $prepared[ $field ] = wp_kses_post( (string) $value );

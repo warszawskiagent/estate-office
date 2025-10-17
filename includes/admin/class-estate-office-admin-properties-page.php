@@ -9,10 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once ESTATE_OFFICE_PATH . 'includes/admin/class-estate-office-admin-agent-assignment.php';
+
 /**
  * Class Estate_Office_Admin_Properties_Page
  */
 class Estate_Office_Admin_Properties_Page {
+
+    use Estate_Office_Admin_Agent_Assignment;
 
     private const PAGE_SLUG = 'estate-office-properties';
 
@@ -40,11 +44,18 @@ class Estate_Office_Admin_Properties_Page {
     /**
      * Konstruktor.
      *
-     * @param Estate_Office_Property_Repository|null $repository Opcjonalne repozytorium.
+     * @param Estate_Office_Property_Repository|null $repository           Repozytorium nieruchomości.
+     * @param Estate_Office_Contract_Repository|null $contracts_repository Repozytorium umów.
+     * @param Estate_Office_Agent_Repository|null    $agent_repository     Repozytorium agentów.
      */
-    public function __construct( ?Estate_Office_Property_Repository $repository = null, ?Estate_Office_Contract_Repository $contracts_repository = null ) {
+    public function __construct(
+        ?Estate_Office_Property_Repository $repository = null,
+        ?Estate_Office_Contract_Repository $contracts_repository = null,
+        ?Estate_Office_Agent_Repository $agent_repository = null
+    ) {
         $this->repository            = $repository ?? new Estate_Office_Property_Repository();
         $this->contracts_repository  = $contracts_repository ?? new Estate_Office_Contract_Repository();
+        $this->init_agent_repository( $agent_repository );
     }
 
     /**
@@ -365,6 +376,12 @@ JS
             ]
         );
 
+        $agent_ids = [];
+        if ( isset( $query['items'] ) && is_array( $query['items'] ) ) {
+            $agent_ids = array_map( 'intval', wp_list_pluck( $query['items'], 'agent_id' ) );
+        }
+        $this->prime_agent_labels( $agent_ids );
+
         $message       = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : '';
         $message_class = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : 'updated';
 
@@ -490,7 +507,8 @@ JS
                 printf( '<td>%s</td>', wp_kses_post( $price_sqm_display ) );
                 printf( '<td>%s</td>', wp_kses_post( $area_display ) );
                 printf( '<td>%s</td>', esc_html( $rooms_display ) );
-                printf( '<td>%s</td>', esc_html__( 'Do przypisania', 'estate-office' ) );
+                $guardian_display = $this->format_agent_cell( (int) ( $item['agent_id'] ?? 0 ) );
+                printf( '<td>%s</td>', wp_kses_post( $guardian_display ) );
                 printf( '<td>%s</td>', esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $updated ) ) );
                 echo '</tr>';
             }
@@ -559,6 +577,24 @@ JS
             __( 'Powiązana umowa', 'estate-office' ),
             (string) $data['contract_id'],
             $this->get_contract_select_options( (int) $data['contract_id'] )
+        );
+        $agent_description = '';
+        if ( ! $this->can_assign_all_agents() ) {
+            if ( $this->get_current_user_agent_id() > 0 ) {
+                $agent_description = __( 'Możesz przypisać jedynie siebie jako opiekuna.', 'estate-office' );
+            } else {
+                $agent_description = __( 'Brak powiązanego profilu agenta dla Twojego konta. Skontaktuj się z administratorem.', 'estate-office' );
+            }
+        }
+        $this->render_select_field(
+            'agent_id',
+            __( 'Opiekun (agent)', 'estate-office' ),
+            (string) $data['agent_id'],
+            $this->get_agent_select_options(),
+            false,
+            [],
+            [],
+            $agent_description
         );
         $transaction_locked = ! empty( $data['transaction_type_locked'] );
         $this->render_select_field(
@@ -783,6 +819,15 @@ JS
                 $this->redirect_with_message( $property_id, __( 'Nie znaleziono powiązanej umowy.', 'estate-office' ), 'error', $redirect_to );
             }
 
+            $contract_agent_id = (int) ( $contract['agent_id'] ?? 0 );
+            if ( $contract_agent_id > 0 && $data['agent_id'] <= 0 ) {
+                if ( $this->can_assign_all_agents() || $contract_agent_id === $this->get_current_user_agent_id() ) {
+                    if ( $this->agent_repository->exists( $contract_agent_id ) ) {
+                        $data['agent_id'] = $contract_agent_id;
+                    }
+                }
+            }
+
             $mapped_type = $this->map_contract_transaction_type( (string) ( $contract['transaction_type'] ?? '' ) );
             if ( '' === $mapped_type ) {
                 $this->redirect_with_message( $property_id, __( 'Typ transakcji powiązanej umowy jest nieobsługiwany.', 'estate-office' ), 'error', $redirect_to );
@@ -863,6 +908,7 @@ JS
             'id'                    => 0,
             'listing_number'        => '',
             'contract_id'           => 0,
+            'agent_id'              => 0,
             'title'                 => '',
             'transaction_type'      => 'SPRZEDAŻ',
             'transaction_type_locked' => false,
@@ -958,6 +1004,21 @@ JS
                 $defaults['contract_id'] = absint( $_GET['contract_id'] );
             }
 
+            if ( $defaults['contract_id'] > 0 && $defaults['agent_id'] <= 0 ) {
+                $contract = $this->contracts_repository->find( $defaults['contract_id'] );
+                if ( null !== $contract && ! empty( $contract['agent_id'] ) ) {
+                    $defaults['agent_id'] = (int) $contract['agent_id'];
+                }
+            }
+
+            if ( $defaults['agent_id'] <= 0 ) {
+                $defaults['agent_id'] = $this->get_current_user_agent_id();
+            }
+
+            if ( $defaults['agent_id'] > 0 ) {
+                $this->prime_agent_labels( [ $defaults['agent_id'] ] );
+            }
+
             if ( $defaults['contract_id'] > 0 ) {
                 $this->apply_contract_constraints( $defaults );
             }
@@ -972,6 +1033,11 @@ JS
         }
 
         $defaults['contract_id'] = absint( $defaults['contract_id'] );
+        $defaults['agent_id']    = absint( $defaults['agent_id'] );
+
+        if ( $defaults['agent_id'] > 0 ) {
+            $this->prime_agent_labels( [ $defaults['agent_id'] ] );
+        }
 
         if ( $defaults['contract_id'] > 0 ) {
             $this->apply_contract_constraints( $defaults );
@@ -1036,6 +1102,8 @@ JS
 
         $data['listing_number']  = sanitize_text_field( wp_unslash( $_POST['listing_number'] ?? '' ) );
         $data['contract_id']     = isset( $_POST['contract_id'] ) ? absint( $_POST['contract_id'] ) : 0;
+        $agent_input             = isset( $_POST['agent_id'] ) ? absint( $_POST['agent_id'] ) : 0;
+        $data['agent_id']        = $this->sanitize_agent_selection( $agent_input );
         $data['title']           = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
         $data['transaction_type'] = $this->sanitize_choice( $_POST['transaction_type'] ?? '', array_keys( $this->get_transaction_types() ) );
         $data['property_type']    = $this->sanitize_choice( $_POST['property_type'] ?? '', array_keys( $this->get_property_types() ) );
@@ -1286,7 +1354,6 @@ JS
         return $options;
     }
 
-    /**
      * Sanitizuje pojedynczy wybór.
      *
      * @param mixed        $value   Wartość wejściowa.

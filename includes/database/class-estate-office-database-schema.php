@@ -48,6 +48,7 @@ class Estate_Office_Database_Schema {
 
         $schema[] = "CREATE TABLE {$prefix}clients (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            agent_id BIGINT(20) UNSIGNED NULL,
             client_type VARCHAR(20) NOT NULL,
             first_name VARCHAR(100) NOT NULL DEFAULT '',
             last_name VARCHAR(100) NOT NULL DEFAULT '',
@@ -82,11 +83,13 @@ class Estate_Office_Database_Schema {
             updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             KEY email (email),
-            KEY phone (phone)
+            KEY phone (phone),
+            KEY agent_id (agent_id)
         ) {$charset_collate};";
 
         $schema[] = "CREATE TABLE {$prefix}contracts (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            agent_id BIGINT(20) UNSIGNED NULL,
             contract_number VARCHAR(60) NOT NULL,
             transaction_type VARCHAR(20) NOT NULL,
             start_date DATE NOT NULL,
@@ -102,7 +105,8 @@ class Estate_Office_Database_Schema {
             updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY contract_number (contract_number),
-            KEY transaction_type (transaction_type)
+            KEY transaction_type (transaction_type),
+            KEY agent_id (agent_id)
         ) {$charset_collate};";
 
         $schema[] = "CREATE TABLE {$prefix}contract_stages (
@@ -120,6 +124,7 @@ class Estate_Office_Database_Schema {
 
         $schema[] = "CREATE TABLE {$prefix}properties (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            agent_id BIGINT(20) UNSIGNED NULL,
             contract_id BIGINT(20) UNSIGNED NULL,
             listing_number VARCHAR(60) NOT NULL,
             title VARCHAR(200) NOT NULL DEFAULT '',
@@ -186,6 +191,7 @@ class Estate_Office_Database_Schema {
             updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY listing_number (listing_number),
+            KEY agent_id (agent_id),
             KEY contract_id (contract_id),
             KEY city (city),
             KEY transaction_type (transaction_type),
@@ -194,6 +200,7 @@ class Estate_Office_Database_Schema {
 
         $schema[] = "CREATE TABLE {$prefix}searches (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            agent_id BIGINT(20) UNSIGNED NULL,
             contract_id BIGINT(20) UNSIGNED NULL,
             search_number VARCHAR(60) NOT NULL,
             transaction_type VARCHAR(20) NOT NULL,
@@ -214,6 +221,7 @@ class Estate_Office_Database_Schema {
             updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY search_number (search_number),
+            KEY agent_id (agent_id),
             KEY contract_id (contract_id),
             KEY transaction_type (transaction_type),
             KEY property_type (property_type),

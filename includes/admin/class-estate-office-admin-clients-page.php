@@ -9,10 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once ESTATE_OFFICE_PATH . 'includes/admin/class-estate-office-admin-agent-assignment.php';
+
 /**
  * Class Estate_Office_Admin_Clients_Page
  */
 class Estate_Office_Admin_Clients_Page {
+
+    use Estate_Office_Admin_Agent_Assignment;
 
     private const PAGE_SLUG = 'estate-office-clients';
 
@@ -26,10 +30,12 @@ class Estate_Office_Admin_Clients_Page {
     /**
      * Konstruktor.
      *
-     * @param Estate_Office_Client_Repository|null $repository Repozytorium.
+     * @param Estate_Office_Client_Repository|null $repository        Repozytorium.
+     * @param Estate_Office_Agent_Repository|null  $agent_repository Repozytorium agentów.
      */
-    public function __construct( ?Estate_Office_Client_Repository $repository = null ) {
+    public function __construct( ?Estate_Office_Client_Repository $repository = null, ?Estate_Office_Agent_Repository $agent_repository = null ) {
         $this->repository = $repository ?? new Estate_Office_Client_Repository();
+        $this->init_agent_repository( $agent_repository );
     }
 
     /**
@@ -152,6 +158,12 @@ JS
             ]
         );
 
+        $agent_ids = [];
+        if ( isset( $query['items'] ) && is_array( $query['items'] ) ) {
+            $agent_ids = array_map( 'intval', wp_list_pluck( $query['items'], 'agent_id' ) );
+        }
+        $this->prime_agent_labels( $agent_ids );
+
         $message       = isset( $_GET['estate-office-message'] ) ? sanitize_text_field( wp_unslash( $_GET['estate-office-message'] ) ) : $notice;
         $message_class = isset( $_GET['estate-office-status'] ) ? sanitize_key( wp_unslash( $_GET['estate-office-status'] ) ) : $notice_id;
 
@@ -184,11 +196,12 @@ JS
         echo '<th>' . esc_html__( 'Telefon', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'E-mail', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Typ', 'estate-office' ) . '</th>';
+        echo '<th>' . esc_html__( 'Opiekun', 'estate-office' ) . '</th>';
         echo '<th>' . esc_html__( 'Akcje', 'estate-office' ) . '</th>';
         echo '</tr></thead><tbody>';
 
         if ( empty( $query['items'] ) ) {
-            echo '<tr><td colspan="6">' . esc_html__( 'Brak klientów do wyświetlenia.', 'estate-office' ) . '</td></tr>';
+            echo '<tr><td colspan="7">' . esc_html__( 'Brak klientów do wyświetlenia.', 'estate-office' ) . '</td></tr>';
         } else {
             foreach ( $query['items'] as $item ) {
                 $name = 'person' === $item['client_type']
@@ -224,6 +237,7 @@ JS
                 echo '<td>' . esc_html( $item['phone'] ) . '</td>';
                 echo '<td><a href="mailto:' . esc_attr( $item['email'] ) . '">' . esc_html( $item['email'] ) . '</a></td>';
                 echo '<td>' . esc_html( 'person' === $item['client_type'] ? __( 'Osoba fizyczna', 'estate-office' ) : __( 'Firma', 'estate-office' ) ) . '</td>';
+                echo '<td>' . wp_kses_post( $this->format_agent_cell( (int) ( $item['agent_id'] ?? 0 ) ) ) . '</td>';
                 echo '<td>' . implode( ' | ', $actions ) . '</td>';
                 echo '</tr>';
             }
@@ -289,9 +303,19 @@ JS
             'correspondence_city'       => '',
             'correspondence_country'    => '',
             'notes'                     => '',
+            'agent_id'                  => 0,
         ];
 
         $data = wp_parse_args( $client, $defaults );
+        $data['agent_id'] = isset( $data['agent_id'] ) ? (int) $data['agent_id'] : 0;
+
+        if ( ! $is_edit && 0 === $data['agent_id'] ) {
+            $data['agent_id'] = $this->get_current_user_agent_id();
+        }
+
+        if ( $data['agent_id'] > 0 ) {
+            $this->prime_agent_labels( [ $data['agent_id'] ] );
+        }
 
         echo '<div class="wrap">';
         echo '<h1>' . ( $is_edit ? esc_html__( 'Edytuj klienta', 'estate-office' ) : esc_html__( 'Dodaj klienta', 'estate-office' ) ) . '</h1>';
@@ -308,6 +332,27 @@ JS
         echo '<option value="person"' . selected( $data['client_type'], 'person', false ) . '>' . esc_html__( 'Osoba fizyczna', 'estate-office' ) . '</option>';
         echo '<option value="company"' . selected( $data['client_type'], 'company', false ) . '>' . esc_html__( 'Firma', 'estate-office' ) . '</option>';
         echo '</select>';
+        echo '</td></tr>';
+
+        $agent_options     = $this->get_agent_select_options();
+        $agent_description = '';
+        if ( ! $this->can_assign_all_agents() ) {
+            if ( $this->get_current_user_agent_id() > 0 ) {
+                $agent_description = __( 'Możesz przypisać jedynie siebie jako opiekuna.', 'estate-office' );
+            } else {
+                $agent_description = __( 'Twoje konto nie ma przypisanego profilu agenta. Skontaktuj się z administratorem.', 'estate-office' );
+            }
+        }
+        echo '<tr><th><label for="agent_id">' . esc_html__( 'Opiekun (agent)', 'estate-office' ) . '</label></th><td>';
+        echo '<select name="agent_id" id="agent_id">';
+        echo '<option value="">' . esc_html__( 'Wybierz…', 'estate-office' ) . '</option>';
+        foreach ( $agent_options as $value => $label ) {
+            echo '<option value="' . esc_attr( $value ) . '"' . selected( (string) $data['agent_id'], (string) $value, false ) . '>' . esc_html( $label ) . '</option>';
+        }
+        echo '</select>';
+        if ( '' !== $agent_description ) {
+            echo '<p class="description">' . esc_html( $agent_description ) . '</p>';
+        }
         echo '</td></tr>';
 
         echo '<tr class="estate-office-client-type" data-type="person"><th>' . esc_html__( 'Imię i nazwisko', 'estate-office' ) . '</th><td>';
@@ -398,6 +443,8 @@ JS
         $client_id  = isset( $_POST['client_id'] ) ? absint( $_POST['client_id'] ) : 0;
         $redirect   = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '';
         $data       = Estate_Office_Client_Request_Helper::sanitize_from_array( $_POST );
+        $agent_input = isset( $_POST['agent_id'] ) ? absint( $_POST['agent_id'] ) : 0;
+        $data['agent_id'] = $this->sanitize_agent_selection( $agent_input );
         $is_portal  = ! empty( $redirect );
         $message    = '';
         $status     = '';
@@ -493,6 +540,7 @@ JS
      */
     private function render_profile( array $client ) : void {
         $contracts = $this->repository->get_contracts_for_client( (int) $client['id'] );
+        $this->prime_agent_labels( [ (int) ( $client['agent_id'] ?? 0 ) ] );
 
         $name = 'person' === $client['client_type']
             ? trim( $client['first_name'] . ' ' . $client['last_name'] )
@@ -505,6 +553,7 @@ JS
         echo '<div style="flex:1 1 320px;min-width:280px;">';
         echo '<h2>' . esc_html__( 'Dane klienta', 'estate-office' ) . '</h2>';
         echo '<table class="widefat fixed striped">';
+        $agent_cell = $this->format_agent_cell( (int) ( $client['agent_id'] ?? 0 ) );
         $rows = [
             __( 'Typ', 'estate-office' ) => 'person' === $client['client_type'] ? __( 'Osoba fizyczna', 'estate-office' ) : __( 'Firma', 'estate-office' ),
             __( 'Telefon', 'estate-office' ) => $client['phone'],
@@ -514,6 +563,7 @@ JS
             __( 'NIP', 'estate-office' ) => $client['nip'],
             __( 'KRS', 'estate-office' ) => $client['krs'],
             __( 'REGON', 'estate-office' ) => $client['regon'],
+            __( 'Opiekun', 'estate-office' ) => $agent_cell,
         ];
         foreach ( $rows as $label => $value ) {
             if ( empty( $value ) ) {
@@ -524,6 +574,8 @@ JS
                 echo '<a href="mailto:' . esc_attr( $value ) . '">' . esc_html( $value ) . '</a>';
             } elseif ( __( 'Strona WWW', 'estate-office' ) === $label ) {
                 echo '<a href="' . esc_url( $value ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $value ) . '</a>';
+            } elseif ( __( 'Opiekun', 'estate-office' ) === $label ) {
+                echo wp_kses_post( $agent_cell );
             } else {
                 echo esc_html( $value );
             }
