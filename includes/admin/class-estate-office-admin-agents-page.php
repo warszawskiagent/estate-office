@@ -51,9 +51,8 @@ class Estate_Office_Admin_Agents_Page {
             wp_die( esc_html__( 'Nie masz uprawnień do zarządzania agentami.', 'estate-office' ) );
         }
 
-        $current_agent = $this->get_current_agent();
-        $messages      = $this->collect_messages();
-        $agents        = $this->repository->all();
+        $action   = $this->get_current_action();
+        $messages = $this->collect_messages();
 
         echo '<div class="wrap estate-office-agents">';
         echo '<h1>' . esc_html__( 'Agenci EstateOffice', 'estate-office' ) . '</h1>';
@@ -66,8 +65,24 @@ class Estate_Office_Admin_Agents_Page {
             );
         }
 
-        $this->render_form( $current_agent );
-        $this->render_list( $agents );
+        if ( in_array( $action, [ 'add', 'edit' ], true ) ) {
+            $agent = 'edit' === $action ? $this->get_current_agent() : null;
+
+            if ( 'edit' === $action && null === $agent ) {
+                printf(
+                    '<div class="notice notice-error"><p>%s</p></div>',
+                    esc_html__( 'Nie znaleziono wskazanego agenta.', 'estate-office' )
+                );
+                $this->render_actions_toolbar();
+                $this->render_list( $this->repository->all() );
+            } else {
+                $this->render_actions_toolbar( true );
+                $this->render_form( $agent );
+            }
+        } else {
+            $this->render_actions_toolbar();
+            $this->render_list( $this->repository->all() );
+        }
 
         echo '</div>';
     }
@@ -318,6 +333,39 @@ class Estate_Office_Admin_Agents_Page {
     }
 
     /**
+     * Renderuje pasek akcji nad tabelą/formularzem.
+     *
+     * @param bool $show_back Czy wyświetlić przycisk powrotu.
+     *
+     * @return void
+     */
+    private function render_actions_toolbar( bool $show_back = false ) : void {
+        $base_url = add_query_arg(
+            [
+                'page' => self::PAGE_SLUG,
+            ],
+            admin_url( 'admin.php' )
+        );
+
+        echo '<div class="estate-office-agents-actions">';
+
+        if ( $show_back ) {
+            echo '<a class="button" href="' . esc_url( $base_url ) . '">' . esc_html__( 'Powrót do listy', 'estate-office' ) . '</a>';
+        } else {
+            $add_url = add_query_arg(
+                [
+                    'action' => 'add',
+                ],
+                $base_url
+            );
+
+            echo '<a class="button button-primary" href="' . esc_url( $add_url ) . '">' . esc_html__( 'Dodaj agenta', 'estate-office' ) . '</a>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
      * Renderuje formularz dodawania/edycji agenta.
      *
      * @param object|null $agent Bieżący agent.
@@ -470,5 +518,14 @@ class Estate_Office_Admin_Agents_Page {
         }
         echo '</tbody>';
         echo '</table>';
+    }
+
+    /**
+     * Zwraca aktualną akcję widoku.
+     *
+     * @return string
+     */
+    private function get_current_action() : string {
+        return isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
     }
 }
