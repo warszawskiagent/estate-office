@@ -57,6 +57,13 @@ final class Estate_Office_Plugin {
     private ?Estate_Office_Frontend_Offers $offers = null;
 
     /**
+     * Frontendowe kalkulatory finansowe.
+     *
+     * @var Estate_Office_Frontend_Calculators|null
+     */
+    private ?Estate_Office_Frontend_Calculators $calculators = null;
+
+    /**
      * Menedżer licencji.
      *
      * @var Estate_Office_License_Manager|null
@@ -157,6 +164,7 @@ final class Estate_Office_Plugin {
         $instance->get_portal_export_manager()->generate_exports();
         Estate_Office_Frontend_Portal::ensure_portal_page();
         Estate_Office_Frontend_Offers::ensure_offer_pages();
+        Estate_Office_Frontend_Calculators::ensure_calculator_pages();
         flush_rewrite_rules();
 
         self::log_debug( 'EstateOffice aktywowana. Wersja: ' . ESTATE_OFFICE_VERSION );
@@ -215,6 +223,12 @@ final class Estate_Office_Plugin {
         }
 
         $this->offers->hooks();
+
+        if ( null === $this->calculators ) {
+            $this->calculators = new Estate_Office_Frontend_Calculators();
+        }
+
+        $this->calculators->hooks();
     }
 
     /**

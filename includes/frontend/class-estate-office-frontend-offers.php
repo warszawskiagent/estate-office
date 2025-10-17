@@ -80,6 +80,8 @@ class Estate_Office_Frontend_Offers {
             . '.estate-office-offers__pagination .estate-office-offers__page{padding:0.45rem 0.85rem;border-radius:8px;background:#f3f4f6;color:#1f2937;text-decoration:none;font-weight:600;}'
             . '.estate-office-offers__pagination .estate-office-offers__page.is-active{background:#2563eb;color:#fff;}'
             . '.estate-office-offers__description{margin-top:1.5rem;color:#374151;font-size:0.95rem;line-height:1.7;}'
+            . '.estate-office-offers__calculators{display:grid;gap:2rem;margin-top:2.5rem;}'
+            . '.estate-office-offers__calculators .estate-office-calculators{margin:0;}'
             . '@media (max-width:640px){.estate-office-offers__filters{flex-direction:column;align-items:stretch;}.estate-office-offers__filters select,.estate-office-offers__filters button{width:100%;}}';
 
         wp_add_inline_style( 'estate-office-offers', $css );
@@ -270,6 +272,25 @@ class Estate_Office_Frontend_Offers {
                         </div>
                     <?php endif; ?>
                     <?php $this->render_gallery( $detail ); ?>
+                    <div class="estate-office-offers__calculators">
+                        <?php
+                        $price_value           = isset( $detail['price'] ) ? (float) $detail['price'] : 0.0;
+                        $transaction_context   = isset( $detail['transaction_type'] ) ? sanitize_text_field( $detail['transaction_type'] ) : 'SPRZEDAŻ';
+                        $default_down_payment  = $price_value > 0 ? $price_value * 0.2 : 200000.0;
+
+                        echo do_shortcode( sprintf(
+                            '[estate_office_notary_calculator price="%1$s" transaction="%2$s" show_hint="yes"]',
+                            esc_attr( number_format( $price_value, 2, '.', '' ) ),
+                            esc_attr( $transaction_context )
+                        ) );
+
+                        echo do_shortcode( sprintf(
+                            '[estate_office_mortgage_calculator price="%1$s" down_payment="%2$s" interest="6.5" years="25"]',
+                            esc_attr( number_format( $price_value, 2, '.', '' ) ),
+                            esc_attr( number_format( $default_down_payment, 2, '.', '' ) )
+                        ) );
+                        ?>
+                    </div>
                 </section>
             <?php endif; ?>
         </div>

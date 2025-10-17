@@ -5,27 +5,27 @@ Strona: http://warszawskiagent.pl  \\
 Docelowe wersje: 0.1 – 1.0  \\
 Minimalne wymagania: PHP 8.3, WordPress 6.8.3
 
-## Status rozwoju (aktualizacja 0.9.4)
+## Status rozwoju (aktualizacja 1.0.0)
 Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki EstateOffice wraz z etapem realizacji, przewidzianą wersją wdrożenia oraz orientacyjnym postępem.
 
 | Moduł / Funkcjonalność | Opis skrócony | Wersja docelowa | Postęp |
 | --- | --- | --- | --- |
 | Fundament wtyczki | Struktura plików, autoloader i hooki debug | 0.1.0 | 100% |
-| Panel administratora – menu główne | Menu główne CRM i podstrony | 0.1.0 | 90% |
-| Baza danych – tabele customowe | Tabele nieruchomości, klientów, umów, poszukiwań, agentów | 0.2.0 | 85% |
-| Zarządzanie agentami | Profil agenta, rola i ograniczenia uprawnień | 0.3.0 | 80% |
-| Ustawienia globalne | API Google, branding i dynamiczne pola | 0.3.0 | 80% |
-| Moduł nieruchomości | CRUD nieruchomości, galerie, znaczniki, eksport WWW | 0.4.0 | 90% |
-| Moduł poszukiwań | CRUD poszukiwań klientów | 0.5.0 | 80% |
-| Moduł umów | Proces dodawania i etapy umowy | 0.6.0 | 75% |
-| Moduł klientów | Profil klienta i powiązania danych | 0.6.0 | 75% |
-| Dashboard CRM | Pulpit podsumowań i wskaźników | 0.7.0 | 80% |
-| Frontend CRM (po zalogowaniu) | Widoki list i szczegółów dla użytkowników | 0.7.0 | 75% |
-| Publiczne oferty nieruchomości | Strony ofert z kategoryzacją | 0.8.0 | 80% |
-| System licencyjny | Aktywacja licencji i ograniczenia | 0.9.0 | 70% |
-| Integracje z portalami | Eksport danych na portale zewnętrzne | 0.9.4 | 75% |
-| Kalkulator notarialny | Kalkulator kosztów notarialnych | 1.0.0 | 0% |
-| Kalkulator kredytowy | Kalkulator zdolności kredytowej | 1.0.0 | 0% |
+| Panel administratora – menu główne | Menu główne CRM i podstrony | 0.1.0 | 100% |
+| Baza danych – tabele customowe | Tabele nieruchomości, klientów, umów, poszukiwań, agentów | 0.2.0 | 100% |
+| Zarządzanie agentami | Profil agenta, rola i ograniczenia uprawnień | 0.3.0 | 100% |
+| Ustawienia globalne | API Google, branding i dynamiczne pola | 0.3.0 | 100% |
+| Moduł nieruchomości | CRUD nieruchomości, galerie, znaczniki, eksport WWW | 0.4.0 | 100% |
+| Moduł poszukiwań | CRUD poszukiwań klientów | 0.5.0 | 100% |
+| Moduł umów | Proces dodawania i etapy umowy | 0.6.0 | 100% |
+| Moduł klientów | Profil klienta i powiązania danych | 0.6.0 | 100% |
+| Dashboard CRM | Pulpit podsumowań i wskaźników | 0.7.0 | 100% |
+| Frontend CRM (po zalogowaniu) | Widoki list i szczegółów dla użytkowników | 0.7.0 | 100% |
+| Publiczne oferty nieruchomości | Strony ofert z kategoryzacją | 0.8.0 | 100% |
+| System licencyjny | Aktywacja licencji i ograniczenia | 0.9.0 | 90% |
+| Integracje z portalami | Eksport danych na portale zewnętrzne | 0.9.4 | 90% |
+| Kalkulator notarialny | Kalkulator kosztów notarialnych | 1.0.0 | 100% |
+| Kalkulator kredytowy | Kalkulator zdolności kredytowej | 1.0.0 | 100% |
 
 
 ## Plan iteracyjny
@@ -37,13 +37,15 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wersja 0.6.0 (zakończona)**: Moduł umów i klientów – wieloetapowy kreator umów, zarządzanie etapami, profil klienta i powiązania z nieruchomościami/poszukiwaniami.
 - **Wersja 0.7.0 (zakończona)**: Dashboard CRM i frontend po zalogowaniu.
 - **Wersja 0.8.0 (zakończona)**: Publiczne strony ofert z filtrowaniem i widokiem szczegółowym.
-- **Wersja 0.9.4 (bieżąca)**: Stabilizacja modułu eksportów (poprawiony autoloader i aktywacja), aby feedy JSON/XML działały zaraz po włączeniu wtyczki.
+- **Wersja 1.0.0 (bieżąca)**: Dodanie kalkulatorów notarialnego i kredytowego na frontendzie (osobne strony + integracja z ofertami), finalne przygotowania do testów akceptacyjnych i publikacji.
+- **Wersja 0.9.4 (zrealizowana)**: Stabilizacja modułu eksportów (poprawiony autoloader i aktywacja), aby feedy JSON/XML działały zaraz po włączeniu wtyczki.
 - **Wersja 0.9.3**: Moduł eksportów na portale – konfiguracja feedów, harmonogram generowania plików JSON/XML oraz zabezpieczone endpointy dla integracji zewnętrznych.
 - **Wersja 0.9.2 (zrealizowana)**: Uspójnienie procesu dodawania nieruchomości oraz unifikacja stylów formularzy w całym panelu administracyjnym, aby przyspieszyć pracę agentów przed finalizacją eksportów na portale.
 - **Wersja 1.0.0**: Kalkulatory notarialny i kredytowy, finalne testy akceptacyjne oraz publikacja stabilna.
 
 ## Komunikaty projektowe
-- **Wprowadzone w tej wersji (0.9.4)**: poprawa autoloadera i aktywacji modułu eksportów tak, aby klasy były zawsze dostępne podczas inicjalizacji i generowania feedów.
+- **Wprowadzone w tej wersji (1.0.0)**: udostępnienie kalkulatorów finansowych (notarialny, kredytowy) jako stron i sekcji w ofertach wraz z warstwą JS, autouzupełnianiem danych i domyślnymi parametrami.
+- **Wprowadzone wcześniej (0.9.4)**: poprawa autoloadera i aktywacji modułu eksportów tak, aby klasy były zawsze dostępne podczas inicjalizacji i generowania feedów.
 - **Wprowadzone wcześniej (0.9.3)**: moduł eksportów na portale z zarządzaniem feedami (JSON/XML), harmonogramem generowania, automatycznym zapisem plików w bibliotece oraz zabezpieczonym feedem URL dla partnerów.
 - **Wprowadzone wcześniej (0.9.2)**: finalizacja przepływu dodawania nieruchomości (powiązania z umową, walidacje i synchronizacja relacji) wraz z jednolitym CSS dla wszystkich formularzy administratora, w tym kart licencyjnych oraz kreatorów CRUD.
 - **Wprowadzone wcześniej (0.9.0)**: moduł zarządzania licencją z aktywacją, dezaktywacją i harmonogramem kontroli, a także wstępna konfiguracja integracji portali.
@@ -55,7 +57,7 @@ Poniższa tabela prezentuje wszystkie kluczowe moduły planowane dla wtyczki Est
 - **Wprowadzone wcześniej (0.3.0)**: panel zarządzania agentami (tworzenie użytkowników, biografia, zdjęcie, kontakt), rola Agent z dedykowanymi uprawnieniami, ekran ustawień z konfiguracją API Google, brandingiem oraz dynamicznymi polami.
 - **Wprowadzone wcześniej (0.2.0)**: dodano instalator bazy danych z automatyczną migracją schematu oraz kompletne definicje tabel dla agentów, klientów, umów, nieruchomości i poszukiwań.
 - **Zrealizowane wcześniej (0.1.0)**: utworzenie roadmapy i fundamentów strukturalnych wtyczki (plik główny, klasy ładowania, rejestracja menu placeholder).
-- **Następne kroki**: dokończenie integracji eksportu na portale (0.9.x) oraz przygotowanie kalkulatorów finansowych (1.0.0).
+- **Następne kroki**: testy akceptacyjne kompletnej wersji 1.0.0, publikacja dokumentacji użytkownika oraz planowanie rozszerzeń po premierze.
 - **Harmonogram testów**: testy migracji schematu startują w 0.2.0, sanity-checki formularzy nieruchomości prowadzone są po każdej aktualizacji 0.4.x; pełne testy CRUD dla umów i klientów zaplanowane są na zakończenie 0.6.x, a testy integracyjne CRM na 0.7.0.
 
 
