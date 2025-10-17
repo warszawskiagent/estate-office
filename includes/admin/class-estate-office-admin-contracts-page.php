@@ -283,7 +283,7 @@ JS
                         ),
                         'estate-office-delete-contract-' . $item['id']
                     );
-                    $actions[] = '<a href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js__( 'Czy na pewno chcesz usunąć umowę?', 'estate-office' ) . '\');">' . esc_html__( 'Usuń', 'estate-office' ) . '</a>';
+                    $actions[] = '<a href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Czy na pewno chcesz usunąć umowę?', 'estate-office' ) ) . '\');">' . esc_html__( 'Usuń', 'estate-office' ) . '</a>';
                 }
 
                 echo '<tr>';
@@ -478,7 +478,7 @@ JS
                 echo '<tr>';
                 echo '<td>' . esc_html( $name ) . '</td>';
                 echo '<td>' . esc_html( $client['role'] ?: __( 'Klient', 'estate-office' ) ) . '</td>';
-                echo '<td><a href="' . esc_url( $remove_url ) . '" onclick="return confirm(\'' . esc_js__( 'Czy usunąć klienta z umowy?', 'estate-office' ) . '\');">' . esc_html__( 'Usuń powiązanie', 'estate-office' ) . '</a></td>';
+                echo '<td><a href="' . esc_url( $remove_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Czy usunąć klienta z umowy?', 'estate-office' ) ) . '\');">' . esc_html__( 'Usuń powiązanie', 'estate-office' ) . '</a></td>';
                 echo '</tr>';
             }
             echo '</tbody></table>';
