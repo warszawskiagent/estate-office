@@ -89,6 +89,10 @@
     margin-bottom: 24px;
 }
 
+.estate-office-agreement-creator__grid--compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .estate-office-agreement-creator__grid label,
 .estate-office-agreement-creator__grid input,
 .estate-office-agreement-creator__grid select {
@@ -117,6 +121,24 @@
     font-weight: 600;
 }
 
+.estate-office-agreement-creator__grid label .estate-office-agreement-creator__label-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__grid label .required {
+    color: #b71d33;
+    font-weight: 700;
+}
+
+.estate-office-agreement-creator__grid label .required[hidden] {
+    display: none;
+}
+
 .estate-office-agreement-creator__grid input,
 .estate-office-agreement-creator__grid select,
 .estate-office-agreement-creator__search input {
@@ -136,6 +158,10 @@
 
 .estate-office-agreement-creator__checkbox input {
     width: auto;
+}
+
+.estate-office-agreement-creator .is-hidden {
+    display: none !important;
 }
 
 .estate-office-agreement-creator__textarea {
@@ -208,6 +234,106 @@
 
 .estate-office-agreement-creator__message.is-error {
     color: #b71d33;
+}
+
+.estate-office-agreement-creator__fieldset {
+    border: 1px solid #dce4f0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    background: #fff;
+}
+
+.estate-office-agreement-creator__fieldset legend {
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__checkgroup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px 16px;
+    margin-top: 16px;
+}
+
+.estate-office-agreement-creator__checkgroup-title {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__checkgroup-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__checkgroup-item input {
+    width: auto;
+}
+
+.estate-office-agreement-creator__nested {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #dce4f0;
+    background: #f8fbff;
+    display: grid;
+    gap: 12px;
+}
+
+.estate-office-agreement-creator__nested[hidden] {
+    display: none;
+}
+
+.estate-office-agreement-creator__nested label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.estate-office-agreement-creator__nested input,
+.estate-office-agreement-creator__nested select {
+    border: 1px solid #c9d3df;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    background: #fff;
+}
+
+.estate-office-agreement-creator__surfaces {
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .estate-office-agreement-creator__surfaces {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+.estate-office-agreement-creator__surface {
+    border: 1px dashed #dce4f0;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fbfdff;
+    display: grid;
+    gap: 12px;
+}
+
+.estate-office-agreement-creator__surface .estate-office-agreement-creator__checkbox {
+    font-weight: 700;
 }
 
 .estate-office-agreement-creator__prompt {

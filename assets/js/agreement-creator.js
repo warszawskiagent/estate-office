@@ -30,6 +30,17 @@
     const propertyMessage = overlay.querySelector('[data-eo-agreement-property-message]');
     const propertySearchInput = overlay.querySelector('[data-eo-agreement-property-search]');
     const propertyResults = overlay.querySelector('[data-eo-agreement-property-results]');
+    const propertyTypeSelect = propertyForm?.querySelector('[data-eo-property-type]');
+    const propertyScopedElements = propertyForm ? Array.from(propertyForm.querySelectorAll('[data-eo-property-scope]')) : [];
+    const propertyConditionalElements = propertyForm ? Array.from(propertyForm.querySelectorAll('[data-eo-required-for]')) : [];
+    const plotShapeSelect = propertyForm?.querySelector('[data-eo-plot-shape]');
+    const plotDimensionFields = propertyForm ? Array.from(propertyForm.querySelectorAll('[data-eo-plot-dimension]')) : [];
+    const propertyParkingToggle = propertyForm?.querySelector('[data-eo-property-parking]');
+    const propertyParkingFields = propertyForm?.querySelector('[data-eo-property-parking-fields]');
+    const surfaceToggleInputs = propertyForm ? Array.from(propertyForm.querySelectorAll('[data-eo-surface-toggle]')) : [];
+    const propertyPriceInput = propertyForm?.querySelector('[data-eo-property-price]');
+    const propertyAreaInput = propertyForm?.querySelector('[data-eo-property-area]');
+    const propertyPricePerSqmInput = propertyForm?.querySelector('[data-eo-property-price-sqm]');
     const searchForm = overlay.querySelector('[data-eo-agreement-search]');
     const searchTransactionInput = overlay.querySelector('[data-eo-agreement-search-transaction]');
     const searchMessage = overlay.querySelector('[data-eo-agreement-search-message]');
@@ -43,6 +54,9 @@
     const clientRoleLabel = config.labels?.clientRole || '';
     const clientRolePlaceholder = config.labels?.clientRolePlaceholder || '';
 
+    let updateParkingVisibility;
+    const surfaceVisibilityUpdaters = [];
+
     const state = {
         agreementId: 0,
         clients: [],
@@ -50,6 +64,163 @@
         transactionType: '',
         record: null,
     };
+
+    function parsePropertyList(value) {
+        if (!value) {
+            return [];
+        }
+
+        return value
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
+    }
+
+    function collectFields(element) {
+        if (!element) {
+            return [];
+        }
+
+        if (element.matches('input, select, textarea')) {
+            return [element];
+        }
+
+        return Array.from(element.querySelectorAll('input, select, textarea'));
+    }
+
+    function setElementVisibility(element, visible, options = {}) {
+        if (!element) {
+            return;
+        }
+
+        const { resetOnHide = true } = options;
+        const fields = collectFields(element);
+
+        if (visible) {
+            element.classList.remove('is-hidden');
+            element.removeAttribute('hidden');
+            element.removeAttribute('aria-hidden');
+
+            fields.forEach((field) => {
+                if (field.dataset.eoHiddenDisabled === '1') {
+                    field.removeAttribute('disabled');
+                    delete field.dataset.eoHiddenDisabled;
+                }
+            });
+
+            return;
+        }
+
+        element.classList.add('is-hidden');
+        element.setAttribute('hidden', 'hidden');
+        element.setAttribute('aria-hidden', 'true');
+
+        fields.forEach((field) => {
+            if (!field.disabled) {
+                field.dataset.eoHiddenDisabled = '1';
+                field.setAttribute('disabled', 'disabled');
+            }
+
+            if (resetOnHide) {
+                if (field.type === 'checkbox' || field.type === 'radio') {
+                    field.checked = false;
+                } else if (field.tagName === 'SELECT') {
+                    field.selectedIndex = 0;
+                } else if ('value' in field) {
+                    field.value = '';
+                }
+            }
+
+            field.removeAttribute('required');
+        });
+    }
+
+    function updatePropertyScope() {
+        const propertyType = propertyTypeSelect?.value || '';
+
+        propertyScopedElements.forEach((element) => {
+            const scopeAttr = element.getAttribute('data-eo-property-scope') || '';
+            const scopes = parsePropertyList(scopeAttr);
+            const shouldShow = scopes.length === 0 ? true : (propertyType !== '' && scopes.includes(propertyType));
+
+            setElementVisibility(element, shouldShow, { resetOnHide: true });
+        });
+    }
+
+    function updatePropertyRequirements() {
+        const propertyType = propertyTypeSelect?.value || '';
+
+        propertyConditionalElements.forEach((element) => {
+            const requiredAttr = element.getAttribute('data-eo-required-for') || '';
+            const requiredTypes = parsePropertyList(requiredAttr);
+            const shouldRequire = propertyType !== '' && (requiredTypes.length === 0 || requiredTypes.includes(propertyType));
+            const fields = collectFields(element);
+
+            fields.forEach((field) => {
+                if (shouldRequire && !field.disabled) {
+                    field.setAttribute('required', 'required');
+                } else {
+                    field.removeAttribute('required');
+                }
+            });
+
+            const indicator = element.querySelector('[data-eo-required-indicator]');
+            if (indicator) {
+                if (shouldRequire && !element.hasAttribute('hidden')) {
+                    indicator.removeAttribute('hidden');
+                } else {
+                    indicator.setAttribute('hidden', 'hidden');
+                }
+            }
+        });
+    }
+
+    function updatePlotDimensions() {
+        const propertyType = propertyTypeSelect?.value || '';
+        const plotShape = plotShapeSelect?.value || '';
+        const isScopedType = propertyType === 'land' || propertyType === 'house';
+
+        plotDimensionFields.forEach((element) => {
+            const dimension = element.getAttribute('data-eo-plot-dimension') || '';
+            const shouldShow = isScopedType && plotShape !== '' && dimension === plotShape;
+
+            setElementVisibility(element, shouldShow, { resetOnHide: true });
+        });
+    }
+
+    function updatePricePerSqm() {
+        if (!propertyPricePerSqmInput) {
+            return;
+        }
+
+        const price = parseFloat(propertyPriceInput?.value || '');
+        const area = parseFloat(propertyAreaInput?.value || '');
+
+        if (Number.isFinite(price) && Number.isFinite(area) && area > 0) {
+            propertyPricePerSqmInput.value = (price / area).toFixed(2);
+        } else {
+            propertyPricePerSqmInput.value = '';
+        }
+    }
+
+    function refreshSurfaceVisibility() {
+        surfaceVisibilityUpdaters.forEach((update) => {
+            update();
+        });
+    }
+
+    function refreshPropertyFormState() {
+        updatePropertyScope();
+        updatePropertyRequirements();
+        updatePlotDimensions();
+
+        if (typeof updateParkingVisibility === 'function') {
+            updateParkingVisibility();
+        }
+
+        refreshSurfaceVisibility();
+        updatePricePerSqm();
+    }
 
     const hideClientPrompt = () => {
         if (!clientPrompt) {
@@ -83,6 +254,65 @@
 
     const propertyTransactions = Array.isArray(config.propertyTransactions) ? config.propertyTransactions : [];
     const searchTransactions = Array.isArray(config.searchTransactions) ? config.searchTransactions : [];
+
+    if (propertyParkingToggle && propertyParkingFields) {
+        updateParkingVisibility = () => {
+            const parentHidden = propertyParkingToggle.closest('[hidden]') !== null || propertyParkingToggle.disabled;
+            const shouldShow = propertyParkingToggle.checked && !parentHidden;
+
+            setElementVisibility(propertyParkingFields, shouldShow, { resetOnHide: true });
+        };
+
+        updateParkingVisibility();
+        propertyParkingToggle.addEventListener('change', updateParkingVisibility);
+    }
+
+    surfaceToggleInputs.forEach((toggle) => {
+        const key = toggle.getAttribute('data-eo-surface-toggle');
+        if (!key) {
+            return;
+        }
+
+        const target = propertyForm?.querySelector('[data-eo-surface-fields="' + key + '"]');
+        if (!target) {
+            return;
+        }
+
+        const update = () => {
+            const parentHidden = toggle.closest('[hidden]') !== null || toggle.disabled;
+            const shouldShow = toggle.checked && !parentHidden;
+
+            setElementVisibility(target, shouldShow, { resetOnHide: true });
+        };
+
+        surfaceVisibilityUpdaters.push(update);
+        update();
+        toggle.addEventListener('change', update);
+    });
+
+    if (propertyTypeSelect) {
+        propertyTypeSelect.addEventListener('change', () => {
+            refreshPropertyFormState();
+        });
+    }
+
+    if (plotShapeSelect) {
+        plotShapeSelect.addEventListener('change', () => {
+            updatePlotDimensions();
+        });
+    }
+
+    if (propertyPriceInput) {
+        propertyPriceInput.addEventListener('input', updatePricePerSqm);
+        propertyPriceInput.addEventListener('blur', updatePricePerSqm);
+    }
+
+    if (propertyAreaInput) {
+        propertyAreaInput.addEventListener('input', updatePricePerSqm);
+        propertyAreaInput.addEventListener('blur', updatePricePerSqm);
+    }
+
+    refreshPropertyFormState();
 
     const setMessage = (container, type, text) => {
         if (!container) {
@@ -167,6 +397,7 @@
         if (clientResults) {
             clientResults.innerHTML = '';
         }
+        refreshPropertyFormState();
         hideClientPrompt();
     };
 
@@ -1240,6 +1471,7 @@
             searchSearchInput.value = '';
         }
 
+        refreshPropertyFormState();
         renderSummary();
 
         const type = state.transactionType;
@@ -1255,6 +1487,7 @@
             if (step3Description) {
                 step3Description.textContent = config.step3?.propertyDescription || '';
             }
+            refreshPropertyFormState();
             return;
         }
 

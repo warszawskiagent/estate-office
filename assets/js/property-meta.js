@@ -864,10 +864,87 @@
         });
     }
 
+    function setToggleState(target, visible) {
+        if (!target) {
+            return;
+        }
+
+        if (visible) {
+            target.classList.add('is-visible');
+            target.removeAttribute('hidden');
+        } else {
+            target.classList.remove('is-visible');
+            target.setAttribute('hidden', 'hidden');
+        }
+
+        const fields = target.querySelectorAll('input, select, textarea');
+        fields.forEach(function (field) {
+            if (visible) {
+                if (field.dataset.eoToggleDisabled === '1') {
+                    field.removeAttribute('disabled');
+                    delete field.dataset.eoToggleDisabled;
+                }
+            } else if (!field.disabled) {
+                field.dataset.eoToggleDisabled = '1';
+                field.setAttribute('disabled', 'disabled');
+            }
+        });
+    }
+
+    function initToggleFields() {
+        const toggles = document.querySelectorAll('[data-eo-toggle]');
+        if (!toggles.length) {
+            return;
+        }
+
+        toggles.forEach(function (toggle) {
+            const selector = toggle.getAttribute('data-eo-toggle');
+            if (!selector) {
+                return;
+            }
+
+            const target = document.querySelector(selector);
+            if (!target) {
+                return;
+            }
+
+            const update = function () {
+                const visible = toggle.type === 'checkbox' ? toggle.checked : !toggle.hasAttribute('disabled');
+                setToggleState(target, visible);
+            };
+
+            update();
+            toggle.addEventListener('change', update);
+        });
+    }
+
+    function initLandRegisterToggle() {
+        const checkbox = document.getElementById('estate_property_no_land_register');
+        const input = document.getElementById('estate_property_land_register_number');
+
+        if (!checkbox || !input) {
+            return;
+        }
+
+        const update = function () {
+            if (checkbox.checked) {
+                input.value = '';
+                input.setAttribute('disabled', 'disabled');
+            } else {
+                input.removeAttribute('disabled');
+            }
+        };
+
+        update();
+        checkbox.addEventListener('change', update);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initMapField();
         initGalleries();
         initDownloadFields();
         initSingleMediaFields();
+        initToggleFields();
+        initLandRegisterToggle();
     });
 })(window, document);

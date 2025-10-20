@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.2 rozwija podstawową strukturę panelu administracyjnego, zarządzanie rolą agentów oraz sekcję ustawień dla kluczowych integracji o aktywny moduł licencyjny i kontekstowe alerty na liście wtyczek.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.3 rozszerza frontowy kreator umów o kompletną kartę metadanych nieruchomości, dynamiczne sekcje formularza oraz obliczenia ceny za m² przy zachowaniu aktywnego modułu licencyjnego i alertów na liście wtyczek.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -28,6 +28,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.2 r
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania, Klienci i Leady oraz wyszukiwarką w tabelach.
 * Frontowe formularze szybkiego dodawania nieruchomości, poszukiwań i klientów dostępne bezpośrednio w CRM.
 * Kreator frontowy umów prowadzący przez dodawanie danych i klientów bez opuszczania panelu CRM.
+* Dynamiczny krok dodawania nieruchomości w kreatorze umów z warunkową widocznością pól, sekcjami budynku, udogodnień, wyposażenia i powierzchniami dodatkowymi.
 * Możliwość wyszukania i przypisania istniejących nieruchomości lub poszukiwań w kreatorze umów oraz zmiany wyboru przed finalizacją.
 * Walidacja finalizacji kreatora umów wymagająca przypisania nieruchomości lub poszukiwania zgodnie z typem transakcji.
 * Obsługa dynamicznych pól umów, nieruchomości i poszukiwań bezpośrednio w kreatorze umów.
@@ -93,6 +94,11 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.2 r
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.3 =
+* Rozszerzono krok dodawania nieruchomości w kreatorze umów o pełną listę pól technicznych, prawnych i marketingowych zgodną z metadanymi panelu administracyjnego.
+* Dodano logikę JavaScript sterującą widocznością sekcji formularza zależnie od typu nieruchomości, statusu KW, powierzchni dodatkowych oraz automatyczne wyliczanie ceny za metr.
+* Uzupełniono style frontowe o nowe fieldsety, grupy checkboxów oraz zagnieżdżone kontenery, aby zachować przejrzystość złożonego formularza.
+
 = 0.1.2 =
 * Dodano skrót do zakładki licencji w tabeli wtyczek oraz kontekstowe alerty statusu i błędów sprawdzeń.
 

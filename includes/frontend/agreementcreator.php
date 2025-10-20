@@ -206,8 +206,8 @@ final class AgreementCreator
         echo '<h2>' . esc_html__('Szczegóły umowy', 'estate-office') . '</h2>';
         echo '<p class="description">' . esc_html__('Uzupełnij podstawowe dane nowej umowy, a następnie przejdź do dodawania klientów.', 'estate-office') . '</p>';
         echo '<div class="estate-office-agreement-creator__grid">';
-        echo '<label>' . esc_html__('Numer umowy', 'estate-office') . '<span class="required">*</span><input type="text" name="estate_agreement_number" required /></label>';
-        echo '<label>' . esc_html__('Typ transakcji', 'estate-office') . '<span class="required">*</span>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer umowy', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_agreement_number" required /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Typ transakcji', 'estate-office') . '<span class="required">*</span></span>';
         echo '<select name="estate_agreement_transaction_type" required>';
         echo '<option value="">' . esc_html__('Wybierz typ', 'estate-office') . '</option>';
         foreach (AgreementMeta::TRANSACTION_TYPES as $key => $label) {
@@ -336,6 +336,19 @@ final class AgreementCreator
         $propertyTypes       = self::getPropertyTypes();
         $propertyDynamic     = GeneralSettings::getPropertyDynamicFields();
         $searchDynamic       = GeneralSettings::getSearchDynamicFields();
+        $finishes            = PropertyMeta::getFinishes();
+        $exposures           = PropertyMeta::getExposureOptions();
+        $views               = PropertyMeta::getViewOptions();
+        $layouts             = PropertyMeta::getLayoutOptions();
+        $kitchenTypes        = PropertyMeta::getKitchenTypes();
+        $heatingTypes        = PropertyMeta::getHeatingTypes();
+        $waterTypes          = PropertyMeta::getWaterTypes();
+        $sewageTypes         = PropertyMeta::getSewageTypes();
+        $furnishingOptions   = PropertyMeta::getFurnishingOptions();
+        $parkingTypes        = PropertyMeta::getParkingTypes();
+        $houseTypes          = PropertyMeta::getHouseTypes();
+        $legalStatuses       = PropertyMeta::getLegalStatuses();
+        $plotShapes          = PropertyMeta::getPlotShapes();
 
         echo '<div class="estate-office-agreement-creator__form" data-eo-agreement-step="3" hidden>';
         echo '<h2 data-eo-agreement-step3-heading>' . esc_html__('Dodaj nieruchomość lub poszukiwanie', 'estate-office') . '</h2>';
@@ -354,25 +367,205 @@ final class AgreementCreator
         echo '<div class="estate-office-agreement-creator__divider"><span>' . esc_html__('lub dodaj nową nieruchomość', 'estate-office') . '</span></div>';
         echo '</div>';
         echo '<div class="estate-office-agreement-creator__grid">';
-        echo '<label>' . esc_html__('Numer oferty', 'estate-office') . '<span class="required">*</span><input type="text" name="property[estate_property_reference]" required /></label>';
-        echo '<label>' . esc_html__('Typ nieruchomości', 'estate-office') . '<span class="required">*</span>';
-        echo '<select name="property[property_type]" required>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer oferty', 'estate-office') . '<span class="required">*</span></span><input type="text" name="property[estate_property_reference]" required /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Typ nieruchomości', 'estate-office') . '<span class="required">*</span></span>';
+        echo '<select name="property[property_type]" required data-eo-property-type>';
         echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
         foreach ($propertyTypes as $value => $label) {
             echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
         }
         echo '</select>';
         echo '</label>';
-        echo '<label>' . esc_html__('Ulica', 'estate-office') . '<span class="required">*</span><input type="text" name="property[estate_property_street]" required /></label>';
-        echo '<label>' . esc_html__('Numer', 'estate-office') . '<span class="required">*</span><input type="text" name="property[estate_property_number]" required /></label>';
-        echo '<label>' . esc_html__('Lokal', 'estate-office') . '<input type="text" name="property[estate_property_unit]" /></label>';
-        echo '<label>' . esc_html__('Kod pocztowy', 'estate-office') . '<span class="required">*</span><input type="text" name="property[estate_property_postal_code]" required /></label>';
-        echo '<label>' . esc_html__('Miasto', 'estate-office') . '<span class="required">*</span><input type="text" name="property[estate_property_city]" required /></label>';
-        echo '<label>' . esc_html__('Dzielnica', 'estate-office') . '<input type="text" name="property[estate_property_district]" /></label>';
-        echo '<label>' . esc_html__('Cena', 'estate-office') . '<span class="required">*</span><input type="number" name="property[estate_property_price]" step="0.01" min="0" required /></label>';
-        echo '<label>' . esc_html__('Metraż (m²)', 'estate-office') . '<span class="required">*</span><input type="number" name="property[estate_property_area]" step="0.01" min="0" required /></label>';
-        echo '<label>' . esc_html__('Liczba pokoi', 'estate-office') . '<input type="number" name="property[estate_property_rooms]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house" data-eo-required-for="apartment,commercial,house"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Ulica', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="property[estate_property_street]" required /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house" data-eo-required-for="apartment,commercial,house"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="property[estate_property_number]" required /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial">' . esc_html__('Lokal', 'estate-office') . '<input type="text" name="property[estate_property_unit]" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house" data-eo-required-for="apartment,commercial,house"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Kod pocztowy', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="property[estate_property_postal_code]" required /></label>';
+        echo '<label data-eo-required-for="apartment,commercial,house,land"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Miasto', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="property[estate_property_city]" required /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial">' . esc_html__('Dzielnica', 'estate-office') . '<input type="text" name="property[estate_property_district]" /></label>';
+        echo '<label data-eo-property-scope="house,land">' . esc_html__('Powiat', 'estate-office') . '<input type="text" name="property[estate_property_county]" /></label>';
+        echo '<label data-eo-property-scope="house,land">' . esc_html__('Obręb', 'estate-office') . '<input type="text" name="property[estate_property_precinct]" /></label>';
+        echo '<label data-eo-property-scope="house,land">' . esc_html__('Numer działki', 'estate-office') . '<input type="text" name="property[estate_property_plot_number]" /></label>';
+        echo '<label data-eo-property-scope="house">' . esc_html__('Typ domu', 'estate-office') . '<select name="property[estate_property_house_type]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($houseTypes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<div class="estate-office-agreement-creator__grid estate-office-agreement-creator__grid--compact">';
+        echo '<label>' . esc_html__('Numer księgi wieczystej', 'estate-office') . '<input type="text" name="property[estate_property_land_register_number]" data-eo-property-kw /></label>';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_no_land_register]" value="1" data-eo-property-no-kw />' . esc_html__('Brak księgi wieczystej', 'estate-office') . '</label>';
+        echo '<label>' . esc_html__('Stan prawny', 'estate-office') . '<select name="property[estate_property_legal_status]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($legalStatuses as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
         echo '</div>';
+
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Cena', 'estate-office') . '<span class="required">*</span></span><input type="number" name="property[estate_property_price]" step="0.01" min="0" required data-eo-property-price /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Metraż (m²)', 'estate-office') . '<span class="required">*</span></span><input type="number" name="property[estate_property_area]" step="0.01" min="0" required data-eo-property-area /></label>';
+        echo '<label>' . esc_html__('Cena za m²', 'estate-office') . '<input type="number" name="property[estate_property_price_per_sqm]" step="0.01" min="0" readonly data-eo-property-price-sqm /></label>';
+        echo '<label>' . esc_html__('Czynsz administracyjny', 'estate-office') . '<input type="number" name="property[estate_property_admin_fee]" step="0.01" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Rok budowy', 'estate-office') . '<input type="number" name="property[estate_property_build_year]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial">' . esc_html__('Piętro', 'estate-office') . '<input type="number" name="property[estate_property_floor]" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Liczba pięter budynku', 'estate-office') . '<input type="number" name="property[estate_property_floors]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Liczba pokoi', 'estate-office') . '<input type="number" name="property[estate_property_rooms]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Liczba sypialni', 'estate-office') . '<input type="number" name="property[estate_property_bedrooms]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Liczba łazienek', 'estate-office') . '<input type="number" name="property[estate_property_bathrooms]" min="0" /></label>';
+        echo '<label data-eo-property-scope="apartment,commercial,house">' . esc_html__('Liczba toalet', 'estate-office') . '<input type="number" name="property[estate_property_toilets]" min="0" /></label>';
+        echo '<label data-eo-property-scope="land,house">' . esc_html__('Kształt działki', 'estate-office') . '<select name="property[estate_property_plot_shape]" data-eo-plot-shape>';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($plotShapes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label data-eo-property-scope="land,house" data-eo-plot-dimension="regular">' . esc_html__('Długość działki (m)', 'estate-office') . '<input type="number" name="property[estate_property_plot_length]" step="0.01" min="0" /></label>';
+        echo '<label data-eo-property-scope="land,house" data-eo-plot-dimension="regular">' . esc_html__('Szerokość działki (m)', 'estate-office') . '<input type="number" name="property[estate_property_plot_width]" step="0.01" min="0" /></label>';
+        echo '<label data-eo-property-scope="land,house" data-eo-plot-dimension="irregular">' . esc_html__('Opis wymiarów działki', 'estate-office') . '<textarea name="property[estate_property_plot_dimensions]" rows="3"></textarea></label>';
+        echo '</div>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house">';
+        echo '<legend>' . esc_html__('Szczegóły budynku', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label>' . esc_html__('Stan wykończenia', 'estate-office') . '<select name="property[estate_property_finish]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($finishes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Typ kuchni', 'estate-office') . '<select name="property[estate_property_kitchen_type]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($kitchenTypes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Ekspozycja', 'estate-office') . '</p>';
+        foreach ($exposures as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_exposure][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Widok', 'estate-office') . '</p>';
+        foreach ($views as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_views][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Rozkład', 'estate-office') . '</p>';
+        foreach ($layouts as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_layout][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_attic]" value="1" /> ' . esc_html__('Poddasze', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_multilevel]" value="1" /> ' . esc_html__('Wielopoziomowe', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_parking]" value="1" data-eo-property-parking />' . esc_html__('Miejsce parkingowe', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-property-parking-fields hidden>';
+        echo '<p class="description">' . esc_html__('Podaj liczbę dostępnych miejsc według typu.', 'estate-office') . '</p>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        foreach ($parkingTypes as $value => $label) {
+            echo '<label>' . esc_html($label) . '<input type="number" name="property[estate_property_parking_' . esc_attr($value) . ']" min="0" /></label>';
+        }
+        echo '</div>';
+        echo '</div>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house,land">';
+        echo '<legend>' . esc_html__('Media i instalacje', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label>' . esc_html__('Ogrzewanie', 'estate-office') . '<select name="property[estate_property_heating]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($heatingTypes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Dostęp do wody', 'estate-office') . '<select name="property[estate_property_water]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($waterTypes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Kanalizacja', 'estate-office') . '<select name="property[estate_property_sewage]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($sewageTypes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_gas]" value="1" />' . esc_html__('Przyłącze gazowe', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house">';
+        echo '<legend>' . esc_html__('Udogodnienia', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__options">';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_elevator]" value="1" /> ' . esc_html__('Winda', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_air_conditioning]" value="1" /> ' . esc_html__('Klimatyzacja', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_security]" value="1" /> ' . esc_html__('Monitoring/Ochrona', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_reception]" value="1" /> ' . esc_html__('Recepcja', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_gated]" value="1" /> ' . esc_html__('Teren zamknięty', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_intercom]" value="1" /> ' . esc_html__('Domofon', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '<label>' . esc_html__('Umeblowanie', 'estate-office') . '<select name="property[estate_property_furnishing]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($furnishingOptions as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house">';
+        echo '<legend>' . esc_html__('Wyposażenie', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__options">';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_washer]" value="1" /> ' . esc_html__('Pralka', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_dishwasher]" value="1" /> ' . esc_html__('Zmywarka', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_fridge]" value="1" /> ' . esc_html__('Lodówka', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_stove]" value="1" /> ' . esc_html__('Kuchenka', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_oven]" value="1" /> ' . esc_html__('Piekarnik', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_tv]" value="1" /> ' . esc_html__('Telewizor', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="property[estate_property_equipment_microwave]" value="1" /> ' . esc_html__('Mikrofala', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house,land">';
+        echo '<legend>' . esc_html__('Powierzchnie dodatkowe', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__surfaces">';
+        echo '<div class="estate-office-agreement-creator__surface">';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_balcony]" value="1" data-eo-surface-toggle="estate_property_balcony" />' . esc_html__('Balkon', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-surface-fields="estate_property_balcony" hidden>';
+        echo '<label>' . esc_html__('Liczba balkonów', 'estate-office') . '<input type="number" name="property[estate_property_balcony_count]" min="0" /></label>';
+        echo '<label>' . esc_html__('Powierzchnia łączna (m²)', 'estate-office') . '<input type="number" name="property[estate_property_balcony_area]" step="0.01" min="0" /></label>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__surface">';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_terrace]" value="1" data-eo-surface-toggle="estate_property_terrace" />' . esc_html__('Taras', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-surface-fields="estate_property_terrace" hidden>';
+        echo '<label>' . esc_html__('Liczba tarasów', 'estate-office') . '<input type="number" name="property[estate_property_terrace_count]" min="0" /></label>';
+        echo '<label>' . esc_html__('Powierzchnia łączna (m²)', 'estate-office') . '<input type="number" name="property[estate_property_terrace_area]" step="0.01" min="0" /></label>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__surface">';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_basement]" value="1" data-eo-surface-toggle="estate_property_basement" />' . esc_html__('Piwnica', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-surface-fields="estate_property_basement" hidden>';
+        echo '<label>' . esc_html__('Powierzchnia (m²)', 'estate-office') . '<input type="number" name="property[estate_property_basement_area]" step="0.01" min="0" /></label>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__surface">';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_storage]" value="1" data-eo-surface-toggle="estate_property_storage" />' . esc_html__('Komórka lokatorska', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-surface-fields="estate_property_storage" hidden>';
+        echo '<label>' . esc_html__('Powierzchnia (m²)', 'estate-office') . '<input type="number" name="property[estate_property_storage_area]" step="0.01" min="0" /></label>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__surface">';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="property[estate_property_garden]" value="1" data-eo-surface-toggle="estate_property_garden" />' . esc_html__('Ogródek', 'estate-office') . '</label>';
+        echo '<div class="estate-office-agreement-creator__nested" data-eo-surface-fields="estate_property_garden" hidden>';
+        echo '<label>' . esc_html__('Powierzchnia (m²)', 'estate-office') . '<input type="number" name="property[estate_property_garden_area]" step="0.01" min="0" /></label>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</fieldset>';
+
         echo '<label class="estate-office-agreement-creator__textarea">' . esc_html__('Opis nieruchomości', 'estate-office');
         echo '<textarea name="property[description]" rows="4"></textarea>';
         echo '</label>';
@@ -408,8 +601,8 @@ final class AgreementCreator
         echo '<div class="estate-office-agreement-creator__divider"><span>' . esc_html__('lub dodaj nowe poszukiwanie', 'estate-office') . '</span></div>';
         echo '</div>';
         echo '<div class="estate-office-agreement-creator__grid">';
-        echo '<label>' . esc_html__('Numer poszukiwania', 'estate-office') . '<span class="required">*</span><input type="text" name="search[estate_search_reference]" required /></label>';
-        echo '<label>' . esc_html__('Rodzaj nieruchomości', 'estate-office') . '<span class="required">*</span>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer poszukiwania', 'estate-office') . '<span class="required">*</span></span><input type="text" name="search[estate_search_reference]" required /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Rodzaj nieruchomości', 'estate-office') . '<span class="required">*</span></span>';
         echo '<select name="search[estate_search_property_type]" required>';
         echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
         foreach ($propertyTypes as $value => $label) {

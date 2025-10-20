@@ -107,6 +107,47 @@ final class PropertyMeta
         'estate_property_plot_length'         => ['type' => 'decimal', 'precision' => 2],
         'estate_property_plot_width'          => ['type' => 'decimal', 'precision' => 2],
         'estate_property_plot_dimensions'     => ['type' => 'textarea'],
+        'estate_property_finish'              => ['type' => 'enum', 'values' => self::FINISHES],
+        'estate_property_exposure'            => ['type' => 'array', 'items' => 'enum', 'values' => self::EXPOSURES],
+        'estate_property_views'               => ['type' => 'array', 'items' => 'enum', 'values' => self::VIEWS],
+        'estate_property_attic'               => ['type' => 'boolean'],
+        'estate_property_multilevel'          => ['type' => 'boolean'],
+        'estate_property_layout'              => ['type' => 'array', 'items' => 'enum', 'values' => self::LAYOUTS],
+        'estate_property_kitchen_type'        => ['type' => 'enum', 'values' => self::KITCHEN_TYPES],
+        'estate_property_parking'             => ['type' => 'boolean'],
+        'estate_property_parking_rent'        => ['type' => 'integer'],
+        'estate_property_parking_underground' => ['type' => 'integer'],
+        'estate_property_parking_garage'      => ['type' => 'integer'],
+        'estate_property_heating'             => ['type' => 'enum', 'values' => self::HEATING_TYPES],
+        'estate_property_water'               => ['type' => 'enum', 'values' => self::WATER_TYPES],
+        'estate_property_sewage'              => ['type' => 'enum', 'values' => self::SEWAGE_TYPES],
+        'estate_property_gas'                 => ['type' => 'boolean'],
+        'estate_property_elevator'            => ['type' => 'boolean'],
+        'estate_property_furnishing'          => ['type' => 'enum', 'values' => self::FURNISHING],
+        'estate_property_air_conditioning'    => ['type' => 'boolean'],
+        'estate_property_security'            => ['type' => 'boolean'],
+        'estate_property_reception'           => ['type' => 'boolean'],
+        'estate_property_gated'               => ['type' => 'boolean'],
+        'estate_property_intercom'            => ['type' => 'boolean'],
+        'estate_property_equipment_washer'        => ['type' => 'boolean'],
+        'estate_property_equipment_dishwasher'   => ['type' => 'boolean'],
+        'estate_property_equipment_fridge'        => ['type' => 'boolean'],
+        'estate_property_equipment_stove'         => ['type' => 'boolean'],
+        'estate_property_equipment_oven'          => ['type' => 'boolean'],
+        'estate_property_equipment_tv'            => ['type' => 'boolean'],
+        'estate_property_equipment_microwave'     => ['type' => 'boolean'],
+        'estate_property_balcony'             => ['type' => 'boolean'],
+        'estate_property_balcony_count'       => ['type' => 'integer'],
+        'estate_property_balcony_area'        => ['type' => 'decimal', 'precision' => 2],
+        'estate_property_terrace'             => ['type' => 'boolean'],
+        'estate_property_terrace_count'       => ['type' => 'integer'],
+        'estate_property_terrace_area'        => ['type' => 'decimal', 'precision' => 2],
+        'estate_property_basement'            => ['type' => 'boolean'],
+        'estate_property_basement_area'       => ['type' => 'decimal', 'precision' => 2],
+        'estate_property_storage'             => ['type' => 'boolean'],
+        'estate_property_storage_area'        => ['type' => 'decimal', 'precision' => 2],
+        'estate_property_garden'              => ['type' => 'boolean'],
+        'estate_property_garden_area'         => ['type' => 'decimal', 'precision' => 2],
         'estate_property_flag_new_offer'      => ['type' => 'boolean'],
         'estate_property_flag_exclusive'      => ['type' => 'boolean'],
         'estate_property_flag_sold'           => ['type' => 'boolean'],
@@ -145,6 +186,75 @@ final class PropertyMeta
         'semi_detached' => 'Bliźniak',
         'terraced'      => 'Szeregowiec',
         'multi_family'  => 'Wielorodzinny',
+    ];
+
+    private const FINISHES = [
+        'shell'      => 'Stan deweloperski',
+        'to_finish'  => 'Do wykończenia',
+        'ready'      => 'Wykończone',
+        'premium'    => 'Podwyższony standard',
+    ];
+
+    private const EXPOSURES = [
+        'north' => 'Północ',
+        'south' => 'Południe',
+        'east'  => 'Wschód',
+        'west'  => 'Zachód',
+    ];
+
+    private const VIEWS = [
+        'garden'    => 'Na ogród',
+        'city'      => 'Na miasto',
+        'park'      => 'Na park',
+        'panorama'  => 'Panorama',
+        'courtyard' => 'Na podwórze',
+    ];
+
+    private const LAYOUTS = [
+        'separate'   => 'Rozkładowe',
+        'open_plan'  => 'Otwarty plan',
+        'adjustable' => 'Możliwość aranżacji',
+        'two_level'  => 'Dwupoziomowe',
+    ];
+
+    private const KITCHEN_TYPES = [
+        'annex'       => 'Aneks kuchenny',
+        'separate'    => 'Oddzielna kuchnia',
+        'with_living' => 'Z salonem',
+    ];
+
+    private const HEATING_TYPES = [
+        'district'   => 'Miejskie',
+        'gas'        => 'Gazowe',
+        'electric'   => 'Elektryczne',
+        'solid_fuel' => 'Na paliwo stałe',
+        'heat_pump'  => 'Pompa ciepła',
+        'other'      => 'Inne',
+    ];
+
+    private const WATER_TYPES = [
+        'municipal' => 'Miejska',
+        'well'      => 'Studnia',
+        'other'     => 'Inne',
+    ];
+
+    private const SEWAGE_TYPES = [
+        'municipal' => 'Miejska',
+        'septic'    => 'Szambo',
+        'treatment' => 'Przydomowa oczyszczalnia',
+        'other'     => 'Inne',
+    ];
+
+    private const FURNISHING = [
+        'yes'     => 'Tak',
+        'partial' => 'Częściowe',
+        'no'      => 'Nie',
+    ];
+
+    private const PARKING_TYPES = [
+        'rent'       => 'Najmowane',
+        'underground'=> 'Podziemne',
+        'garage'     => 'Garaż (wolnostojący/przylegający)',
     ];
 
     public static function bootstrap(): void
@@ -320,6 +430,51 @@ final class PropertyMeta
             'estate-office-property-details',
             __('Parametry nieruchomości', 'estate-office'),
             [self::class, 'renderDetailsBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-building',
+            __('Szczegóły budynku', 'estate-office'),
+            [self::class, 'renderBuildingBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-utilities',
+            __('Media i instalacje', 'estate-office'),
+            [self::class, 'renderUtilitiesBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-amenities',
+            __('Udogodnienia', 'estate-office'),
+            [self::class, 'renderAmenitiesBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-equipment',
+            __('Wyposażenie', 'estate-office'),
+            [self::class, 'renderEquipmentBox'],
+            PropertyRegister::POST_TYPE,
+            'normal',
+            'default'
+        );
+
+        add_meta_box(
+            'estate-office-property-surfaces',
+            __('Powierzchnie dodatkowe', 'estate-office'),
+            [self::class, 'renderSurfacesBox'],
             PropertyRegister::POST_TYPE,
             'normal',
             'default'
@@ -507,6 +662,110 @@ final class PropertyMeta
     public static function getHouseTypeLabel(string $type): string
     {
         return self::HOUSE_TYPES[$type] ?? '';
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getHouseTypes(): array
+    {
+        return self::HOUSE_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getFinishes(): array
+    {
+        return self::FINISHES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getExposureOptions(): array
+    {
+        return self::EXPOSURES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getViewOptions(): array
+    {
+        return self::VIEWS;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getLayoutOptions(): array
+    {
+        return self::LAYOUTS;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getKitchenTypes(): array
+    {
+        return self::KITCHEN_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getHeatingTypes(): array
+    {
+        return self::HEATING_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getWaterTypes(): array
+    {
+        return self::WATER_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getSewageTypes(): array
+    {
+        return self::SEWAGE_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getFurnishingOptions(): array
+    {
+        return self::FURNISHING;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getParkingTypes(): array
+    {
+        return self::PARKING_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getLegalStatuses(): array
+    {
+        return self::LEGAL_STATUSES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getPlotShapes(): array
+    {
+        return self::PLOT_SHAPES;
     }
 
     private static function renderAgreementsSummary(WP_Post $post): void
@@ -863,6 +1122,282 @@ final class PropertyMeta
         printf('<td><textarea id="estate_property_plot_dimensions" name="estate_property_plot_dimensions" rows="3" class="large-text">%s</textarea><p class="description">%s</p></td></tr>', $plotNotes, esc_html__('W przypadku nieregularnych działek podaj najważniejsze informacje o wymiarach.', 'estate-office'));
 
         echo '</table>';
+    }
+
+    public static function renderBuildingBox(WP_Post $post): void
+    {
+        $finish     = esc_attr(get_post_meta($post->ID, 'estate_property_finish', true));
+        $exposure   = self::getMetaArray($post, 'estate_property_exposure');
+        $views      = self::getMetaArray($post, 'estate_property_views');
+        $attic      = (bool) get_post_meta($post->ID, 'estate_property_attic', true);
+        $multilevel = (bool) get_post_meta($post->ID, 'estate_property_multilevel', true);
+        $layout     = self::getMetaArray($post, 'estate_property_layout');
+        $kitchen    = esc_attr(get_post_meta($post->ID, 'estate_property_kitchen_type', true));
+        $parking    = (bool) get_post_meta($post->ID, 'estate_property_parking', true);
+
+        echo '<table class="form-table estate-office-meta-table">';
+
+        echo '<tr><th><label for="estate_property_finish">' . esc_html__('Stan wykończenia', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_finish" name="estate_property_finish">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::FINISHES as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($finish, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Ekspozycja', 'estate-office') . '</th><td>';
+        self::renderCheckboxOptions('estate_property_exposure', self::EXPOSURES, $exposure);
+        echo '<p class="description">' . esc_html__('Wybierz kierunki świata, na które wychodzą okna.', 'estate-office') . '</p>';
+        echo '</td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Widok', 'estate-office') . '</th><td>';
+        self::renderCheckboxOptions('estate_property_views', self::VIEWS, $views);
+        echo '<p class="description">' . esc_html__('Zaznacz atuty widoku z nieruchomości.', 'estate-office') . '</p>';
+        echo '</td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Rzut i kondygnacje', 'estate-office') . '</th><td>';
+        echo '<label class="estate-office-property-inline"><input type="checkbox" name="estate_property_attic" value="1" ' . checked($attic, true, false) . ' /> ' . esc_html__('Poddasze', 'estate-office') . '</label> ';
+        echo '<label class="estate-office-property-inline"><input type="checkbox" name="estate_property_multilevel" value="1" ' . checked($multilevel, true, false) . ' /> ' . esc_html__('Wielopoziomowe', 'estate-office') . '</label>';
+        self::renderCheckboxOptions('estate_property_layout', self::LAYOUTS, $layout);
+        echo '</td></tr>';
+
+        echo '<tr><th><label for="estate_property_kitchen_type">' . esc_html__('Typ kuchni', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_kitchen_type" name="estate_property_kitchen_type">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::KITCHEN_TYPES as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($kitchen, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Miejsce parkingowe', 'estate-office') . '</th><td>';
+        $parkingToggleId = 'estate_property_parking_toggle';
+        printf('<label for="%1$s" class="estate-office-property-inline"><input type="checkbox" id="%1$s" name="estate_property_parking" value="1" %2$s data-eo-toggle="#estate_property_parking_fields" /> %3$s</label>', esc_attr($parkingToggleId), checked($parking, true, false), esc_html__('Dostępne miejsca parkingowe', 'estate-office'));
+        $parkingHidden = $parking ? '' : ' hidden';
+        echo '<div id="estate_property_parking_fields" class="estate-office-property-nested' . ($parking ? ' is-visible' : '') . '"' . $parkingHidden . '>';
+        echo '<p class="description">' . esc_html__('Podaj liczbę dostępnych miejsc według typu.', 'estate-office') . '</p>';
+        echo '<div class="estate-office-property-nested-grid">';
+        foreach (self::PARKING_TYPES as $value => $label) {
+            $inputName  = 'estate_property_parking_' . $value;
+            $inputValue = esc_attr(get_post_meta($post->ID, $inputName, true));
+            $fieldId    = $inputName . '_count';
+            echo '<label for="' . esc_attr($fieldId) . '">';
+            echo esc_html($label);
+            printf('<input type="number" min="0" id="%s" name="%s" value="%s" class="small-text" />', esc_attr($fieldId), esc_attr($inputName), $inputValue);
+            echo '</label>';
+        }
+        echo '</div>';
+        echo '</div>';
+        echo '</td></tr>';
+
+        echo '</table>';
+    }
+
+    public static function renderUtilitiesBox(WP_Post $post): void
+    {
+        $heating = esc_attr(get_post_meta($post->ID, 'estate_property_heating', true));
+        $water   = esc_attr(get_post_meta($post->ID, 'estate_property_water', true));
+        $sewage  = esc_attr(get_post_meta($post->ID, 'estate_property_sewage', true));
+        $gas     = (bool) get_post_meta($post->ID, 'estate_property_gas', true);
+
+        echo '<table class="form-table estate-office-meta-table">';
+
+        echo '<tr><th><label for="estate_property_heating">' . esc_html__('Ogrzewanie', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_heating" name="estate_property_heating">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::HEATING_TYPES as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($heating, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th><label for="estate_property_water">' . esc_html__('Dostęp do wody', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_water" name="estate_property_water">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::WATER_TYPES as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($water, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th><label for="estate_property_sewage">' . esc_html__('Kanalizacja', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_sewage" name="estate_property_sewage">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::SEWAGE_TYPES as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($sewage, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Gaz', 'estate-office') . '</th>';
+        echo '<td><label class="estate-office-property-inline"><input type="checkbox" name="estate_property_gas" value="1" ' . checked($gas, true, false) . ' /> ' . esc_html__('Przyłącze gazowe', 'estate-office') . '</label></td></tr>';
+
+        echo '</table>';
+    }
+
+    public static function renderAmenitiesBox(WP_Post $post): void
+    {
+        $elevator       = (bool) get_post_meta($post->ID, 'estate_property_elevator', true);
+        $furnishing     = esc_attr(get_post_meta($post->ID, 'estate_property_furnishing', true));
+        $airCondition   = (bool) get_post_meta($post->ID, 'estate_property_air_conditioning', true);
+        $security       = (bool) get_post_meta($post->ID, 'estate_property_security', true);
+        $reception      = (bool) get_post_meta($post->ID, 'estate_property_reception', true);
+        $gated          = (bool) get_post_meta($post->ID, 'estate_property_gated', true);
+        $intercom       = (bool) get_post_meta($post->ID, 'estate_property_intercom', true);
+
+        echo '<table class="form-table estate-office-meta-table">';
+
+        echo '<tr><th scope="row">' . esc_html__('Udogodnienia budynku', 'estate-office') . '</th><td>';
+        echo '<div class="estate-office-property-options">';
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_elevator" value="1" %s /> %s</label>', checked($elevator, true, false), esc_html__('Winda', 'estate-office'));
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_air_conditioning" value="1" %s /> %s</label>', checked($airCondition, true, false), esc_html__('Klimatyzacja', 'estate-office'));
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_security" value="1" %s /> %s</label>', checked($security, true, false), esc_html__('Monitoring/Ochrona', 'estate-office'));
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_reception" value="1" %s /> %s</label>', checked($reception, true, false), esc_html__('Recepcja', 'estate-office'));
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_gated" value="1" %s /> %s</label>', checked($gated, true, false), esc_html__('Teren zamknięty', 'estate-office'));
+        printf('<label class="estate-office-property-option"><input type="checkbox" name="estate_property_intercom" value="1" %s /> %s</label>', checked($intercom, true, false), esc_html__('Domofon', 'estate-office'));
+        echo '</div>';
+        echo '</td></tr>';
+
+        echo '<tr><th><label for="estate_property_furnishing">' . esc_html__('Umeblowanie', 'estate-office') . '</label></th>';
+        echo '<td><select id="estate_property_furnishing" name="estate_property_furnishing">';
+        echo '<option value="">' . esc_html__('— Wybierz —', 'estate-office') . '</option>';
+        foreach (self::FURNISHING as $value => $label) {
+            printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($furnishing, $value, false), esc_html($label));
+        }
+        echo '</select></td></tr>';
+
+        echo '</table>';
+    }
+
+    public static function renderEquipmentBox(WP_Post $post): void
+    {
+        $equipmentKeys = [
+            'estate_property_equipment_washer'     => __('Pralka', 'estate-office'),
+            'estate_property_equipment_dishwasher' => __('Zmywarka', 'estate-office'),
+            'estate_property_equipment_fridge'     => __('Lodówka', 'estate-office'),
+            'estate_property_equipment_stove'      => __('Kuchenka', 'estate-office'),
+            'estate_property_equipment_oven'       => __('Piekarnik', 'estate-office'),
+            'estate_property_equipment_tv'         => __('Telewizor', 'estate-office'),
+            'estate_property_equipment_microwave'  => __('Mikrofala', 'estate-office'),
+        ];
+
+        echo '<table class="form-table estate-office-meta-table">';
+        echo '<tr><th scope="row">' . esc_html__('Wyposażenie AGD/RTV', 'estate-office') . '</th><td>';
+        echo '<div class="estate-office-property-options">';
+        foreach ($equipmentKeys as $metaKey => $label) {
+            $checked = (bool) get_post_meta($post->ID, $metaKey, true);
+            printf('<label class="estate-office-property-option"><input type="checkbox" name="%1$s" value="1" %2$s /> %3$s</label>', esc_attr($metaKey), checked($checked, true, false), esc_html($label));
+        }
+        echo '</div>';
+        echo '<p class="description">' . esc_html__('Zaznacz elementy wyposażenia pozostające w nieruchomości.', 'estate-office') . '</p>';
+        echo '</td></tr>';
+        echo '</table>';
+    }
+
+    public static function renderSurfacesBox(WP_Post $post): void
+    {
+        $definitions = [
+            'balcony' => [
+                'label'       => __('Balkon', 'estate-office'),
+                'count'       => 'estate_property_balcony_count',
+                'count_label' => __('Liczba balkonów', 'estate-office'),
+                'area'        => 'estate_property_balcony_area',
+                'area_label'  => __('Powierzchnia łączna (m²)', 'estate-office'),
+            ],
+            'terrace' => [
+                'label'       => __('Taras', 'estate-office'),
+                'count'       => 'estate_property_terrace_count',
+                'count_label' => __('Liczba tarasów', 'estate-office'),
+                'area'        => 'estate_property_terrace_area',
+                'area_label'  => __('Powierzchnia łączna (m²)', 'estate-office'),
+            ],
+            'basement' => [
+                'label'      => __('Piwnica', 'estate-office'),
+                'area'       => 'estate_property_basement_area',
+                'area_label' => __('Powierzchnia (m²)', 'estate-office'),
+            ],
+            'storage' => [
+                'label'      => __('Komórka lokatorska', 'estate-office'),
+                'area'       => 'estate_property_storage_area',
+                'area_label' => __('Powierzchnia (m²)', 'estate-office'),
+            ],
+            'garden' => [
+                'label'      => __('Ogródek', 'estate-office'),
+                'area'       => 'estate_property_garden_area',
+                'area_label' => __('Powierzchnia (m²)', 'estate-office'),
+            ],
+        ];
+
+        echo '<table class="form-table estate-office-meta-table">';
+        echo '<tr><th scope="row">' . esc_html__('Powierzchnie dodatkowe', 'estate-office') . '</th><td>';
+        echo '<div class="estate-office-property-surfaces">';
+
+        foreach ($definitions as $key => $definition) {
+            $metaKey    = 'estate_property_' . $key;
+            $isChecked  = (bool) get_post_meta($post->ID, $metaKey, true);
+            $toggleId   = $metaKey . '_toggle';
+            $fieldsId   = $metaKey . '_fields';
+            $countValue = isset($definition['count']) ? esc_attr(get_post_meta($post->ID, $definition['count'], true)) : '';
+            $areaValue  = isset($definition['area']) ? esc_attr(get_post_meta($post->ID, $definition['area'], true)) : '';
+
+            echo '<div class="estate-office-property-surface">';
+            printf('<label class="estate-office-property-option" for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" %3$s data-eo-toggle="#%4$s" /> %5$s</label>', esc_attr($toggleId), esc_attr($metaKey), checked($isChecked, true, false), esc_attr($fieldsId), esc_html($definition['label']));
+            $hiddenAttr = $isChecked ? '' : ' hidden';
+            echo '<div id="' . esc_attr($fieldsId) . '" class="estate-office-property-nested' . ($isChecked ? ' is-visible' : '') . '"' . $hiddenAttr . '>';
+            if (isset($definition['count'], $definition['count_label'])) {
+                printf('<label for="%1$s">%2$s<input type="number" min="0" id="%1$s" name="%3$s" value="%4$s" class="small-text" /></label>', esc_attr($definition['count']), esc_html($definition['count_label']), esc_attr($definition['count']), $countValue);
+            }
+            if (isset($definition['area'], $definition['area_label'])) {
+                printf('<label for="%1$s">%2$s<input type="number" step="0.01" min="0" id="%1$s" name="%3$s" value="%4$s" class="regular-text" /></label>', esc_attr($definition['area']), esc_html($definition['area_label']), esc_attr($definition['area']), $areaValue);
+            }
+            echo '</div>';
+            echo '</div>';
+        }
+
+        echo '</div>';
+        echo '</td></tr>';
+        echo '</table>';
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private static function getMetaArray(WP_Post $post, string $key): array
+    {
+        $value = get_post_meta($post->ID, $key, true);
+
+        if (is_array($value)) {
+            $items = [];
+            foreach ($value as $item) {
+                if (!is_scalar($item)) {
+                    continue;
+                }
+                $item = (string) $item;
+                if ($item === '') {
+                    continue;
+                }
+                $items[] = $item;
+            }
+
+            return array_values(array_unique($items));
+        }
+
+        if (is_scalar($value) && $value !== '') {
+            return [(string) $value];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<string,string> $options
+     * @param array<int,string>    $selected
+     */
+    private static function renderCheckboxOptions(string $name, array $options, array $selected): void
+    {
+        echo '<div class="estate-office-property-options">';
+        foreach ($options as $value => $label) {
+            $id       = $name . '_' . $value;
+            $isActive = in_array($value, $selected, true);
+            printf('<label class="estate-office-property-option" for="%1$s"><input type="checkbox" id="%1$s" name="%2$s[]" value="%3$s" %4$s /> %5$s</label>', esc_attr($id), esc_attr($name), esc_attr($value), checked($isActive, true, false), esc_html($label));
+        }
+        echo '</div>';
     }
 
     public static function renderDynamicFieldsBox(WP_Post $post): void
@@ -1540,6 +2075,16 @@ final class PropertyMeta
                 if ($id > 0) {
                     $sanitized[] = $id;
                 }
+                continue;
+            }
+
+            if ($itemsType === 'enum') {
+                $key = sanitize_key($item);
+                $allowed = isset($definition['values']) && is_array($definition['values']) ? array_keys($definition['values']) : [];
+                if ($key === '' || !in_array($key, $allowed, true)) {
+                    continue;
+                }
+                $sanitized[] = $key;
                 continue;
             }
 
