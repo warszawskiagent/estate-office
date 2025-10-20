@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.10
+Stable tag: 0.1.11
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.10 usprawnia nawigację pomiędzy listami rekordów, dodając bezpośrednie przejścia z umów i klientów do powiązanych nieruchomości przy zachowaniu pełnotekstowego wyszukiwania oraz kreatora umów z Mapami Google.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.11 pozwala przypisać opiekuna już na etapie tworzenia umowy i filtrować listę umów po agencie, zachowując rozbudowany kreator danych oraz nawigację pomiędzy rekordami.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -28,6 +28,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.10 
 * Zakładka Agenci z wyszukiwarką, kontaktami i podsumowaniem przypisanych rekordów CRM.
 * Frontowy panel CRM z zakładkami Pulpit, Nieruchomości, Umowy, Poszukiwania, Klienci i Leady oraz wyszukiwarką przeszukującą wszystkie kolumny tabel.
 * Klikalne adresy w listach umów i klientów, prowadzące bezpośrednio do powiązanych nieruchomości w panelu CRM.
+* Przypisanie opiekuna umowy w kreatorze frontowym i w panelu administracyjnym oraz filtr listy umów według agenta.
 * Frontowe formularze szybkiego dodawania nieruchomości, poszukiwań i klientów dostępne bezpośrednio w CRM.
 * Kreator frontowy umów prowadzący przez dodawanie danych i klientów bez opuszczania panelu CRM.
 * Dynamiczny krok dodawania nieruchomości w kreatorze umów z warunkową widocznością pól, sekcjami budynku, udogodnień, wyposażenia i powierzchniami dodatkowymi.
@@ -97,6 +98,10 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.10 
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.11 =
+* Dodano możliwość wyboru opiekuna podczas tworzenia umowy i w panelu administracyjnym oraz prezentację opiekuna w szczegółach CRM.
+* Rozszerzono filtry panelu WordPress o wybór agenta na liście umów, aby przyspieszyć raportowanie pracy zespołu.
+
 = 0.1.10 =
 * Dodano klikalne adresy nieruchomości w listach umów, prowadzące bezpośrednio do szczegółów ofert w CRM.
 * Uzupełniono listę klientów o skróty do powiązanych nieruchomości, przy zachowaniu wyświetlania adresu korespondencyjnego, gdy brak powiązań.

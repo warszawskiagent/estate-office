@@ -12,10 +12,13 @@ use EstateOffice\PostTypes\PropertyMeta;
 use EstateOffice\PostTypes\PropertyRegister;
 use EstateOffice\PostTypes\SearchMeta;
 use EstateOffice\PostTypes\SearchRegister;
+use EstateOffice\Roles\Manager as RolesManager;
 use EstateOffice\Settings\GeneralSettings;
 use WP_Error;
 use WP_Post;
 use WP_Query;
+use WP_User;
+use WP_User_Query;
 
 use function __;
 use function absint;
@@ -63,6 +66,7 @@ use function wp_strip_all_tags;
 use function term_exists;
 use function update_post_meta;
 use function trim;
+use function user_can;
 use function wp_list_pluck;
 
 use const ESTATE_OFFICE_PLUGIN_FILE;
@@ -233,9 +237,72 @@ final class AgreementCreator
         echo '</div>';
     }
 
+    /**
+     * @return array<int,array{id:int,label:string}>
+     */
+    private static function getManagerOptions(): array
+    {
+        $query = new WP_User_Query([
+            'role__in' => [RolesManager::AGENT_ROLE, 'administrator'],
+            'orderby'  => 'display_name',
+            'order'    => 'ASC',
+            'number'   => 200,
+        ]);
+
+        $options = [];
+
+        foreach ($query->get_results() as $user) {
+            if (!$user instanceof WP_User) {
+                continue;
+            }
+
+            if (!user_can($user, 'publish_estate_agreements') && !user_can($user, 'edit_estate_agreements')) {
+                continue;
+            }
+
+            $label = trim((string) $user->display_name);
+            if ($label === '') {
+                $label = (string) $user->user_login;
+            }
+
+            if ($label === '') {
+                continue;
+            }
+
+            $options[(string) $user->ID] = [
+                'id'    => (int) $user->ID,
+                'label' => $label,
+            ];
+        }
+
+        $currentUserId = get_current_user_id();
+        if ($currentUserId > 0 && !isset($options[(string) $currentUserId])) {
+            $currentUser = get_user_by('id', $currentUserId);
+            if ($currentUser instanceof WP_User) {
+                if (user_can($currentUser, 'publish_estate_agreements') || user_can($currentUser, 'edit_estate_agreements')) {
+                    $label = trim((string) $currentUser->display_name);
+                    if ($label === '') {
+                        $label = (string) $currentUser->user_login;
+                    }
+
+                    if ($label !== '') {
+                        $options[(string) $currentUserId] = [
+                            'id'    => $currentUserId,
+                            'label' => $label,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return array_values($options);
+    }
+
     private static function renderStepAgreement(): void
     {
         $agreementDynamic = GeneralSettings::getAgreementDynamicFields();
+        $managerOptions   = self::getManagerOptions();
+        $currentUserId    = get_current_user_id();
 
         echo '<form class="estate-office-agreement-creator__form is-active" data-eo-agreement-step="1">';
         echo '<h2>' . esc_html__('Szczegóły umowy', 'estate-office') . '</h2>';
@@ -260,6 +327,21 @@ final class AgreementCreator
             echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
         }
         echo '</select></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Opiekun umowy', 'estate-office') . '<span class="required">*</span></span>';
+        echo '<select name="estate_agreement_manager" required>';
+        echo '<option value="">' . esc_html__('Wybierz opiekuna', 'estate-office') . '</option>';
+        foreach ($managerOptions as $option) {
+            $id    = (int) ($option['id'] ?? 0);
+            $label = (string) ($option['label'] ?? '');
+
+            if ($id <= 0 || $label === '') {
+                continue;
+            }
+
+            echo '<option value="' . esc_attr((string) $id) . '"' . selected($currentUserId, $id, false) . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+        echo '</label>';
         echo '</div>';
         if (!empty($agreementDynamic)) {
             echo '<div class="estate-office-agreement-creator__dynamic">';
@@ -889,10 +971,18 @@ final class AgreementCreator
             'estate_agreement_is_indefinite'     => $_POST['estate_agreement_is_indefinite'] ?? '',
             'estate_agreement_commission_amount' => $_POST['estate_agreement_commission_amount'] ?? '',
             'estate_agreement_commission_unit'   => $_POST['estate_agreement_commission_unit'] ?? '',
+            'estate_agreement_manager'           => $_POST['estate_agreement_manager'] ?? '',
         ];
 
         $values = AgreementMeta::prepareValues($input);
         $dynamicValues = AgreementMeta::prepareDynamicValues($_POST['estate_agreement_dynamic'] ?? []);
+
+        if ($agreementId <= 0 && empty($values['estate_agreement_manager'])) {
+            $currentManager = get_current_user_id();
+            if ($currentManager > 0) {
+                $values['estate_agreement_manager'] = (string) $currentManager;
+            }
+        }
 
         if (empty($values['estate_agreement_number'])) {
             wp_send_json_error(['message' => esc_html__('Numer umowy jest wymagany.', 'estate-office')]);
@@ -908,6 +998,12 @@ final class AgreementCreator
             $values['estate_agreement_clients']    = get_post_meta($agreementId, 'estate_agreement_clients', true);
             $values['estate_agreement_properties'] = get_post_meta($agreementId, 'estate_agreement_properties', true);
             $values['estate_agreement_searches']   = get_post_meta($agreementId, 'estate_agreement_searches', true);
+            if (empty($values['estate_agreement_manager'])) {
+                $existingManager = (string) get_post_meta($agreementId, 'estate_agreement_manager', true);
+                if ($existingManager !== '') {
+                    $values['estate_agreement_manager'] = $existingManager;
+                }
+            }
         }
 
         if ($agreementId > 0) {

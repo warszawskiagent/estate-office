@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EstateOffice\PostTypes;
 
 use EstateOffice\Roles\Manager as RolesManager;
+use EstateOffice\PostTypes\AgreementRegister;
 use WP_Query;
 use WP_Screen;
 use WP_User;
@@ -135,6 +136,7 @@ final class ManagerFilters
             PropertyRegister::POST_TYPE,
             SearchRegister::POST_TYPE,
             ClientRegister::POST_TYPE,
+            AgreementRegister::POST_TYPE,
         ];
     }
 
@@ -144,6 +146,7 @@ final class ManagerFilters
             PropertyRegister::POST_TYPE => 'estate_property_manager',
             SearchRegister::POST_TYPE   => 'estate_search_manager',
             ClientRegister::POST_TYPE   => 'estate_client_manager',
+            AgreementRegister::POST_TYPE => 'estate_agreement_manager',
             default                     => null,
         };
     }
@@ -154,6 +157,7 @@ final class ManagerFilters
             PropertyRegister::POST_TYPE => current_user_can('edit_estate_properties'),
             SearchRegister::POST_TYPE   => current_user_can('edit_estate_searches'),
             ClientRegister::POST_TYPE   => current_user_can('edit_estate_clients'),
+            AgreementRegister::POST_TYPE => current_user_can('edit_estate_agreements'),
             default                     => false,
         };
     }

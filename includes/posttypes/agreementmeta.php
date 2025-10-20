@@ -5,15 +5,22 @@ declare(strict_types=1);
 namespace EstateOffice\PostTypes;
 
 use DateTimeImmutable;
+use EstateOffice\Roles\Manager as RolesManager;
 use EstateOffice\Settings\GeneralSettings;
 use WP_Post;
+use function absint;
 use function __;
+use function esc_html__;
 use function get_post;
 use function get_post_meta;
 use function get_post_type;
 use function get_posts;
 use function get_the_title;
+use function get_user_by;
+use function sanitize_text_field;
 use function sanitize_key;
+use function trim;
+use function wp_dropdown_users;
 use function wp_unslash;
 
 defined('ABSPATH') || exit;
@@ -28,6 +35,7 @@ final class AgreementMeta
         'estate_agreement_is_indefinite'      => ['type' => 'boolean'],
         'estate_agreement_commission_amount'  => ['type' => 'decimal', 'precision' => 2],
         'estate_agreement_commission_unit'    => ['type' => 'enum', 'values' => self::COMMISSION_UNITS],
+        'estate_agreement_manager'            => ['type' => 'user'],
         'estate_agreement_clients'            => ['type' => 'relation', 'post_type' => ClientRegister::POST_TYPE],
         'estate_agreement_properties'         => ['type' => 'relation', 'post_type' => PropertyRegister::POST_TYPE],
         'estate_agreement_searches'           => ['type' => 'relation', 'post_type' => SearchRegister::POST_TYPE],
@@ -341,6 +349,7 @@ final class AgreementMeta
         return match ($definition['type'] ?? 'string') {
             'boolean' => 'boolean',
             'decimal' => 'number',
+            'user'    => 'integer',
             default   => 'string',
         };
     }
@@ -565,10 +574,33 @@ final class AgreementMeta
                     <option value=""><?php esc_html_e('Wybierz', 'estate-office'); ?></option>
                     <?php foreach (self::COMMISSION_UNITS as $key => $label) : ?>
                         <option value="<?php echo esc_attr($key); ?>" <?php selected($commissionUnit, $key); ?>><?php echo esc_html($label); ?></option>
-                    <?php endforeach; ?>
+                <?php endforeach; ?>
                 </select>
             </p>
         </div>
+        <p>
+            <label for="estate_agreement_manager"><strong><?php esc_html_e('Opiekun umowy', 'estate-office'); ?></strong></label></p>
+        <?php
+        $manager   = (int) get_post_meta($post->ID, 'estate_agreement_manager', true);
+        $dropdown  = wp_dropdown_users([
+            'name'              => 'estate_agreement_manager',
+            'id'                => 'estate_agreement_manager',
+            'selected'          => $manager,
+            'show_option_none'  => esc_html__('Wybierz opiekuna', 'estate-office'),
+            'option_none_value' => '',
+            'class'             => 'widefat',
+            'role__in'          => [RolesManager::AGENT_ROLE, 'administrator'],
+            'include_selected'  => true,
+            'echo'              => false,
+        ]);
+
+        if (is_string($dropdown) && trim($dropdown) !== '') {
+            echo $dropdown;
+        } else {
+            echo '<p class="description">' . esc_html__('Brak dostępnych agentów. Dodaj użytkowników z rolą agenta lub administratora, aby przypisać opiekuna.', 'estate-office') . '</p>';
+        }
+        ?>
+        <p class="description"><?php esc_html_e('Wybierz agenta odpowiedzialnego za prowadzenie tej umowy. Opiekun jest widoczny w CRM i raportach.', 'estate-office'); ?></p>
         <p class="description"><?php esc_html_e('W przypadku umowy bezterminowej data zakończenia pozostanie pusta.', 'estate-office'); ?></p>
         <script>
             (function() {
@@ -838,6 +870,28 @@ final class AgreementMeta
         update_post_meta($agreementId, 'estate_agreement_properties', $properties);
         update_post_meta($agreementId, 'estate_agreement_searches', $searches);
         self::pruneClientRoles($agreementId, $clients);
+
+        $managerId = (int) get_post_meta($agreementId, 'estate_agreement_manager', true);
+        if ($managerId <= 0) {
+            foreach ($properties as $propertyId) {
+                $propertyManager = (int) get_post_meta($propertyId, 'estate_property_manager', true);
+                if ($propertyManager > 0) {
+                    update_post_meta($agreementId, 'estate_agreement_manager', $propertyManager);
+                    $managerId = $propertyManager;
+                    break;
+                }
+            }
+        }
+
+        if ($managerId <= 0) {
+            foreach ($searches as $searchId) {
+                $searchManager = (int) get_post_meta($searchId, 'estate_search_manager', true);
+                if ($searchManager > 0) {
+                    update_post_meta($agreementId, 'estate_agreement_manager', $searchManager);
+                    break;
+                }
+            }
+        }
     }
 
     public static function isNumberTaken(string $number, ?int $excludeId = null): bool
@@ -1349,8 +1403,26 @@ final class AgreementMeta
             'decimal' => self::sanitizeDecimal($value, (int) ($definition['precision'] ?? 2)),
             'enum'    => self::sanitizeEnum($value, (array) ($definition['values'] ?? [])),
             'date'    => self::sanitizeDate($value),
+            'user'    => self::sanitizeUser($value),
             default   => self::sanitizeLine($value),
         };
+    }
+
+    private static function sanitizeUser(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $userId = absint($value);
+
+        if ($userId <= 0 || !get_user_by('id', $userId)) {
+            return '';
+        }
+
+        return (string) $userId;
     }
 
     private static function sanitizeLine(string $value): string

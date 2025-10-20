@@ -1788,6 +1788,7 @@ final class CRM
                     ['label' => __('Data zakończenia', 'estate-office'), 'value' => esc_html($endDate)],
                     ['label' => __('Aktualny etap', 'estate-office'), 'value' => esc_html($stage)],
                     ['label' => __('Prowizja', 'estate-office'), 'value' => esc_html($commission)],
+                    ['label' => __('Opiekun', 'estate-office'), 'value' => esc_html(self::getAgreementManager($postId))],
                 ],
             ],
         ];
@@ -2778,6 +2779,14 @@ final class CRM
 
     private static function getAgreementManager(int $agreementId): string
     {
+        $assigned = (int) get_post_meta($agreementId, 'estate_agreement_manager', true);
+        if ($assigned > 0) {
+            $manager = self::getManagerName($assigned);
+            if ($manager !== '—') {
+                return $manager;
+            }
+        }
+
         $properties = self::sanitizeIdArray(get_post_meta($agreementId, 'estate_agreement_properties', true));
         foreach ($properties as $propertyId) {
             $managerId = (int) get_post_meta($propertyId, 'estate_property_manager', true);
