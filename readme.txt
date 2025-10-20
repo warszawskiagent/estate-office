@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.4
+Stable tag: 0.1.5
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.4 dodaje interaktywną obsługę Map Google w kroku nieruchomości kreatora umów, umożliwiając wskazanie lokalizacji prosto z mapy przy zachowaniu rozbudowanych pól i aktywnego modułu licencyjnego z alertami.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.5 rozbudowuje kreator umów o pełne kryteria poszukiwań – od preferencji budynku po udogodnienia i powierzchnie dodatkowe – zachowując interaktywną obsługę Map Google i aktywny moduł licencyjny z alertami.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -18,6 +18,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.4 d
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
 * Konfigurowalne pola dodatkowe nieruchomości, umów, poszukiwań i klientów obsługiwane w panelu administracyjnym, CRM oraz publicznych widokach.
+* Kreator umów z kompletnym formularzem preferencji poszukiwań obejmującym budynek, media, udogodnienia, wyposażenie i powierzchnie dodatkowe.
 * Rozszerzone meta boksy nieruchomości z danymi adresowymi, prawnymi, technicznymi oraz informacjami CRM (numer oferty, opiekun).
 * Integracja Map Google w edycji nieruchomości z zapisem współrzędnych i wyszukiwaniem adresów.
 * Interaktywny podgląd lokalizacji w froncie CRM, katalogu ofert i na stronach ofertowych z automatycznym fallbackiem iframe przy braku klucza API.
@@ -94,6 +95,9 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.4 d
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.5 =
+* Rozszerzono krok dodawania poszukiwania o komplet sekcji preferencji obejmujących budynek, media, udogodnienia, wyposażenie oraz powierzchnie dodatkowe zgodnie ze specyfikacją CRM.
+
 = 0.1.4 =
 * Dodano pole lokalizacji z przyciskiem „Zaznacz na mapie” w kroku nieruchomości kreatora umów wraz z integracją Map Google i zapisem współrzędnych.
 * Wprowadzono skrypt ładujący Mapy Google na żądanie z dynamiczną obsługą wyszukiwania adresów, przeciągania pinezki oraz geokodowania wyników.

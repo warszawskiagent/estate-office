@@ -440,6 +440,18 @@ final class AgreementCreator
         $houseTypes          = PropertyMeta::getHouseTypes();
         $legalStatuses       = PropertyMeta::getLegalStatuses();
         $plotShapes          = PropertyMeta::getPlotShapes();
+        $searchFinishes      = SearchMeta::getFinishes();
+        $searchExposures     = SearchMeta::getExposureOptions();
+        $searchViews         = SearchMeta::getViewOptions();
+        $searchLayouts       = SearchMeta::getLayoutOptions();
+        $searchKitchens      = SearchMeta::getKitchenTypes();
+        $searchHeating       = SearchMeta::getHeatingTypes();
+        $searchWater         = SearchMeta::getWaterTypes();
+        $searchSewer         = SearchMeta::getSewerTypes();
+        $searchAmenities     = SearchMeta::getAmenityOptions();
+        $searchFurnishings   = SearchMeta::getFurnishingOptions();
+        $searchEquipment     = SearchMeta::getEquipmentOptions();
+        $searchExtraSpaces   = SearchMeta::getExtraSpaces();
 
         echo '<div class="estate-office-agreement-creator__form" data-eo-agreement-step="3" hidden>';
         echo '<h2 data-eo-agreement-step3-heading>' . esc_html__('Dodaj nieruchomość lub poszukiwanie', 'estate-office') . '</h2>';
@@ -734,6 +746,104 @@ final class AgreementCreator
         echo '<label>' . esc_html__('Liczba pokoi do', 'estate-office') . '<input type="number" name="search[estate_search_rooms_max]" min="0" /></label>';
         echo '<label>' . esc_html__('Preferowana lokalizacja', 'estate-office') . '<input type="text" name="search[estate_search_location]" /></label>';
         echo '</div>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Preferencje budynku', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label>' . esc_html__('Stan wykończenia', 'estate-office') . '<select name="search[estate_search_building_finish]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchFinishes as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Typ kuchni', 'estate-office') . '<select name="search[estate_search_kitchen]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchKitchens as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Ekspozycja', 'estate-office') . '</p>';
+        foreach ($searchExposures as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_exposure][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Widok', 'estate-office') . '</p>';
+        foreach ($searchViews as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_views][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Rozkład', 'estate-office') . '</p>';
+        foreach ($searchLayouts as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_layout][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_attic]" value="1" /> ' . esc_html__('Z poddaszem', 'estate-office') . '</label>';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_multilevel]" value="1" /> ' . esc_html__('Układ wielopoziomowy', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '</fieldset>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Media i instalacje', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label>' . esc_html__('Ogrzewanie', 'estate-office') . '<select name="search[estate_search_heating]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchHeating as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Dostęp do wody', 'estate-office') . '<select name="search[estate_search_water]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchWater as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '<label>' . esc_html__('Kanalizacja', 'estate-office') . '<select name="search[estate_search_sewer]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchSewer as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_gas]" value="1" /> ' . esc_html__('Dostęp do gazu', 'estate-office') . '</label>';
+        echo '</div>';
+        echo '</fieldset>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Preferowane udogodnienia', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label>' . esc_html__('Umeblowanie', 'estate-office') . '<select name="search[estate_search_furnishing]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach ($searchFurnishings as $value => $label) {
+            echo '<option value="' . esc_attr($value) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select></label>';
+        echo '</div>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        echo '<p class="estate-office-agreement-creator__checkgroup-title">' . esc_html__('Udogodnienia', 'estate-office') . '</p>';
+        foreach ($searchAmenities as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_amenities][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '</fieldset>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Wyposażenie', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        foreach ($searchEquipment as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_equipment][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '</fieldset>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Powierzchnie dodatkowe', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__checkgroup">';
+        foreach ($searchExtraSpaces as $value => $label) {
+            echo '<label class="estate-office-agreement-creator__checkgroup-item"><input type="checkbox" name="search[estate_search_extra_spaces][]" value="' . esc_attr($value) . '" /> ' . esc_html($label) . '</label>';
+        }
+        echo '</div>';
+        echo '</fieldset>';
         echo '<label class="estate-office-agreement-creator__textarea">' . esc_html__('Opis poszukiwania', 'estate-office');
         echo '<textarea name="search[estate_search_description]" rows="4"></textarea>';
         echo '</label>';

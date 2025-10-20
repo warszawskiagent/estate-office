@@ -709,6 +709,102 @@ final class SearchMeta
         self::persistDynamicFields($postId, $dynamicValues);
     }
 
+    /**
+     * @return array<string,string>
+     */
+    public static function getFinishes(): array
+    {
+        return self::FINISHES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getExposureOptions(): array
+    {
+        return self::EXPOSURES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getViewOptions(): array
+    {
+        return self::VIEWS;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getLayoutOptions(): array
+    {
+        return self::LAYOUTS;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getKitchenTypes(): array
+    {
+        return self::KITCHEN_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getHeatingTypes(): array
+    {
+        return self::HEATING_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getWaterTypes(): array
+    {
+        return self::WATER_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getSewerTypes(): array
+    {
+        return self::SEWER_TYPES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getAmenityOptions(): array
+    {
+        return self::AMENITIES;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getFurnishingOptions(): array
+    {
+        return self::FURNISHING;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getEquipmentOptions(): array
+    {
+        return self::EQUIPMENT;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function getExtraSpaces(): array
+    {
+        return self::EXTRA_SPACES;
+    }
+
     private static function persistMeta(int $postId, string $key, $value, array $definition): void
     {
         $type = $definition['type'] ?? 'string';
