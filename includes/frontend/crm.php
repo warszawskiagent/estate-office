@@ -54,10 +54,12 @@ use function get_the_title;
 use function get_the_terms;
 use function get_option;
 use function get_user_by;
+use function has_shortcode;
 use function html_entity_decode;
 use function is_array;
 use function is_scalar;
 use function is_string;
+use function is_singular;
 use function is_user_logged_in;
 use function number_format_i18n;
 use function plugins_url;
@@ -82,6 +84,7 @@ use function wp_kses_post;
 use function wp_register_script;
 use function wp_register_style;
 use function wp_create_nonce;
+use function wp_localize_script;
 use function wp_reset_postdata;
 use function wp_strip_all_tags;
 use function wpautop;
@@ -144,6 +147,7 @@ final class CRM
     {
         add_action('init', [self::class, 'registerShortcode']);
         add_action('wp_enqueue_scripts', [self::class, 'registerAssets']);
+        add_action('wp_enqueue_scripts', [self::class, 'enqueueAssets'], 20);
         add_action('wp_ajax_estate_office_update_agreement_stage', [self::class, 'handleUpdateAgreementStage']);
     }
 
@@ -170,10 +174,10 @@ final class CRM
         );
     }
 
-    public static function renderShortcode(): string
+    public static function enqueueAssets(): void
     {
-        if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
-            return '<div class="estate-office-crm__notice">' . esc_html__('Dostęp do CRM jest ograniczony do agentów nieruchomości.', 'estate-office') . '</div>';
+        if (!self::shouldLoadAssets()) {
+            return;
         }
 
         wp_enqueue_style('estate-office-frontend-crm');
@@ -197,6 +201,13 @@ final class CRM
                 ],
             ]
         );
+    }
+
+    public static function renderShortcode(): string
+    {
+        if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
+            return '<div class="estate-office-crm__notice">' . esc_html__('Dostęp do CRM jest ograniczony do agentów nieruchomości.', 'estate-office') . '</div>';
+        }
 
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
@@ -247,6 +258,28 @@ final class CRM
         echo '</div>';
 
         return (string) ob_get_clean();
+    }
+
+    private static function shouldLoadAssets(): bool
+    {
+        if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
+            return false;
+        }
+
+        if (isset($_GET[self::SECTION_PARAM]) || isset($_GET[self::RECORD_PARAM]) || isset($_GET[self::RECORD_ID_PARAM])) {
+            return true;
+        }
+
+        if (!is_singular()) {
+            return false;
+        }
+
+        $post = get_post();
+        if ($post instanceof WP_Post) {
+            return has_shortcode((string) $post->post_content, self::SHORTCODE);
+        }
+
+        return false;
     }
 
     public static function handleUpdateAgreementStage(): void
