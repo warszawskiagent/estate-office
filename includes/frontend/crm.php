@@ -35,6 +35,7 @@ use function current_user_can;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
+use function esc_js;
 use function esc_url;
 use function get_edit_post_link;
 use function get_post;
@@ -81,6 +82,7 @@ use function mysql2date;
 use function __;
 use function wp_send_json_error;
 use function wp_send_json_success;
+use function wp_nonce_url;
 
 use const ARRAY_A;
 use const ESTATE_OFFICE_PLUGIN_FILE;
@@ -624,6 +626,8 @@ final class CRM
         if (LeadActions::canCurrentUserManageLead($postId)) {
             self::renderLeadStatusForm($postId, $statusKey);
         }
+
+        self::renderDetailFooter('leads', $postId);
 
         echo '</section>';
     }
@@ -1531,6 +1535,8 @@ final class CRM
             static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
         );
 
+        self::renderDetailFooter('properties', $postId);
+
         echo '</section>';
     }
 
@@ -1656,6 +1662,8 @@ final class CRM
         self::renderStageManager($postId);
         self::renderStageHistory($postId);
 
+        self::renderDetailFooter('agreements', $postId);
+
         echo '</section>';
     }
 
@@ -1741,6 +1749,8 @@ final class CRM
             $agreements,
             static fn(int $agreementId): string => self::getAgreementNumberLabel($agreementId)
         );
+
+        self::renderDetailFooter('searches', $postId);
 
         echo '</section>';
     }
@@ -1853,6 +1863,8 @@ final class CRM
             }
         );
 
+        self::renderDetailFooter('clients', $postId);
+
         echo '</section>';
     }
 
@@ -1894,6 +1906,54 @@ final class CRM
         }
 
         echo '</header>';
+    }
+
+    private static function renderDetailFooter(string $section, int $postId): void
+    {
+        $buttons = [];
+
+        $buttons[] = [
+            'label' => __('Powrót do listy', 'estate-office'),
+            'url'   => add_query_arg(self::SECTION_PARAM, $section, self::getBaseUrl()),
+            'class' => 'estate-office-crm__button',
+        ];
+
+        if (current_user_can('edit_post', $postId)) {
+            $editLink = get_edit_post_link($postId);
+            if (is_string($editLink) && $editLink !== '') {
+                $buttons[] = [
+                    'label' => __('Edytuj', 'estate-office'),
+                    'url'   => $editLink,
+                    'class' => 'estate-office-crm__button estate-office-crm__button--primary',
+                ];
+            }
+        }
+
+        if (current_user_can('manage_options') && current_user_can('delete_post', $postId)) {
+            $buttons[] = [
+                'label'   => __('Usuń', 'estate-office'),
+                'url'     => wp_nonce_url(admin_url('post.php?action=delete&post=' . $postId), 'delete-post_' . $postId),
+                'class'   => 'estate-office-crm__button estate-office-crm__button--danger',
+                'confirm' => __('Czy na pewno chcesz usunąć ten rekord? Tej operacji nie można cofnąć.', 'estate-office'),
+            ];
+        }
+
+        if (empty($buttons)) {
+            return;
+        }
+
+        echo '<footer class="estate-office-crm__detail-footer">';
+        foreach ($buttons as $button) {
+            $class = isset($button['class']) ? trim((string) $button['class']) : 'estate-office-crm__button';
+            $attributes = 'class="' . esc_attr($class) . '"';
+
+            if (isset($button['confirm'])) {
+                $attributes .= ' onclick="return confirm(\'' . esc_js((string) $button['confirm']) . '\');"';
+            }
+
+            echo '<a ' . $attributes . ' href="' . esc_url((string) $button['url']) . '">' . esc_html((string) $button['label']) . '</a>';
+        }
+        echo '</footer>';
     }
 
     /**

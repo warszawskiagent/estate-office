@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.6
+Stable tag: 0.1.7
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.6 dodaje panel zarządzania etapami umów z dynamicznym formularzem aktualizacji i tabelaryczną historią zmian, zachowując interaktywną obsługę kreatora umów, Map Google oraz aktywny moduł licencyjny z alertami.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.7 dodaje stopkę akcji w profilach CRM ze skrótami do powrotu, edycji i usuwania rekordów, utrzymując panel etapów umów, interaktywny kreator oraz integrację Map Google z aktywnym modułem licencyjnym.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -49,6 +49,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.6 d
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
+* Stopki akcji w profilach CRM z przyciskami powrotu do listy, edycji i usuwania chronionymi odpowiednimi uprawnieniami.
 * Panel leadów w frontowym CRM umożliwiający aktualizację statusów bez przechodzenia do kokpitu administracyjnego.
 * Galeria nieruchomości z obsługą zdjęć, podpisów, wyboru zdjęcia głównego, rzutów 2D/3D, linków wideo oraz automatycznym nakładaniem znaku wodnego.
 * Moduł umów z dedykowanymi polami meta, historią etapów oraz synchronizacją numeru z tytułem wpisu.
@@ -95,6 +96,9 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.6 d
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.7 =
+* Dodano stopkę akcji w profilach rekordów CRM z przyciskami powrotu, edycji i usuwania zgodnie z wymaganiami bezpieczeństwa.
+
 = 0.1.6 =
 * Dodano sekcję „Etap umowy” w profilu umowy z podsumowaniem aktualnego etapu i daty oraz formularzem zmiany zgodnym ze specyfikacją CRM.
 * Wprowadzono bezpieczną aktualizację etapów przez AJAX z komunikatami zwrotnymi, kontrolą uprawnień i automatycznym dopisywaniem historii.

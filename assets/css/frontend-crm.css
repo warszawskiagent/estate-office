@@ -102,6 +102,40 @@
     color: #2271b1;
 }
 
+.estate-office-crm__button--primary {
+    background-color: #2271b1;
+    border-color: #1a5f94;
+    color: #fff;
+}
+
+.estate-office-crm__button--primary:hover,
+.estate-office-crm__button--primary:focus {
+    background-color: #1a5f94;
+    border-color: #144a73;
+    color: #fff;
+}
+
+.estate-office-crm__button--danger {
+    border-color: #d63638;
+    color: #d63638;
+}
+
+.estate-office-crm__button--danger:hover,
+.estate-office-crm__button--danger:focus {
+    background-color: #d63638;
+    border-color: #aa2a2c;
+    color: #fff;
+}
+
+.estate-office-crm__detail-footer {
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+}
+
 .estate-office-crm__back {
     margin: 16px 0;
 }
