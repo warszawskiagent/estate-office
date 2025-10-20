@@ -27,6 +27,7 @@ use function add_action;
 use function add_query_arg;
 use function add_shortcode;
 use function admin_url;
+use function check_ajax_referer;
 use function array_search;
 use function array_slice;
 use function get_current_user_id;
@@ -78,6 +79,8 @@ use function wp_unslash;
 use function wp_date;
 use function mysql2date;
 use function __;
+use function wp_send_json_error;
+use function wp_send_json_success;
 
 use const ARRAY_A;
 use const ESTATE_OFFICE_PLUGIN_FILE;
@@ -92,6 +95,7 @@ final class CRM
     public const SECTION_PARAM = 'estate_office_section';
     public const RECORD_PARAM = 'estate_office_record';
     public const RECORD_ID_PARAM = 'estate_office_record_id';
+    private const STAGE_NONCE_ACTION = 'estate_office_update_agreement_stage';
 
     /**
      * @var array<string,string>
@@ -120,6 +124,7 @@ final class CRM
     {
         add_action('init', [self::class, 'registerShortcode']);
         add_action('wp_enqueue_scripts', [self::class, 'registerAssets']);
+        add_action('wp_ajax_estate_office_update_agreement_stage', [self::class, 'handleUpdateAgreementStage']);
     }
 
     public static function registerShortcode(): void
@@ -159,6 +164,19 @@ final class CRM
         }
 
         QuickCreate::enqueueAssets();
+
+        wp_localize_script(
+            'estate-office-frontend-crm',
+            'EstateOfficeCRM',
+            [
+                'ajaxUrl'       => admin_url('admin-ajax.php'),
+                'stageNonce'    => wp_create_nonce(self::STAGE_NONCE_ACTION),
+                'stageMessages' => [
+                    'success' => esc_html__('Etap umowy został zaktualizowany.', 'estate-office'),
+                    'error'   => esc_html__('Nie udało się zaktualizować etapu umowy. Spróbuj ponownie.', 'estate-office'),
+                ],
+            ]
+        );
 
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
@@ -209,6 +227,45 @@ final class CRM
         echo '</div>';
 
         return (string) ob_get_clean();
+    }
+
+    public static function handleUpdateAgreementStage(): void
+    {
+        if (!is_user_logged_in()) {
+            wp_send_json_error([
+                'message' => esc_html__('Brak uprawnień do aktualizacji etapu umowy.', 'estate-office'),
+            ], 403);
+        }
+
+        check_ajax_referer(self::STAGE_NONCE_ACTION, 'nonce');
+
+        $agreementId = absint($_POST['agreement_id'] ?? 0);
+        if ($agreementId <= 0) {
+            wp_send_json_error([
+                'message' => esc_html__('Nieprawidłowy identyfikator umowy.', 'estate-office'),
+            ], 400);
+        }
+
+        if (!current_user_can('edit_post', $agreementId)) {
+            wp_send_json_error([
+                'message' => esc_html__('Brak uprawnień do aktualizacji etapu umowy.', 'estate-office'),
+            ], 403);
+        }
+
+        $stage     = sanitize_text_field(wp_unslash((string) ($_POST['stage'] ?? '')));
+        $stageDate = sanitize_text_field(wp_unslash((string) ($_POST['stage_date'] ?? '')));
+
+        $result = AgreementMeta::updateStageFromFrontend($agreementId, $stage, $stageDate);
+
+        wp_send_json_success([
+            'message' => esc_html__('Etap umowy został zaktualizowany.', 'estate-office'),
+            'stage'   => [
+                'key'      => $result['stage'],
+                'label'    => self::getAgreementStageLabel($result['stage']),
+                'date'     => self::formatStageDate($result['date']),
+                'raw_date' => $result['date'],
+            ],
+        ]);
     }
 
     public static function getCrmBaseUrl(): string
@@ -1596,6 +1653,7 @@ final class CRM
             static fn(int $searchId): string => self::getSearchRelationLabel($searchId)
         );
 
+        self::renderStageManager($postId);
         self::renderStageHistory($postId);
 
         echo '</section>';
@@ -1907,33 +1965,110 @@ final class CRM
         echo '</section>';
     }
 
+    private static function renderStageManager(int $postId): void
+    {
+        $history       = AgreementMeta::getStageHistory($postId);
+        $stageKey      = (string) get_post_meta($postId, 'estate_agreement_stage', true);
+        $lastDateValue = '';
+
+        if ($history !== []) {
+            $lastIndex = array_key_last($history);
+            if ($lastIndex !== null && isset($history[$lastIndex])) {
+                $lastEntry = $history[$lastIndex];
+                $historyStage = isset($lastEntry['stage']) ? (string) $lastEntry['stage'] : '';
+                if ($historyStage !== '') {
+                    $stageKey = $historyStage;
+                }
+                $lastDateValue = isset($lastEntry['date']) ? (string) $lastEntry['date'] : '';
+            }
+        }
+
+        if ($stageKey === '') {
+            $stageKey = AgreementMeta::getDefaultStage();
+        }
+
+        $stageLabel = self::getAgreementStageLabel($stageKey);
+
+        if ($lastDateValue === '') {
+            $lastDateValue = (string) get_post_meta($postId, 'estate_agreement_start_date', true);
+        }
+
+        $displayDate = self::formatStageDate($lastDateValue);
+        $canManage   = current_user_can('edit_post', $postId);
+
+        echo '<section class="estate-office-crm__detail-panel estate-office-crm__detail-panel--form">';
+        echo '<h3>' . esc_html__('Etap umowy', 'estate-office') . '</h3>';
+        echo '<div class="estate-office-crm__stage-summary">';
+        echo '<div><strong>' . esc_html__('Aktualny etap:', 'estate-office') . '</strong><span>' . esc_html($stageLabel) . '</span></div>';
+        echo '<div><strong>' . esc_html__('Data etapu:', 'estate-office') . '</strong><span>' . esc_html($displayDate) . '</span></div>';
+        echo '</div>';
+
+        if ($canManage) {
+            echo '<form class="estate-office-crm__stage-form" data-eo-agreement-stage-form method="post">';
+            echo '<input type="hidden" name="agreement_id" value="' . esc_attr((string) $postId) . '">';
+            echo '<input type="hidden" name="nonce" value="' . esc_attr(wp_create_nonce(self::STAGE_NONCE_ACTION)) . '">';
+            echo '<label class="estate-office-crm__form-label" for="estate-office-agreement-stage">' . esc_html__('Zmień etap', 'estate-office') . '</label>';
+            echo '<select class="estate-office-crm__form-control" name="stage" id="estate-office-agreement-stage">';
+            foreach (AgreementMeta::STAGES as $value => $label) {
+                printf(
+                    '<option value="%s"%s>%s</option>',
+                    esc_attr((string) $value),
+                    selected($stageKey, (string) $value, false),
+                    esc_html($label)
+                );
+            }
+            echo '</select>';
+            echo '<label class="estate-office-crm__form-label" for="estate-office-agreement-stage-date">' . esc_html__('Data etapu', 'estate-office') . '</label>';
+            echo '<input class="estate-office-crm__form-control" type="date" name="stage_date" id="estate-office-agreement-stage-date" value="' . esc_attr($lastDateValue) . '">';
+            echo '<div class="estate-office-crm__form-actions">';
+            echo '<button type="submit" class="estate-office-crm__button">' . esc_html__('Aktualizuj etap', 'estate-office') . '</button>';
+            echo '<p class="estate-office-crm__form-message" data-eo-agreement-stage-message></p>';
+            echo '</div>';
+            echo '</form>';
+        } else {
+            echo '<p class="description">' . esc_html__('Nie masz uprawnień do zmiany etapu tej umowy.', 'estate-office') . '</p>';
+        }
+
+        echo '</section>';
+    }
+
     private static function renderStageHistory(int $postId): void
     {
-        $history = get_post_meta($postId, 'estate_agreement_stage_history', true);
-        if (!is_array($history) || $history === []) {
+        $history = AgreementMeta::getStageHistory($postId);
+        if ($history === []) {
             return;
         }
 
         echo '<section class="estate-office-crm__detail-panel">';
         echo '<h3>' . esc_html__('Historia etapów', 'estate-office') . '</h3>';
-        echo '<ol class="estate-office-crm__timeline">';
-        foreach ($history as $entry) {
-            if (!is_array($entry)) {
+        echo '<table class="estate-office-crm__stage-history">';
+        echo '<thead><tr><th scope="col">' . esc_html__('Data', 'estate-office') . '</th><th scope="col">' . esc_html__('Etap', 'estate-office') . '</th></tr></thead>';
+        echo '<tbody>';
+
+        $rowsRendered = 0;
+
+        foreach (array_reverse($history) as $entry) {
+            $stageKey   = isset($entry['stage']) ? (string) $entry['stage'] : '';
+            $stageLabel = self::getAgreementStageLabel($stageKey);
+            $date       = isset($entry['date']) ? self::formatStageDate((string) $entry['date']) : '—';
+
+            if ($stageLabel === '—' && $date === '—') {
                 continue;
             }
 
-            $stageKey   = (string) ($entry['stage'] ?? '');
-            $stageLabel = self::getAgreementStageLabel($stageKey);
-            $date       = (string) ($entry['date'] ?? '');
-
-            echo '<li>';
-            echo '<span class="estate-office-crm__timeline-stage">' . esc_html($stageLabel) . '</span>';
-            if ($date !== '') {
-                echo '<span class="estate-office-crm__timeline-date">' . esc_html($date) . '</span>';
-            }
-            echo '</li>';
+            echo '<tr>';
+            echo '<td>' . esc_html($date) . '</td>';
+            echo '<td>' . esc_html($stageLabel) . '</td>';
+            echo '</tr>';
+            $rowsRendered++;
         }
-        echo '</ol>';
+
+        if ($rowsRendered === 0) {
+            echo '<tr><td colspan="2">' . esc_html__('Brak zapisanej historii etapów.', 'estate-office') . '</td></tr>';
+        }
+
+        echo '</tbody>';
+        echo '</table>';
         echo '</section>';
     }
 
@@ -2570,6 +2705,26 @@ final class CRM
         }
 
         return $value;
+    }
+
+    private static function formatStageDate(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '—';
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return '—';
+        }
+
+        $format = (string) get_option('date_format');
+        if ($format === '') {
+            $format = 'Y-m-d';
+        }
+
+        return wp_date($format, $timestamp);
     }
 
     private static function formatAgreementEndDate(int $postId): string

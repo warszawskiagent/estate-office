@@ -471,6 +471,64 @@
     gap: 12px;
 }
 
+.estate-office-crm__stage-summary {
+    display: grid;
+    gap: 4px;
+    font-size: 0.95rem;
+    color: #1d2327;
+}
+
+.estate-office-crm__stage-summary div {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.estate-office-crm__stage-summary strong {
+    font-weight: 600;
+    min-width: 140px;
+}
+
+.estate-office-crm__stage-summary span {
+    font-weight: 500;
+}
+
+.estate-office-crm__stage-form {
+    display: grid;
+    gap: 12px;
+}
+
+.estate-office-crm__stage-history {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.estate-office-crm__stage-history th,
+.estate-office-crm__stage-history td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.estate-office-crm__stage-history th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.estate-office-crm__stage-history tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.estate-office-crm__stage-history td {
+    color: #1f2933;
+}
+
+.estate-office-crm__stage-history td:first-child {
+    white-space: nowrap;
+}
+
 .estate-office-crm__lead-status-form {
     display: grid;
     gap: 12px;

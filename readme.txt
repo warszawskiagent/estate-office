@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.5 rozbudowuje kreator umów o pełne kryteria poszukiwań – od preferencji budynku po udogodnienia i powierzchnie dodatkowe – zachowując interaktywną obsługę Map Google i aktywny moduł licencyjny z alertami.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.6 dodaje panel zarządzania etapami umów z dynamicznym formularzem aktualizacji i tabelaryczną historią zmian, zachowując interaktywną obsługę kreatora umów, Map Google oraz aktywny moduł licencyjny z alertami.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -95,6 +95,10 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.5 r
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.6 =
+* Dodano sekcję „Etap umowy” w profilu umowy z podsumowaniem aktualnego etapu i daty oraz formularzem zmiany zgodnym ze specyfikacją CRM.
+* Wprowadzono bezpieczną aktualizację etapów przez AJAX z komunikatami zwrotnymi, kontrolą uprawnień i automatycznym dopisywaniem historii.
+* Przebudowano widok historii etapów na tabelę z kolumnami daty i etapu, uzupełniając styl warstw szczegółów CRM.
 = 0.1.5 =
 * Rozszerzono krok dodawania poszukiwania o komplet sekcji preferencji obejmujących budynek, media, udogodnienia, wyposażenie oraz powierzchnie dodatkowe zgodnie ze specyfikacją CRM.
 

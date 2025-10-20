@@ -39,9 +39,10 @@
         filterTable(table, target.value);
     });
 
+    const crmConfig = window.EstateOfficeCRM || {};
     const leadActions = window.EstateOfficeLeadActions || {};
 
-    const showLeadMessage = (element, type, text) => {
+    const showFormMessage = (element, type, text) => {
         if (!element) {
             return;
         }
@@ -66,11 +67,73 @@
             return;
         }
 
+        if (form.matches('[data-eo-agreement-stage-form]')) {
+            if (!crmConfig.ajaxUrl) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const messageElement = form.querySelector('[data-eo-agreement-stage-message]');
+            showFormMessage(messageElement, '', '');
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+
+            form.classList.add('is-loading');
+
+            const formData = new FormData(form);
+            formData.append('action', 'estate_office_update_agreement_stage');
+
+            if (!formData.has('nonce') && typeof crmConfig.stageNonce === 'string') {
+                formData.append('nonce', crmConfig.stageNonce);
+            }
+
+            fetch(crmConfig.ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData,
+            })
+                .then((response) => response.json().then((data) => ({ ok: response.ok, status: response.status, body: data })))
+                .then(({ ok, body }) => {
+                    if (ok && body && body.success) {
+                        const successMessage = (crmConfig.stageMessages && crmConfig.stageMessages.success)
+                            || (body.data && body.data.message)
+                            || '';
+                        showFormMessage(messageElement, 'success', successMessage);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 600);
+
+                        return;
+                    }
+
+                    const errorMessage = (body && body.data && body.data.message)
+                        || (crmConfig.stageMessages && crmConfig.stageMessages.error)
+                        || '';
+                    showFormMessage(messageElement, 'error', errorMessage);
+                })
+                .catch(() => {
+                    const errorMessage = (crmConfig.stageMessages && crmConfig.stageMessages.error) || '';
+                    showFormMessage(messageElement, 'error', errorMessage);
+                })
+                .finally(() => {
+                    form.classList.remove('is-loading');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
+                });
+
+            return;
+        }
+
         if (form.matches('[data-eo-lead-status-form]')) {
             event.preventDefault();
 
             const messageElement = form.querySelector('[data-eo-lead-status-message]');
-            showLeadMessage(messageElement, '', '');
+            showFormMessage(messageElement, '', '');
 
             const submitButton = form.querySelector('button[type="submit"]');
             if (submitButton) {
@@ -97,7 +160,7 @@
                         const successMessage = (leadActions.messages && leadActions.messages.success)
                             || (body.data && body.data.message)
                             || '';
-                        showLeadMessage(messageElement, 'success', successMessage);
+                        showFormMessage(messageElement, 'success', successMessage);
                         setTimeout(() => {
                             window.location.reload();
                         }, 600);
@@ -108,11 +171,11 @@
                     const errorMessage = (body && body.data && body.data.message)
                         || (leadActions.messages && leadActions.messages.error)
                         || '';
-                    showLeadMessage(messageElement, 'error', errorMessage);
+                    showFormMessage(messageElement, 'error', errorMessage);
                 })
                 .catch(() => {
                     const errorMessage = (leadActions.messages && leadActions.messages.error) || '';
-                    showLeadMessage(messageElement, 'error', errorMessage);
+                    showFormMessage(messageElement, 'error', errorMessage);
                 })
                 .finally(() => {
                     form.classList.remove('is-loading');
@@ -128,7 +191,7 @@
             event.preventDefault();
 
             const messageElement = form.querySelector('[data-eo-lead-note-message]');
-            showLeadMessage(messageElement, '', '');
+            showFormMessage(messageElement, '', '');
 
             const submitButton = form.querySelector('button[type="submit"]');
             if (submitButton) {
@@ -155,7 +218,7 @@
                         const successMessage = (leadActions.noteMessages && leadActions.noteMessages.success)
                             || (body.data && body.data.message)
                             || '';
-                        showLeadMessage(messageElement, 'success', successMessage);
+                        showFormMessage(messageElement, 'success', successMessage);
                         setTimeout(() => {
                             window.location.reload();
                         }, 600);
@@ -166,11 +229,11 @@
                     const errorMessage = (body && body.data && body.data.message)
                         || (leadActions.noteMessages && leadActions.noteMessages.error)
                         || '';
-                    showLeadMessage(messageElement, 'error', errorMessage);
+                    showFormMessage(messageElement, 'error', errorMessage);
                 })
                 .catch(() => {
                     const errorMessage = (leadActions.noteMessages && leadActions.noteMessages.error) || '';
-                    showLeadMessage(messageElement, 'error', errorMessage);
+                    showFormMessage(messageElement, 'error', errorMessage);
                 })
                 .finally(() => {
                     form.classList.remove('is-loading');

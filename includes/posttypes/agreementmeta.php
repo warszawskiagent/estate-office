@@ -980,49 +980,95 @@ final class AgreementMeta
 
     private static function updateStage(int $postId, array $values): void
     {
-        $currentStage = get_post_meta($postId, 'estate_agreement_stage', true);
-        $history      = get_post_meta($postId, 'estate_agreement_stage_history', true);
+        $rawStage = wp_unslash((string) ($_POST['estate_agreement_stage'] ?? ''));
+        if ($rawStage === '') {
+            $rawStage = (string) ($values['estate_agreement_stage'] ?? '');
+        }
+
+        $rawDate           = wp_unslash((string) ($_POST['estate_agreement_stage_date'] ?? ''));
+        $shouldUpdateDate  = $rawDate !== '';
+        if ($rawDate === '') {
+            $rawDate = (string) ($values['estate_agreement_start_date'] ?? '');
+        }
+
+        self::persistStageData($postId, $rawStage, $rawDate, $shouldUpdateDate);
+    }
+
+    public static function updateStageFromFrontend(int $postId, string $stage, string $stageDate = ''): array
+    {
+        return self::persistStageData($postId, $stage, $stageDate, true);
+    }
+
+    public static function getStageHistory(int $postId): array
+    {
+        $history = get_post_meta($postId, 'estate_agreement_stage_history', true);
+        if (!is_array($history)) {
+            return [];
+        }
+
+        return self::sanitizeStageHistory($history);
+    }
+
+    /**
+     * @return array{stage:string,date:string,history:array<int,array{stage:string,date:string}>}
+     */
+    private static function persistStageData(int $postId, string $stage, string $stageDate, bool $shouldUpdateDate): array
+    {
+        $currentStage = self::sanitizeEnum((string) get_post_meta($postId, 'estate_agreement_stage', true), self::STAGES);
+        if ($currentStage === '') {
+            $currentStage = self::DEFAULT_STAGE;
+        }
+
+        $stage = self::sanitizeEnum($stage, self::STAGES);
+        if ($stage === '') {
+            $stage = $currentStage;
+        }
+
+        $history = get_post_meta($postId, 'estate_agreement_stage_history', true);
         if (!is_array($history)) {
             $history = [];
         }
+        $history = self::sanitizeStageHistory($history);
 
-        $newStage = self::sanitizeEnum(
-            wp_unslash((string) ($_POST['estate_agreement_stage'] ?? ($currentStage ?: self::DEFAULT_STAGE))),
-            self::STAGES
-        );
+        $stageChanged  = $stage !== $currentStage;
+        $historyEmpty  = $history === [];
 
-        $stageDate = self::sanitizeDate(wp_unslash((string) ($_POST['estate_agreement_stage_date'] ?? '')));
-        if ($stageDate === '') {
-            $stageDate = $values['estate_agreement_start_date'] ?? gmdate('Y-m-d');
+        $sanitizedDate    = self::sanitizeDate($stageDate);
+        $hasExplicitDate  = $sanitizedDate !== '';
+
+        if (!$hasExplicitDate) {
+            $sanitizedDate = self::sanitizeDate((string) get_post_meta($postId, 'estate_agreement_start_date', true));
         }
 
-        if ($newStage === '') {
-            $newStage = self::DEFAULT_STAGE;
+        if ($sanitizedDate === '') {
+            $sanitizedDate = gmdate('Y-m-d');
         }
 
-        $shouldPersist = $newStage !== $currentStage;
-
-        if (!$shouldPersist && empty($history)) {
-            $shouldPersist = true;
-        }
-
-        if ($shouldPersist) {
+        if ($stageChanged || $historyEmpty) {
             $history[] = [
-                'stage' => $newStage,
-                'date'  => $stageDate,
+                'stage' => $stage,
+                'date'  => $sanitizedDate,
             ];
 
             $history = array_slice($history, -50);
-
-            update_post_meta($postId, 'estate_agreement_stage', $newStage);
-            update_post_meta($postId, 'estate_agreement_stage_history', $history);
-        } elseif (!empty($_POST['estate_agreement_stage_date'])) {
+        } elseif ($shouldUpdateDate && $history !== []) {
             $lastIndex = array_key_last($history);
             if ($lastIndex !== null) {
-                $history[$lastIndex]['date'] = $stageDate;
-                update_post_meta($postId, 'estate_agreement_stage_history', $history);
+                $history[$lastIndex]['date'] = $sanitizedDate;
             }
         }
+
+        update_post_meta($postId, 'estate_agreement_stage', $stage);
+
+        if ($stageChanged || $historyEmpty || ($shouldUpdateDate && $history !== [])) {
+            update_post_meta($postId, 'estate_agreement_stage_history', $history);
+        }
+
+        return [
+            'stage'   => $stage,
+            'date'    => $sanitizedDate,
+            'history' => $history,
+        ];
     }
 
     private static function synchroniseTitle(int $postId, string $number): void
