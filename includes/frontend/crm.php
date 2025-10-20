@@ -1340,7 +1340,13 @@ final class CRM
                 echo '<td><a href="' . esc_url($row['link']) . '">' . esc_html($row['number']) . '</a></td>';
                 echo '<td>' . esc_html($row['transaction']) . '</td>';
                 echo '<td>' . esc_html($row['property_type']) . '</td>';
-                echo '<td>' . esc_html($row['address']) . '</td>';
+                echo '<td>';
+                if ($row['address_link'] !== '' && $row['address'] !== '—') {
+                    echo '<a href="' . esc_url($row['address_link']) . '">' . esc_html($row['address']) . '</a>';
+                } else {
+                    echo esc_html($row['address']);
+                }
+                echo '</td>';
                 echo '<td>' . esc_html($row['start_date']) . '</td>';
                 echo '<td>' . esc_html($row['end_date']) . '</td>';
                 echo '<td>' . esc_html($row['stage']) . '</td>';
@@ -1357,7 +1363,7 @@ final class CRM
     }
 
     /**
-     * @return array<int,array{link:string,number:string,transaction:string,property_type:string,address:string,start_date:string,end_date:string,stage:string,manager:string}>
+     * @return array<int,array{link:string,number:string,transaction:string,property_type:string,address:string,address_link:string,start_date:string,end_date:string,stage:string,manager:string}>
      */
     private static function queryAgreements(string $searchTerm): array
     {
@@ -1385,12 +1391,19 @@ final class CRM
             $firstProperty  = $properties[0] ?? 0;
             $manager        = self::getAgreementManager($postId);
 
+            $address      = $firstProperty > 0 ? self::formatPropertyAddress($firstProperty) : '—';
+            $addressLink  = '';
+            if ($firstProperty > 0) {
+                $addressLink = self::getDetailLink('properties', $firstProperty);
+            }
+
             $rows[] = [
                 'link'          => self::getDetailLink('agreements', $postId),
                 'number'        => $number,
                 'transaction'   => self::getAgreementTransactionLabel($transactionKey),
                 'property_type' => self::getPropertyTypeFromAgreement($firstProperty),
-                'address'       => $firstProperty > 0 ? self::formatPropertyAddress($firstProperty) : '—',
+                'address'       => $address,
+                'address_link'  => $addressLink,
                 'start_date'    => self::formatDateMeta($postId, 'estate_agreement_start_date'),
                 'end_date'      => self::formatAgreementEndDate($postId),
                 'stage'         => self::getAgreementStageLabel((string) get_post_meta($postId, 'estate_agreement_stage', true)),
@@ -1496,7 +1509,13 @@ final class CRM
             foreach ($rows as $row) {
                 echo '<tr>';
                 echo '<td><a href="' . esc_url($row['link']) . '">' . esc_html($row['name']) . '</a></td>';
-                echo '<td>' . esc_html($row['address']) . '</td>';
+                echo '<td>';
+                if ($row['address_link'] !== '' && $row['address'] !== '—') {
+                    echo '<a href="' . esc_url($row['address_link']) . '">' . esc_html($row['address']) . '</a>';
+                } else {
+                    echo esc_html($row['address']);
+                }
+                echo '</td>';
                 echo '<td>' . $row['phone'] . '</td>';
                 echo '<td>' . $row['email'] . '</td>';
                 echo '<td>' . esc_html($row['manager']) . '</td>';
@@ -2878,7 +2897,35 @@ final class CRM
     }
 
     /**
-     * @return array<int,array{link:string,name:string,address:string,phone:string,email:string,manager:string}>
+     * @return array{label:string,link:string}
+     */
+    private static function getClientPrimaryPropertyLink(int $clientId): array
+    {
+        $agreements = self::sanitizeIdArray(get_post_meta($clientId, ClientMeta::AGREEMENTS_META_KEY, true));
+
+        foreach ($agreements as $agreementId) {
+            $properties = self::sanitizeIdArray(get_post_meta($agreementId, 'estate_agreement_properties', true));
+            foreach ($properties as $propertyId) {
+                $property = self::getAccessiblePost($propertyId, PropertyRegister::POST_TYPE);
+                if (!$property instanceof WP_Post) {
+                    continue;
+                }
+
+                return [
+                    'label' => self::formatPropertyAddress($propertyId),
+                    'link'  => self::getDetailLink('properties', $propertyId),
+                ];
+            }
+        }
+
+        return [
+            'label' => self::formatClientAddress($clientId),
+            'link'  => '',
+        ];
+    }
+
+    /**
+     * @return array<int,array{link:string,name:string,address:string,address_link:string,phone:string,email:string,manager:string}>
      */
     private static function queryClients(string $searchTerm): array
     {
@@ -2897,13 +2944,16 @@ final class CRM
         while ($query->have_posts()) {
             $query->the_post();
             $postId = (int) get_the_ID();
+            $addressData = self::getClientPrimaryPropertyLink($postId);
+
             $rows[] = [
-                'link'    => self::getDetailLink('clients', $postId),
-                'name'    => self::resolveClientName($postId),
-                'address' => self::formatClientAddress($postId),
-                'phone'   => self::formatPhone((string) get_post_meta($postId, 'estate_client_phone', true)),
-                'email'   => self::formatEmail((string) get_post_meta($postId, 'estate_client_email', true)),
-                'manager' => self::getManagerName((int) get_post_meta($postId, 'estate_client_manager', true)),
+                'link'         => self::getDetailLink('clients', $postId),
+                'name'         => self::resolveClientName($postId),
+                'address'      => $addressData['label'],
+                'address_link' => $addressData['link'],
+                'phone'        => self::formatPhone((string) get_post_meta($postId, 'estate_client_phone', true)),
+                'email'        => self::formatEmail((string) get_post_meta($postId, 'estate_client_email', true)),
+                'manager'      => self::getManagerName((int) get_post_meta($postId, 'estate_client_manager', true)),
             ];
         }
 
