@@ -46,6 +46,18 @@
     const propertyPriceInput = propertyForm?.querySelector('[data-eo-property-price]');
     const propertyAreaInput = propertyForm?.querySelector('[data-eo-property-area]');
     const propertyPricePerSqmInput = propertyForm?.querySelector('[data-eo-property-price-sqm]');
+    const mapConfig = typeof config.maps === 'object' && config.maps !== null ? config.maps : {};
+    const propertyMapToggle = propertyForm?.querySelector('[data-eo-property-map-toggle]');
+    const propertyMapPanel = propertyForm?.querySelector('[data-eo-property-map]');
+    const propertyMapSearch = propertyForm?.querySelector('[data-eo-property-map-search]');
+    const propertyMapCanvas = propertyForm?.querySelector('[data-eo-property-map-canvas]');
+    const propertyMapAddressLabel = propertyForm?.querySelector('[data-eo-property-map-address]');
+    const propertyMapStatus = propertyForm?.querySelector('[data-eo-property-map-status]');
+    const propertyMapClear = propertyForm?.querySelector('[data-eo-property-map-clear]');
+    const propertyMapLatInput = propertyForm?.querySelector('[data-eo-property-map-lat]');
+    const propertyMapLngInput = propertyForm?.querySelector('[data-eo-property-map-lng]');
+    const propertyMapAddressInput = propertyForm?.querySelector('[data-eo-property-map-address-input]');
+    const propertyMapPlaceInput = propertyForm?.querySelector('[data-eo-property-map-place]');
     const searchForm = overlay.querySelector('[data-eo-agreement-search]');
     const searchTransactionInput = overlay.querySelector('[data-eo-agreement-search-transaction]');
     const searchMessage = overlay.querySelector('[data-eo-agreement-search-message]');
@@ -58,6 +70,33 @@
     const clientRoleEntries = Object.entries(clientRoleOptions);
     const clientRoleLabel = config.labels?.clientRole || '';
     const clientRolePlaceholder = config.labels?.clientRolePlaceholder || '';
+
+    const mapDefaults = Object.assign(
+        {
+            lat: 52.2296756,
+            lng: 21.0122287,
+            zoom: 12,
+            activeZoom: 16,
+        },
+        typeof mapConfig.defaults === 'object' && mapConfig.defaults !== null ? mapConfig.defaults : {},
+    );
+
+    const mapStrings = Object.assign(
+        {
+            noApiKey: '',
+            loadError: '',
+            searchPlaceholder: '',
+            applyLocation: '',
+            cleared: '',
+            geocodeError: '',
+            noLocation: '',
+        },
+        typeof mapConfig.i18n === 'object' && mapConfig.i18n !== null ? mapConfig.i18n : {},
+    );
+
+    let googleMapsPromise = null;
+    let propertyMapInitPromise = null;
+    let propertyMapInstance = null;
 
     let updateParkingVisibility;
     const surfaceVisibilityUpdaters = [];
@@ -138,6 +177,294 @@
 
             field.removeAttribute('required');
         });
+    }
+
+    function updateMapStatus(message) {
+        if (propertyMapStatus) {
+            propertyMapStatus.textContent = message || '';
+        }
+    }
+
+    function updateMapAddress(text) {
+        if (propertyMapAddressLabel) {
+            const label = text && text.length > 0 ? text : mapStrings.noLocation || '';
+            propertyMapAddressLabel.textContent = label;
+        }
+    }
+
+    function setMapPanelVisibility(visible) {
+        if (!propertyMapPanel) {
+            return;
+        }
+
+        if (visible) {
+            propertyMapPanel.classList.remove('is-hidden');
+            propertyMapPanel.removeAttribute('hidden');
+        } else {
+            propertyMapPanel.classList.add('is-hidden');
+            propertyMapPanel.setAttribute('hidden', 'hidden');
+        }
+    }
+
+    function setMapClearEnabled(enabled) {
+        if (!propertyMapClear) {
+            return;
+        }
+
+        if (enabled) {
+            propertyMapClear.removeAttribute('disabled');
+        } else {
+            propertyMapClear.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    function loadGoogleMapsScript() {
+        if (window.google && window.google.maps) {
+            return Promise.resolve();
+        }
+
+        if (!mapConfig.enabled || !mapConfig.apiUrl) {
+            return Promise.reject(new Error('maps-disabled'));
+        }
+
+        if (!googleMapsPromise) {
+            googleMapsPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = mapConfig.apiUrl;
+                script.async = true;
+                script.defer = true;
+                script.onload = () => resolve();
+                script.onerror = () => {
+                    googleMapsPromise = null;
+                    reject(new Error('maps-load-error'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        return googleMapsPromise.catch((error) => {
+            googleMapsPromise = null;
+            throw error;
+        });
+    }
+
+    function geocodeLatLng(geocoder, latLng) {
+        if (!geocoder || !latLng) {
+            return Promise.resolve('');
+        }
+
+        return geocoder
+            .geocode({ location: latLng })
+            .then((result) => {
+                if (!result || !Array.isArray(result.results) || result.results.length === 0) {
+                    return '';
+                }
+
+                return result.results[0].formatted_address || '';
+            })
+            .catch(() => '');
+    }
+
+    function applyPropertyLocation(latLng, address, placeId) {
+        if (!propertyMapInstance || !latLng) {
+            return;
+        }
+
+        const { map, marker } = propertyMapInstance;
+        const target = typeof latLng.lat === 'function' && typeof latLng.lng === 'function'
+            ? { lat: latLng.lat(), lng: latLng.lng() }
+            : latLng;
+
+        marker.setPosition(target);
+        marker.setVisible(true);
+        map.panTo(target);
+        map.setZoom(mapDefaults.activeZoom || 16);
+
+        if (propertyMapLatInput) {
+            propertyMapLatInput.value = Number.isFinite(target.lat) ? target.lat.toFixed(8) : '';
+        }
+        if (propertyMapLngInput) {
+            propertyMapLngInput.value = Number.isFinite(target.lng) ? target.lng.toFixed(8) : '';
+        }
+        if (propertyMapAddressInput) {
+            propertyMapAddressInput.value = address || '';
+        }
+        if (propertyMapPlaceInput) {
+            propertyMapPlaceInput.value = placeId || '';
+        }
+
+        updateMapAddress(address || '');
+        updateMapStatus(mapStrings.applyLocation || '');
+        setMapClearEnabled(true);
+    }
+
+    function ensurePropertyMap() {
+        if (!propertyMapPanel || !propertyMapCanvas) {
+            return Promise.reject(new Error('maps-missing-elements'));
+        }
+
+        if (propertyMapInstance) {
+            return Promise.resolve(propertyMapInstance);
+        }
+
+        if (propertyMapInitPromise) {
+            return propertyMapInitPromise;
+        }
+
+        propertyMapInitPromise = loadGoogleMapsScript()
+            .then(() => {
+                if (!window.google || !window.google.maps) {
+                    throw new Error('maps-not-available');
+                }
+
+                const storedLat = propertyMapLatInput ? parseFloat(propertyMapLatInput.value) : NaN;
+                const storedLng = propertyMapLngInput ? parseFloat(propertyMapLngInput.value) : NaN;
+                const hasStored = Number.isFinite(storedLat) && Number.isFinite(storedLng);
+                const initialPosition = hasStored
+                    ? { lat: storedLat, lng: storedLng }
+                    : { lat: Number(mapDefaults.lat) || 52.2296756, lng: Number(mapDefaults.lng) || 21.0122287 };
+                const defaultZoom = Number(mapDefaults.zoom) || 12;
+                const activeZoom = Number(mapDefaults.activeZoom) || 16;
+
+                const map = new window.google.maps.Map(propertyMapCanvas, {
+                    center: initialPosition,
+                    zoom: hasStored ? activeZoom : defaultZoom,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                });
+
+                const marker = new window.google.maps.Marker({
+                    map,
+                    position: initialPosition,
+                    draggable: true,
+                    visible: hasStored,
+                    title: mapStrings.applyLocation || '',
+                });
+
+                const geocoder = new window.google.maps.Geocoder();
+
+                if (propertyMapSearch) {
+                    if (mapStrings.searchPlaceholder) {
+                        propertyMapSearch.placeholder = mapStrings.searchPlaceholder;
+                    }
+
+                    const autocomplete = new window.google.maps.places.Autocomplete(propertyMapSearch, {
+                        fields: ['geometry', 'formatted_address', 'place_id'],
+                    });
+
+                    autocomplete.addListener('place_changed', () => {
+                        const place = autocomplete.getPlace();
+                        if (!place || !place.geometry || !place.geometry.location) {
+                            updateMapStatus(mapStrings.geocodeError || '');
+                            return;
+                        }
+
+                        applyPropertyLocation(place.geometry.location, place.formatted_address || '', place.place_id || '');
+                    });
+
+                    propertyMapInstance = { map, marker, geocoder, autocomplete };
+                } else {
+                    propertyMapInstance = { map, marker, geocoder };
+                }
+
+                map.addListener('click', (event) => {
+                    const latLng = event?.latLng;
+                    if (!latLng) {
+                        return;
+                    }
+
+                    geocodeLatLng(geocoder, latLng)
+                        .then((address) => {
+                            applyPropertyLocation(latLng, address || '', '');
+                        })
+                        .catch(() => {
+                            updateMapStatus(mapStrings.geocodeError || '');
+                        });
+                });
+
+                marker.addListener('dragend', (event) => {
+                    const latLng = event?.latLng;
+                    if (!latLng) {
+                        return;
+                    }
+
+                    geocodeLatLng(geocoder, latLng)
+                        .then((address) => {
+                            const placeId = propertyMapPlaceInput?.value || '';
+                            applyPropertyLocation(latLng, address || '', placeId);
+                        })
+                        .catch(() => {
+                            updateMapStatus(mapStrings.geocodeError || '');
+                        });
+                });
+
+                if (hasStored) {
+                    updateMapAddress(propertyMapAddressInput?.value || '');
+                    setMapClearEnabled(true);
+                } else {
+                    updateMapAddress('');
+                    setMapClearEnabled(false);
+                }
+
+                updateMapStatus('');
+
+                return propertyMapInstance;
+            })
+            .catch((error) => {
+                propertyMapInitPromise = null;
+                if (error && error.message === 'maps-disabled') {
+                    updateMapStatus(mapStrings.noApiKey || '');
+                } else {
+                    updateMapStatus(mapStrings.loadError || '');
+                }
+                throw error;
+            });
+
+        return propertyMapInitPromise;
+    }
+
+    function clearPropertyLocation(options = {}) {
+        const { silent = false } = options;
+
+        if (propertyMapLatInput) {
+            propertyMapLatInput.value = '';
+        }
+        if (propertyMapLngInput) {
+            propertyMapLngInput.value = '';
+        }
+        if (propertyMapAddressInput) {
+            propertyMapAddressInput.value = '';
+        }
+        if (propertyMapPlaceInput) {
+            propertyMapPlaceInput.value = '';
+        }
+
+        if (propertyMapInstance?.marker) {
+            propertyMapInstance.marker.setVisible(false);
+        }
+
+        updateMapAddress('');
+        setMapClearEnabled(false);
+
+        if (!silent) {
+            updateMapStatus(mapStrings.cleared || '');
+        } else {
+            updateMapStatus('');
+        }
+    }
+
+    function resetPropertyMapUI() {
+        if (propertyMapSearch) {
+            propertyMapSearch.value = '';
+        }
+
+        if (propertyMapToggle) {
+            propertyMapToggle.removeAttribute('aria-expanded');
+        }
+
+        clearPropertyLocation({ silent: true });
+        setMapPanelVisibility(false);
     }
 
     function getClientType() {
@@ -482,6 +809,7 @@
         if (propertyForm) {
             propertyForm.reset();
             propertyForm.setAttribute('hidden', 'hidden');
+            resetPropertyMapUI();
         }
         if (searchForm) {
             searchForm.reset();
@@ -870,6 +1198,7 @@
 
                 if (propertyForm) {
                     propertyForm.setAttribute('hidden', 'hidden');
+                    resetPropertyMapUI();
                 }
                 if (propertyResults) {
                     propertyResults.innerHTML = '';
@@ -1408,6 +1737,7 @@
                     setMessage(propertyMessage, 'success', config.messages?.propertySuccess || '');
                     if (propertyForm) {
                         propertyForm.setAttribute('hidden', 'hidden');
+                        resetPropertyMapUI();
                     }
                     if (step3Heading) {
                         step3Heading.textContent = config.messages?.finalizeSuccess || step3Heading.textContent;
@@ -1424,6 +1754,61 @@
                     setMessage(propertyMessage, 'error', config.messages?.propertyError || config.messages?.genericError || '');
                 });
         });
+
+        propertyForm.addEventListener('reset', () => {
+            resetPropertyMapUI();
+        });
+    }
+
+    if (propertyMapToggle) {
+        propertyMapToggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            setMapPanelVisibility(true);
+            propertyMapToggle.setAttribute('aria-expanded', 'true');
+
+            if (!mapConfig.enabled || !mapConfig.apiUrl) {
+                updateMapStatus(mapStrings.noApiKey || '');
+                return;
+            }
+
+            ensurePropertyMap()
+                .then(() => {
+                    updateMapStatus('');
+                    if (propertyMapSearch) {
+                        propertyMapSearch.focus();
+                        if (typeof propertyMapSearch.select === 'function') {
+                            propertyMapSearch.select();
+                        }
+                    }
+                })
+                .catch((error) => {
+                    if (error && error.message === 'maps-disabled') {
+                        updateMapStatus(mapStrings.noApiKey || '');
+                    } else {
+                        updateMapStatus(mapStrings.loadError || '');
+                    }
+                });
+        });
+    }
+
+    if (propertyMapClear) {
+        propertyMapClear.addEventListener('click', (event) => {
+            event.preventDefault();
+            clearPropertyLocation();
+        });
+    }
+
+    if (propertyMapPanel) {
+        setMapPanelVisibility(false);
+    }
+
+    if (propertyMapAddressInput && propertyMapLatInput && propertyMapLngInput) {
+        const hasInitialLocation = propertyMapLatInput.value !== '' && propertyMapLngInput.value !== '';
+        updateMapAddress(propertyMapAddressInput.value || '');
+        setMapClearEnabled(hasInitialLocation);
+    } else {
+        updateMapAddress('');
+        setMapClearEnabled(false);
     }
 
     if (searchForm) {
@@ -1561,6 +1946,7 @@
         if (propertyForm) {
             propertyForm.reset();
             propertyForm.setAttribute('hidden', 'hidden');
+            resetPropertyMapUI();
         }
 
         if (searchForm) {

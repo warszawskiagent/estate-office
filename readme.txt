@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.3
+Stable tag: 0.1.4
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.3 rozszerza frontowy kreator umów o kompletną kartę metadanych nieruchomości, dynamiczne sekcje formularza oraz obliczenia ceny za m² przy zachowaniu aktywnego modułu licencyjnego i alertów na liście wtyczek.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.4 dodaje interaktywną obsługę Map Google w kroku nieruchomości kreatora umów, umożliwiając wskazanie lokalizacji prosto z mapy przy zachowaniu rozbudowanych pól i aktywnego modułu licencyjnego z alertami.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -94,6 +94,11 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.3 r
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.4 =
+* Dodano pole lokalizacji z przyciskiem „Zaznacz na mapie” w kroku nieruchomości kreatora umów wraz z integracją Map Google i zapisem współrzędnych.
+* Wprowadzono skrypt ładujący Mapy Google na żądanie z dynamiczną obsługą wyszukiwania adresów, przeciągania pinezki oraz geokodowania wyników.
+* Rozszerzono interfejs kreatora o panel mapy, odświeżanie stanu po zapisaniu rekordów oraz stylizację kontrolek i komunikatów mapy dla spójności z CRM.
+
 = 0.1.3 =
 * Rozszerzono krok dodawania nieruchomości w kreatorze umów o pełną listę pól technicznych, prawnych i marketingowych zgodną z metadanymi panelu administracyjnego.
 * Dodano logikę JavaScript sterującą widocznością sekcji formularza zależnie od typu nieruchomości, statusu KW, powierzchni dodatkowych oraz automatyczne wyliczanie ceny za metr.

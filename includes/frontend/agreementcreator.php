@@ -29,6 +29,7 @@ use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function get_current_user_id;
+use function get_option;
 use function get_post;
 use function get_post_meta;
 use function get_posts;
@@ -38,9 +39,11 @@ use function is_array;
 use function is_wp_error;
 use function is_user_logged_in;
 use function plugins_url;
+use function rawurlencode;
 use function sanitize_text_field;
 use function sanitize_title;
 use function selected;
+use function sprintf;
 use function wp_create_nonce;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
@@ -59,6 +62,7 @@ use function wp_update_post;
 use function wp_strip_all_tags;
 use function term_exists;
 use function update_post_meta;
+use function trim;
 use function wp_list_pluck;
 
 use const ESTATE_OFFICE_PLUGIN_FILE;
@@ -117,6 +121,35 @@ final class AgreementCreator
         wp_enqueue_style(self::STYLE_HANDLE);
         wp_enqueue_script(self::SCRIPT_HANDLE);
 
+        $settings = get_option(GeneralSettings::OPTION);
+        $apiKey   = '';
+
+        if (is_array($settings) && !empty($settings['google_maps_api_key'])) {
+            $apiKey = trim((string) $settings['google_maps_api_key']);
+        }
+
+        $mapsConfig = [
+            'enabled'  => $apiKey !== '',
+            'apiUrl'   => $apiKey !== ''
+                ? sprintf('https://maps.googleapis.com/maps/api/js?key=%s&libraries=places', rawurlencode($apiKey))
+                : '',
+            'defaults' => [
+                'lat'        => 52.2296756,
+                'lng'        => 21.0122287,
+                'zoom'       => 12,
+                'activeZoom' => 16,
+            ],
+            'i18n'     => [
+                'noApiKey'         => esc_html__('Dodaj klucz API Map Google w ustawieniach wtyczki, aby wskazać lokalizację.', 'estate-office'),
+                'loadError'        => esc_html__('Nie udało się załadować Map Google. Spróbuj ponownie później.', 'estate-office'),
+                'searchPlaceholder'=> esc_html__('Wpisz adres nieruchomości…', 'estate-office'),
+                'applyLocation'    => esc_html__('Lokalizacja nieruchomości została zapisana.', 'estate-office'),
+                'cleared'          => esc_html__('Lokalizacja została usunięta.', 'estate-office'),
+                'geocodeError'     => esc_html__('Nie udało się pobrać adresu dla wskazanej lokalizacji.', 'estate-office'),
+                'noLocation'       => esc_html__('Brak wybranej lokalizacji.', 'estate-office'),
+            ],
+        ];
+
         $data = [
             'ajaxUrl'          => admin_url('admin-ajax.php'),
             'nonce'            => wp_create_nonce(self::NONCE_ACTION),
@@ -165,15 +198,16 @@ final class AgreementCreator
             'roleUpdated'    => esc_html__('Zapisano rolę klienta w umowie.', 'estate-office'),
             'roleUpdateError'=> esc_html__('Nie udało się zapisać roli klienta.', 'estate-office'),
         ],
-        'placeholders'    => [
-            'propertySearch' => esc_attr__('Numer oferty, adres lub opiekun', 'estate-office'),
-            'searchSearch'   => esc_attr__('Numer poszukiwania, lokalizacja lub opiekun', 'estate-office'),
-        ],
-        'clientRoles'     => array_map('esc_html', AgreementMeta::getClientRoleOptions()),
-        'labels'          => [
-            'clientRole'            => esc_html__('Rola w umowie', 'estate-office'),
-            'clientRolePlaceholder' => esc_html__('Wybierz rolę', 'estate-office'),
-        ],
+            'placeholders'    => [
+                'propertySearch' => esc_attr__('Numer oferty, adres lub opiekun', 'estate-office'),
+                'searchSearch'   => esc_attr__('Numer poszukiwania, lokalizacja lub opiekun', 'estate-office'),
+            ],
+            'maps'            => $mapsConfig,
+            'clientRoles'     => array_map('esc_html', AgreementMeta::getClientRoleOptions()),
+            'labels'          => [
+                'clientRole'            => esc_html__('Rola w umowie', 'estate-office'),
+                'clientRolePlaceholder' => esc_html__('Wybierz rolę', 'estate-office'),
+            ],
     ];
 
         wp_localize_script(self::SCRIPT_HANDLE, 'EstateOfficeAgreementCreator', $data);
@@ -458,6 +492,31 @@ final class AgreementCreator
         }
         echo '</select></label>';
         echo '</div>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset" data-eo-property-scope="apartment,commercial,house,land">';
+        echo '<legend>' . esc_html__('Lokalizacja i mapa', 'estate-office') . '</legend>';
+        echo '<p class="description">' . esc_html__('Skorzystaj z mapy, aby dokładnie wskazać lokalizację nieruchomości.', 'estate-office') . '</p>';
+        echo '<input type="hidden" name="property[estate_property_latitude]" value="" data-eo-property-map-lat />';
+        echo '<input type="hidden" name="property[estate_property_longitude]" value="" data-eo-property-map-lng />';
+        echo '<input type="hidden" name="property[estate_property_map_address]" value="" data-eo-property-map-address-input />';
+        echo '<input type="hidden" name="property[estate_property_map_place_id]" value="" data-eo-property-map-place />';
+        echo '<button type="button" class="estate-office-agreement-creator__secondary" data-eo-property-map-toggle>' . esc_html__('Zaznacz na mapie', 'estate-office') . '</button>';
+        echo '<div class="estate-office-agreement-creator__map is-hidden" data-eo-property-map hidden>';
+        echo '<label class="estate-office-agreement-creator__map-search">';
+        echo '<span class="screen-reader-text">' . esc_html__('Szukaj adresu nieruchomości', 'estate-office') . '</span>';
+        echo '<input type="search" data-eo-property-map-search placeholder="' . esc_attr__('Wpisz adres nieruchomości…', 'estate-office') . '" />';
+        echo '</label>';
+        echo '<div class="estate-office-agreement-creator__map-canvas" data-eo-property-map-canvas role="presentation"></div>';
+        echo '<div class="estate-office-agreement-creator__map-footer">';
+        echo '<span class="estate-office-agreement-creator__map-address" data-eo-property-map-address>' . esc_html__('Brak wybranej lokalizacji.', 'estate-office') . '</span>';
+        echo '<button type="button" class="estate-office-agreement-creator__ghost" data-eo-property-map-clear disabled>' . esc_html__('Wyczyść lokalizację', 'estate-office') . '</button>';
+        echo '</div>';
+        echo '<p class="estate-office-agreement-creator__map-status" data-eo-property-map-status></p>';
+        echo '</div>';
+        if (!Maps::hasApiKey()) {
+            echo '<p class="estate-office-agreement-creator__hint">' . esc_html__('Dodaj klucz API Map Google w ustawieniach, aby aktywować podgląd mapy.', 'estate-office') . '</p>';
+        }
+        echo '</fieldset>';
 
         echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Cena', 'estate-office') . '<span class="required">*</span></span><input type="number" name="property[estate_property_price]" step="0.01" min="0" required data-eo-property-price /></label>';
         echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Metraż (m²)', 'estate-office') . '<span class="required">*</span></span><input type="number" name="property[estate_property_area]" step="0.01" min="0" required data-eo-property-area /></label>';
