@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.12
+Stable tag: 0.1.13
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.12 tymczasowo wyłącza moduł licencyjny do czasu wydania 1.0.1, pozostawiając dotychczasowe usprawnienia kreatora i nawigacji CRM.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.13 tymczasowo wyłącza moduł licencyjny do czasu wydania 1.0.1, a dodatkowo wzbogaca profile nieruchomości w CRM o galerię multimediów.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -51,6 +51,7 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.12 
 * Publiczne profile agentów z wizytówką kontaktową, biografią i listą aktualnych ofert eksportowanych na WWW.
 * Publiczny katalog agentów z filtrami po specjalizacjach i obszarach działania oraz linkami do profili.
 * Szczegółowe widoki frontowego CRM z kartami danych, opisami, historią etapów i powiązaniami między rekordami.
+* Profile nieruchomości w CRM prezentują galerię, rzuty oraz linki do materiałów wideo i wirtualnych spacerów.
 * Stopki akcji w profilach CRM z przyciskami powrotu do listy, edycji i usuwania chronionymi odpowiednimi uprawnieniami.
 * Panel leadów w frontowym CRM umożliwiający aktualizację statusów bez przechodzenia do kokpitu administracyjnego.
 * Galeria nieruchomości z obsługą zdjęć, podpisów, wyboru zdjęcia głównego, rzutów 2D/3D, linków wideo oraz automatycznym nakładaniem znaku wodnego.
@@ -98,6 +99,10 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.12 
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.13 =
+* Dodano sekcję galerii w profilach nieruchomości CRM z miniaturami zdjęć, rzutami i odnośnikami do materiałów wideo oraz wirtualnych spacerów.
+* Rozszerzono stylizację panelu CRM o układ kafelków mediów, aby zachować przejrzystość przy rozbudowanych zasobach multimedialnych.
+
 = 0.1.12 =
 * Tymczasowo wyłączono moduł licencyjny i powiązane zadania cron/CLI do czasu wydania wersji 1.0.1.
 * Dodano informację o wstrzymaniu obsługi licencji w zakładce administracyjnej, aby administratorzy znali aktualny status prac.

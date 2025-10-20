@@ -29,6 +29,7 @@ use function add_shortcode;
 use function admin_url;
 use function array_filter;
 use function array_values;
+use function in_array;
 use function check_ajax_referer;
 use function array_search;
 use function array_slice;
@@ -46,6 +47,7 @@ use function get_post;
 use function get_post_field;
 use function get_permalink;
 use function get_post_meta;
+use function get_post_thumbnail_id;
 use function get_post_type_object;
 use function get_the_ID;
 use function get_the_title;
@@ -84,6 +86,9 @@ use function wp_reset_postdata;
 use function wp_strip_all_tags;
 use function wpautop;
 use function wp_list_pluck;
+use function wp_get_attachment_caption;
+use function wp_get_attachment_image_url;
+use function wp_get_attachment_url;
 use function wp_unslash;
 use function wp_date;
 use function mb_strtolower;
@@ -1679,6 +1684,8 @@ final class CRM
 
         self::renderDetailCards($cards);
 
+        self::renderPropertyMedia($postId, $title);
+
         $mapData = Maps::prepareMapData($postId);
         if (!empty($mapData['interactive'])) {
             Maps::enqueue();
@@ -1723,6 +1730,232 @@ final class CRM
         self::renderDetailFooter('properties', $postId);
 
         echo '</section>';
+    }
+
+    private static function renderPropertyMedia(int $postId, string $propertyTitle): void
+    {
+        $gallery    = self::preparePropertyGallery($postId, $propertyTitle);
+        $floorPlans = self::preparePropertyFloorPlans($postId);
+        $mediaLinks = self::preparePropertyMediaLinks($postId);
+
+        if (($gallery['count'] ?? 0) === 0 && $floorPlans === [] && $mediaLinks === []) {
+            return;
+        }
+
+        echo '<section class="estate-office-crm__detail-panel estate-office-crm__detail-panel--media">';
+        echo '<h3>' . esc_html__('Galeria i materiały', 'estate-office') . '</h3>';
+
+        if (!empty($gallery['main'])) {
+            $main = $gallery['main'];
+            echo '<div class="estate-office-crm__media-gallery">';
+            echo '<figure class="estate-office-crm__media-main">';
+            echo '<a href="' . esc_url($main['url']) . '" target="_blank" rel="noopener noreferrer">';
+            echo '<img src="' . esc_url($main['url']) . '" alt="' . esc_attr($main['alt']) . '" loading="lazy" />';
+            echo '</a>';
+            if ($main['caption'] !== '') {
+                echo '<figcaption class="estate-office-crm__media-caption">' . esc_html($main['caption']) . '</figcaption>';
+            }
+            echo '</figure>';
+
+            if (!empty($gallery['thumbnails'])) {
+                echo '<ul class="estate-office-crm__media-thumbnails">';
+                foreach ($gallery['thumbnails'] as $item) {
+                    echo '<li>';
+                    echo '<figure class="estate-office-crm__media-thumb">';
+                    echo '<a href="' . esc_url($item['url']) . '" target="_blank" rel="noopener noreferrer">';
+                    echo '<img src="' . esc_url($item['thumb']) . '" alt="' . esc_attr($item['alt']) . '" loading="lazy" />';
+                    echo '</a>';
+                    if ($item['caption'] !== '') {
+                        echo '<figcaption class="estate-office-crm__media-caption">' . esc_html($item['caption']) . '</figcaption>';
+                    }
+                    echo '</figure>';
+                    echo '</li>';
+                }
+                echo '</ul>';
+            }
+
+            echo '</div>';
+        }
+
+        if ($floorPlans !== [] || $mediaLinks !== []) {
+            echo '<div class="estate-office-crm__media-resources">';
+
+            if ($floorPlans !== []) {
+                echo '<div class="estate-office-crm__media-group">';
+                echo '<h4>' . esc_html__('Rzuty', 'estate-office') . '</h4>';
+                echo '<ul class="estate-office-crm__media-links">';
+                foreach ($floorPlans as $plan) {
+                    echo '<li><a class="estate-office-crm__media-link" href="' . esc_url($plan['url']) . '" target="_blank" rel="noopener noreferrer">' . esc_html($plan['label']) . '</a></li>';
+                }
+                echo '</ul>';
+                echo '</div>';
+            }
+
+            if ($mediaLinks !== []) {
+                echo '<div class="estate-office-crm__media-group">';
+                echo '<h4>' . esc_html__('Materiały dodatkowe', 'estate-office') . '</h4>';
+                echo '<ul class="estate-office-crm__media-links">';
+                foreach ($mediaLinks as $link) {
+                    echo '<li><a class="estate-office-crm__media-link" href="' . esc_url($link['url']) . '" target="_blank" rel="noopener noreferrer">' . esc_html($link['label']) . '</a></li>';
+                }
+                echo '</ul>';
+                echo '</div>';
+            }
+
+            echo '</div>';
+        }
+
+        echo '</section>';
+    }
+
+    /**
+     * @return array{main:array<string,string>|null,thumbnails:array<int,array<string,string>>,count:int}
+     */
+    private static function preparePropertyGallery(int $postId, string $propertyTitle): array
+    {
+        $ids = self::sanitizeIdArray(get_post_meta($postId, 'estate_property_gallery', true));
+        $primary = (int) get_post_meta($postId, PropertyMeta::GALLERY_PRIMARY_META_KEY, true);
+
+        if ($primary > 0 && !in_array($primary, $ids, true)) {
+            array_unshift($ids, $primary);
+        } elseif ($primary > 0) {
+            $primaryIndex = array_search($primary, $ids, true);
+            if ($primaryIndex !== false) {
+                unset($ids[$primaryIndex]);
+                array_unshift($ids, $primary);
+                $ids = array_values($ids);
+            }
+        }
+
+        $captionsMeta = get_post_meta($postId, PropertyMeta::GALLERY_CAPTIONS_META_KEY, true);
+        $captions = is_array($captionsMeta) ? $captionsMeta : [];
+
+        $items = [];
+        foreach ($ids as $attachmentId) {
+            if ($attachmentId <= 0) {
+                continue;
+            }
+
+            $full = wp_get_attachment_image_url($attachmentId, 'large');
+            if (!$full) {
+                continue;
+            }
+
+            $thumb = wp_get_attachment_image_url($attachmentId, 'medium') ?: $full;
+            $alt   = trim((string) get_post_meta($attachmentId, '_wp_attachment_image_alt', true));
+            if ($alt === '') {
+                $alt = wp_strip_all_tags((string) get_the_title($attachmentId));
+            }
+            if ($alt === '') {
+                $alt = $propertyTitle;
+            }
+
+            $caption = '';
+            if (isset($captions[(string) $attachmentId])) {
+                $caption = trim((string) $captions[(string) $attachmentId]);
+            }
+            if ($caption === '') {
+                $caption = wp_strip_all_tags((string) wp_get_attachment_caption($attachmentId));
+            }
+
+            $items[] = [
+                'id'      => (string) $attachmentId,
+                'url'     => $full,
+                'thumb'   => $thumb,
+                'alt'     => $alt,
+                'caption' => $caption,
+            ];
+        }
+
+        if (empty($items)) {
+            $featured = get_post_thumbnail_id($postId);
+            if ($featured) {
+                $full = wp_get_attachment_image_url($featured, 'large');
+                if ($full) {
+                    $thumb = wp_get_attachment_image_url($featured, 'medium') ?: $full;
+                    $alt   = trim((string) get_post_meta($featured, '_wp_attachment_image_alt', true));
+                    if ($alt === '') {
+                        $alt = wp_strip_all_tags((string) get_the_title($featured));
+                    }
+                    if ($alt === '') {
+                        $alt = $propertyTitle;
+                    }
+
+                    $items[] = [
+                        'id'      => (string) $featured,
+                        'url'     => $full,
+                        'thumb'   => $thumb,
+                        'alt'     => $alt,
+                        'caption' => wp_strip_all_tags((string) wp_get_attachment_caption($featured)),
+                    ];
+                }
+            }
+        }
+
+        $count = count($items);
+
+        return [
+            'main'       => $items[0] ?? null,
+            'thumbnails' => array_slice($items, 1),
+            'count'      => $count,
+        ];
+    }
+
+    /**
+     * @return array<int,array{label:string,url:string}>
+     */
+    private static function preparePropertyFloorPlans(int $postId): array
+    {
+        $plans = [
+            'estate_property_floor_plan_2d' => __('Rzut 2D', 'estate-office'),
+            'estate_property_floor_plan_3d' => __('Rzut 3D', 'estate-office'),
+        ];
+
+        $floorPlans = [];
+        foreach ($plans as $metaKey => $label) {
+            $attachmentId = absint((int) get_post_meta($postId, $metaKey, true));
+            if ($attachmentId <= 0) {
+                continue;
+            }
+
+            $url = wp_get_attachment_url($attachmentId);
+            if (!$url) {
+                continue;
+            }
+
+            $floorPlans[] = [
+                'label' => (string) $label,
+                'url'   => $url,
+            ];
+        }
+
+        return $floorPlans;
+    }
+
+    /**
+     * @return array<int,array{label:string,url:string}>
+     */
+    private static function preparePropertyMediaLinks(int $postId): array
+    {
+        $links = [];
+
+        $video = trim((string) get_post_meta($postId, 'estate_property_video_url', true));
+        if ($video !== '') {
+            $links[] = [
+                'label' => __('Zobacz wideo', 'estate-office'),
+                'url'   => $video,
+            ];
+        }
+
+        $tour = trim((string) get_post_meta($postId, 'estate_property_virtual_tour_url', true));
+        if ($tour !== '') {
+            $links[] = [
+                'label' => __('Wirtualny spacer', 'estate-office'),
+                'url'   => $tour,
+            ];
+        }
+
+        return $links;
     }
 
     /**
