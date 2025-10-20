@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EstateOffice\License;
 
+use const ESTATE_OFFICE_PLUGIN_FILE;
+
 defined('ABSPATH') || exit;
 
 final class Manager
@@ -30,6 +32,10 @@ final class Manager
         add_action('admin_notices', [self::class, 'renderNotice']);
         add_action('admin_notices', [self::class, 'renderStatusAlert']);
         add_action(self::CRON_HOOK, [self::class, 'runScheduledCheck']);
+
+        $pluginBasename = plugin_basename(ESTATE_OFFICE_PLUGIN_FILE);
+        add_filter('plugin_action_links_' . $pluginBasename, [self::class, 'addPluginActionLinks']);
+        add_action('after_plugin_row_' . $pluginBasename, [self::class, 'renderPluginRow'], 10, 3);
     }
 
     public static function activatePlugin(): void
@@ -533,5 +539,117 @@ final class Manager
         }
 
         return wp_date('Y-m-d H:i:s', (int) $timestamp);
+    }
+
+    /**
+     * @param array<int|string, string> $links
+     *
+     * @return array<int|string, string>
+     */
+    public static function addPluginActionLinks(array $links): array
+    {
+        if (!current_user_can('manage_options')) {
+            return $links;
+        }
+
+        $url   = admin_url('admin.php?page=estate-office-license');
+        $label = esc_html__('Licencja', 'estate-office');
+
+        array_unshift($links, '<a href="' . esc_url($url) . '">' . $label . '</a>');
+
+        return $links;
+    }
+
+    /**
+     * Adds contextual messaging about the license below the plugin row.
+     *
+     * @param array<string,mixed> $pluginData
+     */
+    public static function renderPluginRow(string $pluginFile, array $pluginData, string $status): void // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $messages = [];
+        $link     = sprintf(
+            '<a href="%s">%s</a>',
+            esc_url(admin_url('admin.php?page=estate-office-license')),
+            esc_html__('Przejdź do zakładki Licencja', 'estate-office')
+        );
+
+        $cronError = get_transient(self::TRANSIENT_CRON);
+        if ($cronError) {
+            $messages[] = [
+                'class' => 'notice-warning',
+                'text'  => sprintf(
+                    /* translators: %s: error message */
+                    esc_html__('Ostatnie automatyczne sprawdzenie licencji zakończyło się błędem: %s.', 'estate-office'),
+                    wp_strip_all_tags((string) $cronError)
+                ) . ' ' . $link,
+            ];
+        }
+
+        $data   = self::getData();
+        $status = self::normalizeStatus($data['status']);
+
+        if ($status === 'valid' && $data['expires_at'] !== '') {
+            $timestamp = strtotime($data['expires_at']);
+
+            if ($timestamp !== false) {
+                $daysLeft = (int) floor(($timestamp - time()) / DAY_IN_SECONDS);
+
+                if ($daysLeft < 0) {
+                    $status = 'expired';
+                } elseif ($daysLeft <= 14) {
+                    $messages[] = [
+                        'class' => 'notice-warning',
+                        'text'  => sprintf(
+                            /* translators: %d: number of days */
+                            esc_html__('Licencja EstateOffice wygaśnie za %d dni. Odnów ją, aby zachować aktualizacje i wsparcie.', 'estate-office'),
+                            max(1, $daysLeft)
+                        ) . ' ' . $link,
+                    ];
+                }
+            }
+        }
+
+        if ($status === 'expired') {
+            $messages[] = [
+                'class' => 'notice-error',
+                'text'  => esc_html__('Licencja EstateOffice wygasła. Odnów ją, aby odzyskać dostęp do aktualizacji i modułów premium.', 'estate-office') . ' ' . $link,
+            ];
+        } elseif ($status === 'invalid' || $status === 'inactive') {
+            $messages[] = [
+                'class' => 'notice-error',
+                'text'  => esc_html__('Licencja EstateOffice nie jest aktywna. Zweryfikuj klucz, aby korzystać z pełnej funkcjonalności.', 'estate-office') . ' ' . $link,
+            ];
+        } elseif ($status === 'pending') {
+            $messages[] = [
+                'class' => 'notice-info',
+                'text'  => esc_html__('Licencja oczekuje na potwierdzenie. Sprawdź status, aby upewnić się, że konfiguracja jest poprawna.', 'estate-office') . ' ' . $link,
+            ];
+        }
+
+        if (empty($messages)) {
+            return;
+        }
+
+        global $wp_list_table;
+        $colspan = 4;
+
+        if (is_object($wp_list_table) && method_exists($wp_list_table, 'get_column_count')) {
+            $colspan = (int) $wp_list_table->get_column_count();
+        }
+
+        $colspan = max(1, $colspan);
+
+        echo '<tr class="plugin-update-tr active"><td colspan="' . esc_attr((string) $colspan) . '" class="plugin-update colspanchange">';
+
+        foreach ($messages as $message) {
+            echo '<div class="update-message notice inline ' . esc_attr($message['class']) . '"><p>' . wp_kses_post($message['text']) . '</p></div>';
+        }
+
+        echo '</td></tr>';
     }
 }

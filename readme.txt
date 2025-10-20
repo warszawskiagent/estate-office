@@ -3,15 +3,16 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.0
+Stable tag: 0.1.2
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 zawiera podstawową strukturę panelu administracyjnego, zarządzanie rolą agentów oraz sekcję ustawień dla kluczowych integracji.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.2 rozwija podstawową strukturę panelu administracyjnego, zarządzanie rolą agentów oraz sekcję ustawień dla kluczowych integracji o aktywny moduł licencyjny i kontekstowe alerty na liście wtyczek.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
-* Moduł licencji jest tymczasowo dezaktywowany do czasu udostępnienia generatora kluczy testowych.
+* Aktywny moduł licencyjny z panelem administracyjnym, harmonogramem sprawdzeń i integracją WP-CLI.
+* Skróty do zakładki licencji oraz alerty statusu bezpośrednio na liście wtyczek WordPress.
 * Automatyczne tworzenie stron z shortcode'ami CRM, katalogu agentów oraz dedykowanych podstron ofert na sprzedaż i wynajem wraz z menu nawigacyjnym podczas aktywacji.
 * Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
@@ -92,6 +93,14 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.0 z
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.2 =
+* Dodano skrót do zakładki licencji w tabeli wtyczek oraz kontekstowe alerty statusu i błędów sprawdzeń.
+
+= 0.1.1 =
+* Włączono moduł licencji wraz z harmonogramem automatycznych sprawdzeń i powiadomieniami w panelu administracyjnym.
+* Dodano integrację WP-CLI umożliwiającą aktywację, odświeżanie i dezaktywację licencji z wiersza poleceń.
+* Zarejestrowano obsługę cron przy aktywacji i czyszczenie harmonogramu przy dezaktywacji wtyczki.
+
 = 0.1.0 =
 * Pierwsze wydanie deweloperskie: struktura kodu, rola agenta, ustawienia integracji.
 * Dodano typ wpisu nieruchomości wraz z podstawowymi taksonomiami do kategoryzacji ofert.
