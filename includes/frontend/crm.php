@@ -27,6 +27,8 @@ use function add_action;
 use function add_query_arg;
 use function add_shortcode;
 use function admin_url;
+use function array_filter;
+use function array_values;
 use function check_ajax_referer;
 use function array_search;
 use function array_slice;
@@ -38,6 +40,7 @@ use function esc_html;
 use function esc_html__;
 use function esc_js;
 use function esc_url;
+use function function_exists;
 use function get_edit_post_link;
 use function get_post;
 use function get_post_field;
@@ -49,6 +52,7 @@ use function get_the_title;
 use function get_the_terms;
 use function get_option;
 use function get_user_by;
+use function html_entity_decode;
 use function is_array;
 use function is_scalar;
 use function is_string;
@@ -62,7 +66,10 @@ use function sanitize_key;
 use function sanitize_text_field;
 use function selected;
 use function sprintf;
+use function str_contains;
 use function str_starts_with;
+use function strtolower;
+use function trim;
 use function uasort;
 use function nl2br;
 use function strtotime;
@@ -79,6 +86,7 @@ use function wpautop;
 use function wp_list_pluck;
 use function wp_unslash;
 use function wp_date;
+use function mb_strtolower;
 use function mysql2date;
 use function __;
 use function wp_send_json_error;
@@ -87,6 +95,7 @@ use function wp_nonce_url;
 use function _n;
 
 use const ARRAY_A;
+use const ENT_QUOTES;
 use const ESTATE_OFFICE_PLUGIN_FILE;
 use const ESTATE_OFFICE_PLUGIN_VERSION;
 use const DAY_IN_SECONDS;
@@ -1195,32 +1204,11 @@ final class CRM
         $args = [
             'post_type'      => PropertyRegister::POST_TYPE,
             'post_status'    => 'publish',
-            'posts_per_page' => 20,
+            'posts_per_page' => $searchTerm === '' ? 20 : -1,
             'orderby'        => 'date',
             'order'          => 'DESC',
+            'no_found_rows'  => true,
         ];
-
-        if ($searchTerm !== '') {
-            $args['s'] = $searchTerm;
-            $args['meta_query'] = [
-                'relation' => 'OR',
-                [
-                    'key'     => 'estate_property_reference',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_property_street',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_property_city',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-            ];
-        }
 
         $query = new WP_Query($args);
         $rows  = [];
@@ -1248,18 +1236,18 @@ final class CRM
 
         wp_reset_postdata();
 
-        return $rows;
+        return $searchTerm === '' ? $rows : self::filterRowsBySearchTerm($rows, $searchTerm);
     }
 
     /**
-     * @return array<int,array{link:string,display:string,context:string,phone:string,email:string,status_key:string,assigned:string,created:string,record_label:string,record_link:string}>
+     * @return array<int,array{link:string,display:string,context:string,phone:string,email:string,status_key:string,status_label:string,assigned:string,created:string,record_label:string,record_link:string}>
      */
     private static function queryLeads(string $searchTerm): array
     {
         $args = [
             'post_type'      => LeadRegister::POST_TYPE,
             'post_status'    => 'publish',
-            'posts_per_page' => 20,
+            'posts_per_page' => $searchTerm === '' ? 20 : -1,
             'orderby'        => 'date',
             'order'          => 'DESC',
             'no_found_rows'  => true,
@@ -1277,30 +1265,7 @@ final class CRM
         }
 
         if ($searchTerm !== '') {
-            $args['s'] = $searchTerm;
-            $metaQuery[] = [
-                'relation' => 'OR',
-                [
-                    'key'     => LeadMeta::META_NAME,
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => LeadMeta::META_EMAIL,
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => LeadMeta::META_PHONE,
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => LeadMeta::META_CONTEXT,
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-            ];
+            $args['no_found_rows'] = true;
         }
 
         if ($metaQuery !== []) {
@@ -1337,6 +1302,7 @@ final class CRM
                 'phone'        => self::formatPhone((string) get_post_meta($postId, LeadMeta::META_PHONE, true)),
                 'email'        => self::formatEmail((string) get_post_meta($postId, LeadMeta::META_EMAIL, true)),
                 'status_key'   => $statusKey,
+                'status_label' => LeadMeta::getStatusLabel($statusKey),
                 'assigned'     => self::getManagerName((int) get_post_meta($postId, LeadMeta::META_ASSIGNED, true)),
                 'created'      => self::formatPostDateTime($postId),
                 'record_label' => $record['label'],
@@ -1346,7 +1312,7 @@ final class CRM
 
         wp_reset_postdata();
 
-        return $rows;
+        return $searchTerm === '' ? $rows : self::filterRowsBySearchTerm($rows, $searchTerm);
     }
 
     private static function renderAgreements(string $searchTerm): void
@@ -1398,27 +1364,11 @@ final class CRM
         $args = [
             'post_type'      => AgreementRegister::POST_TYPE,
             'post_status'    => 'publish',
-            'posts_per_page' => 20,
+            'posts_per_page' => $searchTerm === '' ? 20 : -1,
             'orderby'        => 'date',
             'order'          => 'DESC',
+            'no_found_rows'  => true,
         ];
-
-        if ($searchTerm !== '') {
-            $args['s'] = $searchTerm;
-            $args['meta_query'] = [
-                'relation' => 'OR',
-                [
-                    'key'     => 'estate_agreement_number',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_agreement_transaction_type',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-            ];
-        }
 
         $query = new WP_Query($args);
         $rows  = [];
@@ -1450,7 +1400,7 @@ final class CRM
 
         wp_reset_postdata();
 
-        return $rows;
+        return $searchTerm === '' ? $rows : self::filterRowsBySearchTerm($rows, $searchTerm);
     }
 
     private static function renderSearches(string $searchTerm): void
@@ -1498,27 +1448,11 @@ final class CRM
         $args = [
             'post_type'      => SearchRegister::POST_TYPE,
             'post_status'    => 'publish',
-            'posts_per_page' => 20,
+            'posts_per_page' => $searchTerm === '' ? 20 : -1,
             'orderby'        => 'date',
             'order'          => 'DESC',
+            'no_found_rows'  => true,
         ];
-
-        if ($searchTerm !== '') {
-            $args['s'] = $searchTerm;
-            $args['meta_query'] = [
-                'relation' => 'OR',
-                [
-                    'key'     => 'estate_search_reference',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_search_location',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-            ];
-        }
 
         $query = new WP_Query($args);
         $rows  = [];
@@ -1539,7 +1473,7 @@ final class CRM
 
         wp_reset_postdata();
 
-        return $rows;
+        return $searchTerm === '' ? $rows : self::filterRowsBySearchTerm($rows, $searchTerm);
     }
 
     private static function renderClients(string $searchTerm): void
@@ -2633,6 +2567,90 @@ final class CRM
         return '<span class="' . esc_attr($class) . '">' . esc_html($label) . '</span>';
     }
 
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     * @return array<int,array<string,mixed>>
+     */
+    private static function filterRowsBySearchTerm(array $rows, string $searchTerm): array
+    {
+        $needle = self::prepareSearchNeedle($searchTerm);
+        if ($needle === '') {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            static fn(array $row): bool => self::rowMatchesSearchTerm($row, $needle)
+        ));
+    }
+
+    /**
+     * @param array<int|string,mixed> $row
+     */
+    private static function rowMatchesSearchTerm(array $row, string $needle): bool
+    {
+        foreach ($row as $value) {
+            if (is_array($value)) {
+                if (self::arrayMatchesSearchTerm($value, $needle)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            $haystack = self::normalizeSearchFragment((string) $value);
+            if ($haystack !== '' && str_contains($haystack, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<mixed> $values
+     */
+    private static function arrayMatchesSearchTerm(array $values, string $needle): bool
+    {
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                if (self::arrayMatchesSearchTerm($value, $needle)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            $haystack = self::normalizeSearchFragment((string) $value);
+            if ($haystack !== '' && str_contains($haystack, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function prepareSearchNeedle(string $term): string
+    {
+        return self::normalizeSearchFragment($term);
+    }
+
+    private static function normalizeSearchFragment(string $value): string
+    {
+        $value = html_entity_decode(wp_strip_all_tags($value), ENT_QUOTES);
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($value);
+        }
+
+        return strtolower($value);
+    }
+
     private static function renderSeverityBadge(string $label, string $severity): string
     {
         $class = 'estate-office-crm__badge';
@@ -2867,32 +2885,11 @@ final class CRM
         $args = [
             'post_type'      => ClientRegister::POST_TYPE,
             'post_status'    => 'publish',
-            'posts_per_page' => 20,
+            'posts_per_page' => $searchTerm === '' ? 20 : -1,
             'orderby'        => 'date',
             'order'          => 'DESC',
+            'no_found_rows'  => true,
         ];
-
-        if ($searchTerm !== '') {
-            $args['s'] = $searchTerm;
-            $args['meta_query'] = [
-                'relation' => 'OR',
-                [
-                    'key'     => 'estate_client_first_name',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_client_last_name',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-                [
-                    'key'     => 'estate_client_company_name',
-                    'value'   => $searchTerm,
-                    'compare' => 'LIKE',
-                ],
-            ];
-        }
 
         $query = new WP_Query($args);
         $rows  = [];
@@ -2912,7 +2909,7 @@ final class CRM
 
         wp_reset_postdata();
 
-        return $rows;
+        return $searchTerm === '' ? $rows : self::filterRowsBySearchTerm($rows, $searchTerm);
     }
 
     /**
