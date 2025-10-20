@@ -17,6 +17,11 @@
     const clientResults = overlay.querySelector('[data-eo-agreement-search-results]');
     const selectedClients = overlay.querySelector('[data-eo-agreement-selected]');
     const clientForm = overlay.querySelector('form[data-eo-agreement-new-client]');
+    const clientTypeSelect = clientForm?.querySelector('[data-eo-client-type]');
+    const clientScopeElements = clientForm ? Array.from(clientForm.querySelectorAll('[data-eo-client-scope]')) : [];
+    const clientRequiredElements = clientForm ? Array.from(clientForm.querySelectorAll('[data-eo-client-required-for]')) : [];
+    const correspondenceToggle = clientForm?.querySelector('[data-eo-client-correspondence-toggle]');
+    const correspondenceSections = clientForm ? Array.from(clientForm.querySelectorAll('[data-eo-client-correspondence-fields]')) : [];
     const clientPrompt = overlay.querySelector('[data-eo-agreement-client-prompt]');
     const clientPromptYes = overlay.querySelector('[data-eo-agreement-client-yes]');
     const clientPromptNo = overlay.querySelector('[data-eo-agreement-client-no]');
@@ -133,6 +138,98 @@
 
             field.removeAttribute('required');
         });
+    }
+
+    function getClientType() {
+        const value = clientTypeSelect?.value || '';
+
+        return value === '' ? 'person' : value;
+    }
+
+    function isElementVisible(element) {
+        return !!element && !element.hasAttribute('hidden') && !element.classList.contains('is-hidden');
+    }
+
+    function isCorrespondenceVisible() {
+        return correspondenceSections.some((element) => isElementVisible(element));
+    }
+
+    function updateClientScope() {
+        if (!clientScopeElements.length) {
+            return;
+        }
+
+        const clientType = getClientType();
+
+        clientScopeElements.forEach((element) => {
+            const scopeAttr = element.getAttribute('data-eo-client-scope') || '';
+            const scopes = parsePropertyList(scopeAttr);
+            const shouldShow = scopes.length === 0 || scopes.includes(clientType);
+
+            setElementVisibility(element, shouldShow, { resetOnHide: true });
+        });
+    }
+
+    function updateClientRequirements() {
+        if (!clientRequiredElements.length) {
+            return;
+        }
+
+        const clientType = getClientType();
+        const correspondenceVisible = isCorrespondenceVisible();
+
+        clientRequiredElements.forEach((element) => {
+            const requiredAttr = element.getAttribute('data-eo-client-required-for') || '';
+            const contexts = parsePropertyList(requiredAttr);
+            let shouldRequire = contexts.length === 0;
+
+            if (contexts.length > 0) {
+                shouldRequire = contexts.includes(clientType);
+
+                if (!shouldRequire && contexts.includes('correspondence')) {
+                    shouldRequire = correspondenceVisible;
+                }
+            }
+
+            const fields = collectFields(element);
+
+            fields.forEach((field) => {
+                if (shouldRequire && !field.disabled) {
+                    field.setAttribute('required', 'required');
+                } else {
+                    field.removeAttribute('required');
+                }
+            });
+
+            const indicator = element.querySelector('[data-eo-required-indicator]');
+            if (indicator) {
+                if (shouldRequire && isElementVisible(element)) {
+                    indicator.removeAttribute('hidden');
+                } else {
+                    indicator.setAttribute('hidden', 'hidden');
+                }
+            }
+        });
+    }
+
+    function updateCorrespondenceVisibility() {
+        if (!correspondenceSections.length) {
+            updateClientRequirements();
+            return;
+        }
+
+        const useMainAddress = correspondenceToggle ? correspondenceToggle.checked : true;
+
+        correspondenceSections.forEach((element) => {
+            setElementVisibility(element, !useMainAddress, { resetOnHide: true });
+        });
+
+        updateClientRequirements();
+    }
+
+    function updateClientFormState() {
+        updateClientScope();
+        updateCorrespondenceVisibility();
     }
 
     function updatePropertyScope() {
@@ -314,6 +411,20 @@
 
     refreshPropertyFormState();
 
+    if (clientTypeSelect) {
+        clientTypeSelect.addEventListener('change', () => {
+            updateClientFormState();
+        });
+    }
+
+    if (correspondenceToggle) {
+        correspondenceToggle.addEventListener('change', () => {
+            updateCorrespondenceVisibility();
+        });
+    }
+
+    updateClientFormState();
+
     const setMessage = (container, type, text) => {
         if (!container) {
             return;
@@ -367,6 +478,7 @@
         if (clientForm) {
             clientForm.reset();
         }
+        updateClientFormState();
         if (propertyForm) {
             propertyForm.reset();
             propertyForm.setAttribute('hidden', 'hidden');
@@ -1253,6 +1365,7 @@
 
                     state.clients = body.data?.clients || [];
                     clientForm.reset();
+                    updateClientFormState();
                     renderClients();
                     renderSummary();
                     setMessage(message, 'success', config.messages?.clientCreated || '');
@@ -1562,6 +1675,7 @@
             }
             if (clientForm) {
                 clientForm.reset();
+                updateClientFormState();
                 const focusTarget = clientForm.querySelector('input:not([type="hidden"]), select, textarea');
                 if (focusTarget) {
                     focusTarget.focus();

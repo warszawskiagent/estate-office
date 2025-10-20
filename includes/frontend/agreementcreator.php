@@ -40,6 +40,7 @@ use function is_user_logged_in;
 use function plugins_url;
 use function sanitize_text_field;
 use function sanitize_title;
+use function selected;
 use function wp_create_nonce;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
@@ -268,21 +269,23 @@ final class AgreementCreator
         echo '</div>';
         echo '<details class="estate-office-agreement-creator__new-client" data-eo-agreement-new-client-details>';
         echo '<summary>' . esc_html__('Dodaj nowego klienta', 'estate-office') . '</summary>';
-        echo '<form data-eo-agreement-new-client>'; // nested form? can't have form inside form, but step 2 container is div not form so ok.
+        echo '<form data-eo-agreement-new-client>';
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Dane podstawowe', 'estate-office') . '</legend>';
+        echo '<p class="estate-office-agreement-creator__hint">' . esc_html__('Formularz dopasowuje widoczne pola w zależności od wybranego typu klienta.', 'estate-office') . '</p>';
         echo '<div class="estate-office-agreement-creator__grid">';
-        echo '<label>' . esc_html__('Typ klienta', 'estate-office') . '<select name="estate_client_type">';
+        echo '<label data-eo-client-required-for="person,company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Typ klienta', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span>';
+        echo '<select name="estate_client_type" required data-eo-client-type>';
         foreach (ClientMeta::CLIENT_TYPES as $key => $label) {
-            echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
+            echo '<option value="' . esc_attr($key) . '"' . selected($key, 'person', false) . '>' . esc_html($label) . '</option>';
         }
-        echo '</select></label>';
-        echo '<label>' . esc_html__('Imię', 'estate-office') . '<input type="text" name="estate_client_first_name" /></label>';
-        echo '<label>' . esc_html__('Nazwisko', 'estate-office') . '<input type="text" name="estate_client_last_name" /></label>';
-        echo '<label>' . esc_html__('Nazwa firmy', 'estate-office') . '<input type="text" name="estate_client_company_name" /></label>';
-        echo '<label>' . esc_html__('Przedstawiciel firmy', 'estate-office') . '<input type="text" name="estate_client_company_representative" /></label>';
-        echo '<label>' . esc_html__('Telefon', 'estate-office') . '<input type="tel" name="estate_client_phone" /></label>';
-        echo '<label>' . esc_html__('E-mail', 'estate-office') . '<input type="email" name="estate_client_email" /></label>';
-        echo '<label>' . esc_html__('Strona WWW', 'estate-office') . '<input type="url" name="estate_client_website" /></label>';
-        echo '<label>' . esc_html__('Rola w umowie', 'estate-office');
+        echo '</select>';
+        echo '</label>';
+        echo '<label data-eo-client-scope="person" data-eo-client-required-for="person"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Imię', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="estate_client_first_name" required autocomplete="given-name" /></label>';
+        echo '<label data-eo-client-scope="person" data-eo-client-required-for="person"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Nazwisko', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="estate_client_last_name" required autocomplete="family-name" /></label>';
+        echo '<label data-eo-client-scope="company" data-eo-client-required-for="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Nazwa firmy', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="estate_client_company_name" autocomplete="organization" required /></label>';
+        echo '<label data-eo-client-scope="company" data-eo-client-required-for="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Imię i nazwisko reprezentanta', 'estate-office') . '<span class="required" data-eo-required-indicator>*</span></span><input type="text" name="estate_client_company_representative" required /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Rola w umowie', 'estate-office') . '</span>';
         echo '<select name="client_role">';
         echo '<option value="">' . esc_html__('Wybierz rolę', 'estate-office') . '</option>';
         foreach (AgreementMeta::getClientRoleOptions() as $roleKey => $roleLabel) {
@@ -291,10 +294,63 @@ final class AgreementCreator
         echo '</select>';
         echo '</label>';
         echo '</div>';
-        echo '<p class="description">' . esc_html__('Po zapisaniu klienta możesz zmienić jego rolę bezpośrednio na liście po lewej stronie.', 'estate-office') . '</p>';
+        echo '<p class="estate-office-agreement-creator__hint">' . esc_html__('Po zapisaniu klienta możesz w każdej chwili zmienić jego rolę na liście po lewej stronie.', 'estate-office') . '</p>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Dane kontaktowe', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Telefon', 'estate-office') . '</span><input type="tel" name="estate_client_phone" autocomplete="tel" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('E-mail', 'estate-office') . '</span><input type="email" name="estate_client_email" autocomplete="email" /></label>';
+        echo '<label data-eo-client-scope="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Strona WWW', 'estate-office') . '</span><input type="url" name="estate_client_website" autocomplete="url" /></label>';
+        echo '</div>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Dane identyfikacyjne', 'estate-office') . '</legend>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label data-eo-client-scope="person"><span class="estate-office-agreement-creator__label-text">' . esc_html__('PESEL', 'estate-office') . '</span><input type="text" name="estate_client_pesel" inputmode="numeric" autocomplete="off" /></label>';
+        echo '<label data-eo-client-scope="person"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Rodzaj dokumentu', 'estate-office') . '</span>';
+        echo '<select name="estate_client_document_type">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office') . '</option>';
+        foreach (ClientMeta::DOCUMENT_TYPES as $docKey => $docLabel) {
+            echo '<option value="' . esc_attr($docKey) . '">' . esc_html($docLabel) . '</option>';
+        }
+        echo '</select>';
+        echo '</label>';
+        echo '<label data-eo-client-scope="person"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer dokumentu', 'estate-office') . '</span><input type="text" name="estate_client_document_number" autocomplete="off" /></label>';
+        echo '<label data-eo-client-scope="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('NIP', 'estate-office') . '</span><input type="text" name="estate_client_tax_id" inputmode="numeric" autocomplete="off" /></label>';
+        echo '<label data-eo-client-scope="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('KRS', 'estate-office') . '</span><input type="text" name="estate_client_krs" inputmode="numeric" autocomplete="off" /></label>';
+        echo '<label data-eo-client-scope="company"><span class="estate-office-agreement-creator__label-text">' . esc_html__('REGON', 'estate-office') . '</span><input type="text" name="estate_client_regon" inputmode="numeric" autocomplete="off" /></label>';
+        echo '</div>';
+        echo '</fieldset>';
+
+        echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+        echo '<legend>' . esc_html__('Adresy', 'estate-office') . '</legend>';
+        echo '<p class="estate-office-agreement-creator__hint">' . esc_html__('Podaj główny adres zamieszkania (dla osoby fizycznej) lub adres rejestrowy (dla firmy).', 'estate-office') . '</p>';
+        echo '<div class="estate-office-agreement-creator__grid">';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Ulica', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_client_address_street" required autocomplete="address-line1" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_client_address_number" required autocomplete="address-line2" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Lokal', 'estate-office') . '</span><input type="text" name="estate_client_address_unit" autocomplete="address-line2" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Kod pocztowy', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_client_address_postal_code" required autocomplete="postal-code" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Miasto', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_client_address_city" required autocomplete="address-level2" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Kraj', 'estate-office') . '<span class="required">*</span></span><input type="text" name="estate_client_address_country" required autocomplete="country-name" /></label>';
+        echo '</div>';
+        echo '<label class="estate-office-agreement-creator__checkbox"><input type="checkbox" name="estate_client_correspondence_same" value="1" checked data-eo-client-correspondence-toggle />' . esc_html__('Adres korespondencyjny taki sam jak główny', 'estate-office') . '</label>';
+        echo '<p class="estate-office-agreement-creator__hint">' . esc_html__('Odznacz powyższe pole, aby wprowadzić odrębny adres korespondencyjny.', 'estate-office') . '</p>';
+        echo '<div class="estate-office-agreement-creator__grid is-hidden" data-eo-client-correspondence-fields hidden>';
+        echo '<label data-eo-client-required-for="correspondence"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Ulica (korespondencja)', 'estate-office') . '<span class="required" data-eo-required-indicator hidden>*</span></span><input type="text" name="estate_client_correspondence_street" autocomplete="address-line1" /></label>';
+        echo '<label data-eo-client-required-for="correspondence"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Numer (korespondencja)', 'estate-office') . '<span class="required" data-eo-required-indicator hidden>*</span></span><input type="text" name="estate_client_correspondence_number" autocomplete="address-line2" /></label>';
+        echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html__('Lokal (korespondencja)', 'estate-office') . '</span><input type="text" name="estate_client_correspondence_unit" autocomplete="address-line2" /></label>';
+        echo '<label data-eo-client-required-for="correspondence"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Kod pocztowy (korespondencja)', 'estate-office') . '<span class="required" data-eo-required-indicator hidden>*</span></span><input type="text" name="estate_client_correspondence_postal_code" autocomplete="postal-code" /></label>';
+        echo '<label data-eo-client-required-for="correspondence"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Miasto (korespondencja)', 'estate-office') . '<span class="required" data-eo-required-indicator hidden>*</span></span><input type="text" name="estate_client_correspondence_city" autocomplete="address-level2" /></label>';
+        echo '<label data-eo-client-required-for="correspondence"><span class="estate-office-agreement-creator__label-text">' . esc_html__('Kraj (korespondencja)', 'estate-office') . '<span class="required" data-eo-required-indicator hidden>*</span></span><input type="text" name="estate_client_correspondence_country" autocomplete="country-name" /></label>';
+        echo '</div>';
+        echo '</fieldset>';
+
         if (!empty($clientDynamic)) {
-            echo '<div class="estate-office-agreement-creator__dynamic">';
-            echo '<p class="estate-office-agreement-creator__dynamic-title">' . esc_html__('Pola dodatkowe klienta', 'estate-office') . '</p>';
+            echo '<fieldset class="estate-office-agreement-creator__fieldset">';
+            echo '<legend>' . esc_html__('Pola dodatkowe klienta', 'estate-office') . '</legend>';
             echo '<div class="estate-office-agreement-creator__grid">';
             foreach ($clientDynamic as $field) {
                 $key   = (string) ($field['key'] ?? '');
@@ -304,12 +360,13 @@ final class AgreementCreator
                     continue;
                 }
 
-                echo '<label>' . esc_html($label) . '<input type="text" name="dynamic[' . esc_attr($key) . ']" autocomplete="off" /></label>';
+                echo '<label><span class="estate-office-agreement-creator__label-text">' . esc_html($label) . '</span><input type="text" name="dynamic[' . esc_attr($key) . ']" autocomplete="off" /></label>';
             }
             echo '</div>';
             echo '<p class="description">' . esc_html__('Zarządzaj listą pól w sekcji „Pola klientów” ustawień wtyczki.', 'estate-office') . '</p>';
-            echo '</div>';
+            echo '</fieldset>';
         }
+
         echo '<div class="estate-office-agreement-creator__actions">';
         echo '<button type="submit" class="estate-office-agreement-creator__secondary">' . esc_html__('Zapisz klienta', 'estate-office') . '</button>';
         echo '</div>';
