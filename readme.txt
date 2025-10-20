@@ -3,15 +3,15 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.11
+Stable tag: 0.1.12
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.11 pozwala przypisać opiekuna już na etapie tworzenia umowy i filtrować listę umów po agencie, zachowując rozbudowany kreator danych oraz nawigację pomiędzy rekordami.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.12 tymczasowo wyłącza moduł licencyjny do czasu wydania 1.0.1, pozostawiając dotychczasowe usprawnienia kreatora i nawigacji CRM.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
-* Aktywny moduł licencyjny z panelem administracyjnym, harmonogramem sprawdzeń i integracją WP-CLI.
+* Moduł licencyjny tymczasowo wstrzymany do wersji 1.0.1, dzięki czemu bieżące wdrożenia nie wymagają aktywacji klucza.
 * Skróty do zakładki licencji oraz alerty statusu bezpośrednio na liście wtyczek WordPress.
 * Automatyczne tworzenie stron z shortcode'ami CRM, katalogu agentów oraz dedykowanych podstron ofert na sprzedaż i wynajem wraz z menu nawigacyjnym podczas aktywacji.
 * Pulpit CRM z licznikami rekordów, aktywnych umów, rankingiem aktywności agentów oraz alertami terminów umów i follow-up leadów.
@@ -98,6 +98,10 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.11 
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.12 =
+* Tymczasowo wyłączono moduł licencyjny i powiązane zadania cron/CLI do czasu wydania wersji 1.0.1.
+* Dodano informację o wstrzymaniu obsługi licencji w zakładce administracyjnej, aby administratorzy znali aktualny status prac.
+
 = 0.1.11 =
 * Dodano możliwość wyboru opiekuna podczas tworzenia umowy i w panelu administracyjnym oraz prezentację opiekuna w szczegółach CRM.
 * Rozszerzono filtry panelu WordPress o wybór agenta na liście umów, aby przyspieszyć raportowanie pracy zespołu.

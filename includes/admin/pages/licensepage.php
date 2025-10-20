@@ -22,6 +22,24 @@ final class LicensePage extends BasePage
 
     protected function renderContent(): void
     {
+        if (defined('ESTATE_OFFICE_LICENSE_SUSPENDED') && ESTATE_OFFICE_LICENSE_SUSPENDED) {
+            echo '<div class="notice notice-info"><p>';
+            echo esc_html__(
+                'Moduł licencyjny EstateOffice jest tymczasowo wyłączony do wydania wersji 1.0.1. Bieżące instalacje mogą korzystać z wtyczki bez aktywacji klucza.',
+                'estate-office'
+            );
+            echo '</p></div>';
+
+            echo '<p>';
+            echo esc_html__(
+                'Po ponownym uruchomieniu modułu w tej zakładce ponownie pojawi się możliwość weryfikacji licencji.',
+                'estate-office'
+            );
+            echo '</p>';
+
+            return;
+        }
+
         $data        = LicenseManager::getData();
         $status      = LicenseManager::describeStatus($data['status']);
         $statusClass = 'eo-license-status ' . $status['class'];
