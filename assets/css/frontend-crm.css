@@ -195,6 +195,21 @@
     }
 }
 
+.estate-office-crm__panel-grid {
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .estate-office-crm__panel-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+}
+
+.estate-office-crm__panel--full {
+    grid-column: 1 / -1;
+}
+
 .estate-office-crm__tile {
     background: #fff;
     border: 1px solid #e0e0e0;
@@ -225,6 +240,11 @@
 
 .estate-office-crm__panel h3 {
     margin-top: 0;
+}
+
+.estate-office-crm__muted {
+    color: #6b7280;
+    font-size: 0.85rem;
 }
 
 .estate-office-crm__notice {
@@ -317,6 +337,21 @@
 .estate-office-crm__badge--rented {
     background-color: #008a20;
     color: #fff;
+}
+
+.estate-office-crm__badge--danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.estate-office-crm__badge--warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.estate-office-crm__badge--success {
+    background-color: #dcfce7;
+    color: #065f46;
 }
 
 .estate-office-crm__badge--price {

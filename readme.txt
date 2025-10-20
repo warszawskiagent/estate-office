@@ -3,18 +3,18 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.7
+Stable tag: 0.1.8
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.7 dodaje stopkę akcji w profilach CRM ze skrótami do powrotu, edycji i usuwania rekordów, utrzymując panel etapów umów, interaktywny kreator oraz integrację Map Google z aktywnym modułem licencyjnym.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.8 rozbudowuje pulpit CRM o liczniki aktywnych umów, monitoring terminów wygasania i leadów follow-up oraz responsywne zestawienie agentów przy zachowaniu kreatora umów i integracji Map Google.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
 * Aktywny moduł licencyjny z panelem administracyjnym, harmonogramem sprawdzeń i integracją WP-CLI.
 * Skróty do zakładki licencji oraz alerty statusu bezpośrednio na liście wtyczek WordPress.
 * Automatyczne tworzenie stron z shortcode'ami CRM, katalogu agentów oraz dedykowanych podstron ofert na sprzedaż i wynajem wraz z menu nawigacyjnym podczas aktywacji.
-* Pulpit CRM z licznikami rekordów i rankingiem aktywności agentów opartym o przypisanych opiekunów.
+* Pulpit CRM z licznikami rekordów, aktywnych umów, rankingiem aktywności agentów oraz alertami terminów umów i follow-up leadów.
 * Dedykowana rola użytkownika `estate_agent` przygotowana do dalszej rozbudowy uprawnień.
 * Sekcja ustawień z obsługą klucza API Map Google, materiałów graficznych i dynamicznych pól konfiguracyjnych.
 * Konfigurowalne pola dodatkowe nieruchomości, umów, poszukiwań i klientów obsługiwane w panelu administracyjnym, CRM oraz publicznych widokach.
@@ -96,6 +96,11 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.7 d
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.8 =
+* Rozbudowano pulpit CRM o liczniki aktywnych umów oraz modułów widocznych zgodnie z uprawnieniami użytkownika.
+* Dodano panel monitorujący terminy zakończenia umów z kolorystycznymi alertami i szybkim dostępem do profili.
+* Dodano panel leadów wymagających follow-up z uwzględnieniem zaległych zgłoszeń i kontekstu przypisanych agentów.
+
 = 0.1.7 =
 * Dodano stopkę akcji w profilach rekordów CRM z przyciskami powrotu, edycji i usuwania zgodnie z wymaganiami bezpieczeństwa.
 

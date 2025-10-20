@@ -31,6 +31,7 @@ use function check_ajax_referer;
 use function array_search;
 use function array_slice;
 use function get_current_user_id;
+use function current_time;
 use function current_user_can;
 use function esc_attr;
 use function esc_html;
@@ -83,10 +84,13 @@ use function __;
 use function wp_send_json_error;
 use function wp_send_json_success;
 use function wp_nonce_url;
+use function _n;
 
 use const ARRAY_A;
 use const ESTATE_OFFICE_PLUGIN_FILE;
 use const ESTATE_OFFICE_PLUGIN_VERSION;
+use const DAY_IN_SECONDS;
+use const WEEK_IN_SECONDS;
 
 defined('ABSPATH') || exit;
 
@@ -485,8 +489,10 @@ final class CRM
 
     private static function renderDashboard(): void
     {
-        $stats     = self::getDashboardStats();
-        $topAgents = self::getTopAgents();
+        $stats               = self::getDashboardStats();
+        $topAgents           = self::getTopAgents();
+        $upcomingAgreements  = self::getUpcomingAgreementDeadlines();
+        $leadFollowUps       = self::getPendingLeadFollowUps();
 
         echo '<section class="estate-office-crm__dashboard">';
         echo '<h2>' . esc_html__('Zestawienie CRM', 'estate-office') . '</h2>';
@@ -502,7 +508,9 @@ final class CRM
             echo '</div>';
         }
 
-        echo '<div class="estate-office-crm__panel">';
+        echo '<div class="estate-office-crm__panel-grid">';
+
+        echo '<div class="estate-office-crm__panel estate-office-crm__panel--full">';
         echo '<h3>' . esc_html__('Najaktywniejsi agenci', 'estate-office') . '</h3>';
         if ($topAgents) {
             echo '<table class="estate-office-crm__table">';
@@ -532,6 +540,64 @@ final class CRM
         } else {
             echo '<p>' . esc_html__('Brak danych o aktywności agentów. Przypisz opiekunów do rekordów, aby zobaczyć zestawienie.', 'estate-office') . '</p>';
         }
+        echo '</div>';
+
+        if ($upcomingAgreements !== null) {
+            echo '<div class="estate-office-crm__panel">';
+            echo '<h3>' . esc_html__('Umowy z kończącym się terminem', 'estate-office') . '</h3>';
+            if ($upcomingAgreements) {
+                echo '<table class="estate-office-crm__table">';
+                echo '<thead><tr>';
+                echo '<th>' . esc_html__('Umowa', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Termin zakończenia', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Pozostało', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Opiekun', 'estate-office') . '</th>';
+                echo '</tr></thead>';
+                echo '<tbody>';
+                foreach ($upcomingAgreements as $agreement) {
+                    echo '<tr>';
+                    echo '<td><a href="' . esc_url($agreement['link']) . '">' . esc_html($agreement['label']) . '</a></td>';
+                    echo '<td>' . esc_html($agreement['end_date']) . '</td>';
+                    echo '<td>' . self::renderSeverityBadge($agreement['remaining_label'], $agreement['severity']) . '</td>';
+                    echo '<td>' . esc_html($agreement['manager']) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody>';
+                echo '</table>';
+            } else {
+                echo '<p>' . esc_html__('Brak umów z kończącym się terminem w najbliższych 30 dniach.', 'estate-office') . '</p>';
+            }
+            echo '</div>';
+        }
+
+        if ($leadFollowUps !== null) {
+            echo '<div class="estate-office-crm__panel">';
+            echo '<h3>' . esc_html__('Leady wymagające follow-up', 'estate-office') . '</h3>';
+            if ($leadFollowUps) {
+                echo '<table class="estate-office-crm__table">';
+                echo '<thead><tr>';
+                echo '<th>' . esc_html__('Lead', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Status', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Termin follow-up', 'estate-office') . '</th>';
+                echo '<th>' . esc_html__('Pozostało', 'estate-office') . '</th>';
+                echo '</tr></thead>';
+                echo '<tbody>';
+                foreach ($leadFollowUps as $lead) {
+                    echo '<tr>';
+                    echo '<td><a href="' . esc_url($lead['link']) . '">' . esc_html($lead['label']) . '</a><br /><span class="estate-office-crm__muted">' . esc_html($lead['assigned']) . '</span></td>';
+                    echo '<td>' . esc_html($lead['status']) . '</td>';
+                    echo '<td>' . esc_html($lead['follow_up']) . '</td>';
+                    echo '<td>' . self::renderSeverityBadge($lead['remaining_label'], $lead['severity']) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody>';
+                echo '</table>';
+            } else {
+                echo '<p>' . esc_html__('Brak leadów z zaplanowanym lub zaległym follow-up w najbliższym tygodniu.', 'estate-office') . '</p>';
+            }
+            echo '</div>';
+        }
+
         echo '</div>';
         echo '</section>';
     }
@@ -776,44 +842,44 @@ final class CRM
      */
     private static function getDashboardStats(): array
     {
-        $postTypes = [
-            [
-                'type'    => PropertyRegister::POST_TYPE,
-                'label'   => __('Nieruchomości', 'estate-office'),
-                'section' => 'properties',
-            ],
-            [
-                'type'    => AgreementRegister::POST_TYPE,
-                'label'   => __('Umowy', 'estate-office'),
-                'section' => 'agreements',
-            ],
-            [
-                'type'    => SearchRegister::POST_TYPE,
-                'label'   => __('Poszukiwania', 'estate-office'),
-                'section' => 'searches',
-            ],
-            [
-                'type'    => ClientRegister::POST_TYPE,
-                'label'   => __('Klienci', 'estate-office'),
-                'section' => 'clients',
-            ],
-            [
-                'type'    => LeadRegister::POST_TYPE,
-                'label'   => __('Leady', 'estate-office'),
-                'section' => 'leads',
-            ],
-        ];
-
         $stats = [];
-        foreach ($postTypes as $postType) {
-            if (isset($postType['section']) && !self::userCanAccessSection($postType['section'])) {
-                continue;
-            }
-            $counts    = wp_count_posts($postType['type']);
-            $published = $counts && isset($counts->publish) ? (int) $counts->publish : 0;
-            $stats[]   = [
-                'label' => $postType['label'],
-                'count' => $published,
+
+        if (self::userCanAccessSection('properties')) {
+            $stats[] = [
+                'label' => __('Nieruchomości', 'estate-office'),
+                'count' => self::countPublishedPosts(PropertyRegister::POST_TYPE),
+            ];
+        }
+
+        if (self::userCanAccessSection('agreements')) {
+            $stats[] = [
+                'label' => __('Aktywne umowy', 'estate-office'),
+                'count' => self::countActiveAgreements(),
+            ];
+            $stats[] = [
+                'label' => __('Umowy łącznie', 'estate-office'),
+                'count' => self::countPublishedPosts(AgreementRegister::POST_TYPE),
+            ];
+        }
+
+        if (self::userCanAccessSection('searches')) {
+            $stats[] = [
+                'label' => __('Poszukiwania', 'estate-office'),
+                'count' => self::countPublishedPosts(SearchRegister::POST_TYPE),
+            ];
+        }
+
+        if (self::userCanAccessSection('clients')) {
+            $stats[] = [
+                'label' => __('Klienci', 'estate-office'),
+                'count' => self::countPublishedPosts(ClientRegister::POST_TYPE),
+            ];
+        }
+
+        if (self::userCanAccessSection('leads')) {
+            $stats[] = [
+                'label' => __('Leady', 'estate-office'),
+                'count' => self::countPublishedPosts(LeadRegister::POST_TYPE),
             ];
         }
 
@@ -897,6 +963,175 @@ final class CRM
         });
 
         return array_slice($agents, 0, 5, true);
+    }
+
+    /**
+     * @return array<int,array{label:string,link:string,end_date:string,remaining_label:string,severity:string,manager:string}>|null
+     */
+    private static function getUpcomingAgreementDeadlines(): ?array
+    {
+        if (!self::userCanAccessSection('agreements')) {
+            return null;
+        }
+
+        $currentTimestamp = current_time('timestamp');
+        $limitTimestamp   = $currentTimestamp + (30 * DAY_IN_SECONDS);
+
+        $today     = wp_date('Y-m-d', $currentTimestamp);
+        $limitDate = wp_date('Y-m-d', $limitTimestamp);
+
+        $args = [
+            'post_type'      => AgreementRegister::POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => 5,
+            'orderby'        => 'meta_value',
+            'meta_key'       => 'estate_agreement_end_date',
+            'order'          => 'ASC',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'     => 'estate_agreement_end_date',
+                    'value'   => [$today, $limitDate],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'relation' => 'OR',
+                    [
+                        'key'     => 'estate_agreement_is_indefinite',
+                        'value'   => '1',
+                        'compare' => '!=',
+                        'type'    => 'NUMERIC',
+                    ],
+                    [
+                        'key'     => 'estate_agreement_is_indefinite',
+                        'compare' => 'NOT EXISTS',
+                    ],
+                ],
+                [
+                    'relation' => 'OR',
+                    [
+                        'key'     => 'estate_agreement_stage',
+                        'value'   => 'completed',
+                        'compare' => '!=',
+                    ],
+                    [
+                        'key'     => 'estate_agreement_stage',
+                        'compare' => 'NOT EXISTS',
+                    ],
+                ],
+            ],
+        ];
+
+        $query   = new WP_Query($args);
+        $results = [];
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            $postId   = (int) get_the_ID();
+            $endDate  = (string) get_post_meta($postId, 'estate_agreement_end_date', true);
+            $deadline = self::calculateDaysUntil($endDate, $currentTimestamp, true);
+
+            $results[] = [
+                'label'          => self::resolveReference($postId, 'estate_agreement_number'),
+                'link'           => self::getDetailLink('agreements', $postId),
+                'end_date'       => self::formatStageDate($endDate),
+                'remaining_label'=> self::formatRemainingLabel($deadline),
+                'severity'       => self::determineSeverity($deadline),
+                'manager'        => self::getAgreementManager($postId),
+            ];
+        }
+
+        wp_reset_postdata();
+
+        return $results;
+    }
+
+    /**
+     * @return array<int,array{label:string,link:string,status:string,follow_up:string,remaining_label:string,severity:string,assigned:string}>|null
+     */
+    private static function getPendingLeadFollowUps(): ?array
+    {
+        if (!self::userCanAccessSection('leads')) {
+            return null;
+        }
+
+        $currentTimestamp = current_time('timestamp');
+        $limitTimestamp   = $currentTimestamp + WEEK_IN_SECONDS;
+        $limitDate        = wp_date('Y-m-d H:i:s', $limitTimestamp);
+
+        $metaQuery = [
+            'relation' => 'AND',
+            [
+                'key'     => LeadMeta::META_FOLLOW_UP,
+                'compare' => 'EXISTS',
+            ],
+            [
+                'key'     => LeadMeta::META_FOLLOW_UP,
+                'value'   => '',
+                'compare' => '!=',
+            ],
+            [
+                'key'     => LeadMeta::META_FOLLOW_UP,
+                'value'   => $limitDate,
+                'compare' => '<=',
+                'type'    => 'DATETIME',
+            ],
+        ];
+
+        $currentUserId = get_current_user_id();
+        if ($currentUserId > 0 && !current_user_can('edit_others_estate_leads')) {
+            $metaQuery[] = [
+                'key'     => LeadMeta::META_ASSIGNED,
+                'value'   => $currentUserId,
+                'compare' => '=',
+                'type'    => 'NUMERIC',
+            ];
+        }
+
+        $args = [
+            'post_type'      => LeadRegister::POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => 5,
+            'orderby'        => 'meta_value',
+            'meta_key'       => LeadMeta::META_FOLLOW_UP,
+            'order'          => 'ASC',
+            'no_found_rows'  => true,
+            'meta_query'     => $metaQuery,
+        ];
+
+        $query   = new WP_Query($args);
+        $results = [];
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            $postId      = (int) get_the_ID();
+            $title       = trim((string) get_the_title($postId));
+            $label       = $title !== '' ? $title : sprintf(__('Lead #%d', 'estate-office'), $postId);
+            $statusKey   = (string) get_post_meta($postId, LeadMeta::META_STATUS, true);
+            $statusLabel = LeadMeta::getStatusLabel(LeadMeta::sanitizeStatus($statusKey));
+            $followUp    = (string) get_post_meta($postId, LeadMeta::META_FOLLOW_UP, true);
+            $remaining   = self::calculateDaysUntil($followUp, $currentTimestamp, false);
+            $followUpDisplay = self::formatMysqlDateTime($followUp);
+            if ($followUpDisplay === '') {
+                $followUpDisplay = '—';
+            }
+
+            $results[] = [
+                'label'          => $label,
+                'link'           => self::getDetailLink('leads', $postId),
+                'status'         => $statusLabel,
+                'follow_up'      => $followUpDisplay,
+                'remaining_label'=> self::formatRemainingLabel($remaining),
+                'severity'       => self::determineSeverity($remaining),
+                'assigned'       => self::getManagerName((int) get_post_meta($postId, LeadMeta::META_ASSIGNED, true)),
+            ];
+        }
+
+        wp_reset_postdata();
+
+        return $results;
     }
 
     private static function renderProperties(string $searchTerm): void
@@ -1198,10 +1433,7 @@ final class CRM
             $transactionKey = (string) get_post_meta($postId, 'estate_agreement_transaction_type', true);
             $properties     = self::sanitizeIdArray(get_post_meta($postId, 'estate_agreement_properties', true));
             $firstProperty  = $properties[0] ?? 0;
-            $manager        = '';
-            if ($firstProperty > 0) {
-                $manager = self::getManagerName((int) get_post_meta($firstProperty, 'estate_property_manager', true));
-            }
+            $manager        = self::getAgreementManager($postId);
 
             $rows[] = [
                 'link'          => self::getDetailLink('agreements', $postId),
@@ -2399,6 +2631,139 @@ final class CRM
         $class = 'estate-office-crm__badge estate-office-crm__badge--status-' . sanitize_html_class($status);
 
         return '<span class="' . esc_attr($class) . '">' . esc_html($label) . '</span>';
+    }
+
+    private static function renderSeverityBadge(string $label, string $severity): string
+    {
+        $class = 'estate-office-crm__badge';
+        if ($severity !== '') {
+            $class .= ' estate-office-crm__badge--' . sanitize_html_class($severity);
+        }
+
+        return '<span class="' . esc_attr($class) . '">' . esc_html($label) . '</span>';
+    }
+
+    private static function countPublishedPosts(string $postType): int
+    {
+        $counts = wp_count_posts($postType);
+        if ($counts && isset($counts->publish)) {
+            return (int) $counts->publish;
+        }
+
+        return 0;
+    }
+
+    private static function countActiveAgreements(): int
+    {
+        global $wpdb;
+
+        $stageKey = 'estate_agreement_stage';
+
+        $query = $wpdb->prepare(
+            "SELECT COUNT(DISTINCT p.ID)\n             FROM {$wpdb->posts} p\n             LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = %s\n             WHERE p.post_type = %s AND p.post_status = 'publish'\n             AND (m.meta_value IS NULL OR m.meta_value != %s)",
+            $stageKey,
+            AgreementRegister::POST_TYPE,
+            'completed'
+        );
+
+        $count = $wpdb->get_var($query);
+
+        return $count !== null ? (int) $count : 0;
+    }
+
+    private static function calculateDaysUntil(string $value, int $nowTimestamp, bool $treatAsDate): ?int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if ($treatAsDate) {
+            $timestamp = strtotime($value . ' 23:59:59');
+        } else {
+            $timestamp = strtotime($value);
+        }
+
+        if ($timestamp === false) {
+            return null;
+        }
+
+        $diff = $timestamp - $nowTimestamp;
+
+        return (int) floor($diff / DAY_IN_SECONDS);
+    }
+
+    private static function formatRemainingLabel(?int $days): string
+    {
+        if ($days === null) {
+            return __('Brak danych', 'estate-office');
+        }
+
+        if ($days < 0) {
+            $overdue = abs($days);
+
+            return sprintf(
+                _n('Po terminie o %d dzień', 'Po terminie o %d dni', $overdue, 'estate-office'),
+                $overdue
+            );
+        }
+
+        if ($days === 0) {
+            return __('Dziś', 'estate-office');
+        }
+
+        if ($days === 1) {
+            return __('Jutro', 'estate-office');
+        }
+
+        return sprintf(
+            _n('Za %d dzień', 'Za %d dni', $days, 'estate-office'),
+            $days
+        );
+    }
+
+    private static function determineSeverity(?int $days): string
+    {
+        if ($days === null) {
+            return 'warning';
+        }
+
+        if ($days < 0) {
+            return 'danger';
+        }
+
+        if ($days <= 3) {
+            return 'warning';
+        }
+
+        return 'success';
+    }
+
+    private static function getAgreementManager(int $agreementId): string
+    {
+        $properties = self::sanitizeIdArray(get_post_meta($agreementId, 'estate_agreement_properties', true));
+        foreach ($properties as $propertyId) {
+            $managerId = (int) get_post_meta($propertyId, 'estate_property_manager', true);
+            if ($managerId > 0) {
+                $manager = self::getManagerName($managerId);
+                if ($manager !== '—') {
+                    return $manager;
+                }
+            }
+        }
+
+        $searches = self::sanitizeIdArray(get_post_meta($agreementId, 'estate_agreement_searches', true));
+        foreach ($searches as $searchId) {
+            $managerId = (int) get_post_meta($searchId, 'estate_search_manager', true);
+            if ($managerId > 0) {
+                $manager = self::getManagerName($managerId);
+                if ($manager !== '—') {
+                    return $manager;
+                }
+            }
+        }
+
+        return '—';
     }
 
     private static function getAgreementNumberLabel(int $agreementId): string
