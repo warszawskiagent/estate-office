@@ -204,9 +204,176 @@
     text-decoration: underline;
 }
 
+.estate-office-offer__section--agent {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.estate-office-offer__agent {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.estate-office-offer__agent-photo {
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #e2e8f0;
+    flex: 0 0 auto;
+}
+
+.estate-office-offer__agent-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-offer__agent-details {
+    max-width: 520px;
+}
+
+.estate-office-offer__agent-name {
+    font-size: 20px;
+    margin: 0 0 8px;
+}
+
+.estate-office-offer__agent-contact {
+    margin: 0 0 6px;
+    font-weight: 600;
+}
+
+.estate-office-offer__agent-contact a {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.estate-office-offer__agent-contact a:hover {
+    text-decoration: underline;
+}
+
+.estate-office-offer__agent-bio {
+    margin-top: 16px;
+    color: #334155;
+}
+
+.estate-office-offer__agent-link {
+    margin-top: 16px;
+}
+
+.estate-office-offer__agent-link a {
+    font-weight: 600;
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.estate-office-offer__agent-link a:hover {
+    text-decoration: underline;
+}
+
 .estate-office-message {
     padding: 24px;
     background: #e2e8f0;
     border-radius: 12px;
     color: #1e293b;
+}
+
+.estate-office-agent {
+    background: #fff;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    max-width: 960px;
+    margin: 40px auto;
+}
+
+.estate-office-agent__header {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+}
+
+.estate-office-agent__photo {
+    width: 220px;
+    height: 220px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: #e2e8f0;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estate-office-agent__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-agent__info {
+    flex: 1 1 300px;
+}
+
+.estate-office-agent__name {
+    margin: 0 0 12px;
+    font-size: 34px;
+    color: #0f172a;
+}
+
+.estate-office-agent__contact {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.estate-office-agent__contact a {
+    color: #1d4ed8;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.estate-office-agent__contact a:hover {
+    text-decoration: underline;
+}
+
+.estate-office-agent__bio {
+    color: #334155;
+    line-height: 1.6;
+}
+
+.estate-office-agent__properties {
+    margin-top: 40px;
+}
+
+.estate-office-agent__properties h2 {
+    font-size: 24px;
+    margin-bottom: 16px;
+}
+
+.estate-office-agent__properties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.estate-office-agent__property-card .estate-office-offer-card__title {
+    font-size: 16px;
+}
+
+@media (max-width: 782px) {
+    .estate-office-agent {
+        padding: 24px;
+        margin: 20px;
+    }
+
+    .estate-office-agent__photo {
+        width: 160px;
+        height: 160px;
+    }
 }

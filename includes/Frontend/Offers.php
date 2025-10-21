@@ -15,8 +15,11 @@ class Offers {
 
     private BadgesManager $badges;
 
-    public function __construct( BadgesManager $badges ) {
+    private Agents $agents;
+
+    public function __construct( BadgesManager $badges, Agents $agents ) {
         $this->badges = $badges;
+        $this->agents = $agents;
     }
 
     /**
@@ -475,6 +478,12 @@ class Offers {
      * Builds structured payload for the property.
      */
     private function prepare_property_payload( int $property_id, ?WP_Post $offer = null ): array {
+        $property = get_post( $property_id );
+
+        if ( ! $property || 'estate_property' !== $property->post_type ) {
+            return [];
+        }
+
         $reference   = get_post_meta( $property_id, Keys::PROPERTY_REFERENCE, true );
         $transaction = sanitize_key( get_post_meta( $property_id, Keys::PROPERTY_TRANSACTION, true ) );
         $kind        = sanitize_key( get_post_meta( $property_id, Keys::PROPERTY_KIND, true ) );
@@ -517,6 +526,9 @@ class Offers {
             'country'     => $address['country'] ?? '',
         ];
 
+        $offer_id = $offer instanceof WP_Post ? $offer->ID : (int) get_post_meta( $property_id, Keys::PROPERTY_OFFER_POST, true );
+        $permalink = $offer_id ? get_permalink( $offer_id ) : get_permalink( $property );
+
         return [
             'property_id'      => $property_id,
             'reference'        => $reference,
@@ -552,7 +564,8 @@ class Offers {
             'video'            => esc_url_raw( $video ),
             'vr'               => esc_url_raw( $vr ),
             'badges'           => $badges,
-            'permalink'        => $offer instanceof WP_Post ? get_permalink( $offer ) : get_permalink( (int) get_post_meta( $property_id, Keys::PROPERTY_OFFER_POST, true ) ),
+            'permalink'        => $permalink,
+            'agent'            => $this->agents->get_agent_context( (int) $property->post_author ),
         ];
     }
 
@@ -646,6 +659,10 @@ class Offers {
         }
 
         $this->render_detail_lists( $payload );
+
+        if ( ! empty( $payload['agent']['name'] ) ) {
+            $this->render_agent_section( $payload['agent'] );
+        }
 
         if ( $payload['video'] || $payload['vr'] ) {
             echo '<section class="estate-office-offer__section estate-office-offer__section--media">';
@@ -786,6 +803,62 @@ class Offers {
         }
 
         echo '</ul>';
+        echo '</section>';
+    }
+
+    /**
+     * Renders agent contact section.
+     */
+    private function render_agent_section( array $agent ): void {
+        echo '<section class="estate-office-offer__section estate-office-offer__section--agent">';
+        echo '<h2>' . esc_html__( 'Agent prowadzący', 'estate-office' ) . '</h2>';
+        echo '<div class="estate-office-offer__agent">';
+
+        if ( ! empty( $agent['photo'] ) ) {
+            printf(
+                '<div class="estate-office-offer__agent-photo"><img src="%1$s" alt="%2$s" /></div>',
+                esc_url( $agent['photo'] ),
+                esc_attr( $agent['name'] )
+            );
+        }
+
+        echo '<div class="estate-office-offer__agent-details">';
+        echo '<p class="estate-office-offer__agent-name">' . esc_html( $agent['name'] ) . '</p>';
+
+        if ( ! empty( $agent['phone'] ) ) {
+            $href = ! empty( $agent['phone_href'] ) ? $agent['phone_href'] : preg_replace( '/[^0-9+]/', '', $agent['phone'] );
+            if ( $href ) {
+                printf(
+                    '<p class="estate-office-offer__agent-contact"><a href="tel:%1$s">%2$s</a></p>',
+                    esc_attr( $href ),
+                    esc_html( $agent['phone'] )
+                );
+            } else {
+                echo '<p class="estate-office-offer__agent-contact">' . esc_html( $agent['phone'] ) . '</p>';
+            }
+        }
+
+        if ( ! empty( $agent['email'] ) ) {
+            printf(
+                '<p class="estate-office-offer__agent-contact"><a href="mailto:%1$s">%1$s</a></p>',
+                esc_html( $agent['email'] )
+            );
+        }
+
+        if ( ! empty( $agent['bio'] ) ) {
+            echo '<div class="estate-office-offer__agent-bio">' . wp_kses_post( wpautop( $agent['bio'] ) ) . '</div>';
+        }
+
+        if ( ! empty( $agent['profile_url'] ) ) {
+            printf(
+                '<p class="estate-office-offer__agent-link"><a href="%1$s">%2$s</a></p>',
+                esc_url( $agent['profile_url'] ),
+                esc_html__( 'Zobacz profil agenta', 'estate-office' )
+            );
+        }
+
+        echo '</div>';
+        echo '</div>';
         echo '</section>';
     }
 

@@ -72,4 +72,8 @@ final class Keys {
     public const SEARCH_CONTRACT         = '_estate_office_search_contract';
 
     public const OFFER_PROPERTY          = '_estate_office_offer_property';
+
+    public const AGENT_PHONE             = 'estate_office_phone';
+    public const AGENT_BIO               = 'estate_office_bio';
+    public const AGENT_PHOTO_ID          = 'estate_office_agent_photo_id';
 }

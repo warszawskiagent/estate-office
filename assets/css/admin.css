@@ -162,6 +162,17 @@
     max-height: 100%;
 }
 
+.estate-office-media-field--portrait .estate-office-media-preview {
+    width: 140px;
+    height: 140px;
+}
+
+.estate-office-media-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .estate-office-roadmap {
     list-style: disc;
     padding-left: 20px;
@@ -301,4 +312,35 @@
 
 .estate-office-table__actions a:hover {
     text-decoration: underline;
+}
+
+.estate-office-agent-form__layout {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 24px;
+    margin-bottom: 16px;
+    align-items: start;
+}
+
+@media (max-width: 782px) {
+    .estate-office-agent-form__layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.estate-office-agent-table__person {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.estate-office-agent-table__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.estate-office-agents td {
+    vertical-align: top;
 }
