@@ -54,12 +54,10 @@ use function get_the_title;
 use function get_the_terms;
 use function get_option;
 use function get_user_by;
-use function has_shortcode;
 use function html_entity_decode;
 use function is_array;
 use function is_scalar;
 use function is_string;
-use function is_singular;
 use function is_user_logged_in;
 use function number_format_i18n;
 use function plugins_url;
@@ -176,7 +174,7 @@ final class CRM
 
     public static function enqueueAssets(): void
     {
-        if (!self::shouldLoadAssets()) {
+        if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
             return;
         }
 
@@ -258,28 +256,6 @@ final class CRM
         echo '</div>';
 
         return (string) ob_get_clean();
-    }
-
-    private static function shouldLoadAssets(): bool
-    {
-        if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
-            return false;
-        }
-
-        if (isset($_GET[self::SECTION_PARAM]) || isset($_GET[self::RECORD_PARAM]) || isset($_GET[self::RECORD_ID_PARAM])) {
-            return true;
-        }
-
-        if (!is_singular()) {
-            return false;
-        }
-
-        $post = get_post();
-        if ($post instanceof WP_Post) {
-            return has_shortcode((string) $post->post_content, self::SHORTCODE);
-        }
-
-        return false;
     }
 
     public static function handleUpdateAgreementStage(): void
