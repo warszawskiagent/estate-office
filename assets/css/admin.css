@@ -1,0 +1,71 @@
+.estate-office-admin__title {
+    font-size: 28px;
+    margin-bottom: 0.5rem;
+}
+
+.estate-office-admin__subtitle {
+    margin-top: 0;
+    color: #555d66;
+}
+
+.estate-office-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.estate-office-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.estate-office-label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.estate-office-dynamic-fields {
+    border: 1px solid #dcdcde;
+    padding: 16px;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.estate-office-dynamic-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 12px;
+}
+
+.estate-office-media-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.estate-office-media-preview {
+    width: 80px;
+    height: 80px;
+    background: #f0f0f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.estate-office-media-preview img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.estate-office-roadmap {
+    list-style: disc;
+    padding-left: 20px;
+}
