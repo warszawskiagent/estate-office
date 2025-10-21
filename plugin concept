@@ -1,0 +1,403 @@
+Piszemy wspólnie wtyczkę pod Wordpress, CRM dla biura nieruchomości. Wciel się w speca od wtyczek pod Wordpress, jesteś mistrzem PHP oraz JavaScript. 
+EstateOffice to zaawansowana wtyczka dla WordPress, zaprojektowana specjalnie dla biur nieruchomości. Umożliwia kompleksowe zarządzanie nieruchomościami, umowami, klientami i agentami, a także integrację z mapami Google i eksport ofert na stronę WWW oraz portale. 
+
+Piszemy wersję od 0.0.1 do 1.0 
+Bądź wyjątkowo skrupulatny, trzymaj się ściśle opisu wtyczki. Ważne jest bezpieczeństwo, przejrzystość i estetyka. 
+
+Formularze niech będą dynamiczne, niech się zmieniają w zależności co się zaznaczy i wybierze jak w opisie wtyczki. 
+
+Będę testować co wersja 
+
+________________________________________
+Menu Backend administratora
+W menu administratora wtyczka będzie miała jeden główny katalog
+1.	Estate Office CRM
+o	Licencja (Funkcjonalność zostanie dodana na końcu procesu tworzenia wtyczki)
+o	Agenci
+•	Zarządzanie agentami: Dodawanie i edycja profili agentów.
+•	Nowy typ użytkownika: Agent, który ma dostęp tylko do funkcjonalności wtyczki (bez możliwości usuwania klientów, umów i nieruchomości).
+•	Profil agenta:
+	Zdjęcie
+	Dane teleadresowe
+	Opis/Biografia
+
+o	Ustawienia
+•	API Map Google: Pole do wprowadzenia klucza API dla integracji z mapami Google.
+•	Znak wodny: Opcja wgrania znaku wodnego, który będzie automatycznie nanoszony na zdjęcia nieruchomości.
+•	Logo biura: Opcja wgrania logo biura
+•	Pola nieruchomości: Dodaj lub usuń pola oferty nieruchomości
+•	Pola Umów: Dodaj lub usuń pola oferty nieruchomości
+•	Pola Klientów: Dodaj lub usuń pola profilu klienta
+
+o	About
+•	Opis wtyczki: Krótki opis funkcjonalności wtyczki.
+•	Roadmapa wersji
+
+Menu strony www FRONTEND po zalogowaniu i w menu administratora TYLKO dla administratora
+Widoczne z głównej strony WWW.
+1.	CRM
+o	Pulpit (liczba nieruchomości, aktywnych umów, poszukiwań, najlepsi agenci, inne przydatne informacje)
+o	Nieruchomości
+	Zarządzanie nieruchomościami: Dodawanie, edycja i przegląd nieruchomości.
+	Kolumny w tabeli:
+	Numer oferty: Klikalny numer prowadzący do szczegółów oferty.
+	Adres
+	Cena
+	Cena za m²
+	Metraż
+	Liczba pokoi
+	Opiekun
+o	Poszukiwania
+	Zarządzanie poszukiwaniami: Dodawanie i przegląd poszukiwań klientów.
+	Kolumny w tabeli:
+	Numer poszukiwania: Klikalny numer prowadzący do szczegółów poszukiwania.
+	Rodzaj nieruchomości
+	Budżet
+	Lokalizacja
+	Typ transakcji
+o	Umowy
+	Zarządzanie umowami: Dodawanie, edycja i monitorowanie umów.
+	Kolumny w tabeli:
+	Numer umowy: Klikalny numer prowadzący do szczegółów umowy.
+	Typ transakcji
+	Rodzaj nieruchomości
+	Adres: Klikalny adres prowadzący do powiązanej nieruchomości.
+	Data zawarcia
+	Data zakończenia
+	Aktualny etap
+	Opiekun
+o	Klienci
+	Zarządzanie klientami: Dodawanie, edycja i przegląd profili klientów.
+	Kolumny w tabeli:
+	Imię i nazwisko/Nazwa: Klikalny link prowadzący do profilu klienta.
+	Adres: Klikalny link prowadzący do powiązanej nieruchomości.
+	Telefon
+	E-mail
+	Opiekun
+o	Wyszukiwanie: W każdej zakładce dostępna jest funkcja wyszukiwania po wszystkich kolumnach tabeli.
+o	Przycisk "Dodaj nową Umowę": Dostępny na górze strony w każdej zakładce CRM.
+Struktura Menu Ofert Nieruchomości na stronie (bez logowania)
+Oferty na SPRZEDAŻ (wszystkie Nieruchomości ze znacznikiem export na www)
+o	Kategoryzacja: Oferty są kategoryzowane według:
+	Typu transakcji
+	Rodzaju nieruchomości
+	Miasta
+	Dzielnicy
+Oferty na WWYNAJEM (wszystkie Nieruchomości ze znacznikiem export na www)
+o	Kategoryzacja: Oferty są kategoryzowane według:
+	Typu transakcji
+	Rodzaju nieruchomości
+	Miasta
+	Dzielnicy
+________________________________________
+Proces Dodawania Nowej Umowy
+Dodawanie nowej umowy odbywa się w kilku etapach:
+Etap 1: Nowa Umowa
+•	Numer umowy: Unikalny identyfikator umowy (weryfikacja duplikatów).
+•	Typ transakcji: Wybór z menu rozwijanego:
+o	SPRZEDAŻ
+o	KUPNO
+o	WYNAJEM
+o	NAJEM
+•	Data zawarcia: Data podpisania umowy.
+•	Data zakończenia: Data wygaśnięcia umowy.
+•	Umowa bezterminowa: Checkbox. Jeśli zaznaczony, pole "Data zakończenia" jest nieaktywne.
+•	Wysokość prowizji:
+o	Kwota
+o	Jednostka: Wybór z menu rozwijanego (% / PLN / EUR / USD).
+•	Przycisk "DALEJ": Zapisuje umowę i przechodzi do dodawania klienta.
+Etap 2: Dodawanie Klienta
+•	Wyszukiwarka klientów: Możliwość wyszukania istniejącego klienta po:
+o	Imieniu
+o	Nazwisku
+o	Numerze telefonu
+o	Adresie e-mail
+•	Dodawanie nowego klienta:
+o	Typ klienta: Wybór z menu rozwijanego:
+	Osoba fizyczna
+	Firma
+o	Dane podstawowe:
+	Osoba fizyczna:
+	Imię
+	Nazwisko
+	Firma:
+	Nazwa firmy
+	Imię i nazwisko reprezentanta
+o	Dane kontaktowe:
+	Numer telefonu
+	Adres e-mail
+	Firma: Strona WWW
+o	Dane identyfikacyjne:
+	Osoba fizyczna:
+	PESEL
+	Rodzaj dokumentu (Dowód osobisty, Paszport, Karta pobytu)
+	Numer dokumentu
+	Firma:
+	NIP
+	KRS
+	REGON
+o	Adres zamieszkania/rejestrowy:
+	Ulica
+	Numer
+	Lokal
+	Kod pocztowy
+	Miasto
+	Kraj
+o	Adres korespondencyjny:
+	Checkbox "Adres korespondencyjny taki sam" (domyślnie zaznaczony)
+	Jeśli odznaczony, pola do wprowadzenia innego adresu korespondencyjnego.
+•	Przycisk "DALEJ":
+o	Jeśli wybrano istniejącego klienta, przypisuje go do umowy.
+o	Jeśli dodano nowego klienta, tworzy go w bazie i przypisuje do umowy.
+•	Pytanie o dodanie kolejnego klienta:
+o	"Czy chcesz dodać kolejnego klienta?": TAK / NIE
+	TAK: Ponownie otwiera formularz dodawania klienta.
+	NIE: Przechodzi do kolejnego etapu w zależności od typu transakcji:
+	SPRZEDAŻ/WYNAJEM: Formularz dodawania nieruchomości.
+	KUPNO/NAJEM: Formularz dodawania poszukiwania.
+Etap 3a: Dodawanie Nieruchomości
+•	Typ transakcji: Automatycznie ustawiony z umowy (nieedytowalny).
+•	Rodzaj nieruchomości: Wybór z menu rozwijanego:
+o	MIESZKANIE
+o	DOM
+o	DZIAŁKA
+o	LOKAL H/U
+Dane Adresowe
+•	Dla MIESZKANIA lub LOKALU H/U:
+o	Ulica (wymagane)
+o	Numer (wymagane)
+o	Lokal
+o	Kod pocztowy (wymagane)
+o	Dzielnica
+o	Miasto (wymagane)
+•	Dla DOMU lub DZIAŁKI:
+o	Jeśli DOM:
+	Typ domu (WOLNOSTOJĄCY, BLIŹNIAK, SZEREGOWIEC, WIELORODZINNY)
+o	Ulica
+o	Numer
+o	Lokal (jeśli inny niż WOLNOSTOJĄCY)
+o	Powiat
+o	Obręb
+o	Numer działki
+o	Kod pocztowy
+o	Miasto
+•	Numer Księgi Wieczystej: Pole tekstowe
+•	Checkbox "Brak KW": Dezaktywuje pole numeru KW
+•	Stan prawny: Wybór z menu rozwijanego:
+o	Własność
+o	Współwłasność
+o	Spółdzielcze Własnościowe Prawo do Lokalu
+o	Dzierżawa
+o	Inne
+•	Mapa Google:
+o	Przycisk "Zaznacz na mapie"
+o	Integracja z Google Maps (API dodane w ustawieniach)
+Dane Nieruchomości
+•	Cena: Kwota (dla WYNAJMU z dopiskiem "miesięcznie")
+•	Czynsz administracyjny
+•	Powierzchnia w m²: Metraż
+•	Cena za m²: Automatycznie wyliczana (Cena / Metraż)
+•	Rok budowy: (nie dotyczy DZIAŁKI)
+•	Piętro: (nie dotyczy DZIAŁKI i DOMU)
+•	Liczba pięter: (nie dotyczy DZIAŁKI)
+•	Liczba pokoi: (nie dotyczy DZIAŁKI)
+•	Liczba sypialni: (nie dotyczy DZIAŁKI)
+•	Liczba łazienek: (nie dotyczy DZIAŁKI)
+•	Liczba toalet: (nie dotyczy DZIAŁKI)
+•	Kształt działki: (tylko dla DZIAŁKI)
+o	Wybór z menu: Regularny / Nieregularny
+•	Wymiary działki:
+o	Regularny: Pola na długość i szerokość
+o	Nieregularny: Pole tekstowe do wpisania
+Opis Nieruchomości
+•	Edytor tekstu WordPress: Pełny opis nieruchomości.
+Szczegóły Nieruchomości (nie dotyczy DZIAŁKI)
+•	Budynek:
+o	Stan wykończenia: Wybór z menu
+o	Ekspozycja: Checkboxy (Północ, Południe, Wschód, Zachód)
+o	Widok: Checkboxy
+o	Poddasze: Tak / Nie
+o	Wielopoziomowe: Tak / Nie (nie dotyczy DOMU)
+o	Rozkład: Checkboxy
+o	Kuchnia: Wybór z menu (Aneks, Oddzielna, Z salonem)
+o	Miejsce parkingowe:
+	Tak / Nie
+	Jeśli Tak, checkboxy z ilością:
+	Najemne
+	Podziemne
+	Garaż wolnostojący/przylegający
+•	Media:
+o	Ogrzewanie: Wybór z menu
+o	Woda: Wybór z menu
+o	Kanalizacja: Wybór z menu
+o	Gaz: Tak / Nie
+•	Udogodnienia:
+o	Winda
+o	Umeblowanie: Tak / Nie / Częściowe
+o	Klimatyzacja
+o	Monitoring/Ochrona
+o	Recepcja
+o	Teren zamknięty
+o	Domofon
+•	Wyposażenie:
+o	Checkboxy:
+	Pralka
+	Zmywarka
+	Lodówka
+	Kuchenka
+	Piekarnik
+	Telewizor
+	Mikrofala
+•	Powierzchnie dodatkowe:
+o	Balkon: Tak / Nie
+	Jeśli Tak, ilość i powierzchnia
+o	Taras: Tak / Nie
+	Jeśli Tak, ilość i powierzchnia
+o	Piwnica: Tak / Nie
+	Jeśli Tak, powierzchnia
+o	Komórka lokatorska: Tak / Nie
+	Jeśli Tak, powierzchnia
+o	Ogródek: Tak / Nie
+	Jeśli Tak, powierzchnia
+Galeria i Rzuty
+•	Zdjęcia nieruchomości:
+o	Opcja dodania zdjęć
+o	Automatyczne nanoszenie znaku wodnego w prawym dolnym rogu
+•	Rzut 2D: Opcja dodania
+•	Rzut 3D: Opcja dodania
+•	Link do filmu: Pole tekstowe
+•	Link do wirtualnego spaceru: Pole tekstowe
+Znaczniki (Checkboxy z określonym działaniem)
+•	Nowa oferta:
+o	Naklejka na główne zdjęcie "Nowa oferta"
+o	Hashtag oferty
+o	Automatyczne odznaczenie po 7 dniach
+•	Wyłączność: Hashtag
+•	Sprzedane:
+o	Naklejka i hashtag
+o	Tylko dla SPRZEDAŻ
+•	Wynajęte:
+o	Naklejka i hashtag
+o	Tylko dla WYNAJEM
+•	Nowa cena: Naklejka i hashtag
+•	Bez prowizji: Hashtag
+•	Oferta MLS: Naklejka i hashtag
+•	Premium: Naklejka i hashtag
+•	Eksport na WWW:
+o	Zaznaczenie powoduje eksport nieruchomości jako strony oferty
+•	Eksport na Portale:
+o	(Funkcjonalność planowana na przyszłość)
+•	Przycisk "Dodaj nieruchomość":
+o	Zapisuje nieruchomość i przenosi do jej profilu
+Etap 3b: Dodawanie Poszukiwania
+•	Kryteria poszukiwania:
+o	Typ transakcji: Ustawiony na podstawie umowy
+o	Cena: Od - Do
+o	Metraż: Od - Do
+o	Liczba pokoi: Od - Do
+o	Opis poszukiwania:
+	Edytor tekstu WordPress
+o	Pozostałe kryteria:
+	Skopiowane z sekcji:
+	Budynek
+	Media
+	Udogodnienia
+	Wyposażenie
+	Powierzchnie dodatkowe
+•	Przycisk "Dodaj poszukiwanie":
+o	Zapisuje poszukiwanie i przenosi do jego profilu
+________________________________________
+Profile i Widoki
+Profil Klienta
+•	Lewa strona:
+o	Wszystkie dane klienta wprowadzone podczas dodawania
+•	Prawa strona:
+o	Powiązane umowy:
+	Tabelka z podstawowymi informacjami (numer umowy, typ transakcji, data zawarcia itp.)
+	Przycisk "Przejdź do umowy"
+o	Powiązane oferty nieruchomości/poszukiwania:
+	Analogicznie do umów
+	Przycisk "Przejdź do oferty/poszukiwania"
+•	Opcje na dole:
+o	Powrót do listy
+o	Edytuj
+o	Usuń
+	Usuwać mogą tylko administratorzy
+Profil Umowy
+•	Lewa strona:
+o	Dane umowy (numer, typ transakcji, daty, prowizja)
+•	Prawa strona:
+o	Etap umowy:
+	Aktualny etap:
+	Domyślnie "Umowa pośrednictwa" z datą zawarcia
+	Zmiana etapu:
+	Menu rozwijane z etapami:
+	Umowa Pośrednictwa
+	Publikacja w MLS
+	Przygotowanie oferty
+	Publikacja oferty
+	Marketing i prezentacje
+	Oferta kupna
+	Negocjacje
+	Umowa przedwstępna
+	Umowa przyrzeczona
+	Przekazanie lokalu
+	Umowa zakończona
+	Pole Data
+	Przycisk "Aktualizuj etap"
+	Historia etapów:
+	Tabelka z kolumnami: Data, Etap
+o	Klienci powiązani:
+	Lista z przyciskiem "Przejdź do profilu klienta"
+o	Oferty nieruchomości/poszukiwania powiązane:
+	Lista z przyciskiem "Przejdź do oferty/poszukiwania"
+•	Opcje na dole:
+o	Powrót do listy
+o	Edytuj (nie można edytować typu transakcji)
+o	Usuń
+	Usuwać mogą tylko administratorzy
+Profil Nieruchomości/Poszukiwania
+•	Lewa strona:
+o	Wszystkie dane wprowadzone podczas dodawania (poza opisem)
+•	Prawa strona:
+o	Opis nieruchomości/poszukiwania
+o	Klienci powiązani
+	Lista z przyciskiem "Przejdź do profilu klienta"
+o	Umowa powiązana
+	Przycisk "Przejdź do umowy"
+•	Opcje na dole:
+o	Powrót do listy
+o	Edytuj (nie można edytować typu transakcji ani rodzaju nieruchomości)
+o	Usuń
+	Usuwać mogą tylko administratorzy
+________________________________________
+Dodatkowe Zakładki w Menu Administracyjnym
+Oferty
+•	Automatyczne tworzenie stron ofert:
+o	Nieruchomości ze znacznikiem "Eksport na WWW" są publikowane jako strony
+•	Kategoryzacja ofert:
+o	Typ transakcji
+o	Rodzaj nieruchomości
+o	Miasto
+o	Dzielnica
+•	Unikanie duplikacji kategorii:
+o	Raz utworzona kategoria lub podkategoria nie będzie się powtarzać
+•	Szablon strony oferty:
+o	Do ustalenia w przyszłości
+Agenci
+•	Nowy typ użytkownika: Agent
+o	Dostęp tylko do funkcjonalności wtyczki
+o	Brak możliwości usuwania klientów, umów i nieruchomości
+•	Profil Agenta:
+o	Zdjęcie
+o	Dane teleadresowe
+o	Opis/Biografia
+•	Strona agenta:
+o	Każdy agent ma własną publiczną stronę na witrynie
+________________________________________
+Przyszłe Funkcjonalności
+•	Kalkulator Notarialny:
+o	Osobna strona w witrynie
+o	Będzie dołączany do eksportowanych ofert na WWW
+•	Kalkulator Kredytowy:
+o	Analogicznie do kalkulatora notarialnego
