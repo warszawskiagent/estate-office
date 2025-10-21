@@ -56,38 +56,61 @@ class EstateOffice_Admin {
      * Register menu pages.
      */
     public function register_pages(): void {
+        EstateOffice_Activator::ensure_role_capabilities();
+
         $dashboard = new EstateOffice_Admin_Dashboard( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $dashboard );
         $dashboard->register();
 
         $this->pages['dashboard'] = $dashboard;
 
         $contracts = new EstateOffice_Admin_Contracts( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $contracts );
         $contracts->register();
         $this->pages['contracts'] = $contracts;
 
         $properties = new EstateOffice_Admin_Properties( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $properties );
         $properties->register();
         $this->pages['properties'] = $properties;
 
         $searches = new EstateOffice_Admin_Searches( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $searches );
         $searches->register();
         $this->pages['searches'] = $searches;
 
         $clients = new EstateOffice_Admin_Clients( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $clients );
         $clients->register();
         $this->pages['clients'] = $clients;
 
         $agents = new EstateOffice_Admin_Agents( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $agents );
         $agents->register();
         $this->pages['agents'] = $agents;
 
         $settings = new EstateOffice_Admin_Settings( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $settings );
         $settings->register();
         $this->pages['settings'] = $settings;
 
         $about = new EstateOffice_Admin_About( self::MENU_SLUG );
+        $this->maybe_allow_administrator_fallback( $about );
         $about->register();
         $this->pages['about'] = $about;
+    }
+
+    /**
+     * Ensure administrators without synced caps still see the menu.
+     */
+    protected function maybe_allow_administrator_fallback( EstateOffice_Admin_Page $page ): void {
+        if ( current_user_can( $page->get_capability() ) ) {
+            return;
+        }
+
+        if ( current_user_can( 'manage_options' ) ) {
+            $page->set_capability( 'manage_options' );
+        }
     }
 
     /**

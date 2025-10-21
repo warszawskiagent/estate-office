@@ -75,6 +75,20 @@ abstract class EstateOffice_Admin_Page {
     }
 
     /**
+     * Retrieve required capability.
+     */
+    public function get_capability(): string {
+        return $this->capability;
+    }
+
+    /**
+     * Override capability requirement.
+     */
+    public function set_capability( string $capability ): void {
+        $this->capability = $capability;
+    }
+
+    /**
      * Register menu page.
      */
     public function register(): void {
