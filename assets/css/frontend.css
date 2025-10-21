@@ -200,6 +200,52 @@
     text-decoration: none;
 }
 
+.estate-office-offer__section--gallery .estate-office-offer__gallery-main {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.estate-office-offer__gallery-main img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.estate-office-offer__gallery-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.estate-office-offer__gallery-thumb {
+    display: block;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.estate-office-offer__gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.estate-office-offer__gallery-thumb:hover {
+    transform: translateY(-2px);
+}
+
+.estate-office-offer__media--floorplans {
+    flex-direction: column;
+}
+
+.estate-office-offer__section--floorplans a {
+    font-weight: 600;
+}
+
 .estate-office-offer__media a:hover {
     text-decoration: underline;
 }

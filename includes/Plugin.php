@@ -6,6 +6,7 @@ use EstateOffice\Badges\Manager as BadgesManager;
 use EstateOffice\Frontend\Agents as FrontendAgents;
 use EstateOffice\Frontend\CRM as FrontendCRM;
 use EstateOffice\Frontend\Offers as FrontendOffers;
+use EstateOffice\Media\Watermark;
 use EstateOffice\PostTypes\Register as PostTypesRegister;
 use EstateOffice\Settings\Manager as SettingsManager;
 
@@ -70,6 +71,11 @@ final class Plugin {
     private BadgesManager $badges;
 
     /**
+     * Watermark manager.
+     */
+    private Watermark $watermark;
+
+    /**
      * Retrieves singleton instance.
      */
     public static function instance(): Plugin {
@@ -91,6 +97,7 @@ final class Plugin {
         $this->badges        = new BadgesManager();
         $this->agents        = new FrontendAgents();
         $this->offers        = new FrontendOffers( $this->badges, $this->agents );
+        $this->watermark     = new Watermark( $this->settings );
 
         register_activation_hook( ESTATE_OFFICE_FILE, [ $this, 'activate' ] );
         register_deactivation_hook( ESTATE_OFFICE_FILE, [ $this, 'deactivate' ] );
@@ -117,6 +124,8 @@ final class Plugin {
         add_action( 'trashed_post', [ $this->offers, 'handle_property_trashed' ] );
         add_action( 'before_delete_post', [ $this->offers, 'handle_property_deleted' ] );
         add_action( 'estate_office_property_badges_updated', [ $this->offers, 'refresh_offer' ], 10 );
+        add_action( 'estate_office_property_gallery_updated', [ $this->watermark, 'apply_to_gallery' ], 10, 2 );
+        add_action( 'save_post_estate_property', [ $this->watermark, 'apply_on_save' ], 50, 3 );
         $this->offers->register_admin_actions();
         $this->badges->register();
     }

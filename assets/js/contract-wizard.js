@@ -1,4 +1,6 @@
 (function () {
+    const { wp } = window;
+
     function toggleIndefiniteContract() {
         var checkbox = document.querySelector('[data-contract-indefinite]');
         var endField = document.querySelector('[data-contract-end]');
@@ -151,6 +153,120 @@
             toggle.addEventListener('change', update);
             update();
         });
+
+        setupPropertyGallery(form);
+    }
+
+    function setupPropertyGallery(form) {
+        if (!wp || !wp.media) {
+            return;
+        }
+
+        var container = form.querySelector('[data-property-gallery]');
+        if (!container) {
+            return;
+        }
+
+        var list = container.querySelector('[data-gallery-list]');
+        var emptyState = container.querySelector('[data-gallery-empty]');
+        var addButton = container.querySelector('[data-gallery-add]');
+        if (!list || !addButton) {
+            return;
+        }
+
+        var frame;
+        var removeLabel = container.getAttribute('data-remove-label') || 'Usuń zdjęcie';
+
+        var refreshEmpty = function () {
+            if (!emptyState) {
+                return;
+            }
+            emptyState.classList.toggle('hidden', list.children.length > 0);
+        };
+
+        var addAttachment = function (attachment) {
+            if (!attachment || !attachment.id) {
+                return;
+            }
+
+            if (list.querySelector('[data-gallery-id="' + attachment.id + '"]')) {
+                return;
+            }
+
+            var item = document.createElement('li');
+            item.className = 'estate-office-gallery__item';
+            item.setAttribute('data-gallery-id', attachment.id);
+
+            var figure = document.createElement('figure');
+            figure.className = 'estate-office-gallery__thumb';
+
+            var img = document.createElement('img');
+            var sizes = attachment.sizes || {};
+            var preferred = sizes.medium || sizes.large || sizes.thumbnail;
+            img.src = preferred ? preferred.url : attachment.url;
+            img.alt = attachment.alt || attachment.title || '';
+            figure.appendChild(img);
+
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'property[gallery][]';
+            input.value = attachment.id;
+
+            var remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'estate-office-gallery__remove';
+            remove.setAttribute('data-gallery-remove', '1');
+            remove.setAttribute('aria-label', removeLabel);
+            remove.innerHTML = '×';
+
+            item.appendChild(figure);
+            item.appendChild(input);
+            item.appendChild(remove);
+            list.appendChild(item);
+            refreshEmpty();
+        };
+
+        addButton.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            if (!frame) {
+                frame = wp.media({
+                    title: addButton.dataset.label || addButton.textContent,
+                    button: { text: addButton.dataset.label || addButton.textContent },
+                    library: { type: 'image' },
+                    multiple: true,
+                });
+
+                frame.on('select', function () {
+                    var selection = frame.state().get('selection');
+                    if (!selection) {
+                        return;
+                    }
+
+                    selection.each(function (item) {
+                        addAttachment(item.toJSON());
+                    });
+                });
+            }
+
+            frame.open();
+        });
+
+        list.addEventListener('click', function (event) {
+            var removeButton = event.target.closest('[data-gallery-remove]');
+            if (!removeButton) {
+                return;
+            }
+
+            event.preventDefault();
+            var item = removeButton.closest('.estate-office-gallery__item');
+            if (item) {
+                item.remove();
+                refreshEmpty();
+            }
+        });
+
+        refreshEmpty();
     }
 
     document.addEventListener('DOMContentLoaded', function () {

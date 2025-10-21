@@ -502,6 +502,9 @@ class Offers {
         $video       = get_post_meta( $property_id, Keys::PROPERTY_VIDEO, true );
         $vr          = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
         $badges      = get_post_meta( $property_id, Keys::PROPERTY_BADGES, true );
+        $gallery_ids = get_post_meta( $property_id, Keys::PROPERTY_GALLERY, true );
+        $floorplan_2d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, true );
+        $floorplan_3d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, true );
 
         if ( empty( $reference ) ) {
             return [];
@@ -513,7 +516,8 @@ class Offers {
         $amenities = is_array( $amenities ) ? array_map( 'sanitize_key', $amenities ) : [];
         $equipment = is_array( $equipment ) ? array_map( 'sanitize_key', $equipment ) : [];
         $extra     = is_array( $extra ) ? $extra : [];
-        $badges    = is_array( $badges ) ? array_map( 'sanitize_key', $badges ) : [];
+        $gallery_ids = is_array( $gallery_ids ) ? array_map( 'intval', $gallery_ids ) : [];
+        $badges      = is_array( $badges ) ? array_map( 'sanitize_key', $badges ) : [];
 
         $address_normalized = [
             'street'      => $address['street'] ?? '',
@@ -566,6 +570,62 @@ class Offers {
             'badges'           => $badges,
             'permalink'        => $permalink,
             'agent'            => $this->agents->get_agent_context( (int) $property->post_author ),
+            'gallery'          => $this->prepare_gallery_items( $gallery_ids ),
+            'floorplan_2d'     => $this->prepare_floorplan_link( $floorplan_2d, __( 'Rzut 2D', 'estate-office' ) ),
+            'floorplan_3d'     => $this->prepare_floorplan_link( $floorplan_3d, __( 'Rzut 3D', 'estate-office' ) ),
+        ];
+    }
+
+    /**
+     * Maps gallery attachments into an array suitable for rendering.
+     */
+    private function prepare_gallery_items( array $ids ): array {
+        $items = [];
+
+        foreach ( $ids as $id ) {
+            $attachment_id = (int) $id;
+
+            if ( $attachment_id <= 0 ) {
+                continue;
+            }
+
+            $primary = wp_get_attachment_image_url( $attachment_id, 'large' );
+            $full    = wp_get_attachment_url( $attachment_id );
+
+            if ( ! $primary && ! $full ) {
+                continue;
+            }
+
+            $items[] = [
+                'id'    => $attachment_id,
+                'url'   => $primary ?: $full,
+                'full'  => $full ?: $primary,
+                'alt'   => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ?: get_the_title( $attachment_id ),
+                'title' => get_the_title( $attachment_id ),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Builds metadata for floorplan links.
+     */
+    private function prepare_floorplan_link( int $attachment_id, string $label ): array {
+        if ( $attachment_id <= 0 ) {
+            return [];
+        }
+
+        $url = wp_get_attachment_url( $attachment_id );
+
+        if ( ! $url ) {
+            return [];
+        }
+
+        return [
+            'url'   => $url,
+            'label' => $label,
+            'title' => get_the_title( $attachment_id ) ?: '',
         ];
     }
 
@@ -651,6 +711,14 @@ class Offers {
         echo '</dl>';
         echo '</section>';
 
+        if ( ! empty( $payload['gallery'] ) ) {
+            $this->render_gallery_section( $payload['gallery'] );
+        }
+
+        if ( ! empty( $payload['floorplan_2d'] ) || ! empty( $payload['floorplan_3d'] ) ) {
+            $this->render_floorplan_section( $payload['floorplan_2d'], $payload['floorplan_3d'] );
+        }
+
         if ( $payload['description'] ) {
             echo '<section class="estate-office-offer__section">';
             echo '<h2>' . esc_html__( 'Opis nieruchomości', 'estate-office' ) . '</h2>';
@@ -690,6 +758,89 @@ class Offers {
         }
 
         echo '</article>';
+    }
+
+    /**
+     * Renders the gallery section for the single offer view.
+     */
+    private function render_gallery_section( array $gallery ): void {
+        if ( empty( $gallery ) ) {
+            return;
+        }
+
+        $items   = $gallery;
+        $primary = array_shift( $items );
+
+        if ( empty( $primary['url'] ) ) {
+            return;
+        }
+
+        echo '<section class="estate-office-offer__section estate-office-offer__section--gallery">';
+        echo '<h2>' . esc_html__( 'Galeria zdjęć', 'estate-office' ) . '</h2>';
+
+        $primary_link = ! empty( $primary['full'] ) ? $primary['full'] : $primary['url'];
+        echo '<figure class="estate-office-offer__gallery-main">';
+        echo '<a href="' . esc_url( $primary_link ) . '" target="_blank" rel="noopener">';
+        echo '<img src="' . esc_url( $primary['url'] ) . '" alt="' . esc_attr( $primary['alt'] ?? '' ) . '" />';
+        echo '</a>';
+        echo '</figure>';
+
+        if ( ! empty( $items ) ) {
+            echo '<div class="estate-office-offer__gallery-thumbs">';
+
+            foreach ( $items as $item ) {
+                if ( empty( $item['url'] ) ) {
+                    continue;
+                }
+
+                $link = ! empty( $item['full'] ) ? $item['full'] : $item['url'];
+                echo '<a class="estate-office-offer__gallery-thumb" href="' . esc_url( $link ) . '" target="_blank" rel="noopener">';
+                echo '<img src="' . esc_url( $item['url'] ) . '" alt="' . esc_attr( $item['alt'] ?? '' ) . '" />';
+                echo '</a>';
+            }
+
+            echo '</div>';
+        }
+
+        echo '</section>';
+    }
+
+    /**
+     * Outputs links to available floor plans.
+     */
+    private function render_floorplan_section( array $plan_2d, array $plan_3d ): void {
+        $links = [];
+
+        foreach ( [ $plan_2d, $plan_3d ] as $plan ) {
+            if ( empty( $plan['url'] ) ) {
+                continue;
+            }
+
+            $label = $plan['label'] ?? '';
+            if ( ! empty( $plan['title'] ) ) {
+                $label .= ' – ' . $plan['title'];
+            }
+
+            $links[] = [
+                'url'   => $plan['url'],
+                'label' => $label,
+            ];
+        }
+
+        if ( empty( $links ) ) {
+            return;
+        }
+
+        echo '<section class="estate-office-offer__section estate-office-offer__section--floorplans">';
+        echo '<h2>' . esc_html__( 'Rzuty', 'estate-office' ) . '</h2>';
+        echo '<ul class="estate-office-offer__media estate-office-offer__media--floorplans">';
+
+        foreach ( $links as $link ) {
+            echo '<li><a href="' . esc_url( $link['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $link['label'] ) . '</a></li>';
+        }
+
+        echo '</ul>';
+        echo '</section>';
     }
 
     /**

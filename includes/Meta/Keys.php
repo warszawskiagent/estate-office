@@ -61,6 +61,8 @@ final class Keys {
     public const PROPERTY_EQUIPMENT      = '_estate_office_property_equipment';
     public const PROPERTY_EXTRA_SPACES   = '_estate_office_property_extra_spaces';
     public const PROPERTY_GALLERY        = '_estate_office_property_gallery';
+    public const PROPERTY_FLOORPLAN_2D   = '_estate_office_property_floorplan_2d';
+    public const PROPERTY_FLOORPLAN_3D   = '_estate_office_property_floorplan_3d';
     public const PROPERTY_BADGES         = '_estate_office_property_badges';
     public const PROPERTY_VIDEO          = '_estate_office_property_video';
     public const PROPERTY_VR             = '_estate_office_property_vr';

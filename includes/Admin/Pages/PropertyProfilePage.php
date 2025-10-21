@@ -33,14 +33,17 @@ class PropertyProfilePage extends AbstractPage {
         $address     = get_post_meta( $property_id, Keys::PROPERTY_ADDRESS, true );
         $building    = get_post_meta( $property_id, Keys::PROPERTY_BUILDING, true );
         $media       = get_post_meta( $property_id, Keys::PROPERTY_MEDIA, true );
-        $amenities   = get_post_meta( $property_id, Keys::PROPERTY_AMENITIES, true );
-        $equipment   = get_post_meta( $property_id, Keys::PROPERTY_EQUIPMENT, true );
-        $extra       = get_post_meta( $property_id, Keys::PROPERTY_EXTRA_SPACES, true );
-        $badges      = get_post_meta( $property_id, Keys::PROPERTY_BADGES, true );
-        $description = get_post_meta( $property_id, Keys::PROPERTY_DESCRIPTION, true );
-        $video       = get_post_meta( $property_id, Keys::PROPERTY_VIDEO, true );
-        $vr          = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
-        $contract_id = (int) get_post_meta( $property_id, Keys::PROPERTY_CONTRACT, true );
+        $amenities    = get_post_meta( $property_id, Keys::PROPERTY_AMENITIES, true );
+        $equipment    = get_post_meta( $property_id, Keys::PROPERTY_EQUIPMENT, true );
+        $extra        = get_post_meta( $property_id, Keys::PROPERTY_EXTRA_SPACES, true );
+        $badges       = get_post_meta( $property_id, Keys::PROPERTY_BADGES, true );
+        $description  = get_post_meta( $property_id, Keys::PROPERTY_DESCRIPTION, true );
+        $video        = get_post_meta( $property_id, Keys::PROPERTY_VIDEO, true );
+        $vr           = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
+        $gallery      = get_post_meta( $property_id, Keys::PROPERTY_GALLERY, true );
+        $floorplan_2d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, true );
+        $floorplan_3d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, true );
+        $contract_id  = (int) get_post_meta( $property_id, Keys::PROPERTY_CONTRACT, true );
 
         echo '<div class="estate-office-profile">';
         echo '<div class="estate-office-profile__main">';
@@ -49,6 +52,7 @@ class PropertyProfilePage extends AbstractPage {
         $this->render_media_card( $media, $amenities, $equipment );
         $this->render_extra_spaces_card( $extra );
         $this->render_badges_card( $badges );
+        $this->render_gallery_card( $gallery, $floorplan_2d, $floorplan_3d );
         echo '</div>';
 
         echo '<div class="estate-office-profile__sidebar">';
@@ -284,6 +288,61 @@ class PropertyProfilePage extends AbstractPage {
             echo '<li class="estate-office-badge">' . esc_html( $label ) . '</li>';
         }
         echo '</ul>';
+        echo '</div>';
+    }
+
+    private function render_gallery_card( $gallery, int $floorplan_2d, int $floorplan_3d ): void {
+        $gallery_ids = [];
+        if ( is_array( $gallery ) ) {
+            foreach ( $gallery as $value ) {
+                $id = (int) $value;
+                if ( $id > 0 ) {
+                    $gallery_ids[] = $id;
+                }
+            }
+        }
+
+        $links = [];
+
+        $floorplan_link = $this->format_floorplan_link( $floorplan_2d, __( 'Rzut 2D', 'estate-office' ) );
+        if ( $floorplan_link ) {
+            $links[] = $floorplan_link;
+        }
+
+        $floorplan_link = $this->format_floorplan_link( $floorplan_3d, __( 'Rzut 3D', 'estate-office' ) );
+        if ( $floorplan_link ) {
+            $links[] = $floorplan_link;
+        }
+
+        if ( empty( $gallery_ids ) && empty( $links ) ) {
+            return;
+        }
+
+        echo '<div class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Galeria i rzuty', 'estate-office' ) . '</h2>';
+
+        if ( ! empty( $gallery_ids ) ) {
+            echo '<div class="estate-office-property-gallery">';
+            foreach ( $gallery_ids as $attachment_id ) {
+                $image = wp_get_attachment_image( $attachment_id, 'medium_large' );
+                if ( ! $image ) {
+                    continue;
+                }
+                echo '<figure class="estate-office-property-gallery__item">' . $image . '</figure>';
+            }
+            echo '</div>';
+        } else {
+            echo '<p>' . esc_html__( 'Brak dodanych zdjęć.', 'estate-office' ) . '</p>';
+        }
+
+        if ( ! empty( $links ) ) {
+            echo '<ul class="estate-office-list estate-office-property-gallery__floorplans">';
+            foreach ( $links as $link ) {
+                echo '<li>' . $link . '</li>';
+            }
+            echo '</ul>';
+        }
+
         echo '</div>';
     }
 
@@ -580,5 +639,25 @@ class PropertyProfilePage extends AbstractPage {
             $formatted .= ' / ' . __( 'miesięcznie', 'estate-office' );
         }
         return $formatted;
+    }
+
+    private function format_floorplan_link( int $attachment_id, string $label ): string {
+        if ( $attachment_id <= 0 ) {
+            return '';
+        }
+
+        $url = wp_get_attachment_url( $attachment_id );
+        if ( ! $url ) {
+            return '';
+        }
+
+        $title     = get_the_title( $attachment_id );
+        $link_text = $title ? sprintf( '%s (%s)', $label, $title ) : $label;
+
+        return sprintf(
+            '<a href="%1$s" target="_blank" rel="noopener">%2$s</a>',
+            esc_url( $url ),
+            esc_html( $link_text )
+        );
     }
 }

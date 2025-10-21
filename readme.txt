@@ -3,7 +3,7 @@ Contributors: estateoffice
 Tags: real estate, crm, property management
 Requires at least: 6.0
 Tested up to: 6.4
-Stable tag: 0.6.0
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,11 @@ Nie. Rola "Agent" została pozbawiona możliwości usuwania rekordów.
 Podczas aktywacji wtyczka tworzy stronę "Estate Office CRM" z panelem dostępnym jedynie dla administratorów.
 
 == Changelog ==
+= 0.7.0 =
+* Dodano obsługę galerii zdjęć w kreatorze nieruchomości wraz z możliwością wyboru rzutów 2D/3D i automatycznym nakładaniem skonfigurowanego znaku wodnego.
+* Uzupełniono profil nieruchomości o podgląd galerii i szybkie odnośniki do rzutów, aby administratorzy mogli kontrolować materiały wizualne.
+* Rozszerzono publiczne strony ofert o sekcje galerii, miniatury i linki do rzutów, harmonizując prezentację z wymaganiami eksportu WWW.
+
 = 0.6.0 =
 * Dodano możliwość edycji profili agentów w panelu administratora wraz ze wsparciem dla zdjęcia, danych kontaktowych i biografii.
 * Udostępniono publiczne strony agentów prezentujące profil, dane teleadresowe oraz aktywne oferty eksportowane na WWW.

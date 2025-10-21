@@ -894,6 +894,37 @@ class ContractWizardPage extends AbstractPage {
             </div>
 
             <h3><?php esc_html_e( 'Galeria i multimedia', 'estate-office' ); ?></h3>
+            <div class="estate-office-gallery" data-property-gallery data-remove-label="<?php echo esc_attr__( 'Usuń zdjęcie', 'estate-office' ); ?>">
+                <div class="estate-office-gallery__toolbar">
+                    <label class="estate-office-label"><?php esc_html_e( 'Zdjęcia nieruchomości', 'estate-office' ); ?></label>
+                    <button type="button" class="button" data-gallery-add data-label="<?php echo esc_attr__( 'Dodaj zdjęcia', 'estate-office' ); ?>"><?php esc_html_e( 'Dodaj zdjęcia', 'estate-office' ); ?></button>
+                </div>
+                <p class="description" data-gallery-empty><?php esc_html_e( 'Nie dodano jeszcze żadnych zdjęć.', 'estate-office' ); ?></p>
+                <ul class="estate-office-gallery__items" data-gallery-list></ul>
+                <p class="description"><?php esc_html_e( 'Znak wodny zostanie nałożony automatycznie po zapisaniu nieruchomości.', 'estate-office' ); ?></p>
+            </div>
+
+            <div class="estate-office-grid estate-office-gallery__floorplans">
+                <div>
+                    <label class="estate-office-label" for="property_floorplan_2d"><?php esc_html_e( 'Rzut 2D', 'estate-office' ); ?></label>
+                    <div class="estate-office-media-field" data-target="property[floorplan_2d]">
+                        <div class="estate-office-media-preview"><span class="description"><?php esc_html_e( 'Brak wybranego pliku', 'estate-office' ); ?></span></div>
+                        <input type="hidden" id="property_floorplan_2d" name="property[floorplan_2d]" />
+                        <button type="button" class="button estate-office-media-upload" data-label="<?php echo esc_attr__( 'Wybierz plik', 'estate-office' ); ?>"><?php esc_html_e( 'Wybierz plik', 'estate-office' ); ?></button>
+                        <button type="button" class="button-link estate-office-media-remove"><?php esc_html_e( 'Usuń', 'estate-office' ); ?></button>
+                    </div>
+                </div>
+                <div>
+                    <label class="estate-office-label" for="property_floorplan_3d"><?php esc_html_e( 'Rzut 3D', 'estate-office' ); ?></label>
+                    <div class="estate-office-media-field" data-target="property[floorplan_3d]">
+                        <div class="estate-office-media-preview"><span class="description"><?php esc_html_e( 'Brak wybranego pliku', 'estate-office' ); ?></span></div>
+                        <input type="hidden" id="property_floorplan_3d" name="property[floorplan_3d]" />
+                        <button type="button" class="button estate-office-media-upload" data-label="<?php echo esc_attr__( 'Wybierz plik', 'estate-office' ); ?>"><?php esc_html_e( 'Wybierz plik', 'estate-office' ); ?></button>
+                        <button type="button" class="button-link estate-office-media-remove"><?php esc_html_e( 'Usuń', 'estate-office' ); ?></button>
+                    </div>
+                </div>
+            </div>
+
             <p>
                 <label class="estate-office-label" for="property_video"><?php esc_html_e( 'Link do filmu', 'estate-office' ); ?></label>
                 <input type="url" id="property_video" name="property[video]" />
@@ -943,10 +974,13 @@ class ContractWizardPage extends AbstractPage {
             return;
         }
 
-        $address  = $this->sanitize_address( $data['address'] ?? [] );
-        $price    = isset( $data['price'] ) ? (float) $data['price'] : 0.0;
-        $area     = isset( $data['area'] ) ? (float) $data['area'] : 0.0;
-        $price_m2 = $area > 0 ? $price / $area : 0.0;
+        $address     = $this->sanitize_address( $data['address'] ?? [] );
+        $price       = isset( $data['price'] ) ? (float) $data['price'] : 0.0;
+        $area        = isset( $data['area'] ) ? (float) $data['area'] : 0.0;
+        $price_m2    = $area > 0 ? $price / $area : 0.0;
+        $gallery     = isset( $data['gallery'] ) && is_array( $data['gallery'] ) ? $this->sanitize_attachment_ids( $data['gallery'] ) : [];
+        $floorplan_2d = isset( $data['floorplan_2d'] ) ? absint( $data['floorplan_2d'] ) : 0;
+        $floorplan_3d = isset( $data['floorplan_3d'] ) ? absint( $data['floorplan_3d'] ) : 0;
 
         $post_title = $reference;
         if ( $address['street'] && $address['city'] ) {
@@ -1000,6 +1034,9 @@ class ContractWizardPage extends AbstractPage {
         update_post_meta( $property_id, Keys::PROPERTY_AMENITIES, $this->sanitize_array_values( $data['amenities'] ?? [] ) );
         update_post_meta( $property_id, Keys::PROPERTY_EQUIPMENT, $this->sanitize_array_values( $data['equipment'] ?? [] ) );
         update_post_meta( $property_id, Keys::PROPERTY_EXTRA_SPACES, $this->sanitize_nested_array( $data['extra_spaces'] ?? [] ) );
+        update_post_meta( $property_id, Keys::PROPERTY_GALLERY, $gallery );
+        update_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, $floorplan_2d );
+        update_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, $floorplan_3d );
         update_post_meta( $property_id, Keys::PROPERTY_VIDEO, esc_url_raw( $data['video'] ?? '' ) );
         update_post_meta( $property_id, Keys::PROPERTY_VR, esc_url_raw( $data['vr'] ?? '' ) );
         update_post_meta( $property_id, Keys::PROPERTY_BADGES, $this->sanitize_array_values( $data['badges'] ?? [] ) );
@@ -1015,6 +1052,8 @@ class ContractWizardPage extends AbstractPage {
         if ( $address['district'] ) {
             wp_set_object_terms( $property_id, $address['district'], 'estate_property_district', false );
         }
+
+        do_action( 'estate_office_property_gallery_updated', $property_id, $gallery );
 
         add_settings_error( 'estate-office-contract-wizard', 'property-created', __( 'Nieruchomość została dodana.', 'estate-office' ), 'updated' );
 
@@ -1468,6 +1507,20 @@ class ContractWizardPage extends AbstractPage {
         }
 
         return $sanitized;
+    }
+
+    private function sanitize_attachment_ids( array $ids ): array {
+        $clean = [];
+
+        foreach ( $ids as $id ) {
+            $value = absint( wp_unslash( $id ) );
+
+            if ( $value > 0 ) {
+                $clean[] = $value;
+            }
+        }
+
+        return array_values( array_unique( $clean ) );
     }
 
     private function sanitize_nested_array( array $data ): array {
