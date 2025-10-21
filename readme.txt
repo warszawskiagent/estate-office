@@ -4,17 +4,18 @@ Tags: real estate, crm, agency, property management
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 EstateOffice CRM to fundament rozbudowanego systemu zarządzania biurem nieruchomości w WordPressie.
-Wersja 0.3.0 dodaje pełny kreator umów, klientów i ofert dostępny bezpośrednio z panelu CRM.
+Wersja 0.5.0 dodaje zarządzanie etapami umów bezpośrednio z panelu CRM oraz automatyczną aktualizację historii etapów i podsumowań.
 
 == Description ==
 
-Wersja 0.3.0 udostępnia trzyetapowy proces dodawania umów, klientów i nieruchomości/poszukiwań wraz z zabezpieczeniami przed duplikacją oraz automatycznym powiązaniem rekordów.
-Administratorzy mogą korzystać z kreatora w interfejsie front-end CRM, zachowując pełną kontrolę nad danymi i przypisaniami agentów.
+Wersja 0.5.0 rozbudowuje panel szczegółów o panel aktualizacji etapów umowy z walidacją daty, komunikatami o statusie i synchronizacją podsumowań oraz historii. Administratorzy mogą zmieniać etapy zgodnie z roadmapą procesu sprzedaży, a wszystkie powiązane sekcje są odświeżane bez przeładowania strony.
+
+Dotychczasowe funkcje – w tym kreator trzystopniowy z wersji 0.3.0 oraz szuflada profili z wersji 0.4.0 – pozostają dostępne i współpracują z nowym widokiem, ułatwiając codzienną pracę administracji biura.
 
 == Installation ==
 
@@ -23,6 +24,16 @@ Administratorzy mogą korzystać z kreatora w interfejsie front-end CRM, zachowu
 3. Skonfiguruj ustawienia w menu **Estate Office CRM → Ustawienia**.
 
 == Changelog ==
+
+= 0.5.0 =
+* Aktualizacja etapu umowy z poziomu panelu CRM wraz z walidacją daty i komunikatem o statusie.
+* Nowy endpoint REST zapisujący historię etapów i odświeżający dane podsumowania oraz relacji.
+* Panel boczny z formularzem zmiany etapu dopasowany stylistycznie do CRM i dostępny dla administratorów.
+
+= 0.4.0 =
+* Panel szczegółów rekordów CRM otwierany z poziomu tabel z pełnym zestawem danych, relacji i historii etapów umowy.
+* Nowe endpointy REST API do pobierania profili umów, klientów, nieruchomości i poszukiwań wykorzystywane przez dynamiczny front-end.
+* Rozbudowane style i skrypty frontowe z szufladą profilu, obsługą błędów i szybkimi odnośnikami do edycji w kokpicie WordPressa.
 
 = 0.3.0 =
 * Trzystopniowy kreator umów dostępny z przycisku „Dodaj nową umowę” w panelu CRM z weryfikacją unikalności numeru i automatycznym historiowaniem etapu.

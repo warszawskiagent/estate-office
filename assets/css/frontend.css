@@ -356,3 +356,361 @@
 .estate-office-flag-list label[data-transaction="wynajem"] input:disabled + span {
     opacity: 0.4;
 }
+
+.estate-office-profile-link {
+    color: var(--eo-primary-color, #1d4ed8);
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.estate-office-profile-link:hover,
+.estate-office-profile-link:focus {
+    color: var(--eo-primary-color-dark, #1e3a8a);
+    text-decoration: none;
+}
+
+.estate-office-crm-drawer {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.estate-office-crm-drawer.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.estate-office-crm-drawer__panel {
+    background: #fff;
+    width: min(760px, 100%);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(15, 23, 42, 0.3);
+    padding: 2rem;
+    position: relative;
+}
+
+.estate-office-crm-drawer__close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    color: #475569;
+    cursor: pointer;
+}
+
+.estate-office-crm-drawer__close:hover,
+.estate-office-crm-drawer__close:focus {
+    color: #1f2937;
+}
+
+.estate-office-crm-drawer__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+}
+
+.estate-office-crm-drawer__titles h3 {
+    margin: 0;
+    font-size: 1.75rem;
+    color: #0f172a;
+}
+
+.estate-office-crm-drawer__subtitle {
+    margin: 0.25rem 0 0;
+    color: #475569;
+}
+
+.estate-office-crm-badges {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0.75rem 0 0;
+}
+
+.estate-office-crm-badges li {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-crm-drawer__status {
+    min-width: 160px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.estate-office-crm-drawer__body {
+    display: flex;
+    gap: 2rem;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.estate-office-crm-drawer__main {
+    flex: 1 1 60%;
+    min-width: 0;
+}
+
+.estate-office-crm-drawer__aside {
+    flex: 0 0 220px;
+}
+
+.estate-office-crm-stage {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.estate-office-crm-stage__title {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.estate-office-crm-stage__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.estate-office-crm-stage__group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.estate-office-crm-stage__group select,
+.estate-office-crm-stage__group input[type="date"] {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #cbd5f5;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.9rem;
+    color: #0f172a;
+}
+
+.estate-office-crm-stage__group select:focus,
+.estate-office-crm-stage__group input[type="date"]:focus {
+    outline: none;
+    border-color: var(--eo-primary-color, #2563eb);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.estate-office-crm-stage__form .button {
+    width: 100%;
+    justify-content: center;
+}
+
+.estate-office-crm-stage__status {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+    color: #15803d;
+}
+
+.estate-office-crm-stage__status.is-error {
+    color: #d63638;
+}
+
+.estate-office-crm-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin: 0 0 2rem;
+}
+
+.estate-office-crm-summary dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.estate-office-crm-summary dd {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.estate-office-crm-section {
+    margin-bottom: 1.75rem;
+}
+
+.estate-office-crm-section h4 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.estate-office-crm-section dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.estate-office-crm-section dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-crm-section dd {
+    margin: 0;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.estate-office-crm-description {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    color: #1f2937;
+    line-height: 1.6;
+}
+
+.estate-office-crm-description p:first-child {
+    margin-top: 0;
+}
+
+.estate-office-crm-timeline h4,
+.estate-office-crm-relations h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.estate-office-crm-timeline ol {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    border-left: 2px solid #e2e8f0;
+}
+
+.estate-office-crm-timeline li {
+    padding: 0.75rem 0 0.75rem 1.25rem;
+    position: relative;
+}
+
+.estate-office-crm-timeline li::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 1.15rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1d4ed8;
+}
+
+.estate-office-crm-timeline__date {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-crm-timeline__label {
+    display: block;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.estate-office-crm-timeline__notes {
+    display: block;
+    color: #475569;
+    margin-top: 0.25rem;
+}
+
+.estate-office-crm-relations__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.estate-office-crm-relations__subtitle {
+    display: block;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.estate-office-crm-relations__empty {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.estate-office-crm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.estate-office-crm-drawer__footer {
+    margin-top: 1.5rem;
+    text-align: right;
+}
+
+.estate-office-crm-drawer__loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.estate-office-crm-drawer__error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+@media (max-width: 960px) {
+    .estate-office-crm-drawer__panel {
+        padding: 1.5rem;
+        width: 100%;
+    }
+
+    .estate-office-crm-drawer__body {
+        flex-direction: column;
+        padding-right: 0;
+    }
+
+    .estate-office-crm-drawer__aside {
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}

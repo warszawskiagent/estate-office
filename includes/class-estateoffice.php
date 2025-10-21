@@ -218,6 +218,20 @@ final class Plugin {
                     'success'           => esc_html__( 'Proces został zakończony pomyślnie.', 'estate-office' ),
                     'clientRequired'    => esc_html__( 'Dodaj co najmniej jednego klienta.', 'estate-office' ),
                 ],
+                'profile' => [
+                    'error'         => esc_html__( 'Nie udało się pobrać danych rekordu.', 'estate-office' ),
+                    'openAdmin'     => esc_html__( 'Otwórz w kokpicie', 'estate-office' ),
+                    'emptySection'  => esc_html__( 'Brak danych.', 'estate-office' ),
+                    'noRelations'   => esc_html__( 'Brak powiązań.', 'estate-office' ),
+                    'stage'         => [
+                        'title'   => esc_html__( 'Aktualizuj etap umowy', 'estate-office' ),
+                        'stage'   => esc_html__( 'Etap umowy', 'estate-office' ),
+                        'date'    => esc_html__( 'Data etapu', 'estate-office' ),
+                        'submit'  => esc_html__( 'Aktualizuj etap', 'estate-office' ),
+                        'success' => esc_html__( 'Etap umowy został zaktualizowany.', 'estate-office' ),
+                        'error'   => esc_html__( 'Nie udało się zapisać etapu umowy.', 'estate-office' ),
+                    ],
+                ],
             ]
         );
     }

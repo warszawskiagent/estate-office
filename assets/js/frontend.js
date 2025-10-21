@@ -143,6 +143,400 @@
         });
     }
 
+    function initProfiles(container) {
+        const drawer = $('.estate-office-crm-drawer');
+        if (!drawer.length) {
+            return;
+        }
+
+        const profileStrings = apiConfig.profile || {};
+        const titleEl = drawer.find('.estate-office-crm-drawer__title');
+        const subtitleEl = drawer.find('.estate-office-crm-drawer__subtitle');
+        const badgesEl = drawer.find('.estate-office-crm-badges');
+        const summaryEl = drawer.find('.estate-office-crm-summary');
+        const sectionsEl = drawer.find('.estate-office-crm-sections');
+        const descriptionEl = drawer.find('.estate-office-crm-description');
+        const timelineEl = drawer.find('.estate-office-crm-timeline');
+        const relationsEl = drawer.find('.estate-office-crm-relations');
+        const actionsEl = drawer.find('.estate-office-crm-actions');
+        const stageEl = drawer.find('.estate-office-crm-stage');
+        const loadingEl = drawer.find('.estate-office-crm-drawer__loading');
+        const errorEl = drawer.find('.estate-office-crm-drawer__error');
+        const stageStrings = profileStrings.stage || {};
+
+        function resetDrawer() {
+            titleEl.text('');
+            subtitleEl.text('');
+            badgesEl.empty();
+            summaryEl.empty().removeAttr('hidden');
+            sectionsEl.empty();
+            descriptionEl.empty();
+            timelineEl.empty();
+            relationsEl.empty();
+            actionsEl.empty();
+            stageEl.empty().attr('hidden', 'hidden');
+            loadingEl.attr('hidden', 'hidden');
+            errorEl.attr('hidden', 'hidden').text('');
+        }
+
+        function setVisible(isVisible) {
+            if (isVisible) {
+                drawer.addClass('is-visible').attr('aria-hidden', 'false');
+            } else {
+                drawer.removeClass('is-visible').attr('aria-hidden', 'true');
+            }
+        }
+
+        function closeDrawer() {
+            setVisible(false);
+            resetDrawer();
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loadingEl.removeAttr('hidden');
+            } else {
+                loadingEl.attr('hidden', 'hidden');
+            }
+        }
+
+        function showError(message, fallbackLink) {
+            errorEl.text(message || profileStrings.error || 'Nie udało się pobrać danych.');
+            errorEl.removeAttr('hidden');
+
+            actionsEl.empty();
+            if (fallbackLink) {
+                const button = $('<a class="button" />');
+                button.attr('href', fallbackLink);
+                button.text(profileStrings.openAdmin || 'Otwórz w kokpicie');
+                actionsEl.append(button);
+            }
+        }
+
+        function renderBadges(badges) {
+            badgesEl.empty();
+            if (!badges || !badges.length) {
+                badgesEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            badgesEl.removeAttr('hidden');
+            badges.forEach((badge) => {
+                const item = $('<li />');
+                item.text(badge);
+                badgesEl.append(item);
+            });
+        }
+
+        function renderSummary(items) {
+            summaryEl.empty();
+            if (!items || !items.length) {
+                summaryEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            summaryEl.removeAttr('hidden');
+            items.forEach((item) => {
+                const dt = $('<dt />').text(item.label || '');
+                const dd = $('<dd />').text(item.value || '');
+                summaryEl.append(dt, dd);
+            });
+        }
+
+        function renderSections(sections) {
+            sectionsEl.empty();
+            if (!sections || !sections.length) {
+                sectionsEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            sectionsEl.removeAttr('hidden');
+            sections.forEach((section) => {
+                const wrapper = $('<section class="estate-office-crm-section" />');
+                if (section.title) {
+                    wrapper.append($('<h4 />').text(section.title));
+                }
+
+                if (section.items && section.items.length) {
+                    const list = $('<dl />');
+                    section.items.forEach((item) => {
+                        list.append($('<dt />').text(item.label || ''));
+                        list.append($('<dd />').text(item.value || ''));
+                    });
+                    wrapper.append(list);
+                } else {
+                    wrapper.append($('<p />').text(profileStrings.emptySection || 'Brak danych.'));
+                }
+
+                sectionsEl.append(wrapper);
+            });
+        }
+
+        function renderDescription(content) {
+            if (content) {
+                descriptionEl.html(content).removeAttr('hidden');
+            } else {
+                descriptionEl.empty().attr('hidden', 'hidden');
+            }
+        }
+
+        function renderTimeline(timeline, title) {
+            timelineEl.empty();
+            if (!timeline || !timeline.length) {
+                timelineEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            timelineEl.removeAttr('hidden');
+            if (title) {
+                timelineEl.append($('<h4 />').text(title));
+            }
+
+            const list = $('<ol />');
+            timeline.forEach((entry) => {
+                const item = $('<li />');
+                const date = $('<span class="estate-office-crm-timeline__date" />').text(entry.date || '');
+                const label = $('<span class="estate-office-crm-timeline__label" />').text(entry.label || '');
+                item.append(date).append(label);
+                if (entry.notes) {
+                    item.append($('<span class="estate-office-crm-timeline__notes" />').text(entry.notes));
+                }
+                list.append(item);
+            });
+            timelineEl.append(list);
+        }
+
+        function createRelationLink(item) {
+            const button = $('<a href="#" class="estate-office-profile-link" />');
+            button.attr('data-entity', item.type || '');
+            button.attr('data-entity-id', item.id || '');
+            if (item.edit_link) {
+                button.attr('data-edit-link', item.edit_link);
+            }
+            button.text(item.label || '');
+            return button;
+        }
+
+        function renderRelations(relations) {
+            relationsEl.empty();
+            if (!relations || !relations.length) {
+                relationsEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            relationsEl.removeAttr('hidden');
+            relations.forEach((relation) => {
+                const wrapper = $('<section class="estate-office-crm-section" />');
+                if (relation.title) {
+                    wrapper.append($('<h4 />').text(relation.title));
+                }
+
+                const list = $('<ul class="estate-office-crm-relations__list" />');
+                if (relation.items && relation.items.length) {
+                    relation.items.forEach((item) => {
+                        const listItem = $('<li />');
+                        listItem.append(createRelationLink(item));
+                        if (item.subtitle) {
+                            listItem.append($('<span class="estate-office-crm-relations__subtitle" />').text(item.subtitle));
+                        }
+                        list.append(listItem);
+                    });
+                } else {
+                    const empty = $('<li class="estate-office-crm-relations__empty" />');
+                    empty.text(profileStrings.noRelations || 'Brak powiązań.');
+                    list.append(empty);
+                }
+
+                wrapper.append(list);
+                relationsEl.append(wrapper);
+            });
+        }
+
+        function renderActions(actions) {
+            actionsEl.empty();
+            if (!actions || !actions.length) {
+                actionsEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            actionsEl.removeAttr('hidden');
+            actions.forEach((action) => {
+                if (!action.url) {
+                    return;
+                }
+                const link = $('<a class="button" target="_blank" rel="noopener" />');
+                link.attr('href', action.url);
+                link.text(action.label || 'Zobacz w kokpicie');
+                if (action.style === 'secondary') {
+                    link.addClass('button-secondary');
+                }
+                actionsEl.append(link);
+            });
+        }
+
+        function renderStage(stage, contractId, message, isError) {
+            stageEl.empty();
+
+            if (!stage || stage.enabled === false || !contractId) {
+                stageEl.attr('hidden', 'hidden');
+                return;
+            }
+
+            stageEl.removeAttr('hidden');
+
+            const title = $('<h4 class="estate-office-crm-stage__title" />').text(stageStrings.title || 'Aktualizuj etap umowy');
+            stageEl.append(title);
+
+            const form = $('<form class="estate-office-crm-stage__form" />');
+            form.attr('data-contract-id', contractId);
+
+            const selectId = 'estate-office-stage-' + contractId;
+            const stageGroup = $('<div class="estate-office-crm-stage__group" />');
+            stageGroup.append($('<label />').attr('for', selectId).text(stageStrings.stage || 'Etap umowy'));
+            const select = $('<select name="stage" />').attr('id', selectId);
+            (stage.options || []).forEach((option) => {
+                const optionEl = $('<option />');
+                optionEl.attr('value', option.value || '');
+                optionEl.text(option.label || '');
+                if (option.value === stage.current) {
+                    optionEl.attr('selected', 'selected');
+                }
+                select.append(optionEl);
+            });
+            stageGroup.append(select);
+            form.append(stageGroup);
+
+            const dateId = 'estate-office-stage-date-' + contractId;
+            const dateGroup = $('<div class="estate-office-crm-stage__group" />');
+            dateGroup.append($('<label />').attr('for', dateId).text(stageStrings.date || 'Data etapu'));
+            const dateInput = $('<input type="date" name="stage_date" />').attr('id', dateId);
+            if (stage.date) {
+                dateInput.val(stage.date);
+            }
+            dateGroup.append(dateInput);
+            form.append(dateGroup);
+
+            const submit = $('<button type="submit" class="button button-primary" />');
+            submit.text(stageStrings.submit || 'Aktualizuj etap');
+            form.append(submit);
+
+            const status = $('<p class="estate-office-crm-stage__status" data-stage-status hidden></p>');
+            if (message) {
+                status.text(message);
+                status.toggleClass('is-error', !!isError);
+                status.removeAttr('hidden');
+            }
+            form.append(status);
+
+            stageEl.append(form);
+        }
+
+        function renderProfile(data, fallbackLink) {
+            titleEl.text(data.title || '');
+            subtitleEl.text(data.subtitle || '');
+            renderBadges(data.badges || []);
+            renderSummary(data.summary || []);
+            renderSections(data.sections || []);
+            renderDescription(data.description || '');
+            renderTimeline(data.timeline || [], data.timeline_title || '');
+            renderRelations(data.relations || []);
+            renderStage(data.stage || null, data.id || null);
+
+            const actions = data.actions && data.actions.length ? data.actions : [];
+            if (!actions.length && fallbackLink) {
+                actions.push({ url: fallbackLink, label: profileStrings.openAdmin || 'Otwórz w kokpicie' });
+            }
+            renderActions(actions);
+        }
+
+        function fetchProfile(type, id) {
+            const routes = {
+                contract: '/contracts/' + id,
+                property: '/properties/' + id,
+                client: '/clients/' + id,
+                search: '/searches/' + id,
+            };
+
+            const path = routes[type];
+            if (!path) {
+                return Promise.reject(new Error('Nieobsługiwany typ.'));
+            }
+
+            return api.get(path);
+        }
+
+        container.on('click', '.estate-office-profile-link', function (event) {
+            event.preventDefault();
+            const trigger = $(this);
+            const type = trigger.data('entity');
+            const id = trigger.data('entity-id');
+            if (!type || !id) {
+                return;
+            }
+
+            const fallback = trigger.data('edit-link');
+            resetDrawer();
+            setVisible(true);
+            setLoading(true);
+
+            fetchProfile(type, id)
+                .then((response) => {
+                    setLoading(false);
+                    if (!response || !response.data) {
+                        showError(profileStrings.error || 'Nie udało się pobrać danych.', fallback);
+                        return;
+                    }
+                    renderProfile(response.data, fallback);
+                })
+                .catch((error) => {
+                    setLoading(false);
+                    showError(error && error.message ? error.message : null, fallback);
+                });
+        });
+
+        drawer.on('submit', '.estate-office-crm-stage__form', function (event) {
+            event.preventDefault();
+            const form = $(this);
+            const contractId = form.data('contractId');
+            if (!contractId) {
+                return;
+            }
+
+            const submit = form.find('button[type="submit"]');
+            const status = form.find('[data-stage-status]');
+            status.attr('hidden', 'hidden').removeClass('is-error');
+            submit.prop('disabled', true);
+
+            const payload = serializeForm(form);
+
+            api
+                .post('/contracts/' + contractId + '/stage', payload)
+                .then((response) => {
+                    submit.prop('disabled', false);
+                    renderSummary(response.summary || []);
+                    renderSections(response.sections || []);
+                    renderTimeline(response.timeline || [], response.timeline_title || '');
+                    renderStage(response.stage || null, contractId, response.message || stageStrings.success || 'Etap umowy został zaktualizowany.', false);
+                })
+                .catch((error) => {
+                    submit.prop('disabled', false);
+                    const message = error && error.message ? error.message : stageStrings.error || 'Nie udało się zapisać etapu umowy.';
+                    status.text(message).addClass('is-error').removeAttr('hidden');
+                });
+        });
+
+        drawer.on('click', '[data-action="close-profile"]', function (event) {
+            event.preventDefault();
+            closeDrawer();
+        });
+
+        drawer.on('click', function (event) {
+            if ($(event.target).is('.estate-office-crm-drawer')) {
+                closeDrawer();
+            }
+        });
+    }
+
     function initWizard(container) {
         const modal = $('.estate-office-modal');
         if (!modal.length) {
@@ -620,6 +1014,7 @@
 
         initTabs(crmContainer);
         initSearch(crmContainer);
+        initProfiles(crmContainer);
         initWizard(crmContainer);
     });
 })(jQuery);

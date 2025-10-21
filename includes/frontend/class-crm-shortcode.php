@@ -108,6 +108,7 @@ class CRM_Shortcode {
             </div>
         </div>
         <?php $this->render_contract_modal(); ?>
+        <?php $this->render_profile_drawer(); ?>
         <?php
     }
 
@@ -846,7 +847,7 @@ class CRM_Shortcode {
             $agent_name = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
-                $this->format_link( $post, $number ?: $post->post_title ),
+                $this->format_profile_link( $post, $number ?: $post->post_title, 'property' ),
                 esc_html( $address ?: __( 'Brak adresu', 'estate-office' ) ),
                 esc_html( $this->format_price( $price ) ),
                 esc_html( $this->format_price( $sqm ) ),
@@ -885,7 +886,7 @@ class CRM_Shortcode {
             $agent_name    = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
-                $this->format_link( $post, $number ?: $post->post_title ),
+                $this->format_profile_link( $post, $number ?: $post->post_title, 'contract' ),
                 esc_html( $transaction ?: '-' ),
                 esc_html( $property_type ?: '-' ),
                 esc_html( $address ?: '-' ),
@@ -919,7 +920,7 @@ class CRM_Shortcode {
             $agent_name = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
-                $this->format_link( $post, $post->post_title ),
+                $this->format_profile_link( $post, $post->post_title, 'client' ),
                 esc_html( $address ?: '-' ),
                 esc_html( $phone ?: '-' ),
                 esc_html( $email ?: '-' ),
@@ -951,7 +952,7 @@ class CRM_Shortcode {
             $transaction   = $this->translate_transaction_type( $this->get_meta_value( $post->ID, 'transaction_type' ) );
 
             $rows[] = [
-                $this->format_link( $post, $number ?: $post->post_title ),
+                $this->format_profile_link( $post, $number ?: $post->post_title, 'search' ),
                 esc_html( $property_type ?: '-' ),
                 esc_html( $budget ),
                 esc_html( $location ?: '-' ),
@@ -963,16 +964,67 @@ class CRM_Shortcode {
     }
 
     /**
-     * Creates an edit link for the item.
+     * Creates a button-like link that triggers the profile drawer.
      */
-    private function format_link( \WP_Post $post, string $label ): string {
-        $url = get_edit_post_link( $post );
+    private function format_profile_link( \WP_Post $post, string $label, string $type ): string {
+        $attributes = [
+            'href'          => '#',
+            'class'         => 'estate-office-profile-link',
+            'data-entity'   => $type,
+            'data-entity-id'=> (string) $post->ID,
+        ];
 
-        if ( ! $url ) {
-            return esc_html( $label );
+        $edit_link = get_edit_post_link( $post, 'raw' );
+        if ( $edit_link ) {
+            $attributes['data-edit-link'] = esc_url( $edit_link );
         }
 
-        return '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+        $attr_html = '';
+        foreach ( $attributes as $key => $value ) {
+            $attr_html .= sprintf( ' %1$s="%2$s"', esc_attr( $key ), esc_attr( $value ) );
+        }
+
+        return sprintf( '<a%2$s>%1$s</a>', esc_html( $label ), $attr_html );
+    }
+
+    /**
+     * Renders the empty profile drawer container.
+     */
+    private function render_profile_drawer(): void {
+        ?>
+        <div class="estate-office-crm-drawer" aria-hidden="true">
+            <div class="estate-office-crm-drawer__panel" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Szczegóły rekordu CRM', 'estate-office' ); ?>">
+                <button type="button" class="estate-office-crm-drawer__close" data-action="close-profile" aria-label="<?php esc_attr_e( 'Zamknij szczegóły', 'estate-office' ); ?>">&times;</button>
+                <div class="estate-office-crm-drawer__header">
+                    <div class="estate-office-crm-drawer__titles">
+                        <h3 class="estate-office-crm-drawer__title"></h3>
+                        <p class="estate-office-crm-drawer__subtitle"></p>
+                        <ul class="estate-office-crm-badges" aria-live="polite"></ul>
+                    </div>
+                    <div class="estate-office-crm-drawer__status" aria-live="polite">
+                        <span class="estate-office-crm-drawer__loading" hidden><?php esc_html_e( 'Ładowanie szczegółów…', 'estate-office' ); ?></span>
+                        <span class="estate-office-crm-drawer__error" hidden></span>
+                    </div>
+                </div>
+                <div class="estate-office-crm-drawer__body">
+                    <div class="estate-office-crm-drawer__main">
+                        <dl class="estate-office-crm-summary"></dl>
+                        <div class="estate-office-crm-sections"></div>
+                        <div class="estate-office-crm-description"></div>
+                    </div>
+                    <aside class="estate-office-crm-drawer__aside">
+                        <div class="estate-office-crm-stage" hidden></div>
+                        <div class="estate-office-crm-timeline"></div>
+                        <div class="estate-office-crm-relations"></div>
+                        <div class="estate-office-crm-actions"></div>
+                    </aside>
+                </div>
+                <footer class="estate-office-crm-drawer__footer">
+                    <button type="button" class="button estate-office-crm-drawer__dismiss" data-action="close-profile"><?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></button>
+                </footer>
+            </div>
+        </div>
+        <?php
     }
 
     /**
