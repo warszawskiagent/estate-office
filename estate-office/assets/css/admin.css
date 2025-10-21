@@ -1,0 +1,40 @@
+.estate-office .estate-office-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+gap: 24px;
+margin-top: 24px;
+}
+
+.estate-office .estate-office-card {
+background: #fff;
+border-radius: 8px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+padding: 24px;
+}
+
+.estate-office .estate-office-card h2 {
+margin-top: 0;
+font-size: 1.25rem;
+}
+
+.estate-office .estate-office-media-preview img {
+max-width: 80px;
+height: auto;
+display: block;
+margin-top: 12px;
+border-radius: 4px;
+}
+
+.estate-office .widefat th,
+.estate-office .widefat td {
+vertical-align: middle;
+}
+
+.estate-office .estate-office-dynamic-fields table input,
+.estate-office .estate-office-dynamic-fields table select {
+width: 100%;
+}
+
+.estate-office .estate-office-dynamic-fields .button {
+margin-top: 12px;
+}
