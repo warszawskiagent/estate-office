@@ -65,7 +65,11 @@ final class Keys {
     public const PROPERTY_VIDEO          = '_estate_office_property_video';
     public const PROPERTY_VR             = '_estate_office_property_vr';
     public const PROPERTY_CONTRACT       = '_estate_office_property_contract';
+    public const PROPERTY_OFFER_POST     = '_estate_office_property_offer_post';
+    public const PROPERTY_NEW_BADGE_DATE = '_estate_office_property_new_badge_date';
 
     public const SEARCH_CRITERIA         = '_estate_office_search_criteria';
     public const SEARCH_CONTRACT         = '_estate_office_search_contract';
+
+    public const OFFER_PROPERTY          = '_estate_office_offer_property';
 }

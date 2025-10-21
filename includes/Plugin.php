@@ -2,7 +2,9 @@
 namespace EstateOffice;
 
 use EstateOffice\Admin\Menu as AdminMenu;
+use EstateOffice\Badges\Manager as BadgesManager;
 use EstateOffice\Frontend\CRM as FrontendCRM;
+use EstateOffice\Frontend\Offers as FrontendOffers;
 use EstateOffice\PostTypes\Register as PostTypesRegister;
 use EstateOffice\Settings\Manager as SettingsManager;
 
@@ -46,6 +48,20 @@ final class Plugin {
     private FrontendCRM $frontend_crm;
 
     /**
+     * Front-end offers handler.
+     *
+     * @var FrontendOffers
+     */
+    private FrontendOffers $offers;
+
+    /**
+     * Badge housekeeping manager.
+     *
+     * @var BadgesManager
+     */
+    private BadgesManager $badges;
+
+    /**
      * Retrieves singleton instance.
      */
     public static function instance(): Plugin {
@@ -64,12 +80,15 @@ final class Plugin {
         $this->admin_menu    = new AdminMenu();
         $this->settings      = new SettingsManager();
         $this->frontend_crm  = new FrontendCRM();
+        $this->badges        = new BadgesManager();
+        $this->offers        = new FrontendOffers( $this->badges );
 
         register_activation_hook( ESTATE_OFFICE_FILE, [ $this, 'activate' ] );
         register_deactivation_hook( ESTATE_OFFICE_FILE, [ $this, 'deactivate' ] );
 
         add_action( 'init', [ $this->post_types, 'register' ], 5 );
         add_action( 'init', [ $this, 'register_roles' ], 6 );
+        add_action( 'init', [ $this->offers, 'register_content_types' ], 6 );
         add_action( 'admin_init', [ $this->settings, 'register' ] );
         add_action( 'admin_menu', [ $this->admin_menu, 'register' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
@@ -78,6 +97,15 @@ final class Plugin {
 
         add_action( 'init', [ $this->frontend_crm, 'register_shortcodes' ] );
         add_action( 'admin_init', [ $this->frontend_crm, 'maybe_restore_page' ] );
+        add_action( 'init', [ $this->offers, 'register_shortcodes' ] );
+        add_action( 'admin_init', [ $this->offers, 'ensure_listing_pages' ] );
+        add_action( 'wp_enqueue_scripts', [ $this->offers, 'enqueue_assets' ] );
+        add_action( 'save_post_estate_property', [ $this->offers, 'sync_offer' ], 20, 3 );
+        add_action( 'trashed_post', [ $this->offers, 'handle_property_trashed' ] );
+        add_action( 'before_delete_post', [ $this->offers, 'handle_property_deleted' ] );
+        add_action( 'estate_office_property_badges_updated', [ $this->offers, 'refresh_offer' ], 10 );
+        $this->offers->register_admin_actions();
+        $this->badges->register();
     }
 
     /**
@@ -93,8 +121,11 @@ final class Plugin {
     public function activate(): void {
         $this->register_roles();
         $this->post_types->register();
+        $this->offers->register_content_types();
         flush_rewrite_rules();
         $this->frontend_crm->ensure_page_exists();
+        $this->offers->ensure_listing_pages();
+        $this->badges->schedule();
     }
 
     /**
@@ -102,6 +133,7 @@ final class Plugin {
      */
     public function deactivate(): void {
         flush_rewrite_rules();
+        $this->badges->unschedule();
     }
 
     /**

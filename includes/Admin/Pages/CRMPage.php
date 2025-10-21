@@ -1,6 +1,7 @@
 <?php
 namespace EstateOffice\Admin\Pages;
 
+use EstateOffice\Admin\Pages\Traits\DataFormattingTrait;
 use EstateOffice\Meta\Keys;
 use WP_Post;
 use WP_Query;
@@ -9,6 +10,7 @@ use WP_Query;
  * Displays the CRM lists for contracts, properties, clients and searches.
  */
 class CRMPage extends AbstractPage {
+    use DataFormattingTrait;
     private const TABS = [
         'properties' => 'Nieruchomości',
         'contracts'  => 'Umowy',
@@ -120,7 +122,7 @@ class CRMPage extends AbstractPage {
                 $area      = $this->format_area( get_post_meta( $post->ID, Keys::PROPERTY_AREA, true ) );
                 $rooms     = get_post_meta( $post->ID, Keys::PROPERTY_ROOMS, true );
                 $agent     = $this->format_agent( $post );
-                $link      = get_edit_post_link( $post->ID );
+                $link      = $this->get_profile_url( 'property', $post->ID );
 
                 echo '<tr>';
                 echo '<td><a href="' . esc_url( $link ) . '">' . esc_html( $reference ?: $post->post_title ) . '</a></td>';
@@ -184,13 +186,26 @@ class CRMPage extends AbstractPage {
                 $end      = $this->format_date( get_post_meta( $post->ID, Keys::CONTRACT_END_DATE, true ) );
                 $stage    = $this->format_stage( get_post_meta( $post->ID, Keys::CONTRACT_STAGE, true ) );
                 $agent    = $this->format_agent( $post );
-                $link     = get_edit_post_link( $post->ID );
+                $link     = $this->get_profile_url( 'contract', $post->ID );
+                $related_link = '';
+
+                if ( $property ) {
+                    $related_link = $this->get_profile_url( 'property', $property );
+                } elseif ( $search_id ) {
+                    $related_link = $this->get_profile_url( 'search', $search_id );
+                }
 
                 echo '<tr>';
                 echo '<td><a href="' . esc_url( $link ) . '">' . esc_html( $number ?: $post->post_title ) . '</a></td>';
                 echo '<td>' . esc_html( $type ) . '</td>';
                 echo '<td>' . esc_html( $kind ?: '—' ) . '</td>';
-                echo '<td>' . esc_html( $address ?: '—' ) . '</td>';
+                echo '<td>';
+                if ( $related_link ) {
+                    echo '<a href="' . esc_url( $related_link ) . '">' . esc_html( $address ?: '—' ) . '</a>';
+                } else {
+                    echo esc_html( $address ?: '—' );
+                }
+                echo '</td>';
                 echo '<td>' . esc_html( $start ?: '—' ) . '</td>';
                 echo '<td>' . esc_html( $end ?: '—' ) . '</td>';
                 echo '<td>' . esc_html( $stage ?: '—' ) . '</td>';
@@ -230,11 +245,18 @@ class CRMPage extends AbstractPage {
                 $phone   = get_post_meta( $post->ID, Keys::CLIENT_PHONE, true );
                 $email   = get_post_meta( $post->ID, Keys::CLIENT_EMAIL, true );
                 $agent   = $this->infer_client_agent( $post );
-                $link    = get_edit_post_link( $post->ID );
+                $link    = $this->get_profile_url( 'client', $post->ID );
+                $address_link = $this->get_client_property_link( $post );
 
                 echo '<tr>';
                 echo '<td><a href="' . esc_url( $link ) . '">' . esc_html( $name ) . '</a></td>';
-                echo '<td>' . esc_html( $address ?: '—' ) . '</td>';
+                echo '<td>';
+                if ( $address_link ) {
+                    echo '<a href="' . esc_url( $address_link ) . '">' . esc_html( $address ?: '—' ) . '</a>';
+                } else {
+                    echo esc_html( $address ?: '—' );
+                }
+                echo '</td>';
                 echo '<td>' . esc_html( $phone ?: '—' ) . '</td>';
                 echo '<td>';
                 if ( $email ) {
@@ -268,7 +290,7 @@ class CRMPage extends AbstractPage {
         } else {
             foreach ( $query->posts as $post ) {
                 $criteria = get_post_meta( $post->ID, Keys::SEARCH_CRITERIA, true );
-                $link     = get_edit_post_link( $post->ID );
+                $link     = $this->get_profile_url( 'search', $post->ID );
                 $kind     = $this->format_property_kind( $criteria['property_kind'] ?? '' );
                 $budget   = $this->format_budget( $criteria );
                 $location = $criteria['location'] ?? '—';
@@ -319,171 +341,31 @@ class CRMPage extends AbstractPage {
         return $args;
     }
 
-    private function format_address( $data ): string {
-        if ( ! is_array( $data ) ) {
+    private function get_client_property_link( WP_Post $client ): string {
+        $contracts = get_post_meta( $client->ID, Keys::CLIENT_CONTRACTS, true );
+
+        if ( ! is_array( $contracts ) ) {
             return '';
         }
 
-        $parts = [];
+        foreach ( $contracts as $contract_id ) {
+            $contract_id = (int) $contract_id;
 
-        if ( ! empty( $data['street'] ) ) {
-            $street = $data['street'];
-            if ( ! empty( $data['number'] ) ) {
-                $street .= ' ' . $data['number'];
+            if ( ! $contract_id ) {
+                continue;
             }
 
-            if ( ! empty( $data['unit'] ) ) {
-                $street .= '/' . $data['unit'];
+            $property = (int) get_post_meta( $contract_id, Keys::CONTRACT_PROPERTY, true );
+            if ( $property ) {
+                return $this->get_profile_url( 'property', $property );
             }
 
-            $parts[] = $street;
+            $search = (int) get_post_meta( $contract_id, Keys::CONTRACT_SEARCH, true );
+            if ( $search ) {
+                return $this->get_profile_url( 'search', $search );
+            }
         }
 
-        if ( ! empty( $data['postal_code'] ) || ! empty( $data['city'] ) ) {
-            $parts[] = trim( ( $data['postal_code'] ?? '' ) . ' ' . ( $data['city'] ?? '' ) );
-        }
-
-        if ( ! empty( $data['district'] ) ) {
-            $parts[] = $data['district'];
-        }
-
-        if ( ! empty( $data['county'] ) ) {
-            $parts[] = $data['county'];
-        }
-
-        return implode( ', ', array_filter( $parts ) );
-    }
-
-    private function format_money( $value ): string {
-        $value = is_numeric( $value ) ? (float) $value : 0.0;
-
-        if ( $value <= 0 ) {
-            return '—';
-        }
-
-        return number_format_i18n( $value, 2 ) . ' PLN';
-    }
-
-    private function format_area( $value ): string {
-        $value = is_numeric( $value ) ? (float) $value : 0.0;
-
-        if ( $value <= 0 ) {
-            return '—';
-        }
-
-        return number_format_i18n( $value, 2 ) . ' m²';
-    }
-
-    private function format_agent( WP_Post $post ): string {
-        $user = get_userdata( $post->post_author );
-
-        if ( ! $user ) {
-            return '—';
-        }
-
-        $display = trim( $user->first_name . ' ' . $user->last_name );
-        return $display ?: $user->display_name ?: $user->user_login;
-    }
-
-    private function format_transaction_type( string $type ): string {
-        $map = [
-            'sprzedaz' => __( 'Sprzedaż', 'estate-office' ),
-            'kupno'    => __( 'Kupno', 'estate-office' ),
-            'wynajem'  => __( 'Wynajem', 'estate-office' ),
-            'najem'    => __( 'Najem', 'estate-office' ),
-        ];
-
-        $type = strtolower( $type );
-        return $map[ $type ] ?? ucfirst( $type );
-    }
-
-    private function format_property_kind( string $kind ): string {
-        $map = [
-            'mieszkanie' => __( 'Mieszkanie', 'estate-office' ),
-            'dom'        => __( 'Dom', 'estate-office' ),
-            'dzialka'    => __( 'Działka', 'estate-office' ),
-            'lokal'      => __( 'Lokal H/U', 'estate-office' ),
-        ];
-
-        $kind = strtolower( $kind );
-        return $map[ $kind ] ?? ucfirst( $kind );
-    }
-
-    private function format_stage( $stage ): string {
-        if ( ! is_array( $stage ) ) {
-            return '';
-        }
-
-        $name = $stage['name'] ?? '';
-        $date = $stage['date'] ?? '';
-
-        if ( ! $name ) {
-            return '';
-        }
-
-        return $date ? sprintf( '%s (%s)', $name, $this->format_date( $date ) ) : $name;
-    }
-
-    private function format_date( string $date ): string {
-        if ( ! $date ) {
-            return '';
-        }
-
-        $timestamp = strtotime( $date );
-        if ( ! $timestamp ) {
-            return $date;
-        }
-
-        return wp_date( get_option( 'date_format' ), $timestamp );
-    }
-
-    private function format_client_name( WP_Post $post ): string {
-        $type      = get_post_meta( $post->ID, Keys::CLIENT_TYPE, true );
-        $first     = get_post_meta( $post->ID, Keys::CLIENT_FIRST_NAME, true );
-        $last      = get_post_meta( $post->ID, Keys::CLIENT_LAST_NAME, true );
-        $company   = get_post_meta( $post->ID, Keys::CLIENT_COMPANY_NAME, true );
-        $full_name = trim( $first . ' ' . $last );
-
-        if ( 'firma' === $type && $company ) {
-            return $company;
-        }
-
-        return $full_name ?: $post->post_title;
-    }
-
-    private function infer_client_agent( WP_Post $post ): string {
-        $contracts = get_post_meta( $post->ID, Keys::CLIENT_CONTRACTS, true );
-
-        if ( ! is_array( $contracts ) || empty( $contracts ) ) {
-            return '—';
-        }
-
-        $contract_id = (int) current( $contracts );
-        $contract    = get_post( $contract_id );
-
-        if ( ! $contract ) {
-            return '—';
-        }
-
-        return $this->format_agent( $contract );
-    }
-
-    private function format_budget( array $criteria ): string {
-        $min = isset( $criteria['price_min'] ) ? (float) $criteria['price_min'] : 0.0;
-        $max = isset( $criteria['price_max'] ) ? (float) $criteria['price_max'] : 0.0;
-
-        if ( $min <= 0 && $max <= 0 ) {
-            return '';
-        }
-
-        if ( $min > 0 && $max > 0 ) {
-            return number_format_i18n( $min, 0 ) . ' - ' . number_format_i18n( $max, 0 ) . ' PLN';
-        }
-
-        if ( $min > 0 ) {
-            return sprintf( __( 'Od %s PLN', 'estate-office' ), number_format_i18n( $min, 0 ) );
-        }
-
-        return sprintf( __( 'Do %s PLN', 'estate-office' ), number_format_i18n( $max, 0 ) );
+        return '';
     }
 }

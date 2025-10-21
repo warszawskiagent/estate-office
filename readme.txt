@@ -3,7 +3,7 @@ Contributors: estateoffice
 Tags: real estate, crm, property management
 Requires at least: 6.0
 Tested up to: 6.4
-Stable tag: 0.2.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,18 @@ Nie. Rola "Agent" została pozbawiona możliwości usuwania rekordów.
 Podczas aktywacji wtyczka tworzy stronę "Estate Office CRM" z panelem dostępnym jedynie dla administratorów.
 
 == Changelog ==
+= 0.4.0 =
+* Uruchomiono automatyczny eksport nieruchomości oznaczonych znacznikiem "Eksport na WWW" do publicznych stron ofertowych wraz z kategoryzacją według typu transakcji, rodzaju, miasta i dzielnicy.
+* Dodano stronę administracyjną "Oferty" z możliwością podglądu statusu eksportu, informacji o znaczniku "Nowa oferta" oraz ręczną synchronizacją stron ofert.
+* Wprowadzono automatyczne wygaszanie znacznika "Nowa oferta" po 7 dniach i aktualizację powiązanych stron ofertowych.
+* Rozszerzono front-endowe style oraz układ kart i profili ofert, w tym sekcje multimediów oraz listy udogodnień.
+
+= 0.3.0 =
+* Dodano widoki profili dla umów, nieruchomości, poszukiwań oraz klientów wraz z akcjami edycji i usuwania ograniczonymi do administratorów.
+* Udostępniono możliwość aktualizacji etapów umowy wraz z historią zmian.
+* Powiązano widok CRM z profilami szczegółowymi i rozszerzono formatowanie metadanych.
+* Dodano stylizację interfejsu profili w panelu administratora.
+
 = 0.2.0 =
 * Dodano panel CRM z tabelami nieruchomości, klientów, umów oraz poszukiwań wraz z wyszukiwarką wielokolumnową.
 * Wprowadzono kreator umów prowadzący przez etapy dodawania umowy, klientów i nieruchomości lub poszukiwań.
