@@ -58,43 +58,45 @@ class EstateOffice_Admin {
     public function register_pages(): void {
         EstateOffice_Activator::ensure_role_capabilities();
 
-        $dashboard = new EstateOffice_Admin_Dashboard( self::MENU_SLUG );
+        $dashboard = new EstateOffice_Admin_Dashboard();
         $this->maybe_allow_administrator_fallback( $dashboard );
         $dashboard->register();
 
         $this->pages['dashboard'] = $dashboard;
 
-        $contracts = new EstateOffice_Admin_Contracts( self::MENU_SLUG );
+        $parent_slug = $dashboard->get_slug();
+
+        $contracts = new EstateOffice_Admin_Contracts( $parent_slug );
         $this->maybe_allow_administrator_fallback( $contracts );
         $contracts->register();
         $this->pages['contracts'] = $contracts;
 
-        $properties = new EstateOffice_Admin_Properties( self::MENU_SLUG );
+        $properties = new EstateOffice_Admin_Properties( $parent_slug );
         $this->maybe_allow_administrator_fallback( $properties );
         $properties->register();
         $this->pages['properties'] = $properties;
 
-        $searches = new EstateOffice_Admin_Searches( self::MENU_SLUG );
+        $searches = new EstateOffice_Admin_Searches( $parent_slug );
         $this->maybe_allow_administrator_fallback( $searches );
         $searches->register();
         $this->pages['searches'] = $searches;
 
-        $clients = new EstateOffice_Admin_Clients( self::MENU_SLUG );
+        $clients = new EstateOffice_Admin_Clients( $parent_slug );
         $this->maybe_allow_administrator_fallback( $clients );
         $clients->register();
         $this->pages['clients'] = $clients;
 
-        $agents = new EstateOffice_Admin_Agents( self::MENU_SLUG );
+        $agents = new EstateOffice_Admin_Agents( $parent_slug );
         $this->maybe_allow_administrator_fallback( $agents );
         $agents->register();
         $this->pages['agents'] = $agents;
 
-        $settings = new EstateOffice_Admin_Settings( self::MENU_SLUG );
+        $settings = new EstateOffice_Admin_Settings( $parent_slug );
         $this->maybe_allow_administrator_fallback( $settings );
         $settings->register();
         $this->pages['settings'] = $settings;
 
-        $about = new EstateOffice_Admin_About( self::MENU_SLUG );
+        $about = new EstateOffice_Admin_About( $parent_slug );
         $this->maybe_allow_administrator_fallback( $about );
         $about->register();
         $this->pages['about'] = $about;
