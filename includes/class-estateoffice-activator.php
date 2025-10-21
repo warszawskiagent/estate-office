@@ -18,6 +18,7 @@ class EstateOffice_Activator {
         self::create_roles();
         self::create_tables();
         self::seed_options();
+        self::ensure_pages();
     }
 
     /**
@@ -197,12 +198,75 @@ class EstateOffice_Activator {
             'property_custom_fields' => [],
             'contract_custom_fields' => [],
             'client_custom_fields' => [],
+            'crm_page_id'           => 0,
+            'sale_page_id'          => 0,
+            'rent_page_id'          => 0,
         ];
 
         foreach ( $defaults as $option => $value ) {
             $option_name = 'estate_office_' . $option;
             if ( false === get_option( $option_name, false ) ) {
                 add_option( $option_name, $value );
+            }
+        }
+    }
+
+    /**
+     * Create helper pages used by the plugin.
+     */
+    protected static function ensure_pages(): void {
+        $pages = [
+            'estate_office_crm_page_id'  => [
+                'post_title'   => __( 'EstateOffice CRM', 'estate-office' ),
+                'post_name'    => 'estate-office-crm',
+                'post_content' => '[estate_office_crm]',
+                'post_status'  => 'publish',
+            ],
+            'estate_office_sale_page_id' => [
+                'post_title'   => __( 'Oferty na sprzedaż', 'estate-office' ),
+                'post_name'    => 'oferty-na-sprzedaz',
+                'post_content' => '[estate_office_offers transaction="SPRZEDAŻ"]',
+                'post_status'  => 'publish',
+            ],
+            'estate_office_rent_page_id' => [
+                'post_title'   => __( 'Oferty na wynajem', 'estate-office' ),
+                'post_name'    => 'oferty-na-wynajem',
+                'post_content' => '[estate_office_offers transaction="WYNAJEM"]',
+                'post_status'  => 'publish',
+            ],
+        ];
+
+        foreach ( $pages as $option => $page_args ) {
+            $page_id = (int) get_option( $option );
+            if ( $page_id && get_post( $page_id ) ) {
+                continue;
+            }
+
+            $existing = get_page_by_path( $page_args['post_name'], OBJECT, 'page' );
+            if ( $existing ) {
+                $page_id = $existing->ID;
+                if ( false === strpos( $existing->post_content, $page_args['post_content'] ) ) {
+                    wp_update_post(
+                        [
+                            'ID'           => $existing->ID,
+                            'post_content' => $existing->post_content . "\n\n" . $page_args['post_content'],
+                        ]
+                    );
+                }
+            } else {
+                $page_id = wp_insert_post(
+                    [
+                        'post_title'   => $page_args['post_title'],
+                        'post_name'    => $page_args['post_name'],
+                        'post_type'    => 'page',
+                        'post_content' => $page_args['post_content'],
+                        'post_status'  => $page_args['post_status'],
+                    ]
+                );
+            }
+
+            if ( $page_id && ! is_wp_error( $page_id ) ) {
+                update_option( $option, $page_id );
             }
         }
     }

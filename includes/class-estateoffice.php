@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice-admin.php';
+require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice-public.php';
 
 class EstateOffice {
 
@@ -21,10 +22,18 @@ class EstateOffice {
     protected $admin;
 
     /**
+     * Public module handler.
+     *
+     * @var EstateOffice_Public
+     */
+    protected $public;
+
+    /**
      * Initialize plugin pieces.
      */
     public function __construct() {
-        $this->admin = new EstateOffice_Admin();
+        $this->admin  = new EstateOffice_Admin();
+        $this->public = new EstateOffice_Public();
     }
 
     /**
@@ -35,6 +44,8 @@ class EstateOffice {
         if ( is_admin() ) {
             $this->admin->hooks();
         }
+
+        $this->public->hooks();
     }
 
     /**
