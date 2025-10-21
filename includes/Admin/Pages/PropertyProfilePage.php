@@ -37,17 +37,23 @@ class PropertyProfilePage extends AbstractPage {
         $equipment    = get_post_meta( $property_id, Keys::PROPERTY_EQUIPMENT, true );
         $extra        = get_post_meta( $property_id, Keys::PROPERTY_EXTRA_SPACES, true );
         $badges       = get_post_meta( $property_id, Keys::PROPERTY_BADGES, true );
-        $description  = get_post_meta( $property_id, Keys::PROPERTY_DESCRIPTION, true );
-        $video        = get_post_meta( $property_id, Keys::PROPERTY_VIDEO, true );
-        $vr           = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
-        $gallery      = get_post_meta( $property_id, Keys::PROPERTY_GALLERY, true );
-        $floorplan_2d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, true );
-        $floorplan_3d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, true );
-        $contract_id  = (int) get_post_meta( $property_id, Keys::PROPERTY_CONTRACT, true );
+        $description   = get_post_meta( $property_id, Keys::PROPERTY_DESCRIPTION, true );
+        $video         = get_post_meta( $property_id, Keys::PROPERTY_VIDEO, true );
+        $vr            = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
+        $gallery       = get_post_meta( $property_id, Keys::PROPERTY_GALLERY, true );
+        $floorplan_2d  = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, true );
+        $floorplan_3d  = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, true );
+        $contract_id   = (int) get_post_meta( $property_id, Keys::PROPERTY_CONTRACT, true );
+        $location_meta = get_post_meta( $property_id, Keys::PROPERTY_LOCATION, true );
+        $land_register = get_post_meta( $property_id, Keys::PROPERTY_LAND_REGISTER, true );
+        $missing_land  = (bool) get_post_meta( $property_id, Keys::PROPERTY_LAND_REGISTER_MISSING, true );
+
+        $location = is_array( $location_meta ) ? $location_meta : [];
 
         echo '<div class="estate-office-profile">';
         echo '<div class="estate-office-profile__main">';
-        $this->render_summary_card( $property, $property_id, $transaction, $kind, $address );
+        $this->render_summary_card( $property, $property_id, $transaction, $kind, $address, (string) $land_register, $missing_land );
+        $this->render_location_card( $address, $location );
         $this->render_building_card( $building );
         $this->render_media_card( $media, $amenities, $equipment );
         $this->render_extra_spaces_card( $extra );
@@ -65,7 +71,7 @@ class PropertyProfilePage extends AbstractPage {
         $this->render_footer();
     }
 
-    private function render_summary_card( WP_Post $property, int $property_id, string $transaction, string $kind, $address ): void {
+    private function render_summary_card( WP_Post $property, int $property_id, string $transaction, string $kind, $address, string $land_register, bool $missing_land ): void {
         $price      = get_post_meta( $property_id, Keys::PROPERTY_PRICE, true );
         $price_m2   = get_post_meta( $property_id, Keys::PROPERTY_PRICE_PER_M2, true );
         $admin_fee  = get_post_meta( $property_id, Keys::PROPERTY_ADMIN_FEE, true );
@@ -87,6 +93,7 @@ class PropertyProfilePage extends AbstractPage {
         $this->render_definition_row( __( 'Rodzaj nieruchomości', 'estate-office' ), $this->format_property_kind( $kind ) );
         $this->render_definition_row( __( 'Opiekun', 'estate-office' ), $this->format_agent( $property ) );
         $this->render_definition_row( __( 'Adres', 'estate-office' ), $this->format_address( $address ) ?: '—' );
+        $this->render_definition_row( __( 'Numer księgi wieczystej', 'estate-office' ), $this->format_land_register( $land_register, $missing_land ) );
         $this->render_definition_row( __( 'Stan prawny', 'estate-office' ), $this->map_legal_status( $legal ) );
         $this->render_definition_row( __( 'Cena', 'estate-office' ), $this->format_property_price( $price, $transaction ) );
         $this->render_definition_row( __( 'Cena za m²', 'estate-office' ), $this->format_money( $price_m2 ) );
@@ -288,6 +295,30 @@ class PropertyProfilePage extends AbstractPage {
             echo '<li class="estate-office-badge">' . esc_html( $label ) . '</li>';
         }
         echo '</ul>';
+        echo '</div>';
+    }
+
+    private function render_location_card( $address, array $location ): void {
+        echo '<div class="estate-office-card">';
+        echo '<h2>' . esc_html__( 'Mapa i lokalizacja', 'estate-office' ) . '</h2>';
+
+        $display_address = ! empty( $location['address'] ) ? $location['address'] : $this->format_address( $address );
+        $display_address = $display_address ?: '—';
+
+        echo '<p>' . esc_html( $display_address ) . '</p>';
+
+        $lat = isset( $location['lat'] ) ? (float) $location['lat'] : 0.0;
+        $lng = isset( $location['lng'] ) ? (float) $location['lng'] : 0.0;
+
+        if ( $lat && $lng ) {
+            echo '<div class="estate-office-card__map">';
+            echo '<div class="estate-office-profile__map" data-property-map-view data-lat="' . esc_attr( $lat ) . '" data-lng="' . esc_attr( $lng ) . '"></div>';
+            echo '<p class="description hidden" data-map-fallback>' . esc_html__( 'Mapa wymaga aktywnego klucza Google Maps.', 'estate-office' ) . '</p>';
+            echo '</div>';
+        } else {
+            echo '<p class="description">' . esc_html__( 'Nie wybrano lokalizacji na mapie.', 'estate-office' ) . '</p>';
+        }
+
         echo '</div>';
     }
 

@@ -102,6 +102,14 @@ trait DataFormattingTrait {
         return $map[ $kind ] ?? ucfirst( $kind );
     }
 
+    protected function format_land_register( string $value, bool $missing ): string {
+        if ( $missing ) {
+            return __( 'Brak numeru KW (oświadczenie klienta)', 'estate-office' );
+        }
+
+        return $value ? $value : '—';
+    }
+
     protected function format_stage( $stage ): string {
         if ( ! is_array( $stage ) ) {
             return '';

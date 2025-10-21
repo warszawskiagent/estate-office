@@ -3,6 +3,7 @@ namespace EstateOffice\Frontend;
 
 use EstateOffice\Badges\Manager as BadgesManager;
 use EstateOffice\Meta\Keys;
+use EstateOffice\Settings\Manager as SettingsManager;
 use WP_Post;
 use WP_Query;
 
@@ -146,6 +147,32 @@ class Offers {
         }
 
         wp_enqueue_style( 'estate-office-frontend', ESTATE_OFFICE_URL . 'assets/css/frontend.css', [], ESTATE_OFFICE_VERSION );
+
+        $settings = ( new SettingsManager() )->get_settings();
+        $key      = $settings['google_maps_api_key'] ?? '';
+        $locale   = determine_locale();
+        $language = $locale ? substr( $locale, 0, 2 ) : 'pl';
+
+        wp_enqueue_script( 'estate-office-offer-map', ESTATE_OFFICE_URL . 'assets/js/offers-map.js', [], ESTATE_OFFICE_VERSION, true );
+        wp_localize_script(
+            'estate-office-offer-map',
+            'EstateOfficeOffers',
+            [
+                'googleMaps' => [
+                    'key'      => $key,
+                    'enabled'  => ! empty( $key ),
+                    'language' => $language,
+                    'default'  => [
+                        'lat'  => 52.2297,
+                        'lng'  => 21.0122,
+                        'zoom' => 12,
+                    ],
+                    'i18n'     => [
+                        'missingKey' => __( 'Mapa wymaga aktywnego klucza Google Maps.', 'estate-office' ),
+                    ],
+                ],
+            ]
+        );
     }
 
     /**
@@ -503,6 +530,7 @@ class Offers {
         $vr          = get_post_meta( $property_id, Keys::PROPERTY_VR, true );
         $badges      = get_post_meta( $property_id, Keys::PROPERTY_BADGES, true );
         $gallery_ids = get_post_meta( $property_id, Keys::PROPERTY_GALLERY, true );
+        $location    = get_post_meta( $property_id, Keys::PROPERTY_LOCATION, true );
         $floorplan_2d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_2D, true );
         $floorplan_3d = (int) get_post_meta( $property_id, Keys::PROPERTY_FLOORPLAN_3D, true );
 
@@ -518,6 +546,7 @@ class Offers {
         $extra     = is_array( $extra ) ? $extra : [];
         $gallery_ids = is_array( $gallery_ids ) ? array_map( 'intval', $gallery_ids ) : [];
         $badges      = is_array( $badges ) ? array_map( 'sanitize_key', $badges ) : [];
+        $location    = is_array( $location ) ? $location : [];
 
         $address_normalized = [
             'street'      => $address['street'] ?? '',
@@ -573,6 +602,12 @@ class Offers {
             'gallery'          => $this->prepare_gallery_items( $gallery_ids ),
             'floorplan_2d'     => $this->prepare_floorplan_link( $floorplan_2d, __( 'Rzut 2D', 'estate-office' ) ),
             'floorplan_3d'     => $this->prepare_floorplan_link( $floorplan_3d, __( 'Rzut 3D', 'estate-office' ) ),
+            'location'         => [
+                'lat'      => isset( $location['lat'] ) ? (float) $location['lat'] : 0.0,
+                'lng'      => isset( $location['lng'] ) ? (float) $location['lng'] : 0.0,
+                'address'  => isset( $location['address'] ) ? $location['address'] : '',
+                'place_id' => isset( $location['place_id'] ) ? $location['place_id'] : '',
+            ],
         ];
     }
 
@@ -711,6 +746,10 @@ class Offers {
         echo '</dl>';
         echo '</section>';
 
+        if ( ! empty( $payload['location']['lat'] ) && ! empty( $payload['location']['lng'] ) ) {
+            $this->render_map_section( $payload['location'], $payload['address_label'] );
+        }
+
         if ( ! empty( $payload['gallery'] ) ) {
             $this->render_gallery_section( $payload['gallery'] );
         }
@@ -758,6 +797,28 @@ class Offers {
         }
 
         echo '</article>';
+    }
+
+    private function render_map_section( array $location, string $fallback_address ): void {
+        $lat = isset( $location['lat'] ) ? (float) $location['lat'] : 0.0;
+        $lng = isset( $location['lng'] ) ? (float) $location['lng'] : 0.0;
+
+        if ( ! $lat && ! $lng ) {
+            return;
+        }
+
+        $address = $location['address'] ?: $fallback_address;
+
+        echo '<section class="estate-office-offer__section estate-office-offer__section--map">';
+        echo '<h2>' . esc_html__( 'Lokalizacja', 'estate-office' ) . '</h2>';
+
+        if ( $address ) {
+            echo '<p class="estate-office-offer__map-summary">' . esc_html( $address ) . '</p>';
+        }
+
+        echo '<div class="estate-office-offer__map" data-offer-map data-lat="' . esc_attr( $lat ) . '" data-lng="' . esc_attr( $lng ) . '" data-address="' . esc_attr( $address ) . '"></div>';
+        echo '<p class="estate-office-offer__map-fallback hidden" data-offer-map-fallback>' . esc_html__( 'Mapa wymaga aktywnego klucza Google Maps.', 'estate-office' ) . '</p>';
+        echo '</section>';
     }
 
     /**

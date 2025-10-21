@@ -210,8 +210,41 @@ final class Plugin {
             ]
         );
 
-        if ( isset( $_GET['page'] ) && in_array( $_GET['page'], [ 'estate-office-contract-wizard', 'estate-office-crm-panel' ], true ) ) {
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+        if ( in_array( $page, [ 'estate-office-contract-wizard', 'estate-office-crm-panel', 'estate-office-property-profile' ], true ) ) {
             wp_enqueue_script( 'estate-office-contract-wizard', ESTATE_OFFICE_URL . 'assets/js/contract-wizard.js', [], ESTATE_OFFICE_VERSION, true );
+
+            $settings = $this->settings->get_settings();
+            $key      = $settings['google_maps_api_key'] ?? '';
+            $locale   = determine_locale();
+            $language = $locale ? substr( $locale, 0, 2 ) : 'pl';
+
+            wp_localize_script(
+                'estate-office-contract-wizard',
+                'EstateOfficeWizard',
+                [
+                    'googleMaps' => [
+                        'key'      => $key,
+                        'enabled'  => ! empty( $key ),
+                        'language' => $language,
+                        'default'  => [
+                            'lat'  => 52.2297,
+                            'lng'  => 21.0122,
+                            'zoom' => 12,
+                        ],
+                        'i18n'     => [
+                            'missingKey'       => __( 'Dodaj klucz API Google Maps w ustawieniach, aby aktywować mapę.', 'estate-office' ),
+                            'summaryEmpty'     => __( 'Nie wybrano lokalizacji.', 'estate-office' ),
+                            'summaryValue'     => __( 'Wybrana lokalizacja: %s', 'estate-office' ),
+                            'searchPlaceholder'=> __( 'Wyszukaj adres', 'estate-office' ),
+                            'selectPrompt'     => __( 'Kliknij na mapie, aby ustawić pinezkę.', 'estate-office' ),
+                            'clearLocation'    => __( 'Usuń lokalizację', 'estate-office' ),
+                            'viewMissingKey'   => __( 'Mapa wymaga aktywnego klucza Google Maps.', 'estate-office' ),
+                        ],
+                    ],
+                ]
+            );
         }
     }
 

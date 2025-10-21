@@ -441,3 +441,59 @@
 .estate-office-agents td {
     vertical-align: top;
 }
+
+.estate-office-map {
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 16px;
+    background: #fff;
+    margin-bottom: 24px;
+}
+
+.estate-office-map__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.estate-office-map__canvas {
+    height: 320px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 12px;
+}
+
+.estate-office-map__canvas.hidden {
+    display: none;
+}
+
+.estate-office-map__search {
+    max-width: 320px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.estate-office-map__search.hidden {
+    display: none;
+}
+
+.estate-office-map__notice {
+    margin: 0 0 12px;
+    color: #856404;
+}
+
+.estate-office-profile__map {
+    height: 280px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+[data-map-fallback] {
+    margin-top: 12px;
+}
+
+.estate-office-card__map {
+    margin-top: 12px;
+}

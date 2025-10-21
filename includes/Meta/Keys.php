@@ -63,6 +63,9 @@ final class Keys {
     public const PROPERTY_GALLERY        = '_estate_office_property_gallery';
     public const PROPERTY_FLOORPLAN_2D   = '_estate_office_property_floorplan_2d';
     public const PROPERTY_FLOORPLAN_3D   = '_estate_office_property_floorplan_3d';
+    public const PROPERTY_LOCATION       = '_estate_office_property_location';
+    public const PROPERTY_LAND_REGISTER  = '_estate_office_property_land_register';
+    public const PROPERTY_LAND_REGISTER_MISSING = '_estate_office_property_land_register_missing';
     public const PROPERTY_BADGES         = '_estate_office_property_badges';
     public const PROPERTY_VIDEO          = '_estate_office_property_video';
     public const PROPERTY_VR             = '_estate_office_property_vr';

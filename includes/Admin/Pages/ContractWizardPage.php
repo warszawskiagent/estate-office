@@ -2,6 +2,7 @@
 namespace EstateOffice\Admin\Pages;
 
 use EstateOffice\Meta\Keys;
+use EstateOffice\Settings\Manager as SettingsManager;
 use WP_Error;
 use WP_Post;
 use WP_Query;
@@ -628,6 +629,10 @@ class ContractWizardPage extends AbstractPage {
 
         $this->handle_property_submission( $contract_id, $type );
 
+        $settings   = ( new SettingsManager() )->get_settings();
+        $maps_key   = $settings['google_maps_api_key'] ?? '';
+        $maps_ready = ! empty( $maps_key );
+
         $this->render_header(
             __( 'Dodaj nieruchomość', 'estate-office' ),
             __( 'Uzupełnij dane nieruchomości powiązanej z umową.', 'estate-office' )
@@ -684,6 +689,24 @@ class ContractWizardPage extends AbstractPage {
                     <option value="inne"><?php esc_html_e( 'Inne', 'estate-office' ); ?></option>
                 </select>
             </p>
+
+            <h3><?php esc_html_e( 'Mapa Google', 'estate-office' ); ?></h3>
+            <div class="estate-office-map" data-property-map data-map-enabled="<?php echo $maps_ready ? '1' : '0'; ?>">
+                <?php if ( ! $maps_ready ) : ?>
+                    <p class="estate-office-map__notice"><?php esc_html_e( 'Dodaj klucz API Google Maps w ustawieniach, aby aktywować mapę.', 'estate-office' ); ?></p>
+                <?php endif; ?>
+                <p class="description" data-map-summary><?php esc_html_e( 'Nie wybrano lokalizacji.', 'estate-office' ); ?></p>
+                <div class="estate-office-map__actions">
+                    <button type="button" class="button" data-map-toggle data-label-select="<?php echo esc_attr__( 'Zaznacz na mapie', 'estate-office' ); ?>" data-label-change="<?php echo esc_attr__( 'Zmień lokalizację', 'estate-office' ); ?>"><?php esc_html_e( 'Zaznacz na mapie', 'estate-office' ); ?></button>
+                    <button type="button" class="button-link hidden" data-map-clear><?php esc_html_e( 'Usuń lokalizację', 'estate-office' ); ?></button>
+                </div>
+                <input type="text" class="estate-office-map__search hidden" data-map-search placeholder="<?php echo esc_attr__( 'Wyszukaj adres', 'estate-office' ); ?>" />
+                <div class="estate-office-map__canvas hidden" data-map-canvas></div>
+                <input type="hidden" name="property[location][lat]" data-map-lat />
+                <input type="hidden" name="property[location][lng]" data-map-lng />
+                <input type="hidden" name="property[location][place_id]" data-map-place />
+                <input type="hidden" name="property[location][address]" data-map-address />
+            </div>
 
             <h3><?php esc_html_e( 'Dane nieruchomości', 'estate-office' ); ?></h3>
             <div class="estate-office-grid">
@@ -1004,6 +1027,10 @@ class ContractWizardPage extends AbstractPage {
         update_post_meta( $property_id, Keys::PROPERTY_REFERENCE, $reference );
         update_post_meta( $property_id, Keys::PROPERTY_TRANSACTION, $transaction_type );
         update_post_meta( $property_id, Keys::PROPERTY_KIND, $kind );
+        $location   = $this->sanitize_location( $data['location'] ?? [] );
+        $no_kw      = ! empty( $data['no_kw'] );
+        $ekw_number = $no_kw ? '' : sanitize_text_field( $data['ekw'] ?? '' );
+
         update_post_meta( $property_id, Keys::PROPERTY_ADDRESS, $address );
         update_post_meta( $property_id, Keys::PROPERTY_LEGAL_STATUS, sanitize_key( $data['legal_status'] ?? '' ) );
         update_post_meta( $property_id, Keys::PROPERTY_PRICE, $price );
@@ -1040,6 +1067,9 @@ class ContractWizardPage extends AbstractPage {
         update_post_meta( $property_id, Keys::PROPERTY_VIDEO, esc_url_raw( $data['video'] ?? '' ) );
         update_post_meta( $property_id, Keys::PROPERTY_VR, esc_url_raw( $data['vr'] ?? '' ) );
         update_post_meta( $property_id, Keys::PROPERTY_BADGES, $this->sanitize_array_values( $data['badges'] ?? [] ) );
+        update_post_meta( $property_id, Keys::PROPERTY_LOCATION, $location );
+        update_post_meta( $property_id, Keys::PROPERTY_LAND_REGISTER, $ekw_number );
+        update_post_meta( $property_id, Keys::PROPERTY_LAND_REGISTER_MISSING, $no_kw ? 1 : 0 );
         update_post_meta( $property_id, Keys::PROPERTY_CONTRACT, $contract_id );
 
         update_post_meta( $contract_id, Keys::CONTRACT_PROPERTY, $property_id );
@@ -1507,6 +1537,20 @@ class ContractWizardPage extends AbstractPage {
         }
 
         return $sanitized;
+    }
+
+    private function sanitize_location( array $location ): array {
+        $lat      = isset( $location['lat'] ) ? round( (float) wp_unslash( $location['lat'] ), 6 ) : 0.0;
+        $lng      = isset( $location['lng'] ) ? round( (float) wp_unslash( $location['lng'] ), 6 ) : 0.0;
+        $place_id = isset( $location['place_id'] ) ? sanitize_text_field( wp_unslash( $location['place_id'] ) ) : '';
+        $address  = isset( $location['address'] ) ? sanitize_text_field( wp_unslash( $location['address'] ) ) : '';
+
+        return [
+            'lat'      => $lat,
+            'lng'      => $lng,
+            'place_id' => $place_id,
+            'address'  => $address,
+        ];
     }
 
     private function sanitize_attachment_ids( array $ids ): array {
