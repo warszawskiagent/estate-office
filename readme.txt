@@ -4,16 +4,20 @@ Tags: real estate, crm, agency, property management
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 EstateOffice CRM to fundament rozbudowanego systemu zarządzania biurem nieruchomości w WordPressie.
-Wersja 0.5.0 dodaje zarządzanie etapami umów bezpośrednio z panelu CRM oraz automatyczną aktualizację historii etapów i podsumowań.
+Wersja 0.6.0 wprowadza publiczne profile agentów z dedykowanymi stronami ofert oraz nowe pole zdjęcia w panelu zarządzania agentami.
 
 == Description ==
 
-Wersja 0.5.0 rozbudowuje panel szczegółów o panel aktualizacji etapów umowy z walidacją daty, komunikatami o statusie i synchronizacją podsumowań oraz historii. Administratorzy mogą zmieniać etapy zgodnie z roadmapą procesu sprzedaży, a wszystkie powiązane sekcje są odświeżane bez przeładowania strony.
+Wersja 0.6.0 oferuje spersonalizowane landing pages dla agentów biura. Każdy agent otrzymuje wizytówkę ze zdjęciem, danymi kontaktowymi i listą ofert eksportowanych na WWW, prezentowanych w identycznej formie jak katalog nieruchomości.
+
+Administratorzy mogą łatwo dodać lub uaktualnić zdjęcie agenta bezpośrednio z panelu „Agenci”. Formularz obsługuje podgląd miniatury oraz szybkie usuwanie, dzięki czemu publikowane wizytówki są zawsze aktualne i estetyczne.
+
+Dotychczasowe funkcje – w tym panel etapów umowy z wersji 0.5.0, kreator umów 0.3.0 oraz szuflada profili 0.4.0 – pozostają dostępne i współpracują z nowym widokiem agentów.
 
 Dotychczasowe funkcje – w tym kreator trzystopniowy z wersji 0.3.0 oraz szuflada profili z wersji 0.4.0 – pozostają dostępne i współpracują z nowym widokiem, ułatwiając codzienną pracę administracji biura.
 
@@ -24,6 +28,11 @@ Dotychczasowe funkcje – w tym kreator trzystopniowy z wersji 0.3.0 oraz szufla
 3. Skonfiguruj ustawienia w menu **Estate Office CRM → Ustawienia**.
 
 == Changelog ==
+
+= 0.6.0 =
+* Publiczne profile agentów dostępne pod adresem `agent/{nazwa}` z biogramem, kontaktami i listą eksportowanych ofert.
+* Integracja kart ofert z profilem agenta dzięki współdzielonemu rendererowi i responsywnej siatce znanej z katalogu nieruchomości.
+* Nowe pole zdjęcia na stronie administratora „Agenci” z podglądem miniatury, wyborem z biblioteki mediów oraz opcją usuwania.
 
 = 0.5.0 =
 * Aktualizacja etapu umowy z poziomu panelu CRM wraz z walidacją daty i komunikatem o statusie.

@@ -143,7 +143,7 @@ class Listings {
                                         <?php endif; ?>
                                         <div class="estate-office-property-grid">
                                             <?php foreach ( $entries as $entry ) : ?>
-                                                <?php $this->render_offer_card( $entry ); ?>
+                                                <?php echo $this->get_offer_card_html( $entry ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
@@ -158,55 +158,91 @@ class Listings {
     }
 
     /**
-     * Renders single offer card.
+     * Returns offer card markup.
      *
      * @param array<string, mixed> $entry Offer entry.
+     * @return string
      */
-    private function render_offer_card( array $entry ): void {
-        $thumb_id  = $entry['thumbnail_id'];
+    public function get_offer_card_html( array $entry ): string {
+        $thumb_id  = $entry['thumbnail_id'] ?? 0;
         $image     = $thumb_id ? wp_get_attachment_image( $thumb_id, 'large' ) : '';
-        $flag      = $entry['primary_flag'];
-        $permalink = $entry['permalink'];
+        $flag      = $entry['primary_flag'] ?? '';
+        $permalink = $entry['permalink'] ?? '';
+
+        ob_start();
         ?>
         <article class="estate-office-property-card">
             <div class="estate-office-card-media">
                 <?php if ( $flag ) : ?>
                     <span class="estate-office-flag"><?php echo esc_html( $flag ); ?></span>
                 <?php endif; ?>
-                <?php echo $image ? $image : '<span class="screen-reader-text">' . esc_html__( 'Brak zdjęcia', 'estate-office' ) . '</span>'; ?>
+                <?php echo $image ? $image : '<span class="screen-reader-text">' . esc_html__( 'Brak zdjęcia', 'estate-office' ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </div>
             <div class="estate-office-card-body">
-                <h6 class="estate-office-card-title"><?php echo esc_html( $entry['title'] ); ?></h6>
+                <h6 class="estate-office-card-title"><?php echo esc_html( $entry['title'] ?? '' ); ?></h6>
                 <div class="estate-office-card-meta">
                     <span>
                         <?php echo $this->get_icon_svg( 'location' ); ?>
-                        <span><?php echo esc_html( $entry['address'] ); ?></span>
+                        <span><?php echo esc_html( $entry['address'] ?? '' ); ?></span>
                     </span>
-                    <?php if ( $entry['area'] ) : ?>
+                    <?php if ( ! empty( $entry['area'] ) ) : ?>
                         <span>
                             <?php echo $this->get_icon_svg( 'area' ); ?>
                             <span><?php echo esc_html( $entry['area'] ); ?></span>
                         </span>
                     <?php endif; ?>
-                    <?php if ( $entry['rooms'] ) : ?>
+                    <?php if ( ! empty( $entry['rooms'] ) ) : ?>
                         <span>
                             <?php echo $this->get_icon_svg( 'rooms' ); ?>
                             <span><?php echo esc_html( $entry['rooms'] ); ?></span>
                         </span>
                     <?php endif; ?>
                 </div>
-                <?php if ( $entry['price'] ) : ?>
+                <?php if ( ! empty( $entry['price'] ) ) : ?>
                     <div class="estate-office-card-price"><?php echo esc_html( $entry['price'] ); ?></div>
                 <?php endif; ?>
-                <div class="estate-office-card-link">
-                    <a href="<?php echo esc_url( $permalink ); ?>">
-                        <?php esc_html_e( 'Zobacz szczegóły', 'estate-office' ); ?>
-                        <?php echo $this->get_icon_svg( 'arrow' ); ?>
-                    </a>
-                </div>
+                <?php if ( $permalink ) : ?>
+                    <div class="estate-office-card-link">
+                        <a href="<?php echo esc_url( $permalink ); ?>">
+                            <?php esc_html_e( 'Zobacz szczegóły', 'estate-office' ); ?>
+                            <?php echo $this->get_icon_svg( 'arrow' ); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
         </article>
         <?php
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Builds reusable offer card entry for a property post.
+     *
+     * @param \WP_Post $post Property post.
+     * @return array<string, mixed>
+     */
+    public function prepare_card_entry( \WP_Post $post ): array {
+        $meta        = $this->get_post_meta( $post->ID );
+        $transaction = $meta['transaction_type'] ?? 'sprzedaz';
+        $title       = $meta['offer_number'] ? sprintf( '%s — %s', $meta['offer_number'], $post->post_title ) : $post->post_title;
+
+        return [
+            'entry' => [
+                'title'        => $title,
+                'address'      => $this->format_address( $meta ),
+                'price'        => $this->format_price( $meta, $transaction ),
+                'area'         => $this->format_area( $meta ),
+                'rooms'        => $this->format_rooms( $meta ),
+                'thumbnail_id' => $this->get_featured_media( $meta ),
+                'primary_flag' => $this->get_primary_flag( $meta ),
+                'permalink'    => home_url( user_trailingslashit( 'oferta/' . $post->post_name ) ),
+            ],
+            'transaction'   => $transaction,
+            'property_type' => $meta['property_type'] ?? 'mieszkanie',
+            'city'          => $meta['city'] ?? __( 'Nieznane miasto', 'estate-office' ),
+            'district'      => $meta['district'] ?? '',
+        ];
     }
 
     /**
@@ -238,22 +274,13 @@ class Listings {
         $grouped = [];
 
         foreach ( $posts as $post ) {
-            $meta      = $this->get_post_meta( $post->ID );
-            $type      = $meta['property_type'] ?? 'mieszkanie';
-            $city      = $meta['city'] ?? __( 'Nieznane miasto', 'estate-office' );
-            $district  = $meta['district'] ?? '';
-            $permalink = home_url( user_trailingslashit( 'oferta/' . $post->post_name ) );
+            $prepared  = $this->prepare_card_entry( $post );
+            $entry     = $prepared['entry'];
+            $type      = $prepared['property_type'];
+            $city      = $prepared['city'];
+            $district  = $prepared['district'];
 
-            $grouped[ $type ][ $city ][ $district ][] = [
-                'title'        => $meta['offer_number'] ? sprintf( '%s — %s', $meta['offer_number'], $post->post_title ) : $post->post_title,
-                'address'      => $this->format_address( $meta ),
-                'price'        => $this->format_price( $meta, $transaction ),
-                'area'         => $this->format_area( $meta ),
-                'rooms'        => $this->format_rooms( $meta ),
-                'thumbnail_id' => $this->get_featured_media( $meta ),
-                'primary_flag' => $this->get_primary_flag( $meta ),
-                'permalink'    => $permalink,
-            ];
+            $grouped[ $type ][ $city ][ $district ][] = $entry;
         }
 
         return $grouped;
@@ -470,7 +497,7 @@ class Listings {
      * @param string $transaction Transaction.
      * @return string
      */
-    private function get_transaction_label( string $transaction ): string {
+    public function get_transaction_label( string $transaction ): string {
         $labels = [
             'sprzedaz' => __( 'sprzedaż', 'estate-office' ),
             'wynajem'  => __( 'wynajem', 'estate-office' ),

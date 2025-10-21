@@ -29,6 +29,7 @@ class Agents_Page {
         $last_name  = isset( $_POST['agent_last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_last_name'] ) ) : '';
         $phone      = isset( $_POST['agent_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_phone'] ) ) : '';
         $bio        = isset( $_POST['agent_bio'] ) ? wp_kses_post( wp_unslash( $_POST['agent_bio'] ) ) : '';
+        $avatar_id  = isset( $_POST['agent_avatar_id'] ) ? absint( $_POST['agent_avatar_id'] ) : 0;
 
         if ( empty( $email ) || empty( $username ) ) {
             $this->redirect_with_message( 'estate-office-agents', 'error', __( 'Nazwa użytkownika i email są wymagane.', 'estate-office' ) );
@@ -52,6 +53,12 @@ class Agents_Page {
         update_user_meta( $user_id, '_estate_office_phone', $phone );
         update_user_meta( $user_id, '_estate_office_bio', $bio );
 
+        if ( $avatar_id ) {
+            update_user_meta( $user_id, '_estate_office_avatar_id', $avatar_id );
+        } else {
+            delete_user_meta( $user_id, '_estate_office_avatar_id' );
+        }
+
         $this->redirect_with_message( 'estate-office-agents', 'success', __( 'Agent został dodany.', 'estate-office' ) );
     }
 
@@ -71,6 +78,7 @@ class Agents_Page {
         $email      = isset( $_POST['agent_email'] ) ? sanitize_email( wp_unslash( $_POST['agent_email'] ) ) : '';
         $phone      = isset( $_POST['agent_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_phone'] ) ) : '';
         $bio        = isset( $_POST['agent_bio'] ) ? wp_kses_post( wp_unslash( $_POST['agent_bio'] ) ) : '';
+        $avatar_id  = isset( $_POST['agent_avatar_id'] ) ? absint( $_POST['agent_avatar_id'] ) : 0;
 
         $userdata = [
             'ID'         => $user_id,
@@ -92,6 +100,12 @@ class Agents_Page {
 
         update_user_meta( $user_id, '_estate_office_phone', $phone );
         update_user_meta( $user_id, '_estate_office_bio', $bio );
+
+        if ( $avatar_id ) {
+            update_user_meta( $user_id, '_estate_office_avatar_id', $avatar_id );
+        } else {
+            delete_user_meta( $user_id, '_estate_office_avatar_id' );
+        }
 
         $this->redirect_with_message( 'estate-office-agents', 'success', __( 'Dane agenta zostały zaktualizowane.', 'estate-office' ) );
     }

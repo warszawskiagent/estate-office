@@ -1,11 +1,44 @@
 (function ($) {
     'use strict';
 
+    function updateMediaPreview(previewId, attachment) {
+        if (!previewId) {
+            return;
+        }
+
+        var preview = $('#' + previewId);
+        if (!preview.length) {
+            return;
+        }
+
+        if (!attachment) {
+            var placeholder = preview.data('placeholder') || '';
+            preview.html('<span class="estate-office-avatar-placeholder">' + placeholder + '</span>');
+            return;
+        }
+
+        var imageSource = attachment.url;
+        if (attachment.sizes) {
+            if (attachment.sizes.medium) {
+                imageSource = attachment.sizes.medium.url;
+            } else if (attachment.sizes.thumbnail) {
+                imageSource = attachment.sizes.thumbnail.url;
+            } else if (attachment.sizes.full) {
+                imageSource = attachment.sizes.full.url;
+            }
+        }
+
+        var altText = attachment.alt || attachment.title || attachment.filename || '';
+        preview.html('<img src="' + imageSource + '" alt="' + altText + '" />');
+    }
+
     function initMediaButtons() {
         $('.estate-office-media-button').on('click', function (event) {
             event.preventDefault();
             var button = $(this);
             var targetField = $('#' + button.data('target'));
+            var returnType = button.data('return') || 'url';
+            var previewId = button.data('preview') || '';
 
             var frame = wp.media({
                 title: button.text(),
@@ -17,10 +50,29 @@
 
             frame.on('select', function () {
                 var attachment = frame.state().get('selection').first().toJSON();
-                targetField.val(attachment.url).trigger('change');
+                var value = attachment.url;
+
+                if (returnType === 'id') {
+                    value = attachment.id;
+                }
+
+                targetField.val(value).trigger('change');
+                updateMediaPreview(previewId, attachment);
             });
 
             frame.open();
+        });
+    }
+
+    function initAvatarRemovers() {
+        $('.estate-office-avatar-remove').on('click', function (event) {
+            event.preventDefault();
+            var button = $(this);
+            var targetField = $('#' + button.data('target'));
+            var previewId = button.data('preview') || '';
+
+            targetField.val('').trigger('change');
+            updateMediaPreview(previewId, null);
         });
     }
 
@@ -201,6 +253,7 @@
 
     $(document).ready(function () {
         initMediaButtons();
+        initAvatarRemovers();
         initPropertyMeta();
         initContractMeta();
         initClientMeta();

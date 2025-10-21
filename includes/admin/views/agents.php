@@ -44,6 +44,21 @@ $message     = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GE
                         <td><input type="tel" name="agent_phone" id="agent_phone" class="regular-text" /></td>
                     </tr>
                     <tr>
+                        <th scope="row"><?php esc_html_e( 'Zdjęcie', 'estate-office' ); ?></th>
+                        <td>
+                            <div class="estate-office-avatar-field">
+                                <div class="estate-office-avatar-preview" id="agent_avatar_preview" data-placeholder="<?php echo esc_attr( __( 'Brak zdjęcia', 'estate-office' ) ); ?>">
+                                    <span class="estate-office-avatar-placeholder"><?php esc_html_e( 'Brak zdjęcia', 'estate-office' ); ?></span>
+                                </div>
+                                <input type="hidden" name="agent_avatar_id" id="agent_avatar_id" value="" />
+                                <div class="estate-office-avatar-actions">
+                                    <button type="button" class="button estate-office-media-button" data-target="agent_avatar_id" data-return="id" data-preview="agent_avatar_preview"><?php esc_html_e( 'Wybierz zdjęcie', 'estate-office' ); ?></button>
+                                    <button type="button" class="button-link estate-office-avatar-remove" data-target="agent_avatar_id" data-preview="agent_avatar_preview"><?php esc_html_e( 'Usuń zdjęcie', 'estate-office' ); ?></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><label for="agent_bio"><?php esc_html_e( 'Opis/Biografia', 'estate-office' ); ?></label></th>
                         <td><textarea name="agent_bio" id="agent_bio" rows="4" class="large-text"></textarea></td>
                     </tr>
@@ -69,13 +84,18 @@ $message     = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GE
             </thead>
             <tbody>
                 <?php foreach ( $agents as $agent ) :
-                    $phone = get_user_meta( $agent->ID, '_estate_office_phone', true );
-                    $bio   = get_user_meta( $agent->ID, '_estate_office_bio', true );
+                    $phone      = get_user_meta( $agent->ID, '_estate_office_phone', true );
+                    $bio        = get_user_meta( $agent->ID, '_estate_office_bio', true );
+                    $avatar_id  = (int) get_user_meta( $agent->ID, '_estate_office_avatar_id', true );
+                    $avatar_img = $avatar_id ? wp_get_attachment_image( $avatar_id, 'thumbnail' ) : get_avatar( $agent->ID, 96 );
                     ?>
                     <tr>
-                        <td>
-                            <strong><?php echo esc_html( $agent->display_name ); ?></strong><br />
-                            <small><?php echo esc_html( $agent->user_email ); ?></small>
+                        <td class="estate-office-agent-card">
+                            <span class="estate-office-agent-card-photo"><?php echo $avatar_img; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+                            <span class="estate-office-agent-card-body">
+                                <strong><?php echo esc_html( $agent->display_name ); ?></strong><br />
+                                <small><?php echo esc_html( $agent->user_email ); ?></small>
+                            </span>
                         </td>
                         <td>
                             <?php if ( $phone ) : ?>
@@ -116,6 +136,21 @@ $message     = isset( $_GET['message'] ) ? sanitize_text_field( wp_unslash( $_GE
                                         <tr>
                                             <th scope="row"><label for="agent_phone_<?php echo esc_attr( $agent->ID ); ?>"><?php esc_html_e( 'Telefon', 'estate-office' ); ?></label></th>
                                             <td><input type="tel" name="agent_phone" id="agent_phone_<?php echo esc_attr( $agent->ID ); ?>" value="<?php echo esc_attr( $phone ); ?>" class="regular-text" /></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row"><?php esc_html_e( 'Zdjęcie', 'estate-office' ); ?></th>
+                                            <td>
+                                                <div class="estate-office-avatar-field">
+                                                    <div class="estate-office-avatar-preview" id="agent_avatar_preview_<?php echo esc_attr( $agent->ID ); ?>" data-placeholder="<?php echo esc_attr( __( 'Brak zdjęcia', 'estate-office' ) ); ?>">
+                                                        <?php echo $avatar_img; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                                    </div>
+                                                    <input type="hidden" name="agent_avatar_id" id="agent_avatar_id_<?php echo esc_attr( $agent->ID ); ?>" value="<?php echo esc_attr( $avatar_id ); ?>" />
+                                                    <div class="estate-office-avatar-actions">
+                                                        <button type="button" class="button estate-office-media-button" data-target="agent_avatar_id_<?php echo esc_attr( $agent->ID ); ?>" data-return="id" data-preview="agent_avatar_preview_<?php echo esc_attr( $agent->ID ); ?>"><?php esc_html_e( 'Wybierz zdjęcie', 'estate-office' ); ?></button>
+                                                        <button type="button" class="button-link estate-office-avatar-remove" data-target="agent_avatar_id_<?php echo esc_attr( $agent->ID ); ?>" data-preview="agent_avatar_preview_<?php echo esc_attr( $agent->ID ); ?>"><?php esc_html_e( 'Usuń zdjęcie', 'estate-office' ); ?></button>
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th scope="row"><label for="agent_bio_<?php echo esc_attr( $agent->ID ); ?>"><?php esc_html_e( 'Opis/Biografia', 'estate-office' ); ?></label></th>

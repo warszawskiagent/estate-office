@@ -3,7 +3,7 @@
  * Plugin Name:       EstateOffice CRM
  * Plugin URI:        https://example.com/estateoffice
  * Description:       Kompleksowy CRM dla biur nieruchomości. Zarządzaj nieruchomościami, umowami, klientami i agentami oraz eksportuj oferty na stronę WWW.
- * Version:           0.5.0
+ * Version:           0.6.0
  * Author:            EstateOffice Team
  * Author URI:        https://example.com
  * License:           GPL-2.0-or-later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'ESTATE_OFFICE_VERSION' ) ) {
-    define( 'ESTATE_OFFICE_VERSION', '0.5.0' );
+    define( 'ESTATE_OFFICE_VERSION', '0.6.0' );
 }
 
 if ( ! defined( 'ESTATE_OFFICE_PLUGIN_FILE' ) ) {

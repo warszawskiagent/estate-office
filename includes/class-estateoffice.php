@@ -11,6 +11,7 @@ use EstateOffice\Setup\Deactivator;
 use EstateOffice\Frontend\CRM_Shortcode;
 use EstateOffice\Frontend\CRM_REST;
 use EstateOffice\Frontend\Listings;
+use EstateOffice\Frontend\Agents;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -77,6 +78,13 @@ final class Plugin {
     private $listings;
 
     /**
+     * Public agent pages handler.
+     *
+     * @var Agents
+     */
+    private $agent_pages;
+
+    /**
      * CRM REST endpoints handler.
      *
      * @var CRM_REST
@@ -125,6 +133,7 @@ final class Plugin {
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-crm-shortcode.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-listings.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-agents.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-crm-rest.php';
     }
 
@@ -160,8 +169,9 @@ final class Plugin {
         $this->meta_boxes   = new Meta_Boxes();
         $this->crm_shortcode = new CRM_Shortcode();
         $this->listings      = new Listings();
+        $this->agent_pages   = new Agents( $this->listings );
         $this->crm_rest      = new CRM_REST();
-        $this->admin_menu   = new Admin_Menu( $this->settings, $this->agents_page );
+        $this->admin_menu    = new Admin_Menu( $this->settings, $this->agents_page );
     }
 
     /**

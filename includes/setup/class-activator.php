@@ -42,10 +42,12 @@ class Activator {
         // Register post types before flushing.
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/post-types/class-registrar.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-listings.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-agents.php';
 
         $registrar = new \EstateOffice\Post_Types\Registrar();
         $registrar->register_post_types();
         \EstateOffice\Frontend\Listings::add_rewrite_rules();
+        \EstateOffice\Frontend\Agents::add_rewrite_rules();
         flush_rewrite_rules();
     }
 }

@@ -12,7 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
         <li><strong>0.0.1</strong> – <?php esc_html_e( 'Fundamenty: rejestracja typów danych, rola agenta, ustawienia i panel administracyjny.', 'estate-office' ); ?></li>
         <li><strong>0.1.0</strong> – <?php esc_html_e( 'Zaawansowane formularze umów i klientów wraz z walidacją wieloetapową.', 'estate-office' ); ?></li>
         <li><strong>0.5.0</strong> – <?php esc_html_e( 'Integracje: Google Maps, znaki wodne oraz eksport ofert na WWW.', 'estate-office' ); ?></li>
-        <li><strong>0.9.0</strong> – <?php esc_html_e( 'Publiczne strony ofert i agentów wraz z wyszukiwarką.', 'estate-office' ); ?></li>
+        <li><strong>0.6.0</strong> – <?php esc_html_e( 'Publiczne profile agentów z galerią ofert i personalizacją.', 'estate-office' ); ?></li>
+        <li><strong>0.9.0</strong> – <?php esc_html_e( 'Publiczne strony ofert i rozbudowana wyszukiwarka.', 'estate-office' ); ?></li>
         <li><strong>1.0.0</strong> – <?php esc_html_e( 'Pełny CRM z automatyzacją procesów oraz modułem licencji.', 'estate-office' ); ?></li>
     </ol>
 </div>
