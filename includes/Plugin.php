@@ -147,6 +147,10 @@ final class Plugin {
                 'noMedia'    => __( 'Brak wybranego pliku', 'estate-office' ),
             ]
         );
+
+        if ( isset( $_GET['page'] ) && in_array( $_GET['page'], [ 'estate-office-contract-wizard', 'estate-office-crm-panel' ], true ) ) {
+            wp_enqueue_script( 'estate-office-contract-wizard', ESTATE_OFFICE_URL . 'assets/js/contract-wizard.js', [], ESTATE_OFFICE_VERSION, true );
+        }
     }
 
     /**

@@ -4,6 +4,8 @@ namespace EstateOffice\Admin;
 use EstateOffice\Admin\Pages\AboutPage;
 use EstateOffice\Admin\Pages\AgentsPage;
 use EstateOffice\Admin\Pages\DashboardPage;
+use EstateOffice\Admin\Pages\CRMPage;
+use EstateOffice\Admin\Pages\ContractWizardPage;
 use EstateOffice\Admin\Pages\SettingsPage;
 use EstateOffice\Admin\Pages\LicensePage;
 
@@ -12,17 +14,21 @@ use EstateOffice\Admin\Pages\LicensePage;
  */
 class Menu {
     private DashboardPage $dashboard;
+    private CRMPage $crm;
     private AgentsPage $agents;
     private SettingsPage $settings;
     private AboutPage $about;
     private LicensePage $license;
+    private ContractWizardPage $wizard;
 
     public function __construct() {
         $this->dashboard = new DashboardPage();
+        $this->crm       = new CRMPage();
         $this->agents    = new AgentsPage();
         $this->settings  = new SettingsPage();
         $this->about     = new AboutPage();
         $this->license   = new LicensePage();
+        $this->wizard    = new ContractWizardPage();
     }
 
     /**
@@ -47,6 +53,15 @@ class Menu {
             $capability,
             'estate-office-crm',
             [ $this->dashboard, 'render' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __( 'Panel CRM', 'estate-office' ),
+            __( 'CRM', 'estate-office' ),
+            $capability,
+            'estate-office-crm-panel',
+            [ $this->crm, 'render' ]
         );
 
         add_submenu_page(
@@ -83,6 +98,22 @@ class Menu {
             $capability,
             'estate-office-about',
             [ $this->about, 'render' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __( 'Kreator umów', 'estate-office' ),
+            __( 'Kreator umów', 'estate-office' ),
+            $capability,
+            'estate-office-contract-wizard',
+            [ $this->wizard, 'render' ]
+        );
+
+        add_action(
+            'admin_head',
+            static function () {
+                remove_submenu_page( 'estate-office-crm', 'estate-office-contract-wizard' );
+            }
         );
     }
 }
