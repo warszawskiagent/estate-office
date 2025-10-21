@@ -9,6 +9,7 @@ use EstateOffice\Post_Types\Registrar;
 use EstateOffice\Setup\Activator;
 use EstateOffice\Setup\Deactivator;
 use EstateOffice\Frontend\CRM_Shortcode;
+use EstateOffice\Frontend\CRM_REST;
 use EstateOffice\Frontend\Listings;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -76,6 +77,13 @@ final class Plugin {
     private $listings;
 
     /**
+     * CRM REST endpoints handler.
+     *
+     * @var CRM_REST
+     */
+    private $crm_rest;
+
+    /**
      * Plugin bootstrap.
      */
     private function __construct() {
@@ -117,6 +125,7 @@ final class Plugin {
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/admin/class-meta-boxes.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-crm-shortcode.php';
         require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-listings.php';
+        require_once ESTATE_OFFICE_PLUGIN_DIR . 'includes/frontend/class-crm-rest.php';
     }
 
     /**
@@ -151,6 +160,7 @@ final class Plugin {
         $this->meta_boxes   = new Meta_Boxes();
         $this->crm_shortcode = new CRM_Shortcode();
         $this->listings      = new Listings();
+        $this->crm_rest      = new CRM_REST();
         $this->admin_menu   = new Admin_Menu( $this->settings, $this->agents_page );
     }
 
@@ -198,9 +208,15 @@ final class Plugin {
             'estate-office-frontend',
             'estateOfficeFrontend',
             [
-                'nonce'   => wp_create_nonce( 'estate_office_frontend' ),
+                'nonce'  => wp_create_nonce( 'estate_office_frontend' ),
+                'apiUrl' => esc_url_raw( rest_url( 'estate-office/v1' ) ),
                 'strings' => [
                     'searchPlaceholder' => esc_html__( 'Wyszukaj...', 'estate-office' ),
+                    'noResults'         => esc_html__( 'Brak wyników.', 'estate-office' ),
+                    'contractEdit'      => esc_html__( 'Przejdź do umowy', 'estate-office' ),
+                    'offerEdit'         => esc_html__( 'Otwórz rekord', 'estate-office' ),
+                    'success'           => esc_html__( 'Proces został zakończony pomyślnie.', 'estate-office' ),
+                    'clientRequired'    => esc_html__( 'Dodaj co najmniej jednego klienta.', 'estate-office' ),
                 ],
             ]
         );
