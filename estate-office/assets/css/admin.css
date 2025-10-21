@@ -1,0 +1,30 @@
+.estateoffice-media-field {
+display: flex;
+align-items: center;
+gap: 1rem;
+margin-bottom: 1rem;
+flex-wrap: wrap;
+}
+
+.estateoffice-media-preview img {
+max-width: 120px;
+height: auto;
+border-radius: 4px;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.estateoffice-repeater-items {
+display: grid;
+gap: 0.5rem;
+margin-bottom: 0.5rem;
+max-width: 480px;
+}
+
+.estateoffice-repeater-item {
+display: flex;
+gap: 0.5rem;
+}
+
+.estateoffice-repeater-item .button.link-delete {
+color: #b32d2e;
+}
