@@ -578,9 +578,24 @@ class EstateOffice_Admin {
             $details = array_merge( $details, $dynamic );
         }
 
+        $contract_id      = isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : 0;
+        $transaction_type = '';
+        if ( $contract_id ) {
+            $contract = EstateOffice_Admin_Contracts::get_contract( $contract_id );
+            if ( $contract ) {
+                $transaction_type = $contract->transaction_type;
+            }
+        }
+        if ( empty( $transaction_type ) ) {
+            $transaction_type = sanitize_text_field( $data['transaction_type'] ?? '' );
+        }
+        if ( empty( $transaction_type ) ) {
+            return false;
+        }
+
         $record = [
-            'contract_id'      => isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : null,
-            'transaction_type' => sanitize_text_field( $data['transaction_type'] ?? '' ),
+            'contract_id'      => $contract_id ?: null,
+            'transaction_type' => $transaction_type,
             'property_type'    => $property_type,
             'address'          => ! empty( $address ) ? wp_json_encode( $address ) : null,
             'legal'            => ! empty( $legal ) ? wp_json_encode( $legal ) : null,
@@ -611,8 +626,19 @@ class EstateOffice_Admin {
             $criteria = array_merge( $criteria, $dynamic );
         }
 
+        $contract_id      = isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : 0;
+        if ( $contract_id ) {
+            $contract = EstateOffice_Admin_Contracts::get_contract( $contract_id );
+            if ( $contract ) {
+                $transaction_type = $contract->transaction_type;
+            }
+        }
+        if ( empty( $transaction_type ) ) {
+            return false;
+        }
+
         $record = [
-            'contract_id'      => isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : null,
+            'contract_id'      => $contract_id ?: null,
             'transaction_type' => $transaction_type,
             'criteria'         => ! empty( $criteria ) ? wp_json_encode( $criteria ) : null,
             'description'      => wp_kses_post( $data['description'] ?? '' ),

@@ -7,6 +7,7 @@
             this.setupDynamicFields();
             this.setupContractForm();
             this.setupPropertyForm();
+            this.setupTransactionMirrors();
             this.setupClientForm();
             this.setupAddressToggle();
             this.setupStageHistory();
@@ -82,6 +83,12 @@
                 return;
             }
 
+            const mirrorEmbeddedTransaction = (type) => {
+                $form.find('input[name="property[transaction_type]"]').val(type);
+                $form.find('input[name="search[transaction_type]"]').val(type);
+                $form.find('.estate-office-transaction-display').val(type);
+            };
+
             const toggleSections = () => {
                 const type = $('#transaction_type').val();
                 const propertyRequired = ['SPRZEDAŻ', 'WYNAJEM'].includes(type);
@@ -89,6 +96,7 @@
 
                 $('.estate-office-property').toggle(propertyRequired);
                 $('.estate-office-search').toggle(searchRequired);
+                mirrorEmbeddedTransaction(type);
             };
 
             $('#transaction_type').on('change', toggleSections);
@@ -184,6 +192,47 @@
                     $(this).toggle(allowed === shape);
                 });
             }).trigger('change');
+        },
+
+        setupTransactionMirrors() {
+            const bindMirror = (selectSelector, hiddenSelector, displaySelector) => {
+                const $select = $(selectSelector);
+                const $hidden = $(hiddenSelector);
+                if ( ! $select.length || ! $hidden.length ) {
+                    return;
+                }
+
+                const $display = displaySelector ? $(displaySelector) : $();
+                let fallback = $hidden.data('fallback') || '';
+
+                const update = () => {
+                    const $option = $select.find('option:selected');
+                    let value = $option.data('transaction');
+                    if ( typeof value === 'undefined' || value === '' ) {
+                        value = fallback;
+                    }
+
+                    if ( value ) {
+                        $hidden.val(value);
+                        if ( $display.length ) {
+                            $display.val(value);
+                        }
+                        fallback = value;
+                        $hidden.data('fallback', value);
+                    } else {
+                        $hidden.val('');
+                        if ( $display.length ) {
+                            $display.val('');
+                        }
+                    }
+                };
+
+                $select.on('change', update);
+                update();
+            };
+
+            bindMirror('#property_contract', '#property_transaction', '#property_transaction_display');
+            bindMirror('#search_contract', '#search_transaction', '#search_transaction_display');
         },
 
         setupClientForm() {

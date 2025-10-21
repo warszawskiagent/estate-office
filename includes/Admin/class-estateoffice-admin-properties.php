@@ -104,6 +104,15 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         $address = $property && $property->address ? json_decode( $property->address, true ) : [];
         $legal   = $property && $property->legal ? json_decode( $property->legal, true ) : [];
         $tags    = $property && $property->tags ? json_decode( $property->tags, true ) : [];
+        $contract_transactions = [];
+        foreach ( $contracts as $contract_row ) {
+            $contract_transactions[ $contract_row->id ] = $contract_row->transaction_type;
+        }
+        $selected_contract = $property ? (int) $property->contract_id : 0;
+        $transaction_type  = $property->transaction_type ?? '';
+        if ( empty( $transaction_type ) && $selected_contract && isset( $contract_transactions[ $selected_contract ] ) ) {
+            $transaction_type = $contract_transactions[ $selected_contract ];
+        }
         if ( ! is_array( $details ) ) {
             $details = [];
         }
@@ -129,21 +138,19 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
 
                 <div class="estate-office-grid two-cols">
                     <p>
-                        <label for="property_contract"><?php esc_html_e( 'Powiązana umowa', 'estate-office' ); ?></label>
-                        <select id="property_contract" name="contract_id">
+                        <label for="property_contract" class="required"><?php esc_html_e( 'Powiązana umowa', 'estate-office' ); ?></label>
+                        <select id="property_contract" name="contract_id" required>
                             <option value="">&mdash;</option>
                             <?php foreach ( $contracts as $contract ) : ?>
-                                <option value="<?php echo esc_attr( $contract->id ); ?>" <?php selected( $property->contract_id ?? '', $contract->id ); ?>><?php echo esc_html( $contract->contract_number ); ?></option>
+                                <option value="<?php echo esc_attr( $contract->id ); ?>" data-transaction="<?php echo esc_attr( $contract->transaction_type ); ?>" <?php selected( $selected_contract, (int) $contract->id ); ?>><?php echo esc_html( $contract->contract_number ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </p>
                     <p>
-                        <label for="property_transaction"><?php esc_html_e( 'Typ transakcji', 'estate-office' ); ?></label>
-                        <select id="property_transaction" name="transaction_type">
-                            <?php foreach ( EstateOffice_Admin_Contracts::TRANSACTION_TYPES as $type ) : ?>
-                                <option value="<?php echo esc_attr( $type ); ?>" <?php selected( $property->transaction_type ?? '', $type ); ?>><?php echo esc_html( $type ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label for="property_transaction_display"><?php esc_html_e( 'Typ transakcji', 'estate-office' ); ?></label>
+                        <input type="text" id="property_transaction_display" class="regular-text" value="<?php echo esc_attr( $transaction_type ); ?>" readonly />
+                        <input type="hidden" id="property_transaction" name="transaction_type" value="<?php echo esc_attr( $transaction_type ); ?>" data-fallback="<?php echo esc_attr( $transaction_type ); ?>" />
+                        <span class="description"><?php esc_html_e( 'Typ transakcji wynika z wybranej umowy i nie może być edytowany ręcznie.', 'estate-office' ); ?></span>
                     </p>
                     <p>
                         <label for="property_type_basic" class="required"><?php esc_html_e( 'Rodzaj nieruchomości', 'estate-office' ); ?></label>
