@@ -1,0 +1,223 @@
+.estate-office-wrap {
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(28, 38, 60, 0.08);
+}
+
+.estate-office-wrap h1 {
+    margin-top: 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.estate-office-section {
+    margin-bottom: 32px;
+}
+
+.estate-office-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.estate-office-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    background-color: #f8fafc;
+}
+
+.estate-office-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.estate-office-table th,
+.estate-office-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.estate-office-table th {
+    background: #eff6ff;
+    font-weight: 600;
+}
+
+.estate-office-toolbar {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.estate-office-toolbar .search-field {
+    min-width: 260px;
+}
+
+.estate-office-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #1d4ed8, #4338ca);
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.estate-office-button-secondary {
+    padding: 8px 16px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.estate-office-steps {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.estate-office-step {
+    flex: 1;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #cbd5f5;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.estate-office-step.is-active {
+    border-color: #2563eb;
+    background: #dbeafe;
+}
+
+.estate-office-step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.estate-office-form-step {
+    display: none;
+}
+
+.estate-office-form-step.is-active {
+    display: block;
+}
+
+.estate-office-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.estate-office-form-row label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.estate-office-form-row input[type="text"],
+.estate-office-form-row input[type="number"],
+.estate-office-form-row input[type="email"],
+.estate-office-form-row input[type="date"],
+.estate-office-form-row select,
+.estate-office-form-row textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5f5;
+    background: #fff;
+}
+
+.estate-office-form-row .is-disabled,
+.estate-office-form-row input.is-disabled,
+.estate-office-form-row textarea.is-disabled,
+.estate-office-form-row select.is-disabled {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.estate-office-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.estate-office-chip {
+    border: 1px solid #2563eb;
+    border-radius: 999px;
+    padding: 6px 14px;
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.12);
+    cursor: pointer;
+}
+
+.estate-office-chip.is-active {
+    background: #2563eb;
+    color: #fff;
+}
+
+.estate-office-dynamic-fields {
+    border: 1px dashed #cbd5f5;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.estate-office-dynamic-field {
+    display: grid;
+    grid-template-columns: 1fr 1fr 120px 40px;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.estate-office-dynamic-field button {
+    background: none;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+}
+
+.estate-office-stage-history {
+    margin-top: 16px;
+}
+
+.estate-office-stage-history ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.estate-office-stage-history li {
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
