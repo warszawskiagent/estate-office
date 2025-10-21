@@ -44,7 +44,7 @@ class PropertyProfilePage extends AbstractPage {
 
         echo '<div class="estate-office-profile">';
         echo '<div class="estate-office-profile__main">';
-        $this->render_summary_card( $property_id, $transaction, $kind, $address );
+        $this->render_summary_card( $property, $property_id, $transaction, $kind, $address );
         $this->render_building_card( $building );
         $this->render_media_card( $media, $amenities, $equipment );
         $this->render_extra_spaces_card( $extra );
@@ -61,7 +61,7 @@ class PropertyProfilePage extends AbstractPage {
         $this->render_footer();
     }
 
-    private function render_summary_card( int $property_id, string $transaction, string $kind, $address ): void {
+    private function render_summary_card( WP_Post $property, int $property_id, string $transaction, string $kind, $address ): void {
         $price      = get_post_meta( $property_id, Keys::PROPERTY_PRICE, true );
         $price_m2   = get_post_meta( $property_id, Keys::PROPERTY_PRICE_PER_M2, true );
         $admin_fee  = get_post_meta( $property_id, Keys::PROPERTY_ADMIN_FEE, true );
@@ -81,6 +81,7 @@ class PropertyProfilePage extends AbstractPage {
         echo '<dl class="estate-office-definition">';
         $this->render_definition_row( __( 'Typ transakcji', 'estate-office' ), $this->format_transaction_type( $transaction ) );
         $this->render_definition_row( __( 'Rodzaj nieruchomości', 'estate-office' ), $this->format_property_kind( $kind ) );
+        $this->render_definition_row( __( 'Opiekun', 'estate-office' ), $this->format_agent( $property ) );
         $this->render_definition_row( __( 'Adres', 'estate-office' ), $this->format_address( $address ) ?: '—' );
         $this->render_definition_row( __( 'Stan prawny', 'estate-office' ), $this->map_legal_status( $legal ) );
         $this->render_definition_row( __( 'Cena', 'estate-office' ), $this->format_property_price( $price, $transaction ) );

@@ -21,8 +21,8 @@ class AboutPage extends AbstractPage {
                 <li><strong><?php esc_html_e( '0.1', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Podstawowa struktura wtyczki, role użytkowników, konfiguracja ustawień i panel administracyjny.', 'estate-office' ); ?></li>
                 <li><strong><?php esc_html_e( '0.2', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Rejestracja kluczowych typów danych (nieruchomości, klienci, umowy) wraz z podstawowymi formularzami.', 'estate-office' ); ?></li>
                 <li><strong><?php esc_html_e( '0.3', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Zaawansowane formularze wieloetapowe i powiązania między rekordami.', 'estate-office' ); ?></li>
-                <li><strong><?php esc_html_e( '0.4', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Front-end CRM dla administratorów i agentów z wyszukiwaniem i listami danych.', 'estate-office' ); ?></li>
-                <li><strong><?php esc_html_e( '0.5', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Eksport ofert na stronę WWW wraz z szablonami i znacznikami.', 'estate-office' ); ?></li>
+                <li><strong><?php esc_html_e( '0.4', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Eksport ofert na stronę WWW wraz z kategoryzacją i znacznikami marketingowymi.', 'estate-office' ); ?></li>
+                <li><strong><?php esc_html_e( '0.5', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Rozszerzony pulpit, ranking agentów i zarządzanie opiekunami umów.', 'estate-office' ); ?></li>
                 <li><strong><?php esc_html_e( '0.6–0.9', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Integracje z portalami, raportowanie, automatyzacja procesów, kalkulatory finansowe.', 'estate-office' ); ?></li>
                 <li><strong><?php esc_html_e( '1.0', 'estate-office' ); ?>:</strong> <?php esc_html_e( 'Pełna funkcjonalność CRM z obsługą eksportu, kalkulatorami i modułami marketingowymi.', 'estate-office' ); ?></li>
             </ul>

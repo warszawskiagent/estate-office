@@ -35,7 +35,7 @@ class SearchProfilePage extends AbstractPage {
 
         echo '<div class="estate-office-profile">';
         echo '<div class="estate-office-profile__main">';
-        $this->render_criteria_card( $criteria );
+        $this->render_criteria_card( $search, $criteria );
         $this->render_preferences_card( $criteria );
         echo '</div>';
 
@@ -49,12 +49,13 @@ class SearchProfilePage extends AbstractPage {
         $this->render_footer();
     }
 
-    private function render_criteria_card( array $criteria ): void {
+    private function render_criteria_card( WP_Post $search, array $criteria ): void {
         echo '<div class="estate-office-card">';
         echo '<h2>' . esc_html__( 'Kryteria podstawowe', 'estate-office' ) . '</h2>';
         echo '<dl class="estate-office-definition">';
         $this->render_definition_row( __( 'Typ transakcji', 'estate-office' ), $this->format_transaction_type( $criteria['transaction_type'] ?? '' ) );
         $this->render_definition_row( __( 'Rodzaj nieruchomości', 'estate-office' ), $this->format_property_kind( $criteria['property_kind'] ?? '' ) );
+        $this->render_definition_row( __( 'Opiekun', 'estate-office' ), $this->format_agent( $search ) );
         $this->render_definition_row( __( 'Budżet', 'estate-office' ), $this->format_budget( $criteria ) ?: '—' );
         $this->render_definition_row( __( 'Metraż', 'estate-office' ), $this->format_area_range( $criteria ) );
         $this->render_definition_row( __( 'Liczba pokoi', 'estate-office' ), $this->format_rooms_range( $criteria ) );

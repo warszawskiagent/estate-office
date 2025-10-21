@@ -16,6 +16,40 @@
     margin-bottom: 20px;
 }
 
+.estate-office-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.estate-office-metric {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.estate-office-metric__label {
+    font-weight: 600;
+    color: #555d66;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.estate-office-metric__value {
+    display: block;
+    font-size: 28px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+.estate-office-metric__hint {
+    display: block;
+    color: #6c7781;
+    font-size: 13px;
+}
+
 .estate-office-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -131,6 +165,51 @@
 .estate-office-roadmap {
     list-style: disc;
     padding-left: 20px;
+}
+
+.estate-office-top-agents,
+.estate-office-upcoming-contracts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.estate-office-top-agents li,
+.estate-office-upcoming-contracts li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.estate-office-top-agents li:last-child,
+.estate-office-upcoming-contracts li:last-child {
+    border-bottom: none;
+}
+
+.estate-office-top-agents__name {
+    font-weight: 600;
+}
+
+.estate-office-top-agents__stats {
+    color: #6c7781;
+}
+
+.estate-office-upcoming-contracts__meta {
+    display: block;
+    margin-top: 4px;
+    color: #6c7781;
+}
+
+.estate-office-upcoming-contracts__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.estate-office-upcoming-contracts__date {
+    font-weight: 600;
 }
 
 .estate-office-profile {

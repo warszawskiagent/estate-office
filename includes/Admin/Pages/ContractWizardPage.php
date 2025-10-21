@@ -5,6 +5,7 @@ use EstateOffice\Meta\Keys;
 use WP_Error;
 use WP_Post;
 use WP_Query;
+use WP_User;
 
 /**
  * Multi-step wizard for creating contracts.
@@ -52,12 +53,33 @@ class ContractWizardPage extends AbstractPage {
     private function render_contract_step(): void {
         $this->handle_contract_submission();
 
+        $agents          = $this->get_available_agents();
+        $selected_agent  = isset( $_POST['contract_agent'] ) ? absint( $_POST['contract_agent'] ) : 0;
+        $current_user_id = get_current_user_id();
+
+        if ( ! $selected_agent && ! empty( $agents ) ) {
+            foreach ( $agents as $agent ) {
+                if ( (int) $agent['id'] === $current_user_id ) {
+                    $selected_agent = $current_user_id;
+                    break;
+                }
+            }
+
+            if ( ! $selected_agent ) {
+                $selected_agent = (int) $agents[0]['id'];
+            }
+        }
+
         $this->render_header(
             __( 'Nowa umowa', 'estate-office' ),
             __( 'Wprowadź podstawowe parametry umowy przed przypisaniem klientów.', 'estate-office' )
         );
 
         settings_errors( 'estate-office-contract-wizard' );
+
+        if ( empty( $agents ) ) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__( 'Brak dostępnych agentów. Dodaj użytkownika z rolą "Agent" lub przydziel administracyjny zespół, aby kontynuować.', 'estate-office' ) . '</p></div>';
+        }
 
         $commission_units = [
             'percent' => '%',
@@ -71,6 +93,15 @@ class ContractWizardPage extends AbstractPage {
             <?php wp_nonce_field( 'estate_office_contract_step', 'estate_office_contract_step_nonce' ); ?>
             <input type="hidden" name="estate_office_wizard_step" value="contract" />
             <div class="estate-office-grid">
+                <p>
+                    <label class="estate-office-label" for="contract_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                    <select id="contract_agent" name="contract_agent" required>
+                        <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                        <?php foreach ( $agents as $agent ) : ?>
+                            <option value="<?php echo esc_attr( $agent['id'] ); ?>" <?php selected( $selected_agent, $agent['id'] ); ?>><?php echo esc_html( $agent['name'] ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </p>
                 <p>
                     <label class="estate-office-label" for="contract_number"><?php esc_html_e( 'Numer umowy', 'estate-office' ); ?></label>
                     <input type="text" id="contract_number" name="contract_number" required />
@@ -136,9 +167,15 @@ class ContractWizardPage extends AbstractPage {
         $indefinite = ! empty( $_POST['contract_indefinite'] );
         $commission = isset( $_POST['commission_amount'] ) ? (float) wp_unslash( $_POST['commission_amount'] ) : 0.0;
         $unit       = sanitize_key( wp_unslash( $_POST['commission_unit'] ?? 'percent' ) );
+        $agent_id   = isset( $_POST['contract_agent'] ) ? absint( $_POST['contract_agent'] ) : 0;
 
         if ( ! $number ) {
             add_settings_error( 'estate-office-contract-wizard', 'missing-number', __( 'Numer umowy jest wymagany.', 'estate-office' ) );
+            return;
+        }
+
+        if ( ! $this->is_valid_agent( $agent_id ) ) {
+            add_settings_error( 'estate-office-contract-wizard', 'missing-agent', __( 'Wybierz poprawnego opiekuna umowy.', 'estate-office' ) );
             return;
         }
 
@@ -152,7 +189,7 @@ class ContractWizardPage extends AbstractPage {
                 'post_type'   => 'estate_contract',
                 'post_title'  => $number,
                 'post_status' => 'publish',
-                'post_author' => get_current_user_id(),
+                'post_author' => $agent_id,
             ]
         );
 
@@ -534,13 +571,14 @@ class ContractWizardPage extends AbstractPage {
         }
 
         $post_title = 'osoba' === $type ? trim( $first_name . ' ' . $last_name ) : $company;
+        $author_id  = $contract->post_author ?: get_current_user_id();
 
         $client_id = wp_insert_post(
             [
                 'post_type'   => 'estate_client',
                 'post_status' => 'publish',
                 'post_title'  => $post_title,
-                'post_author' => get_current_user_id(),
+                'post_author' => $author_id,
             ]
         );
 
@@ -894,9 +932,11 @@ class ContractWizardPage extends AbstractPage {
 
         check_admin_referer( 'estate_office_property_create', 'estate_office_property_create_nonce' );
 
-        $data      = isset( $_POST['property'] ) ? (array) wp_unslash( $_POST['property'] ) : [];
-        $reference = sanitize_text_field( $data['reference'] ?? '' );
-        $kind      = sanitize_key( $data['kind'] ?? 'mieszkanie' );
+        $data       = isset( $_POST['property'] ) ? (array) wp_unslash( $_POST['property'] ) : [];
+        $reference  = sanitize_text_field( $data['reference'] ?? '' );
+        $kind       = sanitize_key( $data['kind'] ?? 'mieszkanie' );
+        $contract   = get_post( $contract_id );
+        $author_id  = $contract ? (int) $contract->post_author : get_current_user_id();
 
         if ( ! $reference ) {
             add_settings_error( 'estate-office-contract-wizard', 'property-reference', __( 'Numer oferty jest wymagany.', 'estate-office' ) );
@@ -918,7 +958,7 @@ class ContractWizardPage extends AbstractPage {
                 'post_type'   => 'estate_property',
                 'post_status' => 'publish',
                 'post_title'  => $post_title,
-                'post_author' => get_current_user_id(),
+                'post_author' => $author_id,
             ]
         );
 
@@ -1086,8 +1126,10 @@ class ContractWizardPage extends AbstractPage {
 
         check_admin_referer( 'estate_office_search_create', 'estate_office_search_create_nonce' );
 
-        $data      = isset( $_POST['search'] ) ? (array) wp_unslash( $_POST['search'] ) : [];
-        $reference = sanitize_text_field( $data['reference'] ?? '' );
+        $data       = isset( $_POST['search'] ) ? (array) wp_unslash( $_POST['search'] ) : [];
+        $reference  = sanitize_text_field( $data['reference'] ?? '' );
+        $contract   = get_post( $contract_id );
+        $author_id  = $contract ? (int) $contract->post_author : get_current_user_id();
 
         if ( ! $reference ) {
             add_settings_error( 'estate-office-contract-wizard', 'search-reference', __( 'Numer poszukiwania jest wymagany.', 'estate-office' ) );
@@ -1100,7 +1142,7 @@ class ContractWizardPage extends AbstractPage {
                 'post_type'   => 'estate_search',
                 'post_status' => 'publish',
                 'post_title'  => $post_title,
-                'post_author' => get_current_user_id(),
+                'post_author' => $author_id,
             ]
         );
 
@@ -1333,6 +1375,87 @@ class ContractWizardPage extends AbstractPage {
 
         $type = strtolower( $type );
         return $map[ $type ] ?? strtoupper( $type );
+    }
+
+    private function get_available_agents(): array {
+        $users = get_users(
+            [
+                'role__in' => [ 'estate_office_agent', 'administrator', 'editor', 'author' ],
+                'orderby'  => 'display_name',
+                'order'    => 'ASC',
+            ]
+        );
+
+        $agents = [];
+
+        foreach ( $users as $user ) {
+            if ( ! in_array( 'estate_office_agent', $user->roles, true ) && ! user_can( $user->ID, 'manage_options' ) ) {
+                continue;
+            }
+
+            $agents[] = [
+                'id'   => $user->ID,
+                'name' => $this->format_agent_choice_name( $user ),
+            ];
+        }
+
+        $current = wp_get_current_user();
+        if ( $current->exists() && user_can( $current, 'manage_options' ) ) {
+            $exists = array_filter(
+                $agents,
+                static function ( array $agent ) use ( $current ) {
+                    return (int) $agent['id'] === $current->ID;
+                }
+            );
+
+            if ( empty( $exists ) ) {
+                $agents[] = [
+                    'id'   => $current->ID,
+                    'name' => $this->format_agent_choice_name( $current ),
+                ];
+            }
+        }
+
+        usort(
+            $agents,
+            static function ( array $a, array $b ): int {
+                return strcmp( strtolower( $a['name'] ), strtolower( $b['name'] ) );
+            }
+        );
+
+        return $agents;
+    }
+
+    private function is_valid_agent( int $user_id ): bool {
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        $user = get_userdata( $user_id );
+
+        if ( ! $user ) {
+            return false;
+        }
+
+        if ( in_array( 'estate_office_agent', $user->roles, true ) ) {
+            return true;
+        }
+
+        return user_can( $user, 'manage_options' );
+    }
+
+    private function format_agent_choice_name( WP_User $user ): string {
+        $name = trim( $user->first_name . ' ' . $user->last_name );
+
+        if ( $name ) {
+            return $name;
+        }
+
+        if ( $user->display_name ) {
+            return $user->display_name;
+        }
+
+        return $user->user_login;
     }
 
     private function sanitize_address( array $address ): array {
