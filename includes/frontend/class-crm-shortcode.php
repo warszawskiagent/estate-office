@@ -191,14 +191,13 @@ class CRM_Shortcode {
 
         $rows = [];
         foreach ( $posts as $post ) {
-            $number     = get_post_meta( $post->ID, 'estate_property_number', true );
-            $address    = get_post_meta( $post->ID, 'estate_property_address', true );
-            $price      = get_post_meta( $post->ID, 'estate_property_price', true );
-            $sqm        = get_post_meta( $post->ID, 'estate_property_price_sqm', true );
-            $area       = get_post_meta( $post->ID, 'estate_property_area', true );
-            $rooms      = get_post_meta( $post->ID, 'estate_property_rooms', true );
-            $agent_id   = get_post_meta( $post->ID, 'estate_property_agent', true );
-            $agent_name = $agent_id ? get_the_author_meta( 'display_name', $agent_id ) : '';
+            $number     = $this->get_meta_value( $post->ID, 'offer_number', $post->post_title );
+            $address    = $this->format_property_address( $post->ID );
+            $price      = $this->get_meta_value( $post->ID, 'price' );
+            $sqm        = $this->get_meta_value( $post->ID, 'price_sqm' );
+            $area       = $this->get_meta_value( $post->ID, 'area' );
+            $rooms      = $this->get_meta_value( $post->ID, 'rooms', '-' );
+            $agent_name = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
                 $this->format_link( $post, $number ?: $post->post_title ),
@@ -207,7 +206,7 @@ class CRM_Shortcode {
                 esc_html( $this->format_price( $sqm ) ),
                 esc_html( $this->format_area( $area ) ),
                 esc_html( $rooms ?: '-' ),
-                esc_html( $agent_name ?: __( 'Nieprzypisany', 'estate-office' ) ),
+                esc_html( $agent_name ),
             ];
         }
 
@@ -228,26 +227,26 @@ class CRM_Shortcode {
 
         $rows = [];
         foreach ( $posts as $post ) {
-            $number        = get_post_meta( $post->ID, 'estate_contract_number', true );
-            $type          = get_post_meta( $post->ID, 'estate_contract_type', true );
-            $property      = get_post_meta( $post->ID, 'estate_contract_property', true );
-            $address       = $property ? get_post_meta( (int) $property, 'estate_property_address', true ) : '';
-            $start_date    = get_post_meta( $post->ID, 'estate_contract_start', true );
-            $end_date      = get_post_meta( $post->ID, 'estate_contract_end', true );
-            $stage         = get_post_meta( $post->ID, 'estate_contract_stage', true );
-            $agent_id      = get_post_meta( $post->ID, 'estate_contract_agent', true );
-            $agent_name    = $agent_id ? get_the_author_meta( 'display_name', $agent_id ) : '';
-            $property_type = get_post_meta( $post->ID, 'estate_contract_property_type', true );
+            $number        = $this->get_meta_value( $post->ID, 'contract_number', $post->post_title );
+            $transaction   = $this->translate_transaction_type( $this->get_meta_value( $post->ID, 'transaction_type' ) );
+            $property_type = $this->translate_property_type( $this->get_meta_value( $post->ID, 'property_type' ) );
+            $property_id   = (int) $this->get_meta_value( $post->ID, 'related_property', 0 );
+            $address       = $property_id ? $this->format_property_address( $property_id ) : '';
+            $start_date    = $this->get_meta_value( $post->ID, 'start_date' );
+            $end_date      = $this->get_meta_value( $post->ID, 'end_date' );
+            $stage_key     = $this->get_meta_value( $post->ID, 'stage' );
+            $stage_label   = $stage_key ? $this->get_contract_stage_label( $stage_key ) : __( 'Umowa pośrednictwa', 'estate-office' );
+            $agent_name    = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
                 $this->format_link( $post, $number ?: $post->post_title ),
-                esc_html( $type ?: '-' ),
+                esc_html( $transaction ?: '-' ),
                 esc_html( $property_type ?: '-' ),
                 esc_html( $address ?: '-' ),
                 esc_html( $this->format_date( $start_date ) ),
                 esc_html( $this->format_date( $end_date ) ),
-                esc_html( $stage ?: __( 'Umowa pośrednictwa', 'estate-office' ) ),
-                esc_html( $agent_name ?: __( 'Nieprzypisany', 'estate-office' ) ),
+                esc_html( $stage_label ),
+                esc_html( $agent_name ),
             ];
         }
 
@@ -268,20 +267,17 @@ class CRM_Shortcode {
 
         $rows = [];
         foreach ( $posts as $post ) {
-            $address          = get_post_meta( $post->ID, 'estate_client_address', true );
-            $phone            = get_post_meta( $post->ID, 'estate_client_phone', true );
-            $email            = get_post_meta( $post->ID, 'estate_client_email', true );
-            $agent_id         = get_post_meta( $post->ID, 'estate_client_agent', true );
-            $agent_name       = $agent_id ? get_the_author_meta( 'display_name', $agent_id ) : '';
-            $property         = get_post_meta( $post->ID, 'estate_client_property', true );
-            $property_address = $property ? get_post_meta( (int) $property, 'estate_property_address', true ) : '';
+            $address    = $this->format_client_address( $post->ID );
+            $phone      = $this->get_meta_value( $post->ID, 'phone', '-' );
+            $email      = $this->get_meta_value( $post->ID, 'email', '-' );
+            $agent_name = $this->get_agent_name( (int) $this->get_meta_value( $post->ID, 'agent_id', 0 ) );
 
             $rows[] = [
                 $this->format_link( $post, $post->post_title ),
-                esc_html( $property_address ?: $address ?: '-' ),
+                esc_html( $address ?: '-' ),
                 esc_html( $phone ?: '-' ),
                 esc_html( $email ?: '-' ),
-                esc_html( $agent_name ?: __( 'Nieprzypisany', 'estate-office' ) ),
+                esc_html( $agent_name ),
             ];
         }
 
@@ -302,16 +298,16 @@ class CRM_Shortcode {
 
         $rows = [];
         foreach ( $posts as $post ) {
-            $number      = get_post_meta( $post->ID, 'estate_search_number', true );
-            $type        = get_post_meta( $post->ID, 'estate_search_type', true );
-            $budget      = get_post_meta( $post->ID, 'estate_search_budget', true );
-            $location    = get_post_meta( $post->ID, 'estate_search_location', true );
-            $transaction = get_post_meta( $post->ID, 'estate_search_transaction', true );
+            $number        = $this->get_meta_value( $post->ID, 'search_number', $post->post_title );
+            $property_type = $this->translate_property_type( $this->get_meta_value( $post->ID, 'property_type' ) );
+            $budget        = $this->format_budget( $this->get_meta_value( $post->ID, 'budget_min' ), $this->get_meta_value( $post->ID, 'budget_max' ) );
+            $location      = $this->get_meta_value( $post->ID, 'location', '-' );
+            $transaction   = $this->translate_transaction_type( $this->get_meta_value( $post->ID, 'transaction_type' ) );
 
             $rows[] = [
                 $this->format_link( $post, $number ?: $post->post_title ),
-                esc_html( $type ?: '-' ),
-                esc_html( $this->format_price_range( $budget ) ),
+                esc_html( $property_type ?: '-' ),
+                esc_html( $budget ),
                 esc_html( $location ?: '-' ),
                 esc_html( $transaction ?: '-' ),
             ];
@@ -378,13 +374,167 @@ class CRM_Shortcode {
     }
 
     /**
-     * Formats price range information.
+     * Formats budget range information.
      */
-    private function format_price_range( $value ): string {
-        if ( is_array( $value ) && isset( $value['min'], $value['max'] ) ) {
-            return sprintf( '%s – %s', $this->format_price( $value['min'] ), $this->format_price( $value['max'] ) );
+    private function format_budget( $min, $max ): string {
+        $has_min = '' !== $min && null !== $min;
+        $has_max = '' !== $max && null !== $max;
+
+        if ( ! $has_min && ! $has_max ) {
+            return '-';
         }
 
-        return $this->format_price( $value );
+        if ( $has_min && $has_max ) {
+            return sprintf( '%s – %s', $this->format_price( $min ), $this->format_price( $max ) );
+        }
+
+        if ( $has_min ) {
+            return sprintf( __( 'Od %s', 'estate-office' ), $this->format_price( $min ) );
+        }
+
+        return sprintf( __( 'Do %s', 'estate-office' ), $this->format_price( $max ) );
+    }
+
+    /**
+     * Returns sanitized meta value with estate_office_ prefix.
+     *
+     * @param int    $post_id Post identifier.
+     * @param string $key     Meta key without prefix.
+     * @param mixed  $default Default value.
+     *
+     * @return mixed
+     */
+    private function get_meta_value( int $post_id, string $key, $default = '' ) {
+        $meta_key = 'estate_office_' . $key;
+        $value    = get_post_meta( $post_id, $meta_key, true );
+
+        if ( is_array( $value ) && empty( $value ) ) {
+            return $default;
+        }
+
+        if ( '' === $value || null === $value ) {
+            return $default;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Creates human readable property address.
+     */
+    private function format_property_address( int $post_id ): string {
+        $street  = $this->get_meta_value( $post_id, 'street' );
+        $number  = $this->get_meta_value( $post_id, 'building_number' );
+        $unit    = $this->get_meta_value( $post_id, 'unit_number' );
+        $city    = $this->get_meta_value( $post_id, 'city' );
+        $postal  = $this->get_meta_value( $post_id, 'postal_code' );
+        $district = $this->get_meta_value( $post_id, 'district' );
+        $plot    = $this->get_meta_value( $post_id, 'plot_number' );
+
+        $parts = [];
+        $line  = trim( $street . ' ' . $number );
+        if ( $unit ) {
+            $line = $line ? $line . '/' . $unit : $unit;
+        }
+        if ( $line ) {
+            $parts[] = $line;
+        } elseif ( $plot ) {
+            $parts[] = sprintf( __( 'Działka %s', 'estate-office' ), $plot );
+        }
+
+        if ( $district ) {
+            $parts[] = $district;
+        }
+
+        $city_line = array_filter( [ $postal, $city ] );
+        if ( ! empty( $city_line ) ) {
+            $parts[] = implode( ' ', $city_line );
+        }
+
+        return implode( ', ', array_filter( $parts ) );
+    }
+
+    /**
+     * Formats client address from meta array.
+     */
+    private function format_client_address( int $post_id ): string {
+        $address = get_post_meta( $post_id, 'estate_office_address', true );
+        if ( ! is_array( $address ) ) {
+            return '';
+        }
+
+        $line = trim( ( $address['street'] ?? '' ) . ' ' . ( $address['number'] ?? '' ) );
+        if ( ! empty( $address['unit'] ) ) {
+            $line = $line ? $line . '/' . $address['unit'] : $address['unit'];
+        }
+
+        $parts = array_filter( [ $line, $address['postal_code'] ?? '', $address['city'] ?? '', $address['country'] ?? '' ] );
+
+        return implode( ', ', $parts );
+    }
+
+    /**
+     * Returns agent display name or fallback.
+     */
+    private function get_agent_name( int $user_id ): string {
+        if ( $user_id <= 0 ) {
+            return __( 'Nieprzypisany', 'estate-office' );
+        }
+
+        $user = get_userdata( $user_id );
+        if ( ! $user ) {
+            return __( 'Nieprzypisany', 'estate-office' );
+        }
+
+        return $user->display_name ?: __( 'Nieprzypisany', 'estate-office' );
+    }
+
+    /**
+     * Converts transaction type slug to label.
+     */
+    private function translate_transaction_type( string $type ): string {
+        $map = [
+            'sprzedaz' => __( 'Sprzedaż', 'estate-office' ),
+            'kupno'    => __( 'Kupno', 'estate-office' ),
+            'wynajem'  => __( 'Wynajem', 'estate-office' ),
+            'najem'    => __( 'Najem', 'estate-office' ),
+        ];
+
+        return $map[ $type ] ?? $type;
+    }
+
+    /**
+     * Converts property type slug to label.
+     */
+    private function translate_property_type( string $type ): string {
+        $map = [
+            'mieszkanie' => __( 'Mieszkanie', 'estate-office' ),
+            'dom'        => __( 'Dom', 'estate-office' ),
+            'dzialka'    => __( 'Działka', 'estate-office' ),
+            'lokal'      => __( 'Lokal handlowo-usługowy', 'estate-office' ),
+        ];
+
+        return $map[ $type ] ?? $type;
+    }
+
+    /**
+     * Returns label for contract stage slug.
+     */
+    private function get_contract_stage_label( string $stage ): string {
+        $stages = [
+            ''             => __( 'Umowa pośrednictwa', 'estate-office' ),
+            'mls'          => __( 'Publikacja w MLS', 'estate-office' ),
+            'preparation'  => __( 'Przygotowanie oferty', 'estate-office' ),
+            'publication'  => __( 'Publikacja oferty', 'estate-office' ),
+            'marketing'    => __( 'Marketing i prezentacje', 'estate-office' ),
+            'offer'        => __( 'Oferta kupna', 'estate-office' ),
+            'negotiations' => __( 'Negocjacje', 'estate-office' ),
+            'preliminary'  => __( 'Umowa przedwstępna', 'estate-office' ),
+            'final'        => __( 'Umowa przyrzeczona', 'estate-office' ),
+            'handover'     => __( 'Przekazanie lokalu', 'estate-office' ),
+            'completed'    => __( 'Umowa zakończona', 'estate-office' ),
+        ];
+
+        return $stages[ $stage ] ?? $stage;
     }
 }

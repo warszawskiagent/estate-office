@@ -61,3 +61,83 @@
 .estate-office-dashboard .estate-office-agents-list li:last-child {
     border-bottom: 0;
 }
+
+.estate-office-meta {
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.estate-office-meta h4 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.estate-office-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.estate-office-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.estate-office-field label,
+.estate-office-label {
+    font-weight: 600;
+}
+
+.estate-office-field input,
+.estate-office-field select,
+.estate-office-field textarea {
+    width: 100%;
+}
+
+.estate-office-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.estate-office-checkboxes label {
+    font-weight: 400;
+}
+
+.estate-office-toggle-field {
+    margin-bottom: 16px;
+}
+
+.estate-office-toggle-target {
+    margin-top: 10px;
+    display: none;
+}
+
+.estate-office-toggle-target input {
+    margin-right: 10px;
+}
+
+.estate-office-stage-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.estate-office-stage-history li {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.estate-office-stage-history li:last-child {
+    border-bottom: 0;
+}

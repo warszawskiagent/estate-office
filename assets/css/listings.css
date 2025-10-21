@@ -1,0 +1,391 @@
+.estate-office-offers {
+    font-family: var(--estate-office-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    color: #1f2933;
+}
+
+.estate-office-offers .estate-office-offers-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.estate-office-offers .estate-office-offers-header h2 {
+    font-size: 1.75rem;
+    margin: 0;
+}
+
+.estate-office-offers .estate-office-legend {
+    font-size: 0.9375rem;
+    color: #52606d;
+}
+
+.estate-office-offers section {
+    margin-bottom: 2.5rem;
+}
+
+.estate-office-offers .estate-office-property-type {
+    border-top: 1px solid #d9e2ec;
+    padding-top: 2rem;
+}
+
+.estate-office-offers .estate-office-property-type:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.estate-office-offers .estate-office-property-type h3 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem;
+    color: #243b53;
+}
+
+.estate-office-offers .estate-office-city {
+    margin-bottom: 1.5rem;
+}
+
+.estate-office-offers .estate-office-city h4 {
+    font-size: 1.25rem;
+    margin: 0 0 1rem;
+    color: #334e68;
+}
+
+.estate-office-offers .estate-office-district {
+    margin-bottom: 1.25rem;
+}
+
+.estate-office-offers .estate-office-district h5 {
+    font-size: 1.0625rem;
+    margin: 0 0 0.75rem;
+    color: #3e4c59;
+}
+
+.estate-office-offers .estate-office-property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+.estate-office-offers .estate-office-property-card {
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.estate-office-offers .estate-office-property-card:hover,
+.estate-office-offers .estate-office-property-card:focus-within {
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+}
+
+.estate-office-offers .estate-office-card-media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: #f0f4f8;
+}
+
+.estate-office-offers .estate-office-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-offers .estate-office-flag {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: #1c64f2;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-offers .estate-office-card-body {
+    padding: 1rem 1.25rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 0.75rem;
+}
+
+.estate-office-offers .estate-office-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #102a43;
+    margin: 0;
+}
+
+.estate-office-offers .estate-office-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.9375rem;
+    color: #52606d;
+}
+
+.estate-office-offers .estate-office-card-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.estate-office-offers .estate-office-card-meta svg {
+    width: 16px;
+    height: 16px;
+    fill: #486581;
+}
+
+.estate-office-offers .estate-office-card-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0b7285;
+}
+
+.estate-office-offers .estate-office-card-link {
+    margin-top: auto;
+}
+
+.estate-office-offers .estate-office-card-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #1c64f2;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.estate-office-offers .estate-office-card-link a:hover,
+.estate-office-offers .estate-office-card-link a:focus {
+    text-decoration: underline;
+}
+
+.estate-office-offers .estate-office-empty {
+    padding: 2.5rem;
+    border: 2px dashed #cbd2d9;
+    border-radius: 12px;
+    text-align: center;
+    background: #f5f7fa;
+    color: #52606d;
+    font-size: 1rem;
+}
+
+.estate-office-offers .estate-office-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.estate-office-offers .estate-office-filters span {
+    background: #e3f8ff;
+    color: #0b7285;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.estate-office-offers .estate-office-district h5 + .estate-office-filters {
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .estate-office-offers .estate-office-offers-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .estate-office-offers .estate-office-property-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+.estate-office-offer-single {
+    font-family: var(--estate-office-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    color: #1f2933;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+}
+
+.estate-office-offer-single header {
+    margin-bottom: 2rem;
+}
+
+.estate-office-offer-single .offer-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1c64f2;
+    margin-bottom: 0.5rem;
+}
+
+.estate-office-offer-single h1 {
+    margin: 0 0 0.75rem;
+    font-size: 2.25rem;
+    color: #102a43;
+}
+
+.estate-office-offer-single .offer-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.estate-office-offer-single .offer-flag {
+    background: #e3f8ff;
+    color: #0b7285;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.estate-office-offer-single .offer-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.estate-office-offer-single .summary-card {
+    background: #f0f4f8;
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.estate-office-offer-single .summary-card span.label {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #52606d;
+}
+
+.estate-office-offer-single .summary-card span.value {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #0b7285;
+}
+
+.estate-office-offer-single .offer-section {
+    margin-bottom: 2.75rem;
+}
+
+.estate-office-offer-single .offer-section h2 {
+    margin: 0 0 1.25rem;
+    font-size: 1.5rem;
+    color: #243b53;
+}
+
+.estate-office-offer-single .offer-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.estate-office-offer-single .offer-detail {
+    background: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.estate-office-offer-single .offer-detail span.label {
+    font-size: 0.875rem;
+    color: #52606d;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.estate-office-offer-single .offer-detail span.value {
+    font-weight: 600;
+    color: #1f2933;
+    font-size: 1.05rem;
+}
+
+.estate-office-offer-single .offer-description {
+    background: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-radius: 16px;
+    padding: 1.5rem;
+    line-height: 1.65;
+    color: #334e68;
+}
+
+.estate-office-offer-single .offer-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.estate-office-offer-single .offer-list ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    line-height: 1.6;
+}
+
+.estate-office-offer-single .offer-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.estate-office-offer-single .offer-gallery figure {
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+}
+
+.estate-office-offer-single .offer-gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-offer-single .offer-contact {
+    background: linear-gradient(135deg, #1c64f2, #0b7285);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.estate-office-offer-single .offer-contact strong {
+    font-size: 1.35rem;
+}
+
+.estate-office-offer-single .offer-contact span {
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .estate-office-offer-single {
+        padding: 1.5rem 1rem 2.5rem;
+    }
+
+    .estate-office-offer-single h1 {
+        font-size: 1.875rem;
+    }
+}
