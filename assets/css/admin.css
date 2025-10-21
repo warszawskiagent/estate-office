@@ -1,0 +1,210 @@
+.estate-office-wrap {
+    max-width: 1200px;
+}
+
+.estate-office-wrap .page-title-action {
+    margin-bottom: 1rem;
+}
+
+.estate-office-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.estate-office-grid.two-cols {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.estate-office-grid.three-cols {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.estate-office-grid .full {
+    grid-column: 1 / -1;
+}
+
+.estate-office-section {
+    border: 1px solid #dcdcde;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: #fff;
+    border-radius: 6px;
+}
+
+.estate-office-section h2 {
+    margin-top: 0;
+}
+
+.estate-office-fieldset {
+    border: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem 1.5rem;
+    margin: 1.5rem 0;
+    background: #f8f9fb;
+}
+
+.estate-office-fieldset legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+}
+
+.estate-office-media-field {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.estate-office-media-preview-wrap {
+    width: 96px;
+    height: 96px;
+    background: #f0f0f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #c3c4c7;
+}
+
+.estate-office-media-preview-wrap img {
+    max-width: 100%;
+    height: auto;
+}
+
+.estate-office-media-preview-wrap .placeholder {
+    color: #777;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.inline-form .delete-link {
+    color: #d63638;
+}
+
+.estate-office-stage-table .button-link {
+    color: #d63638;
+}
+
+.estate-office-flag {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 1rem;
+    margin-bottom: 0.5rem;
+    gap: 0.4rem;
+}
+
+.estate-office-search-form {
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.estate-office-search-form input[type="search"] {
+    flex: 1 1 auto;
+}
+
+.estate-office-dashboard .estate-office-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 2rem;
+}
+
+.estate-office-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 1.5rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.estate-office-card-value {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.estate-office-panels {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.estate-office-panel {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 1.5rem;
+    border-radius: 6px;
+}
+
+.estate-office-panel ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.estate-office-panel .button {
+    margin-top: 0.5rem;
+}
+
+.estate-office-dynamic-group {
+    margin-bottom: 2rem;
+}
+
+.estate-office-dynamic-table td,
+.estate-office-dynamic-table th {
+    vertical-align: middle;
+}
+
+.estate-office-dynamic-table input,
+.estate-office-dynamic-table select {
+    width: 100%;
+}
+
+.estate-office-dynamic-table .estate-office-remove-field {
+    color: #d63638;
+    font-size: 20px;
+}
+
+.estate-office-stage-history-json {
+    display: none;
+}
+
+.required::after {
+    content: '*';
+    color: #d63638;
+    margin-left: 0.25rem;
+}
+
+.estate-office-address-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+}
+
+.estate-office-toggle {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.estate-office-search-form-details {
+    margin-top: 1.5rem;
+}
+
+.wp-core-ui .estate-office-multiselect {
+    min-height: 140px;
+    width: 100%;
+}
+
+.estate-office-stage-table .no-items td {
+    text-align: center;
+    color: #777;
+}
+
+@media (max-width: 782px) {
+    .estate-office-grid.two-cols,
+    .estate-office-grid.three-cols {
+        grid-template-columns: 1fr;
+    }
+
+    .estate-office-media-field {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
