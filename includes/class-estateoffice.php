@@ -41,6 +41,7 @@ class EstateOffice {
      */
     public function run(): void {
         add_action( 'plugins_loaded', [ $this, 'load_textdomain' ] );
+        add_action( 'init', [ 'EstateOffice_Activator', 'ensure_role_capabilities' ] );
         if ( is_admin() ) {
             $this->admin->hooks();
         }

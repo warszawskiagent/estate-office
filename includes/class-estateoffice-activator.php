@@ -25,34 +25,86 @@ class EstateOffice_Activator {
      * Register custom role and capabilities for agents.
      */
     protected static function create_roles(): void {
-        $capabilities = [
-            'read'                   => true,
-            'edit_posts'             => false,
-            'delete_posts'           => false,
-            'publish_posts'          => false,
-            'upload_files'           => true,
-            'eo_manage_crm'          => true,
-            'eo_view_crm'            => true,
-            'eo_manage_agents'       => false,
-            'eo_manage_clients'      => true,
-            'eo_manage_contracts'    => true,
-            'eo_manage_properties'   => true,
-            'eo_manage_searches'     => true,
-        ];
+        $capabilities = self::get_capabilities();
 
         if ( null === get_role( 'estate_agent' ) ) {
             add_role( 'estate_agent', __( 'Agent nieruchomości', 'estate-office' ), $capabilities );
+        } else {
+            self::synchronize_role_capabilities( 'estate_agent', $capabilities );
         }
 
-        $administrator = get_role( 'administrator' );
-        if ( $administrator ) {
-            foreach ( $capabilities as $capability => $granted ) {
-                if ( $granted ) {
-                    $administrator->add_cap( $capability );
-                }
-            }
-            $administrator->add_cap( 'eo_manage_agents' );
+        self::grant_administrator_capabilities( $capabilities );
+    }
+
+    /**
+     * Ensure custom role and administrator retain plugin capabilities.
+     */
+    public static function ensure_role_capabilities(): void {
+        $capabilities = self::get_capabilities();
+
+        if ( null === get_role( 'estate_agent' ) ) {
+            add_role( 'estate_agent', __( 'Agent nieruchomości', 'estate-office' ), $capabilities );
+        } else {
+            self::synchronize_role_capabilities( 'estate_agent', $capabilities );
         }
+
+        self::grant_administrator_capabilities( $capabilities );
+    }
+
+    /**
+     * Return canonical capabilities for estate agents.
+     */
+    protected static function get_capabilities(): array {
+        return [
+            'read'                 => true,
+            'edit_posts'           => false,
+            'delete_posts'         => false,
+            'publish_posts'        => false,
+            'upload_files'         => true,
+            'eo_manage_crm'        => true,
+            'eo_view_crm'          => true,
+            'eo_manage_agents'     => false,
+            'eo_manage_clients'    => true,
+            'eo_manage_contracts'  => true,
+            'eo_manage_properties' => true,
+            'eo_manage_searches'   => true,
+        ];
+    }
+
+    /**
+     * Sync capabilities for a given role name.
+     */
+    protected static function synchronize_role_capabilities( string $role_name, array $capabilities ): void {
+        $role = get_role( $role_name );
+        if ( ! $role ) {
+            return;
+        }
+
+        foreach ( $capabilities as $capability => $granted ) {
+            if ( $granted ) {
+                $role->add_cap( $capability );
+            } else {
+                $role->remove_cap( $capability );
+            }
+        }
+    }
+
+    /**
+     * Add plugin capabilities to administrator role.
+     */
+    protected static function grant_administrator_capabilities( array $capabilities ): void {
+        $administrator = get_role( 'administrator' );
+        if ( ! $administrator ) {
+            return;
+        }
+
+        foreach ( $capabilities as $capability => $granted ) {
+            if ( $granted ) {
+                $administrator->add_cap( $capability );
+            }
+        }
+
+        $administrator->add_cap( 'eo_manage_agents' );
     }
 
     /**
