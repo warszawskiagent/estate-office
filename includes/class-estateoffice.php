@@ -40,6 +40,7 @@ class EstateOffice {
      * Register hooks.
      */
     public function run(): void {
+        EstateOffice_Activator::ensure_role_capabilities();
         add_action( 'plugins_loaded', [ $this, 'load_textdomain' ] );
         add_action( 'init', [ 'EstateOffice_Activator', 'ensure_role_capabilities' ] );
         if ( is_admin() ) {

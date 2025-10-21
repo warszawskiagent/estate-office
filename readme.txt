@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.0.3
+Stable tag: 0.0.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie. Wersja 0.0.3 automatycznie synchronizuje uprawnienia administratorów i agentów, aby menu CRM było zawsze widoczne, oraz udostępnia panel CRM dostępny z poziomu frontendu wraz z publicznymi listami ofert.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie. Wersja 0.0.4 dodatkowo wymusza synchronizację uprawnień przy każdym ładowaniu wtyczki, aby menu CRM było zawsze widoczne, oraz udostępnia panel CRM dostępny z poziomu frontendu wraz z publicznymi listami ofert.
 
 == Funkcje ==
 
@@ -48,6 +48,9 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.0.4 =
+* Wymuszono synchronizację uprawnień ról podczas ładowania wtyczki, aby menu **Estate Office CRM** było dostępne natychmiast po aktualizacji.
 
 = 0.0.3 =
 * Naprawiono uprawnienia administratorów tak, aby menu Estate Office CRM było zawsze widoczne po aktualizacji wtyczki.
