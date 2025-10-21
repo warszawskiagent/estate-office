@@ -83,6 +83,8 @@ use function wp_register_script;
 use function wp_register_style;
 use function wp_create_nonce;
 use function wp_localize_script;
+use function wp_style_is;
+use function wp_script_is;
 use function wp_reset_postdata;
 use function wp_strip_all_tags;
 use function wpautop;
@@ -141,6 +143,8 @@ final class CRM
         'leads'      => LeadRegister::POST_TYPE,
     ];
 
+    private static bool $assetsLocalized = false;
+
     public static function bootstrap(): void
     {
         add_action('init', [self::class, 'registerShortcode']);
@@ -178,27 +182,7 @@ final class CRM
             return;
         }
 
-        wp_enqueue_style('estate-office-frontend-crm');
-        wp_enqueue_script('estate-office-frontend-crm');
-
-        if (current_user_can('publish_estate_agreements')) {
-            AgreementCreator::enqueueAssets();
-        }
-
-        QuickCreate::enqueueAssets();
-
-        wp_localize_script(
-            'estate-office-frontend-crm',
-            'EstateOfficeCRM',
-            [
-                'ajaxUrl'       => admin_url('admin-ajax.php'),
-                'stageNonce'    => wp_create_nonce(self::STAGE_NONCE_ACTION),
-                'stageMessages' => [
-                    'success' => esc_html__('Etap umowy został zaktualizowany.', 'estate-office'),
-                    'error'   => esc_html__('Nie udało się zaktualizować etapu umowy. Spróbuj ponownie.', 'estate-office'),
-                ],
-            ]
-        );
+        self::ensureAssetsLoaded();
     }
 
     public static function renderShortcode(): string
@@ -206,6 +190,8 @@ final class CRM
         if (!is_user_logged_in() || !self::currentUserCanAccessCrm()) {
             return '<div class="estate-office-crm__notice">' . esc_html__('Dostęp do CRM jest ograniczony do agentów nieruchomości.', 'estate-office') . '</div>';
         }
+
+        self::ensureAssetsLoaded();
 
         $section    = self::resolveSection();
         $searchTerm = self::getSearchTerm();
@@ -256,6 +242,41 @@ final class CRM
         echo '</div>';
 
         return (string) ob_get_clean();
+    }
+
+    private static function ensureAssetsLoaded(): void
+    {
+        if (!wp_style_is('estate-office-frontend-crm', 'registered') || !wp_script_is('estate-office-frontend-crm', 'registered')) {
+            self::registerAssets();
+        }
+
+        wp_enqueue_style('estate-office-frontend-crm');
+        wp_enqueue_script('estate-office-frontend-crm');
+
+        if (current_user_can('publish_estate_agreements')) {
+            AgreementCreator::enqueueAssets();
+        }
+
+        QuickCreate::enqueueAssets();
+
+        if (self::$assetsLocalized) {
+            return;
+        }
+
+        wp_localize_script(
+            'estate-office-frontend-crm',
+            'EstateOfficeCRM',
+            [
+                'ajaxUrl'       => admin_url('admin-ajax.php'),
+                'stageNonce'    => wp_create_nonce(self::STAGE_NONCE_ACTION),
+                'stageMessages' => [
+                    'success' => esc_html__('Etap umowy został zaktualizowany.', 'estate-office'),
+                    'error'   => esc_html__('Nie udało się zaktualizować etapu umowy. Spróbuj ponownie.', 'estate-office'),
+                ],
+            ]
+        );
+
+        self::$assetsLocalized = true;
     }
 
     public static function handleUpdateAgreementStage(): void

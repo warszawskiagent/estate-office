@@ -3,11 +3,11 @@ Contributors: tomaszobarski
 Requires at least: 6.8
 Tested up to: 6.8.3
 Requires PHP: 8.3
-Stable tag: 0.1.15
+Stable tag: 0.1.16
 License: Proprietary
 License URI: http://warszawskiagent.pl
 
-EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.15 tymczasowo wyłącza moduł licencyjny do czasu wydania 1.0.1, utrzymuje rozbudowane profile nieruchomości z galerią multimediów i gwarantuje pełne formatowanie frontowego panelu CRM niezależnie od sposobu jego osadzenia.
+EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.16 tymczasowo wyłącza moduł licencyjny do czasu wydania 1.0.1, utrzymuje rozbudowane profile nieruchomości z galerią multimediów i gwarantuje poprawne ładowanie zasobów panelu CRM nawet przy ponownej instalacji lub niestandardowym renderowaniu shortcode'u.
 
 == Description ==
 * Kompletny szkielet panelu administracyjnego z zakładkami: Licencja, Agenci, Ustawienia i O wtyczce oraz stroną przeglądową kierującą do panelu frontowego.
@@ -99,6 +99,9 @@ EstateOffice to zaawansowana wtyczka CRM dla biur nieruchomości. Wersja 0.1.15 
 3. Przejdź do menu **Estate Office CRM**, aby uzupełnić ustawienia.
 
 == Changelog ==
+= 0.1.16 =
+* Zapewniono awaryjne doładowanie stylów i skryptów panelu CRM podczas renderowania shortcode'u, aby interfejs zachował formatowanie nawet po reinstalacji lub niestandardowym wywołaniu.
+
 = 0.1.15 =
 * Wymuszono ładowanie stylów i skryptów panelu CRM dla zalogowanych agentów z uprawnieniami, aby interfejs zachował pełne formatowanie niezależnie od użytej metody osadzenia shortcode'u.
 
