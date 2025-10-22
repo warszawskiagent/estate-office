@@ -949,7 +949,9 @@ class EstateOffice_Public {
 
         $sql = "SELECT a.id, a.first_name, a.last_name, a.slug, COUNT(c.id) AS contracts
                 FROM {$agents_table} a
-                LEFT JOIN {$contracts_table} c ON c.agent_id = a.id
+                LEFT JOIN {$contracts_table} c
+                    ON c.agent_id = a.id
+                    AND ( c.indefinite = 1 OR c.end_date >= CURDATE() )
                 GROUP BY a.id
                 HAVING contracts > 0
                 ORDER BY contracts DESC, a.last_name ASC, a.first_name ASC

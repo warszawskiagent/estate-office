@@ -24,14 +24,21 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
     }
 
     public function render(): void {
-        $metrics    = self::get_metrics();
-        $top_agents = self::get_top_agents();
+        $metrics = wp_parse_args(
+            self::get_metrics(),
+            [
+                'cards'              => [],
+                'top_agents'         => [],
+                'recent_contracts'   => [],
+                'upcoming_contracts' => [],
+            ]
+        );
         ?>
         <div class="wrap estate-office-wrap estate-office-dashboard">
             <h1><?php echo esc_html( $this->page_title ); ?></h1>
             <?php $this->render_global_action(); ?>
             <div class="estate-office-grid">
-                <?php foreach ( $metrics as $metric ) : ?>
+                <?php foreach ( $metrics['cards'] as $metric ) : ?>
                     <div class="estate-office-card">
                         <h3><?php echo esc_html( $metric['label'] ); ?></h3>
                         <p class="estate-office-card-value"><?php echo esc_html( $metric['value'] ); ?></p>
@@ -39,23 +46,74 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
                 <?php endforeach; ?>
             </div>
             <div class="estate-office-panels">
+                <?php if ( ! empty( $metrics['top_agents'] ) ) : ?>
+                    <div class="estate-office-panel">
+                        <h2><?php esc_html_e( 'Najlepsi agenci', 'estate-office' ); ?></h2>
+                        <table class="widefat striped">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e( 'Agent', 'estate-office' ); ?></th>
+                                    <th><?php esc_html_e( 'Aktywne umowy', 'estate-office' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ( $metrics['top_agents'] as $agent ) : ?>
+                                    <tr>
+                                        <td><?php echo esc_html( $agent->name ); ?></td>
+                                        <td><?php echo esc_html( (int) $agent->contracts ); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else : ?>
+                    <div class="estate-office-panel">
+                        <h2><?php esc_html_e( 'Najlepsi agenci', 'estate-office' ); ?></h2>
+                        <p><?php esc_html_e( 'Brak przypisanych agentów.', 'estate-office' ); ?></p>
+                    </div>
+                <?php endif; ?>
                 <div class="estate-office-panel">
-                    <h2><?php esc_html_e( 'Najlepsi agenci', 'estate-office' ); ?></h2>
+                    <h2><?php esc_html_e( 'Nadchodzące zakończenia umów', 'estate-office' ); ?></h2>
                     <table class="widefat striped">
                         <thead>
                             <tr>
-                                <th><?php esc_html_e( 'Agent', 'estate-office' ); ?></th>
-                                <th><?php esc_html_e( 'Liczba umów', 'estate-office' ); ?></th>
+                                <th><?php esc_html_e( 'Umowa', 'estate-office' ); ?></th>
+                                <th><?php esc_html_e( 'Data zakończenia', 'estate-office' ); ?></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ( empty( $top_agents ) ) : ?>
-                                <tr><td colspan="2"><?php esc_html_e( 'Brak przypisanych agentów.', 'estate-office' ); ?></td></tr>
+                            <?php if ( empty( $metrics['upcoming_contracts'] ) ) : ?>
+                                <tr><td colspan="2"><?php esc_html_e( 'Brak nadchodzących zakończeń.', 'estate-office' ); ?></td></tr>
                             <?php else : ?>
-                                <?php foreach ( $top_agents as $agent ) : ?>
+                                <?php foreach ( $metrics['upcoming_contracts'] as $contract ) : ?>
                                     <tr>
-                                        <td><?php echo esc_html( $agent->name ); ?></td>
-                                        <td><?php echo esc_html( $agent->contracts ); ?></td>
+                                        <td><?php echo esc_html( sprintf( '%1$s (%2$s)', $contract->contract_number, sprintf( '#%05d', $contract->id ) ) ); ?></td>
+                                        <td><?php echo esc_html( $contract->end_date ); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="estate-office-panel">
+                    <h2><?php esc_html_e( 'Ostatnie umowy', 'estate-office' ); ?></h2>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e( 'Umowa', 'estate-office' ); ?></th>
+                                <th><?php esc_html_e( 'Typ transakcji', 'estate-office' ); ?></th>
+                                <th><?php esc_html_e( 'Data zawarcia', 'estate-office' ); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ( empty( $metrics['recent_contracts'] ) ) : ?>
+                                <tr><td colspan="3"><?php esc_html_e( 'Brak zarejestrowanych umów.', 'estate-office' ); ?></td></tr>
+                            <?php else : ?>
+                                <?php foreach ( $metrics['recent_contracts'] as $contract ) : ?>
+                                    <tr>
+                                        <td><?php echo esc_html( sprintf( '%1$s (%2$s)', $contract->contract_number, sprintf( '#%05d', $contract->id ) ) ); ?></td>
+                                        <td><?php echo esc_html( $contract->transaction_type ); ?></td>
+                                        <td><?php echo esc_html( $contract->start_date ); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -93,23 +151,44 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
     public static function get_metrics(): array {
         global $wpdb;
 
-        $tables = [
-            'properties' => [ $wpdb->prefix . 'eo_properties', __( 'Nieruchomości', 'estate-office' ) ],
-            'contracts'  => [ $wpdb->prefix . 'eo_contracts', __( 'Aktywne umowy', 'estate-office' ) ],
-            'clients'    => [ $wpdb->prefix . 'eo_clients', __( 'Klienci', 'estate-office' ) ],
-            'searches'   => [ $wpdb->prefix . 'eo_searches', __( 'Poszukiwania', 'estate-office' ) ],
+        $contracts_table  = $wpdb->prefix . 'eo_contracts';
+        $properties_table = $wpdb->prefix . 'eo_properties';
+        $clients_table    = $wpdb->prefix . 'eo_clients';
+        $searches_table   = $wpdb->prefix . 'eo_searches';
+
+        $cards = [
+            [
+                'label' => __( 'Nieruchomości', 'estate-office' ),
+                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$properties_table}" ),
+            ],
+            [
+                'label' => __( 'Aktywne umowy', 'estate-office' ),
+                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$contracts_table} WHERE indefinite = 1 OR end_date >= CURDATE()" ),
+            ],
+            [
+                'label' => __( 'Poszukiwania', 'estate-office' ),
+                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$searches_table}" ),
+            ],
+            [
+                'label' => __( 'Klienci', 'estate-office' ),
+                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$clients_table}" ),
+            ],
         ];
 
-        $metrics = [];
-        foreach ( $tables as $table => $config ) {
-            $count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$config[0]}" );
-            $metrics[] = [
-                'label' => $config[1],
-                'value' => $count,
-            ];
-        }
+        $recent_contracts = $wpdb->get_results(
+            "SELECT id, contract_number, transaction_type, start_date FROM {$contracts_table} ORDER BY created_at DESC LIMIT 5"
+        );
 
-        return $metrics;
+        $upcoming_contracts = $wpdb->get_results(
+            "SELECT id, contract_number, end_date FROM {$contracts_table} WHERE end_date IS NOT NULL AND end_date >= CURDATE() AND end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) ORDER BY end_date ASC LIMIT 5"
+        );
+
+        return [
+            'cards'              => $cards,
+            'recent_contracts'   => $recent_contracts,
+            'upcoming_contracts' => $upcoming_contracts,
+            'top_agents'         => self::get_top_agents(),
+        ];
     }
 
     /**
@@ -122,7 +201,9 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
 
         $sql = "SELECT a.id, CONCAT_WS(' ', a.first_name, a.last_name) AS name, COUNT(c.id) AS contracts
                 FROM {$agents_table} a
-                LEFT JOIN {$contracts_table} c ON JSON_EXTRACT(c.stage_history, '$.agent_id') = a.id
+                LEFT JOIN {$contracts_table} c
+                    ON c.agent_id = a.id
+                    AND ( c.indefinite = 1 OR c.end_date >= CURDATE() )
                 GROUP BY a.id
                 ORDER BY contracts DESC, name ASC
                 LIMIT 5";
