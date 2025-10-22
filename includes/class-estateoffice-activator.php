@@ -223,12 +223,14 @@ class EstateOffice_Activator {
             tags LONGTEXT NULL,
             export_www TINYINT(1) DEFAULT 0,
             export_portals TINYINT(1) DEFAULT 0,
+            export_page_id BIGINT UNSIGNED DEFAULT NULL,
             agent_id BIGINT UNSIGNED DEFAULT NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY contract_id (contract_id),
-            KEY agent_id (agent_id)
+            KEY agent_id (agent_id),
+            KEY export_page_id (export_page_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_media (

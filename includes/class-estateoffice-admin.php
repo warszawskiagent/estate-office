@@ -16,6 +16,7 @@ require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-clien
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-properties.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-searches.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-agents.php';
+require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-offers.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-settings.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-about.php';
 
@@ -50,6 +51,8 @@ class EstateOffice_Admin {
         add_action( 'admin_post_estate_office_delete_property', [ $this, 'handle_delete_property' ] );
         add_action( 'admin_post_estate_office_save_search', [ $this, 'handle_save_search' ] );
         add_action( 'admin_post_estate_office_delete_search', [ $this, 'handle_delete_search' ] );
+        add_action( 'admin_post_estate_office_sync_offer', [ $this, 'handle_sync_offer' ] );
+        add_action( 'admin_post_estate_office_sync_offers', [ $this, 'handle_sync_offers' ] );
     }
 
     /**
@@ -75,6 +78,11 @@ class EstateOffice_Admin {
         $this->maybe_allow_administrator_fallback( $properties );
         $properties->register();
         $this->pages['properties'] = $properties;
+
+        $offers = new EstateOffice_Admin_Offers( $parent_slug );
+        $this->maybe_allow_administrator_fallback( $offers );
+        $offers->register();
+        $this->pages['offers'] = $offers;
 
         $searches = new EstateOffice_Admin_Searches( $parent_slug );
         $this->maybe_allow_administrator_fallback( $searches );
@@ -650,6 +658,10 @@ class EstateOffice_Admin {
         check_admin_referer( 'estate_office_delete_property' );
         $property_id = isset( $_POST['property_id'] ) ? absint( $_POST['property_id'] ) : 0;
         if ( $property_id ) {
+            $property = EstateOffice_Admin_Properties::get_property( $property_id );
+            if ( $property ) {
+                estate_office_sync_property_page( $property_id, false, $property );
+            }
             $this->delete_table_record( 'eo_properties', $property_id );
             $this->delete_property_media( $property_id );
         }
@@ -657,6 +669,63 @@ class EstateOffice_Admin {
             [
                 'page'   => EstateOffice_Admin_Properties::SLUG,
                 'status' => 'deleted',
+            ],
+            admin_url( 'admin.php' )
+        );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Manually synchronize a single exported offer page.
+     */
+    public function handle_sync_offer(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do synchronizacji ofert.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_sync_offer' );
+        $property_id = isset( $_POST['property_id'] ) ? absint( $_POST['property_id'] ) : 0;
+        $status      = 'error';
+
+        if ( $property_id ) {
+            $property = EstateOffice_Admin_Properties::get_property( $property_id );
+            if ( $property && ! empty( $property->export_www ) ) {
+                estate_office_sync_property_page( $property_id, true, $property );
+                $status = 'synced';
+            }
+        }
+
+        $redirect = add_query_arg(
+            [
+                'page'   => EstateOffice_Admin_Offers::SLUG,
+                'status' => $status,
+            ],
+            admin_url( 'admin.php' )
+        );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Synchronize all exported offers.
+     */
+    public function handle_sync_offers(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do synchronizacji ofert.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_sync_offers' );
+
+        $offers = EstateOffice_Admin_Offers::get_exported_properties();
+        foreach ( $offers as $offer ) {
+            estate_office_sync_property_page( (int) $offer->id, true, $offer );
+        }
+
+        $redirect = add_query_arg(
+            [
+                'page'   => EstateOffice_Admin_Offers::SLUG,
+                'status' => 'synced',
             ],
             admin_url( 'admin.php' )
         );
@@ -812,6 +881,11 @@ class EstateOffice_Admin {
                     'virtual'  => $virtual_url,
                 ]
             );
+
+            $stored_property = EstateOffice_Admin_Properties::get_property( $saved_id );
+            if ( $stored_property ) {
+                estate_office_sync_property_page( $saved_id, ! empty( $record['export_www'] ), $stored_property );
+            }
         }
 
         return $saved_id;

@@ -591,6 +591,315 @@
     align-self: flex-start;
 }
 
+.estate-office-offer-page {
+    max-width: 1160px;
+    margin: 2.5rem auto 4rem;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: #111827;
+}
+
+.estate-office-offer-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+    color: #ffffff;
+    padding: 3rem;
+}
+
+.estate-office-offer-hero-meta {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 780px;
+}
+
+.estate-office-offer-transaction {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.estate-office-offer-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.estate-office-offer-tags {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.estate-office-offer-tags li {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.25rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.estate-office-offer-address {
+    margin: 0;
+    font-size: 1.05rem;
+    opacity: 0.92;
+}
+
+.estate-office-offer-highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.estate-office-offer-highlights div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.estate-office-offer-highlights dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.estate-office-offer-highlights dd {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.estate-office-offer-gallery,
+.estate-office-offer-floorplans,
+.estate-office-offer-media,
+.estate-office-offer-description,
+.estate-office-offer-section,
+.estate-office-offer-agent,
+.estate-office-offer-map-section,
+.estate-office-offer-calculators {
+    padding: 2.5rem 3rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.estate-office-offer-gallery h2,
+.estate-office-offer-floorplans h2,
+.estate-office-offer-media h2,
+.estate-office-offer-description h2,
+.estate-office-offer-section h2,
+.estate-office-offer-agent h2,
+.estate-office-offer-map-section h2,
+.estate-office-offer-calculators h2 {
+    margin-top: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.estate-office-offer-gallery-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.estate-office-offer-gallery-grid figure {
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12);
+}
+
+.estate-office-offer-gallery-grid figure a {
+    display: block;
+    height: 100%;
+}
+
+.estate-office-offer-gallery-grid img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.estate-office-offer-floorplans ul,
+.estate-office-offer-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.estate-office-offer-floorplans li,
+.estate-office-offer-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.estate-office-offer-floorplans a,
+.estate-office-offer-media-links a,
+.estate-office-offer-calculators-links a {
+    text-decoration: none;
+}
+
+.estate-office-offer-media-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.estate-office-info-list,
+.estate-office-offer-section .estate-office-info-list {
+    display: grid;
+    gap: 1rem 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin: 1.5rem 0 0;
+}
+
+.estate-office-info-list div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.estate-office-info-list dt {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #475569;
+    margin: 0;
+}
+
+.estate-office-info-list dd {
+    margin: 0;
+    font-weight: 600;
+    color: #111827;
+}
+
+.estate-office-offer-description-content {
+    margin-top: 1rem;
+    line-height: 1.7;
+    color: #1f2937;
+}
+
+.estate-office-offer-agent-card {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 160px 1fr;
+    align-items: center;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.estate-office-offer-agent-photo img {
+    border-radius: 12px;
+    width: 100%;
+    height: auto;
+}
+
+.estate-office-offer-agent-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+}
+
+.estate-office-offer-agent-details p {
+    margin: 0.25rem 0;
+}
+
+.estate-office-offer-map {
+    width: 100%;
+    height: 420px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.estate-office-offer-calculators-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    margin-top: 1.5rem;
+}
+
+.estate-office-offer-calculators-links {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.estate-office-offer-calculators-links a {
+    text-decoration: none;
+}
+
+.estate-office-offer-calculators .estate-office-calculator {
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.estate-office-offer-section:last-of-type,
+.estate-office-offer-agent,
+.estate-office-offer-map-section,
+.estate-office-offer-calculators {
+    border-bottom: none;
+}
+
+@media (max-width: 1024px) {
+    .estate-office-offer-page {
+        margin: 1.5rem auto 3rem;
+    }
+
+    .estate-office-offer-hero {
+        padding: 2.5rem;
+    }
+
+    .estate-office-offer-gallery,
+    .estate-office-offer-floorplans,
+    .estate-office-offer-media,
+    .estate-office-offer-description,
+    .estate-office-offer-section,
+    .estate-office-offer-agent,
+    .estate-office-offer-map-section,
+    .estate-office-offer-calculators {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .estate-office-offer-hero {
+        padding: 2rem;
+    }
+
+    .estate-office-offer-hero h1 {
+        font-size: 2rem;
+    }
+
+    .estate-office-offer-agent-card {
+        grid-template-columns: 1fr;
+    }
+
+    .estate-office-offer-map {
+        height: 320px;
+    }
+}
+
 @media (max-width: 768px) {
     .estate-office-agent-profile {
         padding: 1.75rem;

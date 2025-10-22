@@ -149,6 +149,80 @@
         });
     }
 
+    function populateMapDataset() {
+        if (!window.estateOfficeOfferMap || typeof window.estateOfficeOfferMap !== 'object') {
+            return;
+        }
+
+        var container = document.getElementById('estate-office-offer-map');
+        if (!container) {
+            return;
+        }
+
+        if (!container.getAttribute('data-lat') && typeof window.estateOfficeOfferMap.lat !== 'undefined') {
+            container.setAttribute('data-lat', window.estateOfficeOfferMap.lat);
+        }
+        if (!container.getAttribute('data-lng') && typeof window.estateOfficeOfferMap.lng !== 'undefined') {
+            container.setAttribute('data-lng', window.estateOfficeOfferMap.lng);
+        }
+        if (!container.getAttribute('data-title') && window.estateOfficeOfferMap.title) {
+            container.setAttribute('data-title', window.estateOfficeOfferMap.title);
+        }
+        if (!container.getAttribute('data-zoom') && typeof window.estateOfficeOfferMap.zoom !== 'undefined') {
+            container.setAttribute('data-zoom', window.estateOfficeOfferMap.zoom);
+        }
+    }
+
+    function renderOfferMap() {
+        var container = document.getElementById('estate-office-offer-map');
+        if (!container || container.dataset.initialized) {
+            return;
+        }
+
+        var lat = parseFloat(container.getAttribute('data-lat'));
+        var lng = parseFloat(container.getAttribute('data-lng'));
+        if (!isFinite(lat) || !isFinite(lng)) {
+            return;
+        }
+
+        if (!(window.google && window.google.maps)) {
+            return;
+        }
+
+        container.dataset.initialized = '1';
+
+        var center = { lat: lat, lng: lng };
+        var zoom = parseInt(container.getAttribute('data-zoom'), 10);
+        if (!isFinite(zoom)) {
+            zoom = 15;
+        }
+
+        var map = new google.maps.Map(container, {
+            zoom: zoom,
+            center: center,
+            disableDefaultUI: true
+        });
+
+        var title = container.getAttribute('data-title') || '';
+        new google.maps.Marker({
+            position: center,
+            map: map,
+            title: title
+        });
+    }
+
+    window.EstateOfficeOfferMapInit = function () {
+        populateMapDataset();
+        renderOfferMap();
+    };
+
+    function maybeRenderOfferMap() {
+        populateMapDataset();
+        if (window.google && window.google.maps) {
+            renderOfferMap();
+        }
+    }
+
     $(document).on('click', '.estate-office-table tr', function (event) {
         var $link = $(this).find('a').first();
         if ($link.length && !$(event.target).is('a, button, input, textarea')) {
@@ -158,5 +232,8 @@
 
     $(function () {
         initCalculators();
+        maybeRenderOfferMap();
     });
+
+    window.addEventListener('load', maybeRenderOfferMap);
 })(jQuery);

@@ -292,6 +292,329 @@ if ( ! function_exists( 'estate_office_apply_watermark_to_image' ) ) {
     }
 }
 
+if ( ! function_exists( 'estate_office_get_transaction_label' ) ) {
+    /**
+     * Provide human readable label for transaction type.
+     */
+    function estate_office_get_transaction_label( string $transaction, bool $lowercase = false ): string {
+        $map = [
+            'SPRZEDAŻ' => __( 'Sprzedaż', 'estate-office' ),
+            'KUPNO'    => __( 'Kupno', 'estate-office' ),
+            'WYNAJEM'  => __( 'Wynajem', 'estate-office' ),
+            'NAJEM'    => __( 'Najem', 'estate-office' ),
+        ];
+
+        $label = $map[ strtoupper( $transaction ) ] ?? $transaction;
+
+        if ( $lowercase ) {
+            return function_exists( 'mb_strtolower' ) ? mb_strtolower( $label ) : strtolower( $label );
+        }
+
+        return $label;
+    }
+}
+
+if ( ! function_exists( 'estate_office_generate_offer_slug' ) ) {
+    /**
+     * Generate slug for exported offer page.
+     *
+     * @param int                   $property_id Property identifier.
+     * @param array<string,mixed>   $address     Address parts.
+     */
+    function estate_office_generate_offer_slug( int $property_id, array $address ): string {
+        $parts = [ 'oferta', $property_id ];
+
+        if ( ! empty( $address['city'] ) ) {
+            $parts[] = $address['city'];
+        }
+
+        if ( ! empty( $address['street'] ) ) {
+            $parts[] = $address['street'];
+        }
+
+        $slug = sanitize_title( implode( '-', $parts ) );
+
+        return '' !== $slug ? $slug : 'oferta-' . $property_id;
+    }
+}
+
+if ( ! function_exists( 'estate_office_assign_offer_terms' ) ) {
+    /**
+     * Ensure hierarchical offer taxonomy terms exist and assign them to page.
+     *
+     * @param int                   $page_id      Page identifier.
+     * @param string                $transaction  Transaction type.
+     * @param string                $property_type Property type.
+     * @param array<string,mixed>   $address      Address parts.
+     */
+    function estate_office_assign_offer_terms( int $page_id, string $transaction, string $property_type, array $address ): void {
+        $taxonomy = 'estate_office_offer_category';
+        if ( ! taxonomy_exists( $taxonomy ) ) {
+            return;
+        }
+
+        $levels = [];
+        $transaction_label = estate_office_get_transaction_label( $transaction );
+        if ( '' !== $transaction_label ) {
+            $levels[] = [
+                'name' => $transaction_label,
+                'slug' => 'eo-transaction-' . sanitize_title( $transaction ),
+            ];
+        }
+
+        if ( '' !== $property_type ) {
+            $levels[] = [
+                'name' => $property_type,
+                'slug' => 'eo-' . sanitize_title( $transaction ) . '-type-' . sanitize_title( $property_type ),
+            ];
+        }
+
+        if ( ! empty( $address['city'] ) ) {
+            $levels[] = [
+                'name' => $address['city'],
+                'slug' => 'eo-' . sanitize_title( $transaction ) . '-city-' . sanitize_title( $address['city'] ),
+            ];
+        }
+
+        if ( ! empty( $address['district'] ) ) {
+            $levels[] = [
+                'name' => $address['district'],
+                'slug' => 'eo-' . sanitize_title( $transaction ) . '-district-' . sanitize_title( $address['city'] . '-' . $address['district'] ),
+            ];
+        }
+
+        if ( empty( $levels ) ) {
+            wp_set_object_terms( $page_id, [], $taxonomy, false );
+            return;
+        }
+
+        $parent   = 0;
+        $term_ids = [];
+
+        foreach ( $levels as $level ) {
+            $slug = substr( sanitize_title( $level['slug'] ), 0, 190 );
+            if ( '' === $slug ) {
+                $slug = sanitize_title( $level['name'] );
+            }
+
+            $term = get_term_by( 'slug', $slug, $taxonomy );
+            if ( ! $term ) {
+                $created = wp_insert_term(
+                    $level['name'],
+                    $taxonomy,
+                    [
+                        'slug'   => $slug,
+                        'parent' => $parent,
+                    ]
+                );
+
+                if ( is_wp_error( $created ) ) {
+                    continue;
+                }
+
+                $term_id = (int) $created['term_id'];
+            } else {
+                $term_id = (int) $term->term_id;
+                if ( $term->parent !== $parent ) {
+                    wp_update_term( $term_id, $taxonomy, [ 'parent' => $parent ] );
+                }
+            }
+
+            $term_ids[] = $term_id;
+            $parent      = $term_id;
+        }
+
+        if ( ! empty( $term_ids ) ) {
+            wp_set_object_terms( $page_id, $term_ids, $taxonomy, false );
+        }
+    }
+}
+
+if ( ! function_exists( 'estate_office_map_offer_tag_labels' ) ) {
+    /**
+     * Map stored offer tags to display labels.
+     *
+     * @param array<string,mixed> $tags Raw tag payload.
+     * @return array<int,string>
+     */
+    function estate_office_map_offer_tag_labels( array $tags ): array {
+        if ( empty( $tags ) ) {
+            return [];
+        }
+
+        $map = [
+            'new_offer'     => __( 'Nowa oferta', 'estate-office' ),
+            'exclusive'     => __( 'Wyłączność', 'estate-office' ),
+            'new_price'     => __( 'Nowa cena', 'estate-office' ),
+            'no_commission' => __( 'Bez prowizji', 'estate-office' ),
+            'mls'           => __( 'Oferta MLS', 'estate-office' ),
+            'premium'       => __( 'Premium', 'estate-office' ),
+            'sold'          => __( 'Sprzedane', 'estate-office' ),
+            'rented'        => __( 'Wynajęte', 'estate-office' ),
+        ];
+
+        $labels = [];
+        foreach ( $map as $key => $label ) {
+            if ( ! array_key_exists( $key, $tags ) ) {
+                continue;
+            }
+
+            $value = $tags[ $key ];
+            $active = false;
+
+            if ( is_array( $value ) ) {
+                if ( array_key_exists( 'active', $value ) ) {
+                    $active = (bool) $value['active'];
+                } else {
+                    $active = ! empty( $value );
+                }
+            } else {
+                $active = ! empty( $value );
+            }
+
+            if ( $active ) {
+                $labels[] = $label;
+            }
+        }
+
+        return $labels;
+    }
+}
+
+if ( ! function_exists( 'estate_office_sync_property_page' ) ) {
+    /**
+     * Synchronize exported property with WordPress page.
+     *
+     * @param int         $property_id   Property identifier.
+     * @param bool        $should_export Whether offer should be visible publicly.
+     * @param object|null $property      Optional pre-fetched row.
+     */
+    function estate_office_sync_property_page( int $property_id, bool $should_export, $property = null ): void {
+        if ( ! $property ) {
+            $property = EstateOffice_Admin_Properties::get_property( $property_id );
+        }
+
+        if ( ! $property ) {
+            return;
+        }
+
+        global $wpdb;
+        $table   = $wpdb->prefix . 'eo_properties';
+        $page_id = (int) ( $property->export_page_id ?? 0 );
+
+        if ( ! $should_export ) {
+            if ( $page_id && get_post( $page_id ) ) {
+                wp_update_post(
+                    [
+                        'ID'          => $page_id,
+                        'post_status' => 'draft',
+                    ]
+                );
+                wp_set_object_terms( $page_id, [], 'estate_office_offer_category', false );
+                delete_post_meta( $page_id, '_estate_office_property_id' );
+                delete_post_thumbnail( $page_id );
+            }
+
+            $wpdb->update( $table, [ 'export_page_id' => null ], [ 'id' => $property_id ], [ '%d' ], [ '%d' ] );
+            return;
+        }
+
+        $address = $property->address ? json_decode( $property->address, true ) : [];
+        $details = $property->details ? json_decode( $property->details, true ) : [];
+
+        $title_parts = [];
+        if ( ! empty( $property->property_type ) ) {
+            $title_parts[] = $property->property_type;
+        }
+
+        $transaction_label = estate_office_get_transaction_label( (string) $property->transaction_type, true );
+        if ( '' !== $transaction_label ) {
+            $title_parts[] = $transaction_label;
+        }
+
+        if ( ! empty( $address['city'] ) ) {
+            $title_parts[] = $address['city'];
+        }
+
+        $title = trim( implode( ' – ', $title_parts ) );
+        if ( '' === $title ) {
+            $title = sprintf( __( 'Oferta #%d', 'estate-office' ), $property_id );
+        }
+
+        $content = sprintf( '[estate_office_offer id="%d"]', $property_id );
+        $slug    = estate_office_generate_offer_slug( $property_id, $address );
+
+        if ( $page_id && ! get_post( $page_id ) ) {
+            $page_id = 0;
+        }
+
+        $page_args = [
+            'post_title'   => $title,
+            'post_content' => $content,
+            'post_status'  => 'publish',
+            'post_type'    => 'page',
+            'meta_input'   => [
+                '_estate_office_property_id' => $property_id,
+            ],
+        ];
+
+        if ( $page_id ) {
+            $page_args['ID'] = $page_id;
+            $page_id         = wp_update_post( $page_args, true );
+        } else {
+            $page_args['post_name'] = $slug;
+            $page_id                = wp_insert_post( $page_args, true );
+        }
+
+        if ( is_wp_error( $page_id ) || ! $page_id ) {
+            return;
+        }
+
+        $wpdb->update(
+            $table,
+            [ 'export_page_id' => (int) $page_id ],
+            [ 'id' => $property_id ],
+            [ '%d' ],
+            [ '%d' ]
+        );
+
+        $cover_media = EstateOffice_Admin_Properties::get_property_cover_media( $property_id );
+        $image_id    = (int) ( $cover_media['watermarked_id'] ?? 0 );
+        if ( ! $image_id ) {
+            $image_id = (int) ( $cover_media['attachment_id'] ?? 0 );
+        }
+
+        if ( $image_id && estate_office_is_attachment_available( $image_id ) ) {
+            set_post_thumbnail( $page_id, $image_id );
+        }
+
+        estate_office_assign_offer_terms( $page_id, (string) $property->transaction_type, (string) $property->property_type, $address );
+
+        /**
+         * Allow 3rd parties to hook after offer page synchronization.
+         */
+        do_action( 'estate_office_after_offer_sync', $page_id, $property_id, $details, $address );
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_property_page_url' ) ) {
+    /**
+     * Retrieve permalink for exported property.
+     */
+    function estate_office_get_property_page_url( int $property_id ): string {
+        global $wpdb;
+        $table   = $wpdb->prefix . 'eo_properties';
+        $page_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT export_page_id FROM {$table} WHERE id = %d", $property_id ) );
+        if ( ! $page_id ) {
+            return '';
+        }
+
+        $link = get_permalink( $page_id );
+
+        return $link ?: '';
+    }
+}
+
 if ( ! function_exists( 'estate_office_create_watermarked_attachment' ) ) {
     /**
      * Generate a watermarked attachment for a given image.

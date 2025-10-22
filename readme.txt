@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.0.16
+Stable tag: 0.0.17
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.16 rozbudowuje pulpit administratora o sekcję nadchodzących zakończeń i ostatnich umów, a także dostarcza spójny ranking aktywnych agentów oraz utrzymuje automatyczne generowanie wersji zdjęć ze znakiem wodnym w katalogu ofert.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.17 automatycznie generuje strony eksportowanych ofert z dedykowanym shortcode'em, dodaje panel „Oferty” do synchronizacji stron WWW i zapewnia rozbudowany widok publiczny z galerią, mapą, kalkulatorami oraz kontaktami agentów.
 
 == Funkcje ==
 
@@ -20,9 +20,11 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 * Frontowy panel CRM dostępny po zalogowaniu dzięki stronie „EstateOffice CRM” (`[estate_office_crm]`).
 * Publiczne listy ofert na sprzedaż i wynajem z grupowaniem po typie transakcji, rodzaju nieruchomości, mieście i dzielnicy (`[estate_office_offers transaction="SPRZEDAŻ"]`).
 * Automatyczne tworzenie stron „EstateOffice CRM”, „Oferty na sprzedaż” oraz „Oferty na wynajem” podczas aktywacji wtyczki.
+* Panel „Oferty” w kokpicie administratora pozwala przeglądać i ręcznie synchronizować strony eksportowanych nieruchomości.
 * Dynamiczne formularze z polami zależnymi od ustawień w sekcji **Estate Office CRM → Ustawienia**.
 * Integracja z Google Maps (wprowadzony klucz API) oraz automatyczny znak wodny nanoszony na zdjęcia nieruchomości podczas zapisu i aktualizacji.
 * Publiczne listy i profile agentów prezentują miniatury ofert wygenerowane na podstawie zdjęć z nałożonym znakiem wodnym.
+* Shortcode `[estate_office_offer id="123"]` generuje kompletną stronę oferty z galerią, znacznikami, mapą, kalkulatorami i kontaktem do agenta.
 * Automatyczna synchronizacja ról `administrator` i `estate_agent`, aby zachować dostęp do panelu CRM.
 * Możliwość przypisywania opiekuna (agenta) do klientów, umów, nieruchomości i poszukiwań z widoczną prezentacją na listach i profilach CRM.
 * Rozbudowany pulpit administracyjny z kartami statystyk, rankingiem aktywnych agentów oraz listami ostatnich i wygasających umów.
@@ -55,6 +57,12 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.0.17 =
+* Rozszerzono schemat bazy `eo_properties` o identyfikator strony eksportowanej, aby śledzić cykl życia publikacji ofert.
+* Dodano stronę administracyjną **Oferty** z wyszukiwarką, ręczną synchronizacją oraz podglądem kategorii eksportowanych stron WWW.
+* Wprowadzono shortcode `[estate_office_offer]`, który tworzy publiczną stronę oferty z galerią, mapą Google, kalkulatorami i kartą agenta.
+* Uzupełniono listy i karty frontowe o linki do stron ofert, obsługę mapy przez atrybuty danych oraz nowe style dla sekcji szczegółów.
 
 = 0.0.16 =
 * Rozbudowano pulpit administracyjny o sekcje ostatnich umów oraz nadchodzących zakończeń kontraktów.
