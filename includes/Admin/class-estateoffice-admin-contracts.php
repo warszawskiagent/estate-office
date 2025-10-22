@@ -498,12 +498,17 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         if ( ! is_array( $tags ) ) {
             $tags = [];
         }
+
+        $normalized_transaction = strtoupper( $transaction_type );
+        $price_label_default    = __( 'Cena', 'estate-office' );
+        $price_label_rent       = sprintf( __( 'Cena (%s)', 'estate-office' ), __( 'miesięcznie', 'estate-office' ) );
+        $price_label            = 'WYNAJEM' === $normalized_transaction ? $price_label_rent : $price_label_default;
         ?>
         <section class="estate-office-section estate-office-property estate-office-step" data-step="3" data-transaction-target="property">
             <h2><?php esc_html_e( 'Nieruchomość', 'estate-office' ); ?></h2>
             <p class="description"><?php esc_html_e( 'Wypełnij dane nieruchomości. Sekcja jest wymagana dla transakcji sprzedaży i wynajmu.', 'estate-office' ); ?></p>
             <input type="hidden" name="property[property_id]" value="<?php echo esc_attr( $property->id ?? 0 ); ?>" />
-            <input type="hidden" name="property[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
+            <input type="hidden" id="property_transaction_type" name="property[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
             <div class="estate-office-grid two-cols">
                 <p>
                     <label for="property_type" class="required"><?php esc_html_e( 'Rodzaj nieruchomości', 'estate-office' ); ?></label>
@@ -518,7 +523,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     </select>
                 </p>
                 <p>
-                    <label for="property_price" class="required"><?php esc_html_e( 'Cena', 'estate-office' ); ?></label>
+                    <label for="property_price" class="required" data-default-label="<?php echo esc_attr( $price_label_default ); ?>" data-rent-label="<?php echo esc_attr( $price_label_rent ); ?>"><?php echo esc_html( $price_label ); ?></label>
                     <input type="number" step="0.01" id="property_price" name="property[details][price]" value="<?php echo esc_attr( $details['price'] ?? '' ); ?>" />
                 </p>
                 <p>
@@ -687,21 +692,32 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                 <legend><?php esc_html_e( 'Znaczniki', 'estate-office' ); ?></legend>
                 <?php
                 $flags = [
-                    'new_offer'   => __( 'Nowa oferta', 'estate-office' ),
-                    'exclusive'   => __( 'Wyłączność', 'estate-office' ),
-                    'sold'        => __( 'Sprzedane', 'estate-office' ),
-                    'rented'      => __( 'Wynajęte', 'estate-office' ),
-                    'new_price'   => __( 'Nowa cena', 'estate-office' ),
-                    'no_commission' => __( 'Bez prowizji', 'estate-office' ),
-                    'mls'         => __( 'Oferta MLS', 'estate-office' ),
-                    'premium'     => __( 'Premium', 'estate-office' ),
+                    'new_offer'     => [ 'label' => __( 'Nowa oferta', 'estate-office' ) ],
+                    'exclusive'     => [ 'label' => __( 'Wyłączność', 'estate-office' ) ],
+                    'sold'          => [
+                        'label'        => __( 'Sprzedane', 'estate-office' ),
+                        'transactions' => [ 'SPRZEDAŻ' ],
+                    ],
+                    'rented'        => [
+                        'label'        => __( 'Wynajęte', 'estate-office' ),
+                        'transactions' => [ 'WYNAJEM' ],
+                    ],
+                    'new_price'     => [ 'label' => __( 'Nowa cena', 'estate-office' ) ],
+                    'no_commission' => [ 'label' => __( 'Bez prowizji', 'estate-office' ) ],
+                    'mls'           => [ 'label' => __( 'Oferta MLS', 'estate-office' ) ],
+                    'premium'       => [ 'label' => __( 'Premium', 'estate-office' ) ],
                 ];
-                foreach ( $flags as $flag => $label ) {
+                foreach ( $flags as $flag => $config ) {
+                    $transactions_attr = '';
+                    if ( ! empty( $config['transactions'] ) ) {
+                        $transactions_attr = ' data-transaction-types="' . esc_attr( implode( ',', array_map( 'strtoupper', (array) $config['transactions'] ) ) ) . '"';
+                    }
                     printf(
-                        '<label class="estate-office-flag"><input type="checkbox" name="property[tags][%1$s]" value="1" %3$s /> %2$s</label>',
+                        '<label class="estate-office-flag"%4$s><input type="checkbox" name="property[tags][%1$s]" value="1" %3$s /> %2$s</label>',
                         esc_attr( $flag ),
-                        esc_html( $label ),
-                        checked( ! empty( $tags[ $flag ] ), true, false )
+                        esc_html( $config['label'] ),
+                        checked( ! empty( $tags[ $flag ] ), true, false ),
+                        $transactions_attr
                     );
                 }
                 ?>
@@ -722,7 +738,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             <h2><?php esc_html_e( 'Poszukiwanie', 'estate-office' ); ?></h2>
             <p class="description"><?php esc_html_e( 'Wypełnij, jeżeli umowa dotyczy kupna lub najmu.', 'estate-office' ); ?></p>
             <input type="hidden" name="search[search_id]" value="<?php echo esc_attr( $search->id ?? 0 ); ?>" />
-            <input type="hidden" name="search[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
+            <input type="hidden" id="search_transaction_type" name="search[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
             <div class="estate-office-grid two-cols">
                 <p>
                     <label for="search_price_min"><?php esc_html_e( 'Cena od', 'estate-office' ); ?></label>
@@ -789,6 +805,15 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                 echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Umowa usunięta.', 'estate-office' ) . '</p></div>';
             } elseif ( 'error' === $status ) {
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Nie udało się zapisać umowy.', 'estate-office' ) . '</p></div>';
+            } elseif ( 'duplicate' === $status ) {
+                $number = '';
+                if ( isset( $_GET['duplicate_number'] ) ) {
+                    $number = sanitize_text_field( wp_unslash( $_GET['duplicate_number'] ) );
+                }
+                $message = $number
+                    ? sprintf( __( 'Umowa o numerze %s już istnieje. Wybierz inny identyfikator.', 'estate-office' ), $number )
+                    : __( 'Umowa o podanym numerze już istnieje. Wybierz inny identyfikator.', 'estate-office' );
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
             }
         }
     }

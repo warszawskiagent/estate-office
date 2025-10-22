@@ -196,10 +196,28 @@
                 }
             };
 
+            const updatePriceLabel = (type) => {
+                const $label = $form.find('label[for="property_price"]');
+                if ( ! $label.length ) {
+                    return;
+                }
+                const defaultLabel = $label.data('defaultLabel') || $label.data('default-label') || $label.text();
+                const rentLabel = $label.data('rentLabel') || $label.data('rent-label') || defaultLabel;
+                if ( type === 'WYNAJEM' ) {
+                    $label.text(rentLabel);
+                } else {
+                    $label.text(defaultLabel);
+                }
+            };
+
             const mirrorEmbeddedTransaction = (type) => {
-                $form.find('input[name="property[transaction_type]"]').val(type);
-                $form.find('input[name="search[transaction_type]"]').val(type);
-                $form.find('.estate-office-transaction-display').val(type);
+                const normalized = (type || '').toString().toUpperCase();
+                $form.find('input[name="property[transaction_type]"]').val(normalized);
+                $form.find('input[name="search[transaction_type]"]').val(normalized);
+                $form.find('.estate-office-transaction-display').val(normalized);
+                $form.find('#property_transaction_type').trigger('transaction:update', [normalized]);
+                $form.find('#search_transaction_type').trigger('transaction:update', [normalized]);
+                updatePriceLabel(normalized);
             };
 
             let propertyRequiredState = false;
@@ -534,6 +552,13 @@
                     toggleByTransaction(value);
                 });
                 toggleByTransaction($transactionHidden.val());
+            }
+            const $wizardTransaction = $('#property_transaction_type');
+            if ( $wizardTransaction.length ) {
+                $wizardTransaction.on('transaction:update', function( event, value ){
+                    toggleByTransaction(value);
+                });
+                toggleByTransaction($wizardTransaction.val());
             }
 
             const $legalToggle = $('#property_legal_no_kw');

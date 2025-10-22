@@ -444,6 +444,43 @@ class EstateOffice_Admin {
         $commission_unit   = sanitize_text_field( $post['commission_unit'] ?? '' );
         $stage             = sanitize_text_field( $post['stage'] ?? 'umowa_posrednictwa' );
 
+        $table_name = $wpdb->prefix . 'eo_contracts';
+        $duplicate_id = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$table_name} WHERE contract_number = %s AND id <> %d",
+                $contract_number,
+                $contract_id
+            )
+        );
+
+        if ( $duplicate_id ) {
+            $redirect = wp_get_referer();
+            if ( ! $redirect ) {
+                $args = [
+                    'page' => EstateOffice_Admin_Contracts::SLUG,
+                ];
+                if ( $contract_id ) {
+                    $args['action']   = 'edit';
+                    $args['contract'] = $contract_id;
+                } else {
+                    $args['action'] = 'add';
+                }
+                $redirect = add_query_arg( $args, admin_url( 'admin.php' ) );
+            }
+
+            $redirect = remove_query_arg( [ 'status', 'duplicate_number' ], $redirect );
+            $redirect = add_query_arg(
+                [
+                    'status'           => 'duplicate',
+                    'duplicate_number' => $contract_number,
+                ],
+                $redirect
+            );
+
+            wp_safe_redirect( $redirect );
+            exit;
+        }
+
         $contract_data = [
             'contract_number'   => $contract_number,
             'transaction_type'  => $transaction_type,
