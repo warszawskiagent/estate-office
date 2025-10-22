@@ -24,6 +24,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
     public function render(): void {
         $search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
         $clients  = self::get_clients( $search );
+        $agents   = EstateOffice_Admin_Agents::get_agents();
         $edit_id  = isset( $_GET['client'] ) ? absint( $_GET['client'] ) : 0;
         $client   = $edit_id ? self::get_client( $edit_id ) : null;
         ?>
@@ -60,7 +61,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
                                 <td><?php echo esc_html( self::format_address_column( $row->address ) ); ?></td>
                                 <td><?php echo esc_html( $row->phone ); ?></td>
                                 <td><?php echo esc_html( $row->email ); ?></td>
-                                <td>&mdash;</td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $row ) ?: '—' ); ?></td>
                                 <td>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&client=' . absint( $row->id ) ) ); ?>"><?php esc_html_e( 'Edytuj', 'estate-office' ); ?></a>
                                     <?php if ( current_user_can( 'manage_options' ) ) : ?>
@@ -79,7 +80,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
             </table>
 
             <h2 class="title"><?php echo $client ? esc_html__( 'Edytuj klienta', 'estate-office' ) : esc_html__( 'Dodaj klienta', 'estate-office' ); ?></h2>
-            <?php $this->render_form( $client ); ?>
+            <?php $this->render_form( $client, $agents ); ?>
         </div>
         <?php
     }
@@ -102,7 +103,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
         printf( '<a href="%1$s" class="page-title-action">%2$s</a>', esc_url( $url ), esc_html__( 'Dodaj nową umowę', 'estate-office' ) );
     }
 
-    protected function render_form( $client ): void {
+    protected function render_form( $client, array $agents ): void {
         $address        = $client && $client->address ? json_decode( $client->address, true ) : [];
         $correspondence = $client && $client->correspondence_address ? json_decode( $client->correspondence_address, true ) : [];
         $identification = $client && $client->identification ? json_decode( $client->identification, true ) : [];
@@ -172,6 +173,21 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
                     <input type="url" id="client_website" name="website" value="<?php echo esc_attr( $client->website ?? '' ); ?>" />
                 </p>
             </div>
+
+            <p>
+                <label for="client_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                <select id="client_agent" name="agent_id">
+                    <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                    <?php foreach ( $agents as $agent_row ) :
+                        $label = EstateOffice_Admin_Agents::format_agent_name( $agent_row );
+                        if ( '' === $label ) {
+                            $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent_row->id );
+                        }
+                        ?>
+                        <option value="<?php echo esc_attr( $agent_row->id ); ?>" <?php selected( (int) ( $client->agent_id ?? 0 ), (int) $agent_row->id ); ?>><?php echo esc_html( $label ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </p>
 
             <fieldset class="estate-office-fieldset" data-section="individual">
                 <legend><?php esc_html_e( 'Dane identyfikacyjne (osoba fizyczna)', 'estate-office' ); ?></legend>
@@ -284,18 +300,17 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
 
     public static function get_clients( string $search = '' ): array {
         global $wpdb;
-        $table = $wpdb->prefix . 'eo_clients';
+        $table        = $wpdb->prefix . 'eo_clients';
+        $agents_table = $wpdb->prefix . 'eo_agents';
+        $select       = "SELECT c.*, a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone FROM {$table} c LEFT JOIN {$agents_table} a ON a.id = c.agent_id";
+
         if ( empty( $search ) ) {
-            return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY created_at DESC" );
+            return $wpdb->get_results( $select . ' ORDER BY c.created_at DESC' );
         }
 
         $like = '%' . $wpdb->esc_like( $search ) . '%';
         $sql  = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE first_name LIKE %s OR last_name LIKE %s OR company_name LIKE %s OR phone LIKE %s OR email LIKE %s ORDER BY created_at DESC",
-            $like,
-            $like,
-            $like,
-            $like,
+            $select . ' WHERE c.first_name LIKE %1$s OR c.last_name LIKE %1$s OR c.company_name LIKE %1$s OR c.phone LIKE %1$s OR c.email LIKE %1$s ORDER BY c.created_at DESC',
             $like
         );
         return $wpdb->get_results( $sql );

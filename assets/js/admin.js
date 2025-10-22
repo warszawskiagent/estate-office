@@ -9,6 +9,7 @@
             this.setupContractForm();
             this.setupPropertyForm();
             this.setupTransactionMirrors();
+            this.setupAgentMirrors();
             this.setupClientForm();
             this.setupAddressToggle();
             this.setupStageHistory();
@@ -698,6 +699,108 @@
 
             bindMirror('#property_contract', '#property_transaction', '#property_transaction_display');
             bindMirror('#search_contract', '#search_transaction', '#search_transaction_display');
+        },
+
+        setupAgentMirrors() {
+            const markManual = ($element) => {
+                $element.data('manual', true);
+            };
+
+            const prepareAgentField = ($agent) => {
+                if ( ! $agent.length ) {
+                    return;
+                }
+                $agent.on('change', function(){
+                    if ( $agent.data('suppressManual') ) {
+                        $agent.data('suppressManual', false);
+                        return;
+                    }
+                    markManual($agent);
+                });
+            };
+
+            const setAgentValue = ($agent, value) => {
+                if ( ! $agent.length ) {
+                    return;
+                }
+                $agent.data('suppressManual', true);
+                if ( typeof value === 'undefined' || value === null ) {
+                    value = '';
+                }
+                $agent.val(value ? String(value) : '');
+                $agent.trigger('change');
+                if ( '' === value ) {
+                    const fallback = $agent.data('fallback');
+                    if ( fallback ) {
+                        $agent.data('suppressManual', true);
+                        $agent.val(String(fallback)).trigger('change');
+                    }
+                }
+                $agent.data('manual', false);
+            };
+
+            const bindContractAgent = (contractSelector, agentSelector) => {
+                const $contract = $(contractSelector);
+                const $agent    = $(agentSelector);
+                if ( ! $contract.length || ! $agent.length ) {
+                    return;
+                }
+
+                prepareAgentField( $agent );
+
+                const updateFromContract = () => {
+                    const selected = $contract.find('option:selected');
+                    if ( ! $agent.data('manual') ) {
+                        const agentId = selected.data('agent');
+                        if ( typeof agentId !== 'undefined' ) {
+                            setAgentValue( $agent, agentId ? agentId : '' );
+                        }
+                    }
+                };
+
+                $contract.on('change', () => {
+                    $agent.data('manual', false);
+                    updateFromContract();
+                });
+
+                updateFromContract();
+            };
+
+            const synchronizeFromSource = (sourceSelector, targetSelectors) => {
+                const $source = $(sourceSelector);
+                if ( ! $source.length ) {
+                    return;
+                }
+                const $targets = targetSelectors.map((selector) => {
+                    const $target = $(selector);
+                    prepareAgentField( $target );
+                    return $target;
+                });
+
+                const apply = () => {
+                    const value = $source.val();
+                    $targets.forEach(($target) => {
+                        if ( ! $target.length ) {
+                            return;
+                        }
+                        if ( $target.data('manual') ) {
+                            return;
+                        }
+                        setAgentValue( $target, value );
+                    });
+                };
+
+                $source.on('change', () => {
+                    $targets.forEach(($target) => $target.data('manual', false));
+                    apply();
+                });
+
+                apply();
+            };
+
+            bindContractAgent('#property_contract', '#property_agent');
+            bindContractAgent('#search_contract', '#search_agent');
+            synchronizeFromSource('#contract_agent', ['#contract_property_agent', '#contract_search_agent']);
         },
 
         setupClientForm() {

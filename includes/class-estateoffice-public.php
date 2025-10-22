@@ -213,7 +213,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_currency( $property->price_m2 ) ); ?></td>
                                 <td><?php echo esc_html( $property->area ? $property->area . ' m²' : '' ); ?></td>
                                 <td><?php echo esc_html( $property->rooms ); ?></td>
-                                <td>&mdash;</td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $property ) ?: '—' ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -244,6 +244,12 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Cena', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_currency( $details['price'] ?? '' ) ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Metraż', 'estate-office' ); ?></dt><dd><?php echo esc_html( ! empty( $details['area'] ) ? $details['area'] . ' m²' : '' ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Pokoje', 'estate-office' ); ?></dt><dd><?php echo esc_html( $details['rooms'] ?? '' ); ?></dd></div>
+                    <?php if ( ! empty( $property->agent_id ) ) :
+                        $agent = EstateOffice_Admin_Agents::get_agent( (int) $property->agent_id );
+                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
+                        ?>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $property->agent_id ) ); ?></dd></div>
+                    <?php endif; ?>
                 </dl>
                 <h4><?php esc_html_e( 'Adres', 'estate-office' ); ?></h4>
                 <p>
@@ -286,11 +292,12 @@ class EstateOffice_Public {
                         <th><?php esc_html_e( 'Budżet', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Lokalizacja', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Typ transakcji', 'estate-office' ); ?></th>
+                        <th><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ( empty( $searches ) ) : ?>
-                        <tr><td colspan="5"><?php esc_html_e( 'Brak poszukiwań.', 'estate-office' ); ?></td></tr>
+                        <tr><td colspan="6"><?php esc_html_e( 'Brak poszukiwań.', 'estate-office' ); ?></td></tr>
                     <?php else : ?>
                         <?php foreach ( $searches as $item ) :
                             $criteria = $item->criteria ? json_decode( $item->criteria, true ) : [];
@@ -301,6 +308,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_range( $criteria['budget_min'] ?? '', $criteria['budget_max'] ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $criteria['city'] ?? '' ); ?></td>
                                 <td><?php echo esc_html( $item->transaction_type ); ?></td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $item ) ?: '—' ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -328,6 +336,12 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Budżet', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_range( $criteria['budget_min'] ?? '', $criteria['budget_max'] ?? '' ) ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Metraż', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_range( $criteria['area_min'] ?? '', $criteria['area_max'] ?? '', ' m²' ) ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Liczba pokoi', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_range( $criteria['rooms_min'] ?? '', $criteria['rooms_max'] ?? '' ) ); ?></dd></div>
+                    <?php if ( ! empty( $search->agent_id ) ) :
+                        $agent = EstateOffice_Admin_Agents::get_agent( (int) $search->agent_id );
+                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
+                        ?>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $search->agent_id ) ); ?></dd></div>
+                    <?php endif; ?>
                 </dl>
             </div>
             <div>
@@ -381,7 +395,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_date( $contract->start_date ) ); ?></td>
                                 <td><?php echo esc_html( $contract->indefinite ? __( 'Bezterminowa', 'estate-office' ) : $this->format_date( $contract->end_date ) ); ?></td>
                                 <td><?php echo esc_html( $this->format_stage( $contract->stage ) ); ?></td>
-                                <td>&mdash;</td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $contract ) ?: '—' ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -422,6 +436,12 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Data zawarcia', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_date( $contract->start_date ) ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Data zakończenia', 'estate-office' ); ?></dt><dd><?php echo esc_html( $contract->indefinite ? __( 'Bezterminowa', 'estate-office' ) : $this->format_date( $contract->end_date ) ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'Prowizja', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_commission( $contract ) ); ?></dd></div>
+                    <?php if ( ! empty( $contract->agent_id ) ) :
+                        $agent = EstateOffice_Admin_Agents::get_agent( (int) $contract->agent_id );
+                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
+                        ?>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $contract->agent_id ) ); ?></dd></div>
+                    <?php endif; ?>
                 </dl>
                 <?php if ( ! empty( $clients ) ) : ?>
                     <h4><?php esc_html_e( 'Klienci', 'estate-office' ); ?></h4>
@@ -489,7 +509,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_address_from_json( $client->address ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $client->phone ); ?></td>
                                 <td><?php echo esc_html( $client->email ); ?></td>
-                                <td>&mdash;</td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $client ) ?: '—' ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -526,6 +546,12 @@ class EstateOffice_Public {
                     <?php endif; ?>
                     <div><dt><?php esc_html_e( 'Telefon', 'estate-office' ); ?></dt><dd><?php echo esc_html( $client->phone ); ?></dd></div>
                     <div><dt><?php esc_html_e( 'E-mail', 'estate-office' ); ?></dt><dd><?php echo esc_html( $client->email ); ?></dd></div>
+                    <?php if ( ! empty( $client->agent_id ) ) :
+                        $agent = EstateOffice_Admin_Agents::get_agent( (int) $client->agent_id );
+                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
+                        ?>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $client->agent_id ) ); ?></dd></div>
+                    <?php endif; ?>
                 </dl>
                 <?php if ( ! empty( $address ) ) : ?>
                     <h4><?php esc_html_e( 'Adres zamieszkania/rejestrowy', 'estate-office' ); ?></h4>
@@ -757,12 +783,30 @@ class EstateOffice_Public {
 
         $output = [];
         foreach ( $tags as $key => $value ) {
-            if ( empty( $value ) || ! isset( $map[ $key ] ) ) {
+            if ( ! isset( $map[ $key ] ) || ! $this->is_tag_active( $value ) ) {
                 continue;
             }
             $output[] = $map[ $key ];
         }
         return $output;
+    }
+
+    /**
+     * Determine whether a tag should be treated as active.
+     *
+     * @param mixed $value Stored tag value.
+     * @return bool
+     */
+    protected function is_tag_active( $value ): bool {
+        if ( is_array( $value ) ) {
+            if ( array_key_exists( 'active', $value ) ) {
+                return (bool) $value['active'];
+            }
+
+            return ! empty( $value );
+        }
+
+        return ! empty( $value );
     }
 
     /**
@@ -796,10 +840,10 @@ class EstateOffice_Public {
 
         $sql = "SELECT a.id, a.first_name, a.last_name, COUNT(c.id) AS contracts
                 FROM {$agents_table} a
-                LEFT JOIN {$contracts_table} c ON JSON_EXTRACT(c.stage_history, '$.agent_id') = a.id
+                LEFT JOIN {$contracts_table} c ON c.agent_id = a.id
                 GROUP BY a.id
                 HAVING contracts > 0
-                ORDER BY contracts DESC, a.last_name ASC
+                ORDER BY contracts DESC, a.last_name ASC, a.first_name ASC
                 LIMIT 5";
 
         $rows = $wpdb->get_results( $sql );

@@ -28,8 +28,9 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         if ( 'new' === $action || ( 'edit' === $action && $search_id ) ) {
             $search    = $search_id ? self::get_search( $search_id ) : null;
             $contracts = EstateOffice_Admin_Contracts::get_contracts();
+            $agents    = EstateOffice_Admin_Agents::get_agents();
             $dynamic   = EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' );
-            $this->render_form( $search, $contracts, $dynamic );
+            $this->render_form( $search, $contracts, $dynamic, $agents );
             return;
         }
 
@@ -60,6 +61,7 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                         <th><?php esc_html_e( 'Budżet', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Lokalizacja', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Typ transakcji', 'estate-office' ); ?></th>
+                        <th><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Akcje', 'estate-office' ); ?></th>
                     </tr>
                 </thead>
@@ -74,6 +76,7 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                                 <td><?php echo esc_html( self::format_budget( $row->price_min, $row->price_max ) ); ?></td>
                                 <td><?php echo esc_html( $row->location ?: '—' ); ?></td>
                                 <td><?php echo esc_html( $row->transaction_type ); ?></td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $row ) ?: '—' ); ?></td>
                                 <td>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=edit&search=' . absint( $row->id ) ) ); ?>"><?php esc_html_e( 'Edytuj', 'estate-office' ); ?></a>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=edit&contract=' . absint( $row->contract_id ) ) ); ?>"><?php esc_html_e( 'Umowa', 'estate-office' ); ?></a>
@@ -95,19 +98,28 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         <?php
     }
 
-    protected function render_form( $search, array $contracts, array $dynamic_fields ): void {
+    protected function render_form( $search, array $contracts, array $dynamic_fields, array $agents ): void {
         $criteria = $search && $search->criteria ? json_decode( $search->criteria, true ) : [];
         if ( ! is_array( $criteria ) ) {
             $criteria = [];
         }
-        $contract_transactions = [];
+        $contract_index = [];
         foreach ( $contracts as $contract_row ) {
-            $contract_transactions[ $contract_row->id ] = $contract_row->transaction_type;
+            $contract_index[ $contract_row->id ] = [
+                'transaction' => $contract_row->transaction_type,
+                'agent'       => (int) ( $contract_row->agent_id ?? 0 ),
+            ];
         }
         $selected_contract = $search ? (int) $search->contract_id : 0;
         $transaction_type  = $search->transaction_type ?? '';
-        if ( empty( $transaction_type ) && $selected_contract && isset( $contract_transactions[ $selected_contract ] ) ) {
-            $transaction_type = $contract_transactions[ $selected_contract ];
+        $search_agent      = (int) ( $search->agent_id ?? 0 );
+        if ( $selected_contract && isset( $contract_index[ $selected_contract ] ) ) {
+            if ( empty( $transaction_type ) ) {
+                $transaction_type = $contract_index[ $selected_contract ]['transaction'];
+            }
+            if ( ! $search_agent && ! empty( $contract_index[ $selected_contract ]['agent'] ) ) {
+                $search_agent = $contract_index[ $selected_contract ]['agent'];
+            }
         }
 
         $building  = isset( $criteria['building'] ) && is_array( $criteria['building'] ) ? $criteria['building'] : [];
@@ -165,7 +177,21 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                         <select id="search_contract" name="contract_id" required>
                             <option value="">&mdash;</option>
                             <?php foreach ( $contracts as $contract ) : ?>
-                                <option value="<?php echo esc_attr( $contract->id ); ?>" data-transaction="<?php echo esc_attr( $contract->transaction_type ); ?>" <?php selected( $selected_contract, (int) $contract->id ); ?>><?php echo esc_html( $contract->contract_number ); ?></option>
+                                <option value="<?php echo esc_attr( $contract->id ); ?>" data-transaction="<?php echo esc_attr( $contract->transaction_type ); ?>" data-agent="<?php echo esc_attr( (int) ( $contract->agent_id ?? 0 ) ); ?>" <?php selected( $selected_contract, (int) $contract->id ); ?>><?php echo esc_html( $contract->contract_number ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="search_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                        <select id="search_agent" name="agent_id" data-fallback="<?php echo esc_attr( $search_agent ); ?>">
+                            <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                            <?php foreach ( $agents as $agent_row ) :
+                                $label = EstateOffice_Admin_Agents::format_agent_name( $agent_row );
+                                if ( '' === $label ) {
+                                    $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent_row->id );
+                                }
+                                ?>
+                                <option value="<?php echo esc_attr( $agent_row->id ); ?>" <?php selected( $search_agent, (int) $agent_row->id ); ?>><?php echo esc_html( $label ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </p>
@@ -430,15 +456,18 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         global $wpdb;
         $table = $wpdb->prefix . 'eo_searches';
         $contracts_table = $wpdb->prefix . 'eo_contracts';
+        $agents_table    = $wpdb->prefix . 'eo_agents';
 
         if ( empty( $query ) ) {
             $sql = "SELECT s.*, c.contract_number,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location
+                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
                     FROM {$table} s
                     LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
+                    LEFT JOIN {$agents_table} a ON a.id = s.agent_id
                     ORDER BY s.created_at DESC";
             return $wpdb->get_results( $sql );
         }
@@ -449,9 +478,11 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location
+                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
              FROM {$table} s
              LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
+             LEFT JOIN {$agents_table} a ON a.id = s.agent_id
              WHERE JSON_EXTRACT(s.criteria, '$.property_type') LIKE %s OR JSON_EXTRACT(s.criteria, '$.location') LIKE %s
              ORDER BY s.created_at DESC",
             $like,

@@ -19,6 +19,9 @@ class EstateOffice_Activator {
         self::create_tables();
         self::seed_options();
         self::ensure_pages();
+        if ( defined( 'ESTATE_OFFICE_VERSION' ) ) {
+            update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
+        }
     }
 
     /**
@@ -49,6 +52,23 @@ class EstateOffice_Activator {
         }
 
         self::grant_administrator_capabilities( $capabilities );
+    }
+
+    /**
+     * Ensure database schema matches current plugin version.
+     */
+    public static function maybe_upgrade_schema(): void {
+        if ( ! defined( 'ESTATE_OFFICE_VERSION' ) ) {
+            return;
+        }
+
+        $stored_version = get_option( 'estate_office_db_version', '' );
+        if ( $stored_version && version_compare( $stored_version, ESTATE_OFFICE_VERSION, '>=' ) ) {
+            return;
+        }
+
+        self::create_tables();
+        update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
     }
 
     /**
@@ -149,9 +169,11 @@ class EstateOffice_Activator {
             address LONGTEXT NULL,
             correspondence_address LONGTEXT NULL,
             custom_data LONGTEXT NULL,
+            agent_id BIGINT UNSIGNED DEFAULT NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
-            PRIMARY KEY  (id)
+            PRIMARY KEY  (id),
+            KEY agent_id (agent_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_contracts (
@@ -165,10 +187,12 @@ class EstateOffice_Activator {
             commission_unit VARCHAR(10) DEFAULT NULL,
             stage VARCHAR(100) DEFAULT 'umowa_posrednictwa',
             stage_history LONGTEXT NULL,
+            agent_id BIGINT UNSIGNED DEFAULT NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             UNIQUE KEY contract_number (contract_number),
-            PRIMARY KEY  (id)
+            PRIMARY KEY  (id),
+            KEY agent_id (agent_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_contract_clients (
@@ -190,10 +214,12 @@ class EstateOffice_Activator {
             tags LONGTEXT NULL,
             export_www TINYINT(1) DEFAULT 0,
             export_portals TINYINT(1) DEFAULT 0,
+            agent_id BIGINT UNSIGNED DEFAULT NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY contract_id (contract_id)
+            KEY contract_id (contract_id),
+            KEY agent_id (agent_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_media (
@@ -213,10 +239,12 @@ class EstateOffice_Activator {
             transaction_type VARCHAR(20) NOT NULL,
             criteria LONGTEXT NULL,
             description LONGTEXT NULL,
+            agent_id BIGINT UNSIGNED DEFAULT NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY contract_id (contract_id)
+            KEY contract_id (contract_id),
+            KEY agent_id (agent_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_custom_fields (

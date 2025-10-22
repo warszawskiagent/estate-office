@@ -32,6 +32,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         if ( 'new' === $action || ( 'edit' === $action && $contract_id ) ) {
             $contract = $contract_id ? self::get_contract( $contract_id ) : null;
             $clients  = EstateOffice_Admin_Clients::get_clients();
+            $agents   = EstateOffice_Admin_Agents::get_agents();
             $property = $contract ? self::get_property_for_contract( $contract_id ) : null;
             $search   = $contract ? self::get_search_for_contract( $contract_id ) : null;
             $dynamic_contract_fields = EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' );
@@ -41,7 +42,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             if ( ! is_array( $stage_history ) ) {
                 $stage_history = [];
             }
-            $this->render_form( $contract, $clients, $client_ids, $property, $search, $stage_history, $dynamic_contract_fields, $property_fields );
+            $this->render_form( $contract, $clients, $client_ids, $property, $search, $stage_history, $dynamic_contract_fields, $property_fields, $agents );
             return;
         }
 
@@ -91,7 +92,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                                 <td><?php echo esc_html( $contract->start_date ); ?></td>
                                 <td><?php echo esc_html( $contract->end_date ?: __( 'Bezterminowa', 'estate-office' ) ); ?></td>
                                 <td><?php echo esc_html( self::get_stage_label( $contract->stage ) ); ?></td>
-                                <td>&mdash;</td>
+                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $contract ) ?: '—' ); ?></td>
                                 <td>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=edit&contract=' . absint( $contract->id ) ) ); ?>"><?php esc_html_e( 'Edytuj', 'estate-office' ); ?></a>
                                     <?php if ( current_user_can( 'manage_options' ) ) : ?>
@@ -112,8 +113,9 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         <?php
     }
 
-    protected function render_form( $contract, array $clients, array $selected_clients, $property, $search, array $stage_history, array $contract_fields, array $property_fields ): void {
+    protected function render_form( $contract, array $clients, array $selected_clients, $property, $search, array $stage_history, array $contract_fields, array $property_fields, array $agents ): void {
         $transaction_type = $contract->transaction_type ?? 'SPRZEDAŻ';
+        $contract_agent   = (int) ( $contract->agent_id ?? 0 );
         $stage_history = array_map( static function ( $entry ) {
             return [
                 'stage' => sanitize_key( $entry['stage'] ?? '' ),
@@ -184,6 +186,20 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                             <select id="commission_unit" name="commission_unit">
                                 <?php foreach ( self::COMMISSION_UNITS as $unit ) : ?>
                                     <option value="<?php echo esc_attr( $unit ); ?>" <?php selected( $contract->commission_unit ?? '', $unit ); ?>><?php echo esc_html( $unit ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label for="contract_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                            <select id="contract_agent" name="agent_id">
+                                <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                                <?php foreach ( $agents as $agent_row ) :
+                                    $label = EstateOffice_Admin_Agents::format_agent_name( $agent_row );
+                                    if ( '' === $label ) {
+                                        $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent_row->id );
+                                    }
+                                    ?>
+                                    <option value="<?php echo esc_attr( $agent_row->id ); ?>" <?php selected( $contract_agent, (int) $agent_row->id ); ?>><?php echo esc_html( $label ); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </p>
@@ -311,8 +327,8 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     </div>
                 </section>
 
-                <?php $this->render_property_section( $transaction_type, $property, $property_fields ); ?>
-                <?php $this->render_search_section( $transaction_type, $search, $contract_fields ); ?>
+                <?php $this->render_property_section( $transaction_type, $property, $property_fields, $agents, $contract_agent ); ?>
+                <?php $this->render_search_section( $transaction_type, $search, $contract_fields, $agents, $contract_agent ); ?>
                 <div class="estate-office-step-actions">
                     <button type="button" class="button button-secondary estate-office-prev-step" disabled><?php esc_html_e( 'Wstecz', 'estate-office' ); ?></button>
                     <button type="button" class="button button-primary estate-office-next-step"><?php esc_html_e( 'Dalej', 'estate-office' ); ?></button>
@@ -481,7 +497,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         <?php
     }
 
-    protected function render_property_section( string $transaction_type, $property, array $property_fields ): void {
+    protected function render_property_section( string $transaction_type, $property, array $property_fields, array $agents, int $default_agent ): void {
         $details = $property && $property->details ? json_decode( $property->details, true ) : [];
         $address = $property && $property->address ? json_decode( $property->address, true ) : [];
         $legal   = $property && $property->legal ? json_decode( $property->legal, true ) : [];
@@ -503,6 +519,11 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         $price_label_default    = __( 'Cena', 'estate-office' );
         $price_label_rent       = sprintf( __( 'Cena (%s)', 'estate-office' ), __( 'miesięcznie', 'estate-office' ) );
         $price_label            = 'WYNAJEM' === $normalized_transaction ? $price_label_rent : $price_label_default;
+        $property_agent = (int) ( $property->agent_id ?? 0 );
+        if ( ! $property_agent ) {
+            $property_agent = $default_agent;
+        }
+
         ?>
         <section class="estate-office-section estate-office-property estate-office-step" data-step="3" data-transaction-target="property">
             <h2><?php esc_html_e( 'Nieruchomość', 'estate-office' ); ?></h2>
@@ -510,6 +531,20 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             <input type="hidden" name="property[property_id]" value="<?php echo esc_attr( $property->id ?? 0 ); ?>" />
             <input type="hidden" id="property_transaction_type" name="property[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
             <div class="estate-office-grid two-cols">
+                <p>
+                    <label for="contract_property_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                    <select id="contract_property_agent" name="property[agent_id]" data-fallback="<?php echo esc_attr( $property_agent ); ?>">
+                        <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                        <?php foreach ( $agents as $agent_row ) :
+                            $label = EstateOffice_Admin_Agents::format_agent_name( $agent_row );
+                            if ( '' === $label ) {
+                                $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent_row->id );
+                            }
+                            ?>
+                            <option value="<?php echo esc_attr( $agent_row->id ); ?>" <?php selected( $property_agent, (int) $agent_row->id ); ?>><?php echo esc_html( $label ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </p>
                 <p>
                     <label for="property_type" class="required"><?php esc_html_e( 'Rodzaj nieruchomości', 'estate-office' ); ?></label>
                     <select id="property_type" name="property[property_type]" required>
@@ -728,10 +763,14 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         <?php
     }
 
-    protected function render_search_section( string $transaction_type, $search, array $contract_fields ): void {
+    protected function render_search_section( string $transaction_type, $search, array $contract_fields, array $agents, int $default_agent ): void {
         $criteria = $search && $search->criteria ? json_decode( $search->criteria, true ) : [];
         if ( ! is_array( $criteria ) ) {
             $criteria = [];
+        }
+        $search_agent = (int) ( $search->agent_id ?? 0 );
+        if ( ! $search_agent ) {
+            $search_agent = $default_agent;
         }
         ?>
         <section class="estate-office-section estate-office-search estate-office-step" data-step="3" data-transaction-target="search">
@@ -739,6 +778,20 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             <p class="description"><?php esc_html_e( 'Wypełnij, jeżeli umowa dotyczy kupna lub najmu.', 'estate-office' ); ?></p>
             <input type="hidden" name="search[search_id]" value="<?php echo esc_attr( $search->id ?? 0 ); ?>" />
             <input type="hidden" id="search_transaction_type" name="search[transaction_type]" value="<?php echo esc_attr( $transaction_type ); ?>" />
+            <p>
+                <label for="contract_search_agent"><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></label>
+                <select id="contract_search_agent" name="search[agent_id]" data-fallback="<?php echo esc_attr( $search_agent ); ?>">
+                    <option value=""><?php esc_html_e( 'Wybierz opiekuna', 'estate-office' ); ?></option>
+                    <?php foreach ( $agents as $agent_row ) :
+                        $label = EstateOffice_Admin_Agents::format_agent_name( $agent_row );
+                        if ( '' === $label ) {
+                            $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent_row->id );
+                        }
+                        ?>
+                        <option value="<?php echo esc_attr( $agent_row->id ); ?>" <?php selected( $search_agent, (int) $agent_row->id ); ?>><?php echo esc_html( $label ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </p>
             <div class="estate-office-grid two-cols">
                 <p>
                     <label for="search_price_min"><?php esc_html_e( 'Cena od', 'estate-office' ); ?></label>
@@ -841,22 +894,27 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
 
     public static function get_contracts( string $search = '' ): array {
         global $wpdb;
-        $table       = $wpdb->prefix . 'eo_contracts';
+        $table          = $wpdb->prefix . 'eo_contracts';
         $property_table = $wpdb->prefix . 'eo_properties';
+        $agents_table   = $wpdb->prefix . 'eo_agents';
 
         if ( empty( $search ) ) {
-            $sql = "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address
+            $sql = "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
                     FROM {$table} c
                     LEFT JOIN {$property_table} p ON p.contract_id = c.id
+                    LEFT JOIN {$agents_table} a ON a.id = c.agent_id
                     ORDER BY c.created_at DESC";
             return $wpdb->get_results( $sql );
         }
 
         $like = '%' . $wpdb->esc_like( $search ) . '%';
         $sql  = $wpdb->prepare(
-            "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address
+            "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
+             a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
              FROM {$table} c
              LEFT JOIN {$property_table} p ON p.contract_id = c.id
+             LEFT JOIN {$agents_table} a ON a.id = c.agent_id
              WHERE c.contract_number LIKE %s OR JSON_EXTRACT(p.address, '$.city') LIKE %s
              ORDER BY c.created_at DESC",
             $like,

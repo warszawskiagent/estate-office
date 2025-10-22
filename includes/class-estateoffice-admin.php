@@ -274,6 +274,7 @@ class EstateOffice_Admin {
 
         $client_id   = isset( $post['client_id'] ) ? absint( $post['client_id'] ) : 0;
         $client_type = isset( $post['client_type'] ) && 'company' === $post['client_type'] ? 'company' : 'individual';
+        $agent_id    = isset( $post['agent_id'] ) ? absint( $post['agent_id'] ) : 0;
         $identification = [
             'pesel'          => sanitize_text_field( $post['pesel'] ?? '' ),
             'document_type'  => sanitize_text_field( $post['document_type'] ?? '' ),
@@ -295,6 +296,7 @@ class EstateOffice_Admin {
             'identification'       => wp_json_encode( $identification ),
             'address'              => $this->prepare_json( $post['address'] ?? [] ),
             'correspondence_address' => $this->prepare_json( $post['correspondence_address'] ?? [] ),
+            'agent_id'             => $agent_id ?: null,
         ];
 
         $dynamic = EstateOffice_Admin_Settings::filter_dynamic_submission( 'client', $post['custom_fields'] ?? [] );
@@ -318,8 +320,10 @@ class EstateOffice_Admin {
     /**
      * Create client from inline contract submission.
      */
-    protected function persist_inline_client( array $data ): int {
+    protected function persist_inline_client( array $data, int $agent_id = 0 ): int {
         $client_type = isset( $data['client_type'] ) && 'company' === $data['client_type'] ? 'company' : 'individual';
+
+        $agent_id = absint( $agent_id );
 
         $first_name     = sanitize_text_field( $data['first_name'] ?? '' );
         $last_name      = sanitize_text_field( $data['last_name'] ?? '' );
@@ -377,6 +381,7 @@ class EstateOffice_Admin {
             'identification'         => wp_json_encode( $identification ),
             'address'                => $this->prepare_json( $address ),
             'correspondence_address' => $this->prepare_json( $correspondence ),
+            'agent_id'               => $agent_id ?: null,
         ];
 
         $result = $this->save_table_record( 'eo_clients', $client_data );
@@ -443,6 +448,7 @@ class EstateOffice_Admin {
         $commission_amount = isset( $post['commission_amount'] ) ? floatval( $post['commission_amount'] ) : null;
         $commission_unit   = sanitize_text_field( $post['commission_unit'] ?? '' );
         $stage             = sanitize_text_field( $post['stage'] ?? 'umowa_posrednictwa' );
+        $agent_id          = isset( $post['agent_id'] ) ? absint( $post['agent_id'] ) : 0;
 
         $table_name = $wpdb->prefix . 'eo_contracts';
         $duplicate_id = (int) $wpdb->get_var(
@@ -491,6 +497,7 @@ class EstateOffice_Admin {
             'commission_unit'   => $commission_unit,
             'stage'             => $stage,
             'stage_history'     => $this->prepare_json( $post['stage_history'] ?? [] ),
+            'agent_id'          => $agent_id ?: null,
         ];
 
         $result = $this->save_table_record( 'eo_contracts', $contract_data, $contract_id );
@@ -515,7 +522,7 @@ class EstateOffice_Admin {
                 if ( ! is_array( $client_payload ) ) {
                     continue;
                 }
-                $created_id = $this->persist_inline_client( $client_payload );
+                $created_id = $this->persist_inline_client( $client_payload, $agent_id );
                 if ( $created_id ) {
                     $new_client_ids[] = $created_id;
                 }
@@ -540,6 +547,9 @@ class EstateOffice_Admin {
             $property_data = $post['property'];
             $property_data['contract_id']      = $contract_id;
             $property_data['transaction_type'] = $transaction_type;
+            if ( empty( $property_data['agent_id'] ) ) {
+                $property_data['agent_id'] = $agent_id;
+            }
             $this->persist_property_from_contract( $property_data );
         }
 
@@ -547,6 +557,9 @@ class EstateOffice_Admin {
             $search_data = $post['search'];
             $search_data['contract_id'] = $contract_id;
             $search_data['transaction_type'] = $transaction_type;
+            if ( empty( $search_data['agent_id'] ) ) {
+                $search_data['agent_id'] = $agent_id;
+            }
             $this->persist_search_from_contract( $search_data );
         }
 
@@ -700,6 +713,18 @@ class EstateOffice_Admin {
         $details = $this->sanitize_recursive( $data['details'] ?? [] );
         $tags    = $this->sanitize_recursive( $data['tags'] ?? [] );
 
+        $existing_tags = [];
+        if ( $property_id ) {
+            $existing = EstateOffice_Admin_Properties::get_property( $property_id );
+            if ( $existing && $existing->tags ) {
+                $decoded = json_decode( $existing->tags, true );
+                if ( is_array( $decoded ) ) {
+                    $existing_tags = $decoded;
+                }
+            }
+        }
+        $tags = $this->normalize_property_tags( $tags, $existing_tags );
+
         if ( isset( $details['price'] ) && isset( $details['area'] ) ) {
             $price = (float) $details['price'];
             $area  = (float) $details['area'];
@@ -729,11 +754,15 @@ class EstateOffice_Admin {
         $virtual_url = isset( $media_input['virtual'] ) ? esc_url_raw( $media_input['virtual'] ) : '';
 
         $contract_id      = isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : 0;
+        $agent_id         = isset( $data['agent_id'] ) ? absint( $data['agent_id'] ) : 0;
         $transaction_type = '';
         if ( $contract_id ) {
             $contract = EstateOffice_Admin_Contracts::get_contract( $contract_id );
             if ( $contract ) {
                 $transaction_type = $contract->transaction_type;
+                if ( ! $agent_id && ! empty( $contract->agent_id ) ) {
+                    $agent_id = (int) $contract->agent_id;
+                }
             }
         }
         if ( empty( $transaction_type ) ) {
@@ -754,6 +783,7 @@ class EstateOffice_Admin {
             'tags'             => ! empty( $tags ) ? wp_json_encode( $tags ) : null,
             'export_www'       => ! empty( $data['export_www'] ) ? 1 : 0,
             'export_portals'   => ! empty( $data['export_portals'] ) ? 1 : 0,
+            'agent_id'         => $agent_id ?: null,
         ];
 
         $saved_id = $this->save_table_record( 'eo_properties', $record, $property_id );
@@ -791,10 +821,14 @@ class EstateOffice_Admin {
         }
 
         $contract_id      = isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : 0;
+        $agent_id         = isset( $data['agent_id'] ) ? absint( $data['agent_id'] ) : 0;
         if ( $contract_id ) {
             $contract = EstateOffice_Admin_Contracts::get_contract( $contract_id );
             if ( $contract ) {
                 $transaction_type = $contract->transaction_type;
+                if ( ! $agent_id && ! empty( $contract->agent_id ) ) {
+                    $agent_id = (int) $contract->agent_id;
+                }
             }
         }
         if ( empty( $transaction_type ) ) {
@@ -806,6 +840,7 @@ class EstateOffice_Admin {
             'transaction_type' => $transaction_type,
             'criteria'         => ! empty( $criteria ) ? wp_json_encode( $criteria ) : null,
             'description'      => wp_kses_post( $data['description'] ?? '' ),
+            'agent_id'         => $agent_id ?: null,
         ];
 
         return $this->save_table_record( 'eo_searches', $record, $search_id );
@@ -879,6 +914,49 @@ class EstateOffice_Admin {
     protected function delete_property_media( int $property_id ): void {
         global $wpdb;
         $wpdb->delete( $wpdb->prefix . 'eo_property_media', [ 'property_id' => $property_id ], [ '%d' ] );
+    }
+
+    /**
+     * Normalize property tags payload preserving metadata.
+     *
+     * @param array<string,mixed> $input    Raw submitted tags.
+     * @param array<string,mixed> $existing Previously stored tags.
+     * @return array<string,mixed>
+     */
+    protected function normalize_property_tags( array $input, array $existing = [] ): array {
+        $normalized = [];
+
+        foreach ( $input as $key => $value ) {
+            if ( empty( $value ) ) {
+                continue;
+            }
+
+            if ( 'new_offer' === $key ) {
+                $since = '';
+                if ( isset( $existing['new_offer'] ) ) {
+                    $previous = $existing['new_offer'];
+                    if ( is_array( $previous ) ) {
+                        $since = $previous['since'] ?? '';
+                    } elseif ( is_scalar( $previous ) ) {
+                        $since = (string) $previous;
+                    }
+                }
+
+                if ( ! $since || ! strtotime( $since ) ) {
+                    $since = current_time( 'mysql' );
+                }
+
+                $normalized['new_offer'] = [
+                    'active' => 1,
+                    'since'  => $since,
+                ];
+                continue;
+            }
+
+            $normalized[ $key ] = 1;
+        }
+
+        return $normalized;
     }
 
     /**

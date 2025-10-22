@@ -46,7 +46,7 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
                     <?php else : ?>
                         <?php foreach ( $agents as $agent ) : ?>
                             <tr>
-                                <td><?php echo esc_html( trim( $agent->first_name . ' ' . $agent->last_name ) ); ?></td>
+                                <td><?php echo esc_html( self::format_agent_name( $agent ) ); ?></td>
                                 <td><?php echo esc_html( $agent->phone ); ?></td>
                                 <td><?php echo esc_html( $agent->email ); ?></td>
                                 <td>
@@ -166,6 +166,51 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
     public static function get_agent( int $id ) {
         global $wpdb;
         return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'eo_agents WHERE id = %d', $id ) );
+    }
+
+    public static function format_agent_name( $agent ): string {
+        if ( ! $agent ) {
+            return '';
+        }
+
+        return self::compose_agent_label(
+            $agent->first_name ?? '',
+            $agent->last_name ?? '',
+            $agent->email ?? '',
+            $agent->phone ?? '',
+            $agent->id ?? 0
+        );
+    }
+
+    public static function format_agent_from_row( $row ): string {
+        if ( ! $row ) {
+            return '';
+        }
+
+        return self::compose_agent_label(
+            $row->agent_first_name ?? '',
+            $row->agent_last_name ?? '',
+            $row->agent_email ?? '',
+            $row->agent_phone ?? '',
+            $row->agent_id ?? 0
+        );
+    }
+
+    protected static function compose_agent_label( string $first, string $last, string $email, string $phone, int $id ): string {
+        $name = trim( $first . ' ' . $last );
+        if ( '' !== $name ) {
+            return $name;
+        }
+
+        if ( '' !== $email ) {
+            return $email;
+        }
+
+        if ( '' !== $phone ) {
+            return $phone;
+        }
+
+        return $id > 0 ? sprintf( __( 'Agent #%d', 'estate-office' ), $id ) : '';
     }
 
     protected function render_media_field( string $name, int $attachment_id ): void {
