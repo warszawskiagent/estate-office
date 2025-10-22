@@ -286,6 +286,181 @@
     color: #777;
 }
 
+.estate-office-stepper {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.estate-office-stepper li {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid #dcdcde;
+    background: #f6f7f7;
+    border-radius: 999px;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #1d2327;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.estate-office-stepper li .number {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #dcdcde;
+    color: #1d2327;
+    font-weight: 700;
+}
+
+.estate-office-stepper li.active {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.estate-office-stepper li.active .number {
+    background: #2271b1;
+    color: #fff;
+}
+
+.estate-office-stepper li.completed {
+    border-color: #1a7f37;
+    background: #e6f4ea;
+}
+
+.estate-office-stepper li.completed .number {
+    background: #1a7f37;
+    color: #fff;
+}
+
+.estate-office-step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.estate-office-step-actions .estate-office-submit-button {
+    display: none;
+}
+
+.estate-office-clients-search {
+    margin-bottom: 2rem;
+}
+
+.estate-office-client-filter {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.estate-office-client-filter input {
+    max-width: 220px;
+}
+
+.estate-office-selected-clients ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.estate-office-selected-clients li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f8f9fb;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+}
+
+.estate-office-selected-clients li .label {
+    flex: 1;
+    font-weight: 600;
+}
+
+.estate-office-selected-clients li .estate-office-remove-selected {
+    color: #d63638;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.estate-office-new-clients {
+    margin-top: 2rem;
+}
+
+.estate-office-new-client-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.estate-office-new-client-list .empty {
+    margin: 0;
+    color: #6b6b6b;
+}
+
+.estate-office-new-client-card {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.estate-office-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.estate-office-card-header strong {
+    font-size: 1.05rem;
+}
+
+.estate-office-remove-new-client {
+    color: #d63638;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.estate-office-new-client-actions {
+    margin-top: 1rem;
+}
+
+.estate-office-more-clients {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.estate-office-more-clients p {
+    margin: 0;
+    font-weight: 600;
+}
+
+.estate-office-more-clients label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 @media (max-width: 782px) {
     .estate-office-grid.two-cols,
     .estate-office-grid.three-cols {

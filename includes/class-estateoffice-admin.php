@@ -149,6 +149,8 @@ class EstateOffice_Admin {
                 'galleryTitle'    => __( 'Wybierz zdjęcia', 'estate-office' ),
                 'galleryButton'   => __( 'Dodaj zdjęcia', 'estate-office' ),
                 'removeImage'     => __( 'Usuń', 'estate-office' ),
+                'clientsRequired' => __( 'Dodaj co najmniej jednego klienta do umowy.', 'estate-office' ),
+                'removeClientLabel' => __( 'Usuń klienta %s', 'estate-office' ),
             ]
         );
     }
@@ -314,6 +316,74 @@ class EstateOffice_Admin {
     }
 
     /**
+     * Create client from inline contract submission.
+     */
+    protected function persist_inline_client( array $data ): int {
+        $client_type = isset( $data['client_type'] ) && 'company' === $data['client_type'] ? 'company' : 'individual';
+
+        $first_name     = sanitize_text_field( $data['first_name'] ?? '' );
+        $last_name      = sanitize_text_field( $data['last_name'] ?? '' );
+        $company_name   = sanitize_text_field( $data['company_name'] ?? '' );
+        $representative = sanitize_text_field( $data['representative_name'] ?? '' );
+        $phone          = sanitize_text_field( $data['phone'] ?? '' );
+        $email          = sanitize_email( $data['email'] ?? '' );
+        $website        = esc_url_raw( $data['website'] ?? '' );
+
+        if ( 'individual' === $client_type ) {
+            if ( empty( $first_name ) || empty( $last_name ) ) {
+                return 0;
+            }
+        } else {
+            if ( empty( $company_name ) ) {
+                return 0;
+            }
+        }
+
+        if ( empty( $phone ) ) {
+            return 0;
+        }
+
+        $address = $this->sanitize_recursive( $data['address'] ?? [] );
+        if ( empty( $address['street'] ) || empty( $address['number'] ) || empty( $address['postal_code'] ) || empty( $address['city'] ) ) {
+            return 0;
+        }
+
+        $correspondence_raw = $data['correspondence'] ?? [];
+        $same_correspondence = ! empty( $correspondence_raw['same'] );
+        if ( isset( $correspondence_raw['same'] ) ) {
+            unset( $correspondence_raw['same'] );
+        }
+        $correspondence = $same_correspondence ? $address : $this->sanitize_recursive( $correspondence_raw );
+
+        $identification_input = $data['identification'] ?? [];
+        $identification       = [
+            'pesel'         => sanitize_text_field( $identification_input['pesel'] ?? '' ),
+            'document_type' => sanitize_text_field( $identification_input['document_type'] ?? '' ),
+            'document_no'   => sanitize_text_field( $identification_input['document_no'] ?? '' ),
+            'nip'           => sanitize_text_field( $identification_input['nip'] ?? '' ),
+            'krs'           => sanitize_text_field( $identification_input['krs'] ?? '' ),
+            'regon'         => sanitize_text_field( $identification_input['regon'] ?? '' ),
+        ];
+
+        $client_data = [
+            'client_type'            => $client_type,
+            'first_name'             => $first_name,
+            'last_name'              => $last_name,
+            'company_name'           => $company_name,
+            'representative_name'    => $representative,
+            'phone'                  => $phone,
+            'email'                  => $email,
+            'website'                => $website,
+            'identification'         => wp_json_encode( $identification ),
+            'address'                => $this->prepare_json( $address ),
+            'correspondence_address' => $this->prepare_json( $correspondence ),
+        ];
+
+        $result = $this->save_table_record( 'eo_clients', $client_data );
+        return $result ? (int) $result : 0;
+    }
+
+    /**
      * Delete client.
      */
     public function handle_delete_client(): void {
@@ -402,6 +472,19 @@ class EstateOffice_Admin {
         }
 
         $client_ids = array_map( 'absint', (array) ( $post['contract_clients'] ?? [] ) );
+        $new_client_ids = [];
+        if ( isset( $post['new_clients'] ) && is_array( $post['new_clients'] ) ) {
+            foreach ( $post['new_clients'] as $client_payload ) {
+                if ( ! is_array( $client_payload ) ) {
+                    continue;
+                }
+                $created_id = $this->persist_inline_client( $client_payload );
+                if ( $created_id ) {
+                    $new_client_ids[] = $created_id;
+                }
+            }
+        }
+        $client_ids = array_filter( array_unique( array_merge( $client_ids, $new_client_ids ) ) );
         $wpdb->delete( $wpdb->prefix . 'eo_contract_clients', [ 'contract_id' => $contract_id ], [ '%d' ] );
         foreach ( $client_ids as $client_id ) {
             if ( $client_id > 0 ) {

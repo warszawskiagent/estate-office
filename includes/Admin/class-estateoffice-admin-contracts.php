@@ -132,7 +132,18 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     <input type="hidden" name="contract_id" value="<?php echo esc_attr( $contract->id ); ?>" />
                 <?php endif; ?>
 
-                <section class="estate-office-section" data-step="1">
+                <ol class="estate-office-stepper" aria-label="<?php esc_attr_e( 'Proces dodawania umowy', 'estate-office' ); ?>">
+                    <li class="active" data-step="1"><span class="number">1</span><span class="label-text"><?php esc_html_e( 'Umowa', 'estate-office' ); ?></span></li>
+                    <li data-step="2"><span class="number">2</span><span class="label-text"><?php esc_html_e( 'Klienci', 'estate-office' ); ?></span></li>
+                    <li data-step="3"
+                        data-label-default="<?php echo esc_attr__( 'Oferta / Poszukiwanie', 'estate-office' ); ?>"
+                        data-label-property="<?php echo esc_attr__( 'Nieruchomość', 'estate-office' ); ?>"
+                        data-label-search="<?php echo esc_attr__( 'Poszukiwanie', 'estate-office' ); ?>">
+                        <span class="number">3</span><span class="label-text"><?php esc_html_e( 'Oferta / Poszukiwanie', 'estate-office' ); ?></span>
+                    </li>
+                </ol>
+
+                <section class="estate-office-section estate-office-step" data-step="1">
                     <h2><?php esc_html_e( 'Dane umowy', 'estate-office' ); ?></h2>
                     <div class="estate-office-grid three-cols">
                         <p>
@@ -179,19 +190,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     </div>
                 </section>
 
-                <section class="estate-office-section" data-step="2">
-                    <h2><?php esc_html_e( 'Klienci', 'estate-office' ); ?></h2>
-                    <p><?php esc_html_e( 'Wybierz jednego lub wielu klientów powiązanych z umową.', 'estate-office' ); ?></p>
-                    <select name="contract_clients[]" multiple class="estate-office-multiselect" size="5">
-                        <?php foreach ( $clients as $client_row ) : ?>
-                            <?php $name = EstateOffice_Admin_Clients::format_client_name( $client_row ); ?>
-                            <option value="<?php echo esc_attr( $client_row->id ); ?>" <?php selected( in_array( $client_row->id, $selected_clients, true ) ); ?>><?php echo esc_html( $name . ' – ' . $client_row->phone ); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <p class="description"><?php esc_html_e( 'Jeśli klient nie istnieje, zapisz umowę w szkicu i dodaj klienta w zakładce Klienci.', 'estate-office' ); ?></p>
-                </section>
-
-                <section class="estate-office-section estate-office-stage-history" data-step="2b">
+                <section class="estate-office-section estate-office-stage-history estate-office-step" data-step="1">
                     <h2><?php esc_html_e( 'Historia etapów', 'estate-office' ); ?></h2>
                     <table class="widefat striped estate-office-stage-table">
                         <thead>
@@ -225,10 +224,100 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     <input type="hidden" name="stage_history_json" value="<?php echo esc_attr( wp_json_encode( $stage_history ) ); ?>" class="estate-office-stage-history-json" />
                 </section>
 
+                <section class="estate-office-section estate-office-step estate-office-clients-step" data-step="2">
+                    <h2><?php esc_html_e( 'Klienci', 'estate-office' ); ?></h2>
+                    <p><?php esc_html_e( 'Dodaj istniejących klientów lub utwórz nowych uczestników umowy.', 'estate-office' ); ?></p>
+
+                    <div class="estate-office-clients-search">
+                        <h3><?php esc_html_e( 'Wyszukaj klienta', 'estate-office' ); ?></h3>
+                        <div class="estate-office-client-filter">
+                            <input type="search" data-filter="name" placeholder="<?php esc_attr_e( 'Imię lub nazwisko', 'estate-office' ); ?>" />
+                            <input type="search" data-filter="phone" placeholder="<?php esc_attr_e( 'Telefon', 'estate-office' ); ?>" />
+                            <input type="search" data-filter="email" placeholder="<?php esc_attr_e( 'Adres e-mail', 'estate-office' ); ?>" />
+                        </div>
+                        <table class="widefat striped estate-office-clients-table">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e( 'Nazwa', 'estate-office' ); ?></th>
+                                    <th><?php esc_html_e( 'Telefon', 'estate-office' ); ?></th>
+                                    <th><?php esc_html_e( 'E-mail', 'estate-office' ); ?></th>
+                                    <th><?php esc_html_e( 'Akcje', 'estate-office' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ( empty( $clients ) ) : ?>
+                                    <tr class="no-items"><td colspan="4"><?php esc_html_e( 'Brak klientów w bazie.', 'estate-office' ); ?></td></tr>
+                                <?php else : ?>
+                                    <?php foreach ( $clients as $client_row ) : ?>
+                                        <?php
+                                        $name        = EstateOffice_Admin_Clients::format_client_name( $client_row );
+                                        $phone       = $client_row->phone ?? '';
+                                        $email       = $client_row->email ?? '';
+                                        $search_name = function_exists( 'mb_strtolower' ) ? mb_strtolower( $name ) : strtolower( $name );
+                                        $search_phone = function_exists( 'mb_strtolower' ) ? mb_strtolower( $phone ) : strtolower( $phone );
+                                        $search_email = function_exists( 'mb_strtolower' ) ? mb_strtolower( $email ) : strtolower( $email );
+                                        ?>
+                                        <tr data-client-id="<?php echo esc_attr( $client_row->id ); ?>"
+                                            data-name="<?php echo esc_attr( $search_name ); ?>"
+                                            data-phone="<?php echo esc_attr( $search_phone ); ?>"
+                                            data-email="<?php echo esc_attr( $search_email ); ?>">
+                                            <td><?php echo esc_html( $name ); ?></td>
+                                            <td><?php echo esc_html( $client_row->phone ); ?></td>
+                                            <td><?php echo esc_html( $client_row->email ); ?></td>
+                                            <td>
+                                                <button type="button" class="button estate-office-client-add" data-client-id="<?php echo esc_attr( $client_row->id ); ?>" <?php disabled( in_array( $client_row->id, $selected_clients, true ) ); ?>><?php esc_html_e( 'Dodaj do umowy', 'estate-office' ); ?></button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="estate-office-selected-clients" aria-live="polite">
+                        <h3><?php esc_html_e( 'Wybrani klienci', 'estate-office' ); ?></h3>
+                        <ul data-empty="<?php echo esc_attr__( 'Nie wybrano jeszcze żadnego klienta.', 'estate-office' ); ?>">
+                            <?php if ( empty( $selected_clients ) ) : ?>
+                                <li class="empty"><?php esc_html_e( 'Nie wybrano jeszcze żadnego klienta.', 'estate-office' ); ?></li>
+                            <?php else : ?>
+                                <?php foreach ( $selected_clients as $client_id ) : ?>
+                                    <?php $client = EstateOffice_Admin_Clients::get_client( $client_id ); ?>
+                                    <?php if ( ! $client ) { continue; } ?>
+                                    <?php $label = EstateOffice_Admin_Clients::format_client_name( $client ); ?>
+                                    <li data-client-id="<?php echo esc_attr( $client_id ); ?>">
+                                        <span class="label"><?php echo esc_html( $label ); ?></span>
+                                        <button type="button" class="button-link estate-office-remove-selected" aria-label="<?php echo esc_attr( sprintf( __( 'Usuń klienta %s', 'estate-office' ), $label ) ); ?>">&times;</button>
+                                        <input type="hidden" name="contract_clients[]" value="<?php echo esc_attr( $client_id ); ?>" />
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+
+                    <div class="estate-office-new-clients">
+                        <h3><?php esc_html_e( 'Dodaj nowego klienta', 'estate-office' ); ?></h3>
+                        <p class="description"><?php esc_html_e( 'Wypełnij formularz aby utworzyć nowego klienta i powiązać go z umową.', 'estate-office' ); ?></p>
+                        <div class="estate-office-new-client-list" data-empty="<?php echo esc_attr__( 'Brak nowych klientów.', 'estate-office' ); ?>">
+                            <p class="empty"><?php esc_html_e( 'Brak nowych klientów.', 'estate-office' ); ?></p>
+                        </div>
+                        <p class="estate-office-new-client-actions">
+                            <button type="button" class="button button-secondary estate-office-add-new-client" data-template="estate-office-new-client-template"><?php esc_html_e( 'Dodaj klienta', 'estate-office' ); ?></button>
+                        </p>
+                        <div class="estate-office-more-clients" role="group" aria-label="<?php esc_attr_e( 'Czy dodać kolejnego klienta?', 'estate-office' ); ?>">
+                            <p><?php esc_html_e( 'Czy chcesz dodać kolejnego klienta?', 'estate-office' ); ?></p>
+                            <label><input type="radio" name="add_more_clients" value="yes" /> <?php esc_html_e( 'Tak', 'estate-office' ); ?></label>
+                            <label><input type="radio" name="add_more_clients" value="no" checked /> <?php esc_html_e( 'Nie', 'estate-office' ); ?></label>
+                        </div>
+                    </div>
+                </section>
+
                 <?php $this->render_property_section( $transaction_type, $property, $property_fields ); ?>
                 <?php $this->render_search_section( $transaction_type, $search, $contract_fields ); ?>
-
-                <?php submit_button( $contract ? __( 'Zapisz umowę', 'estate-office' ) : __( 'Utwórz umowę', 'estate-office' ) ); ?>
+                <div class="estate-office-step-actions">
+                    <button type="button" class="button button-secondary estate-office-prev-step" disabled><?php esc_html_e( 'Wstecz', 'estate-office' ); ?></button>
+                    <button type="button" class="button button-primary estate-office-next-step"><?php esc_html_e( 'Dalej', 'estate-office' ); ?></button>
+                    <?php submit_button( $contract ? __( 'Zapisz umowę', 'estate-office' ) : __( 'Utwórz umowę', 'estate-office' ), 'primary estate-office-submit-button', 'submit', false ); ?>
+                </div>
             </form>
         </div>
         <script type="text/html" id="tmpl-estate-office-stage-row">
@@ -243,6 +332,151 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                 <td><input type="date" name="stage_history[{{data.index}}][date]" value="" /></td>
                 <td><button type="button" class="button-link estate-office-remove-row">&times;</button></td>
             </tr>
+        </script>
+        <script type="text/html" id="tmpl-estate-office-new-client-template">
+            <div class="estate-office-new-client-card" data-index="{{data.index}}">
+                <div class="estate-office-card-header">
+                    <strong><?php esc_html_e( 'Nowy klient', 'estate-office' ); ?></strong>
+                    <button type="button" class="button-link estate-office-remove-new-client" aria-label="<?php esc_attr_e( 'Usuń nowego klienta', 'estate-office' ); ?>">&times;</button>
+                </div>
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Typ klienta', 'estate-office' ); ?></legend>
+                    <label><input type="radio" name="new_clients[{{data.index}}][client_type]" value="individual" checked /> <?php esc_html_e( 'Osoba fizyczna', 'estate-office' ); ?></label>
+                    <label><input type="radio" name="new_clients[{{data.index}}][client_type]" value="company" /> <?php esc_html_e( 'Firma', 'estate-office' ); ?></label>
+                </fieldset>
+                <div class="estate-office-grid two-cols" data-section="individual">
+                    <p>
+                    <label class="required"><?php esc_html_e( 'Imię', 'estate-office' ); ?></label>
+                    <input type="text" name="new_clients[{{data.index}}][first_name]" data-required-for="individual" />
+                    </p>
+                    <p>
+                    <label class="required"><?php esc_html_e( 'Nazwisko', 'estate-office' ); ?></label>
+                    <input type="text" name="new_clients[{{data.index}}][last_name]" data-required-for="individual" />
+                    </p>
+                </div>
+                <div class="estate-office-grid two-cols" data-section="company" style="display:none;">
+                    <p>
+                    <label class="required"><?php esc_html_e( 'Nazwa firmy', 'estate-office' ); ?></label>
+                    <input type="text" name="new_clients[{{data.index}}][company_name]" data-required-for="company" />
+                    </p>
+                    <p>
+                        <label><?php esc_html_e( 'Imię i nazwisko reprezentanta', 'estate-office' ); ?></label>
+                        <input type="text" name="new_clients[{{data.index}}][representative_name]" />
+                    </p>
+                </div>
+                <div class="estate-office-grid two-cols">
+                    <p>
+                        <label class="required"><?php esc_html_e( 'Telefon', 'estate-office' ); ?></label>
+                        <input type="text" name="new_clients[{{data.index}}][phone]" required />
+                    </p>
+                    <p>
+                        <label><?php esc_html_e( 'Adres e-mail', 'estate-office' ); ?></label>
+                        <input type="email" name="new_clients[{{data.index}}][email]" />
+                    </p>
+                    <p data-section="company" style="display:none;">
+                        <label><?php esc_html_e( 'Strona WWW', 'estate-office' ); ?></label>
+                        <input type="url" name="new_clients[{{data.index}}][website]" />
+                    </p>
+                </div>
+                <fieldset class="estate-office-fieldset" data-section="individual">
+                    <legend><?php esc_html_e( 'Dane identyfikacyjne', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid two-cols">
+                        <p>
+                            <label><?php esc_html_e( 'PESEL', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][identification][pesel]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Rodzaj dokumentu', 'estate-office' ); ?></label>
+                            <select name="new_clients[{{data.index}}][identification][document_type]">
+                                <option value="">&mdash;</option>
+                                <option value="dowod"><?php esc_html_e( 'Dowód osobisty', 'estate-office' ); ?></option>
+                                <option value="paszport"><?php esc_html_e( 'Paszport', 'estate-office' ); ?></option>
+                                <option value="karta_pobytu"><?php esc_html_e( 'Karta pobytu', 'estate-office' ); ?></option>
+                            </select>
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Numer dokumentu', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][identification][document_no]" />
+                        </p>
+                    </div>
+                </fieldset>
+                <fieldset class="estate-office-fieldset" data-section="company" style="display:none;">
+                    <legend><?php esc_html_e( 'Dane rejestrowe', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid three-cols">
+                        <p>
+                            <label><?php esc_html_e( 'NIP', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][identification][nip]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'KRS', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][identification][krs]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'REGON', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][identification][regon]" />
+                        </p>
+                    </div>
+                </fieldset>
+                <fieldset class="estate-office-fieldset estate-office-address">
+                    <legend><?php esc_html_e( 'Adres zamieszkania / rejestrowy', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid three-cols">
+                        <p>
+                            <label class="required"><?php esc_html_e( 'Ulica', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][street]" required />
+                        </p>
+                        <p>
+                            <label class="required"><?php esc_html_e( 'Numer', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][number]" required />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Lokal', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][unit]" />
+                        </p>
+                        <p>
+                            <label class="required"><?php esc_html_e( 'Kod pocztowy', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][postal_code]" required />
+                        </p>
+                        <p>
+                            <label class="required"><?php esc_html_e( 'Miasto', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][city]" required />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Kraj', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][address][country]" />
+                        </p>
+                    </div>
+                </fieldset>
+                <fieldset class="estate-office-fieldset estate-office-address">
+                    <legend><?php esc_html_e( 'Adres korespondencyjny', 'estate-office' ); ?></legend>
+                    <label class="estate-office-toggle"><input type="checkbox" name="new_clients[{{data.index}}][correspondence][same]" value="1" checked /> <?php esc_html_e( 'Adres korespondencyjny taki sam', 'estate-office' ); ?></label>
+                    <div class="estate-office-grid three-cols">
+                        <p>
+                            <label><?php esc_html_e( 'Ulica', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][street]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Numer', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][number]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Lokal', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][unit]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Kod pocztowy', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][postal_code]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Miasto', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][city]" />
+                        </p>
+                        <p>
+                            <label><?php esc_html_e( 'Kraj', 'estate-office' ); ?></label>
+                            <input type="text" name="new_clients[{{data.index}}][correspondence][country]" />
+                        </p>
+                    </div>
+                </fieldset>
+            </div>
         </script>
         <?php
     }
@@ -265,7 +499,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             $tags = [];
         }
         ?>
-        <section class="estate-office-section estate-office-property" data-step="3a">
+        <section class="estate-office-section estate-office-property estate-office-step" data-step="3" data-transaction-target="property">
             <h2><?php esc_html_e( 'Nieruchomość', 'estate-office' ); ?></h2>
             <p class="description"><?php esc_html_e( 'Wypełnij dane nieruchomości. Sekcja jest wymagana dla transakcji sprzedaży i wynajmu.', 'estate-office' ); ?></p>
             <input type="hidden" name="property[property_id]" value="<?php echo esc_attr( $property->id ?? 0 ); ?>" />
@@ -484,7 +718,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             $criteria = [];
         }
         ?>
-        <section class="estate-office-section estate-office-search" data-step="3b">
+        <section class="estate-office-section estate-office-search estate-office-step" data-step="3" data-transaction-target="search">
             <h2><?php esc_html_e( 'Poszukiwanie', 'estate-office' ); ?></h2>
             <p class="description"><?php esc_html_e( 'Wypełnij, jeżeli umowa dotyczy kupna lub najmu.', 'estate-office' ); ?></p>
             <input type="hidden" name="search[search_id]" value="<?php echo esc_attr( $search->id ?? 0 ); ?>" />

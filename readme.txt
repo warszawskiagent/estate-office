@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.0.8
+Stable tag: 0.0.9
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.8 rozbudowuje formularze nieruchomości i poszukiwań o szczegółowe sekcje z opisanymi w specyfikacji polami oraz obsługę galerii, rzutów i mapy Google.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.9 wprowadza trzyetapowy kreator umów z możliwością wyszukiwania lub tworzenia klientów bez opuszczania procesu oraz automatycznym przenoszeniem nowych kontaktów do bazy CRM.
 
 == Funkcje ==
 
@@ -48,6 +48,12 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.0.9 =
+* Przebudowano dodawanie umowy na trzyetapowy kreator (dane umowy → klienci → nieruchomość/poszukiwanie) zgodnie ze specyfikacją.
+* Dodano wyszukiwarkę istniejących klientów z filtrowaniem po imieniu, nazwisku, telefonie i e-mailu oraz listę wybranych kontaktów.
+* Umożliwiono tworzenie nowych klientów bez wychodzenia z kreatora wraz z pełnymi danymi identyfikacyjnymi i adresowymi.
+* Rozszerzono skrypt administracyjny o obsługę kroków, walidację obecności klientów oraz aktualizację etapu nieruchomość/poszukiwanie.
 
 = 0.0.8 =
 * Rozszerzono formularz nieruchomości o komplet sekcji (adresy zależne od typu, dane budynku, media, udogodnienia, wyposażenie, powierzchnie dodatkowe) oraz integrację z mapą Google i galerią zdjęć z rzutami.

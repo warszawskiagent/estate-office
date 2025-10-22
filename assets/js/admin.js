@@ -143,41 +143,301 @@
                 return;
             }
 
+            const $transactionType = $form.find('#transaction_type');
+            const $stepperItems = $form.find('.estate-office-stepper li');
+            const steps = [];
+            $form.find('.estate-office-step').each(function(){
+                const value = parseFloat($(this).data('step'));
+                if ( ! Number.isNaN(value) && ! steps.includes(value) ) {
+                    steps.push(value);
+                }
+            });
+            steps.sort((a, b) => a - b);
+            let currentStepIndex = 0;
+
+            const getStepValue = (index) => steps[Math.max(0, Math.min(index, steps.length - 1))];
+
+            const updateStepperState = (activeValue) => {
+                $stepperItems.each(function(){
+                    const $item = $(this);
+                    const stepValue = parseFloat($item.data('step'));
+                    $item.toggleClass('active', stepValue === activeValue);
+                    $item.toggleClass('completed', stepValue < activeValue);
+                });
+            };
+
+            const showStep = (index) => {
+                const stepValue = getStepValue(index);
+                $form.find('.estate-office-step').each(function(){
+                    const $section = $(this);
+                    const sectionValue = parseFloat($section.data('step'));
+                    if ( sectionValue === stepValue ) {
+                        const target = $section.data('transaction-target');
+                        if ( (target === 'property' && ! propertyRequiredState) || (target === 'search' && ! searchRequiredState) ) {
+                            $section.hide();
+                        } else {
+                            $section.show();
+                        }
+                    } else {
+                        $section.hide();
+                    }
+                });
+                currentStepIndex = steps.indexOf(stepValue);
+                updateStepperState(stepValue);
+                $form.find('.estate-office-prev-step').prop('disabled', currentStepIndex === 0);
+                const $next = $form.find('.estate-office-next-step');
+                const $submit = $form.find('.estate-office-submit-button');
+                if ( currentStepIndex < steps.length - 1 ) {
+                    $next.show();
+                    $submit.hide();
+                } else {
+                    $next.hide();
+                    $submit.show();
+                }
+            };
+
             const mirrorEmbeddedTransaction = (type) => {
                 $form.find('input[name="property[transaction_type]"]').val(type);
                 $form.find('input[name="search[transaction_type]"]').val(type);
                 $form.find('.estate-office-transaction-display').val(type);
             };
 
-            const toggleSections = () => {
-                const type = $('#transaction_type').val();
-                const propertyRequired = ['SPRZEDAŻ', 'WYNAJEM'].includes(type);
-                const searchRequired = ['KUPNO', 'NAJEM'].includes(type);
+            let propertyRequiredState = false;
+            let searchRequiredState = false;
 
-                $('.estate-office-property').toggle(propertyRequired);
-                $('.estate-office-search').toggle(searchRequired);
+            const updateStepThreeLabel = (propertyRequired, searchRequired) => {
+                const $step = $form.find('.estate-office-stepper [data-step="3"]');
+                if ( ! $step.length ) {
+                    return;
+                }
+                let label = $step.data('label-default');
+                if ( propertyRequired ) {
+                    label = $step.data('label-property');
+                } else if ( searchRequired ) {
+                    label = $step.data('label-search');
+                }
+                $step.find('.label-text').text(label);
+            };
+
+            const toggleSections = () => {
+                const type = $transactionType.val();
+                propertyRequiredState = ['SPRZEDAŻ', 'WYNAJEM'].includes(type);
+                searchRequiredState = ['KUPNO', 'NAJEM'].includes(type);
+
+                $form.find('[data-transaction-target="property"]').toggle(propertyRequiredState);
+                $form.find('[data-transaction-target="search"]').toggle(searchRequiredState);
+                updateStepThreeLabel(propertyRequiredState, searchRequiredState);
                 mirrorEmbeddedTransaction(type);
             };
 
-            $('#transaction_type').on('change', toggleSections);
+            const filterClients = () => {
+                const filters = {};
+                $form.find('.estate-office-client-filter input').each(function(){
+                    const $input = $(this);
+                    const key = $input.data('filter');
+                    const value = ($input.val() || '').toString().trim().toLowerCase();
+                    if ( value.length ) {
+                        filters[key] = value;
+                    }
+                });
+
+                const $rows = $form.find('.estate-office-clients-table tbody tr');
+                $rows.each(function(){
+                    const $row = $(this);
+                    if ( $row.hasClass('no-items') ) {
+                        return;
+                    }
+                    let visible = true;
+                    Object.keys(filters).forEach((key) => {
+                        const haystack = ($row.data(key) || '').toString();
+                        if ( haystack.indexOf(filters[key]) === -1 ) {
+                            visible = false;
+                        }
+                    });
+                    $row.toggle(visible);
+                });
+            };
+
+            const $selectedList = $form.find('.estate-office-selected-clients ul');
+            const selectedEmptyText = $selectedList.data('empty') || '';
+            const ensureSelectedPlaceholder = () => {
+                if ( ! $selectedList.find('li[data-client-id]').length ) {
+                    $selectedList.html('<li class="empty">' + selectedEmptyText + '</li>');
+                }
+            };
+
+            const addSelectedClient = (id, label) => {
+                if ( ! id || $selectedList.find('li[data-client-id="' + id + '"]').length ) {
+                    return;
+                }
+                if ( $selectedList.find('.empty').length ) {
+                    $selectedList.empty();
+                }
+                const $item = $('<li/>', { 'data-client-id': id });
+                $item.append($('<span/>', { 'class': 'label', text: label }));
+                $item.append($('<button/>', {
+                    'type': 'button',
+                    'class': 'button-link estate-office-remove-selected',
+                    'aria-label': EstateOfficeData.removeClientLabel ? EstateOfficeData.removeClientLabel.replace('%s', label) : label
+                }).text('×'));
+                $item.append($('<input/>', { type: 'hidden', name: 'contract_clients[]', value: id }));
+                $selectedList.append($item);
+            };
+
+            const $newClientsList = $form.find('.estate-office-new-client-list');
+            const newClientsEmptyText = $newClientsList.data('empty') || '';
+
+            const ensureNewClientsPlaceholder = () => {
+                if ( ! $newClientsList.find('.estate-office-new-client-card').length ) {
+                    $newClientsList.html('<p class="empty">' + newClientsEmptyText + '</p>');
+                }
+            };
+
+            const updateNewClientCard = ($card) => {
+                const type = $card.find('input[name$="[client_type]"]:checked').val() || 'individual';
+                $card.find('[data-section]').each(function(){
+                    const $section = $(this);
+                    const section = $section.data('section');
+                    const show = ! section || section === type;
+                    $section.toggle(show);
+                    $section.find('[data-required-for]').each(function(){
+                        const $field = $(this);
+                        const requiredFor = $field.data('required-for');
+                        $field.prop('required', requiredFor === type);
+                    });
+                });
+                $card.find('[data-required-for]').each(function(){
+                    const $field = $(this);
+                    const requiredFor = $field.data('required-for');
+                    $field.prop('required', requiredFor === type);
+                });
+                $card.find('.estate-office-address input[type="checkbox"][name$="[same]"]').each(function(){
+                    $(this).trigger('change');
+                });
+            };
+
+            const addNewClientCard = () => {
+                if ( typeof wp === 'undefined' || typeof wp.template === 'undefined' ) {
+                    return;
+                }
+                const template = wp.template('estate-office-new-client-template');
+                if ( ! template ) {
+                    return;
+                }
+                const index = $newClientsList.find('.estate-office-new-client-card').length;
+                const html = template({ index: index });
+                if ( $newClientsList.find('.empty').length ) {
+                    $newClientsList.empty();
+                }
+                $newClientsList.append(html);
+                const $card = $newClientsList.find('.estate-office-new-client-card').last();
+                updateNewClientCard($card);
+                $card.find('input, select, textarea').filter(':visible:first').focus();
+            };
+
+            const validateStep = (index) => {
+                const value = getStepValue(index);
+                if ( value === 2 ) {
+                    const hasSelected = $selectedList.find('li[data-client-id]').length > 0;
+                    const hasNew = $newClientsList.find('.estate-office-new-client-card').length > 0;
+                    if ( ! hasSelected && ! hasNew ) {
+                        window.alert(EstateOfficeData.clientsRequired || 'Dodaj co najmniej jednego klienta do umowy.');
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            $transactionType.on('change', () => {
+                toggleSections();
+                showStep(currentStepIndex);
+            });
             toggleSections();
 
-            const toggleEndDate = () => {
-                const indefinite = $('input[name="indefinite"]').is(':checked');
-                const $endDate = $('#end_date');
+            $form.find('input[name="indefinite"]').on('change', function(){
+                const indefinite = $(this).is(':checked');
+                const $endDate = $form.find('#end_date');
                 if ( indefinite ) {
                     $endDate.prop('disabled', true).val('');
                 } else {
                     $endDate.prop('disabled', false);
                 }
-            };
-            $('input[name="indefinite"]').on('change', toggleEndDate);
-            toggleEndDate();
+            }).trigger('change');
+
+            $form.find('.estate-office-next-step').on('click', function(e){
+                e.preventDefault();
+                if ( validateStep(currentStepIndex) && currentStepIndex < steps.length - 1 ) {
+                    showStep(currentStepIndex + 1);
+                }
+            });
+
+            $form.find('.estate-office-prev-step').on('click', function(e){
+                e.preventDefault();
+                if ( currentStepIndex > 0 ) {
+                    showStep(currentStepIndex - 1);
+                }
+            });
+
+            $form.on('input', '.estate-office-client-filter input', filterClients);
+            filterClients();
+
+            $form.on('click', '.estate-office-client-add', function(){
+                const $button = $(this);
+                if ( $button.is(':disabled') ) {
+                    return;
+                }
+                const id = $button.data('client-id');
+                const label = $button.closest('tr').find('td').first().text();
+                addSelectedClient(id, label);
+                $button.prop('disabled', true);
+            });
+
+            $form.on('click', '.estate-office-remove-selected', function(){
+                const $item = $(this).closest('li');
+                const id = $item.data('client-id');
+                $item.remove();
+                $form.find('.estate-office-client-add[data-client-id="' + id + '"]').prop('disabled', false);
+                ensureSelectedPlaceholder();
+            });
+
+            $form.on('click', '.estate-office-add-new-client', function(){
+                addNewClientCard();
+            });
+
+            $form.on('change', 'input[name="add_more_clients"]', function(){
+                if ( $(this).val() === 'yes' ) {
+                    addNewClientCard();
+                    $form.find('input[name="add_more_clients"][value="no"]').prop('checked', true);
+                }
+            });
+
+            $form.on('change', '.estate-office-new-client-card input[name$="[client_type]"]', function(){
+                const $card = $(this).closest('.estate-office-new-client-card');
+                updateNewClientCard($card);
+            });
+
+            $form.on('click', '.estate-office-remove-new-client', function(){
+                $(this).closest('.estate-office-new-client-card').remove();
+                ensureNewClientsPlaceholder();
+            });
+
+            ensureSelectedPlaceholder();
+            $selectedList.find('li[data-client-id]').each(function(){
+                const id = $(this).data('client-id');
+                if ( id ) {
+                    $form.find('.estate-office-client-add[data-client-id="' + id + '"]').prop('disabled', true);
+                }
+            });
+            ensureNewClientsPlaceholder();
+            showStep(0);
 
             $form.on('submit', function(){
                 const stageData = [];
-                $('.estate-office-stage-table tbody tr').each(function(){
+                $form.find('.estate-office-stage-table tbody tr').each(function(){
                     const $row = $(this);
+                    if ( $row.hasClass('no-items') ) {
+                        return;
+                    }
                     const stage = $row.find('select').val();
                     const date = $row.find('input[type="date"]').val();
                     if ( stage ) {
