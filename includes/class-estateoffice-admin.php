@@ -123,8 +123,17 @@ class EstateOffice_Admin {
             return;
         }
 
+        wp_enqueue_media();
         wp_enqueue_style( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/css/admin.css', [], ESTATE_OFFICE_VERSION );
-        wp_enqueue_script( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/js/admin.js', [ 'jquery', 'wp-util' ], ESTATE_OFFICE_VERSION, true );
+
+        $script_deps = [ 'jquery', 'wp-util' ];
+        $maps_key    = get_option( 'estate_office_google_maps_api_key', '' );
+        if ( $maps_key ) {
+            wp_enqueue_script( 'estate-office-google-maps', 'https://maps.googleapis.com/maps/api/js?key=' . rawurlencode( $maps_key ), [], null, true );
+            $script_deps[] = 'estate-office-google-maps';
+        }
+
+        wp_enqueue_script( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/js/admin.js', $script_deps, ESTATE_OFFICE_VERSION, true );
         wp_localize_script(
             'estate-office-admin',
             'EstateOfficeData',
@@ -135,6 +144,11 @@ class EstateOffice_Admin {
                 'propertyFields'  => EstateOffice_Admin_Settings::get_dynamic_fields( 'property' ),
                 'contractFields'  => EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' ),
                 'clientFields'    => EstateOffice_Admin_Settings::get_dynamic_fields( 'client' ),
+                'mediaTitle'      => __( 'Wybierz plik', 'estate-office' ),
+                'mediaButton'     => __( 'Użyj pliku', 'estate-office' ),
+                'galleryTitle'    => __( 'Wybierz zdjęcia', 'estate-office' ),
+                'galleryButton'   => __( 'Dodaj zdjęcia', 'estate-office' ),
+                'removeImage'     => __( 'Usuń', 'estate-office' ),
             ]
         );
     }
@@ -491,6 +505,7 @@ class EstateOffice_Admin {
         $property_id = isset( $_POST['property_id'] ) ? absint( $_POST['property_id'] ) : 0;
         if ( $property_id ) {
             $this->delete_table_record( 'eo_properties', $property_id );
+            $this->delete_property_media( $property_id );
         }
         $redirect = add_query_arg(
             [
@@ -578,6 +593,21 @@ class EstateOffice_Admin {
             $details = array_merge( $details, $dynamic );
         }
 
+        $media_input = $data['media'] ?? [];
+        $gallery     = [];
+        if ( isset( $media_input['gallery'] ) && is_array( $media_input['gallery'] ) ) {
+            foreach ( $media_input['gallery'] as $item ) {
+                $id = absint( $item );
+                if ( $id ) {
+                    $gallery[] = $id;
+                }
+            }
+        }
+        $floor_2d    = isset( $media_input['floor_2d'] ) ? absint( $media_input['floor_2d'] ) : 0;
+        $floor_3d    = isset( $media_input['floor_3d'] ) ? absint( $media_input['floor_3d'] ) : 0;
+        $video_url   = isset( $media_input['video'] ) ? esc_url_raw( $media_input['video'] ) : '';
+        $virtual_url = isset( $media_input['virtual'] ) ? esc_url_raw( $media_input['virtual'] ) : '';
+
         $contract_id      = isset( $data['contract_id'] ) ? absint( $data['contract_id'] ) : 0;
         $transaction_type = '';
         if ( $contract_id ) {
@@ -606,7 +636,21 @@ class EstateOffice_Admin {
             'export_portals'   => ! empty( $data['export_portals'] ) ? 1 : 0,
         ];
 
-        return $this->save_table_record( 'eo_properties', $record, $property_id );
+        $saved_id = $this->save_table_record( 'eo_properties', $record, $property_id );
+        if ( $saved_id ) {
+            $this->sync_property_media(
+                $saved_id,
+                [
+                    'gallery' => $gallery,
+                    'floor_2d' => $floor_2d,
+                    'floor_3d' => $floor_3d,
+                    'video'    => $video_url,
+                    'virtual'  => $virtual_url,
+                ]
+            );
+        }
+
+        return $saved_id;
     }
 
     /**
@@ -645,6 +689,76 @@ class EstateOffice_Admin {
         ];
 
         return $this->save_table_record( 'eo_searches', $record, $search_id );
+    }
+
+    /**
+     * Synchronize property media attachments and links.
+     */
+    protected function sync_property_media( int $property_id, array $media ): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_property_media';
+        $wpdb->delete( $table, [ 'property_id' => $property_id ], [ '%d' ] );
+
+        $now = current_time( 'mysql' );
+
+        if ( ! empty( $media['gallery'] ) && is_array( $media['gallery'] ) ) {
+            foreach ( $media['gallery'] as $attachment_id ) {
+                $id = absint( $attachment_id );
+                if ( ! $id ) {
+                    continue;
+                }
+                $wpdb->insert(
+                    $table,
+                    [
+                        'property_id'    => $property_id,
+                        'media_type'     => 'gallery',
+                        'attachment_id'  => $id,
+                        'media_url'      => null,
+                        'created_at'     => $now,
+                    ]
+                );
+            }
+        }
+
+        foreach ( [ 'floor_2d', 'floor_3d' ] as $key ) {
+            if ( empty( $media[ $key ] ) ) {
+                continue;
+            }
+            $wpdb->insert(
+                $table,
+                [
+                    'property_id'   => $property_id,
+                    'media_type'    => $key,
+                    'attachment_id' => absint( $media[ $key ] ),
+                    'media_url'     => null,
+                    'created_at'    => $now,
+                ]
+            );
+        }
+
+        foreach ( [ 'video', 'virtual' ] as $key ) {
+            if ( empty( $media[ $key ] ) ) {
+                continue;
+            }
+            $wpdb->insert(
+                $table,
+                [
+                    'property_id'   => $property_id,
+                    'media_type'    => $key,
+                    'attachment_id' => null,
+                    'media_url'     => $media[ $key ],
+                    'created_at'    => $now,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Delete media linked to property.
+     */
+    protected function delete_property_media( int $property_id ): void {
+        global $wpdb;
+        $wpdb->delete( $wpdb->prefix . 'eo_property_media', [ 'property_id' => $property_id ], [ '%d' ] );
     }
 
     /**

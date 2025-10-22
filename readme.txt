@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.0.7
+Stable tag: 0.0.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie. Wersja 0.0.7 porządkuje formularze nieruchomości i poszukiwań tak, aby typ transakcji był zawsze dziedziczony z umowy.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.8 rozbudowuje formularze nieruchomości i poszukiwań o szczegółowe sekcje z opisanymi w specyfikacji polami oraz obsługę galerii, rzutów i mapy Google.
 
 == Funkcje ==
 
@@ -48,6 +48,12 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.0.8 =
+* Rozszerzono formularz nieruchomości o komplet sekcji (adresy zależne od typu, dane budynku, media, udogodnienia, wyposażenie, powierzchnie dodatkowe) oraz integrację z mapą Google i galerią zdjęć z rzutami.
+* Zaimplementowano synchronizację materiałów graficznych nieruchomości w dedykowanej tabeli wraz z podglądami i linkami do filmu lub spaceru.
+* Formularz poszukiwań otrzymał lustrzane kryteria budynku, mediów, udogodnień i powierzchni dodatkowych, aby precyzyjnie odwzorować wymagania klientów.
+* Dodano nowe znaczniki ofert (sprzedane, wynajęte, bez prowizji, MLS) oraz wzmocniono obsługę pól prawnych, w tym brak księgi wieczystej.
 
 = 0.0.7 =
 * Formularze nieruchomości i poszukiwań automatycznie odczytują typ transakcji z wybranej umowy i blokują ręczną edycję tego pola.

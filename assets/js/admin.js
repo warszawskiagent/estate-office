@@ -4,6 +4,7 @@
     const EstateOfficeAdmin = {
         init() {
             this.setupMediaFields();
+            this.setupGalleryFields();
             this.setupDynamicFields();
             this.setupContractForm();
             this.setupPropertyForm();
@@ -37,7 +38,11 @@
                 frame.on('select', () => {
                     const attachment = frame.state().get('selection').first().toJSON();
                     $input.val(attachment.id).trigger('change');
-                    $field.find('.estate-office-media-preview-wrap').html('<img src="' + attachment.sizes.thumbnail.url + '" alt="" />');
+                    let preview = attachment.url;
+                    if ( attachment.sizes && attachment.sizes.thumbnail && attachment.sizes.thumbnail.url ) {
+                        preview = attachment.sizes.thumbnail.url;
+                    }
+                    $field.find('.estate-office-media-preview-wrap').html('<img src="' + preview + '" alt="" />');
                     $field.find('.estate-office-media-remove').prop('disabled', false);
                 });
 
@@ -52,6 +57,61 @@
                 $field.find('input[name="' + target + '"]').val('');
                 $field.find('.estate-office-media-preview-wrap').html('<span class="placeholder">' + ($(this).data('placeholder') || 'Brak podglądu') + '</span>');
                 $(this).prop('disabled', true);
+            });
+        },
+
+        setupGalleryFields() {
+            const cache = {};
+
+            $(document).on('click', '.estate-office-gallery-select', function(e){
+                e.preventDefault();
+                const $container = $(this).closest('.estate-office-gallery');
+                const target = $container.data('target');
+                const frameKey = 'estate-office-gallery-' + target;
+
+                if ( cache[frameKey] ) {
+                    cache[frameKey].open();
+                    return;
+                }
+
+                const frame = wp.media({
+                    title: EstateOfficeData ? EstateOfficeData.galleryTitle || 'Wybierz zdjęcia' : 'Wybierz zdjęcia',
+                    button: { text: EstateOfficeData ? EstateOfficeData.galleryButton || 'Dodaj zdjęcia' : 'Dodaj zdjęcia' },
+                    multiple: true
+                });
+
+                const appendAttachment = (attachment) => {
+                    const $list = $container.find('.estate-office-gallery-list');
+                    let preview = attachment.url;
+                    if ( attachment.sizes && attachment.sizes.thumbnail && attachment.sizes.thumbnail.url ) {
+                        preview = attachment.sizes.thumbnail.url;
+                    }
+                    const html = '<li>' +
+                        '<div class="estate-office-gallery-thumb"><img src="' + preview + '" alt="" /></div>' +
+                        '<input type="hidden" name="' + target + '[]" value="' + attachment.id + '" />' +
+                        '<button type="button" class="button-link estate-office-gallery-remove">' + ((EstateOfficeData && EstateOfficeData.removeImage) || 'Usuń') + '</button>' +
+                    '</li>';
+                    $list.append(html);
+                    $container.find('.estate-office-gallery-empty').hide();
+                };
+
+                frame.on('select', () => {
+                    const selection = frame.state().get('selection');
+                    selection.each((model) => appendAttachment(model.toJSON()));
+                });
+
+                cache[frameKey] = frame;
+                frame.open();
+            });
+
+            $(document).on('click', '.estate-office-gallery-remove', function(e){
+                e.preventDefault();
+                const $item = $(this).closest('li');
+                const $list = $item.closest('.estate-office-gallery-list');
+                $item.remove();
+                if ( ! $list.find('li').length ) {
+                    $list.closest('.estate-office-gallery').find('.estate-office-gallery-empty').show();
+                }
             });
         },
 
@@ -151,10 +211,19 @@
 
         setupPropertyForm() {
             const toggleByType = (selector, type) => {
-                const value = type || $(selector).val();
+                const value = (type || $(selector).val() || '').toUpperCase();
                 $('[data-property-types]').each(function(){
-                    const allowed = ($(this).data('property-types') + '').split(',');
-                    const show = allowed.includes(value) || allowed.includes(value?.toUpperCase());
+                    const allowed = ($(this).data('property-types') + '').split(',').map((item) => item.trim().toUpperCase());
+                    const show = allowed.includes(value) || allowed.includes('*');
+                    $(this).toggle(show);
+                });
+            };
+
+            const toggleByTransaction = (value) => {
+                const type = (value || '').toUpperCase();
+                $('[data-transaction-types]').each(function(){
+                    const allowed = ($(this).data('transaction-types') + '').split(',').map((item) => item.trim().toUpperCase());
+                    const show = allowed.includes(type) || allowed.includes('*');
                     $(this).toggle(show);
                 });
             };
@@ -172,6 +241,13 @@
                     toggleByType('#property_type_basic', $(this).val());
                 });
                 toggleByType('#property_type_basic', $propertyTypeBasic.val());
+            }
+            const $searchPropertyType = $('#search_property_type');
+            if ( $searchPropertyType.length ) {
+                $searchPropertyType.on('change', function(){
+                    toggleByType('#search_property_type', $(this).val());
+                });
+                toggleByType('#search_property_type', $searchPropertyType.val());
             }
 
             const computePriceM2 = (priceSelector, areaSelector, targetSelector) => {
@@ -192,6 +268,108 @@
                     $(this).toggle(allowed === shape);
                 });
             }).trigger('change');
+            const $transactionHidden = $('#property_transaction');
+            if ( $transactionHidden.length ) {
+                $transactionHidden.on('transaction:update', function( event, value ){
+                    toggleByTransaction(value);
+                });
+                toggleByTransaction($transactionHidden.val());
+            }
+
+            const $legalToggle = $('#property_legal_no_kw');
+            if ( $legalToggle.length ) {
+                const $kwField = $('#property_legal_kw');
+                const toggleKw = () => {
+                    const disabled = $legalToggle.is(':checked');
+                    $kwField.prop('disabled', disabled);
+                    if ( disabled ) {
+                        $kwField.val('');
+                    }
+                };
+                $legalToggle.on('change', toggleKw);
+                toggleKw();
+            }
+
+            $('[data-toggle-target]').each(function(){
+                const $checkbox = $(this);
+                const targetSelector = $checkbox.data('toggle-target');
+                const $target = $(targetSelector);
+                if ( ! $target.length ) {
+                    return;
+                }
+                const update = () => {
+                    const checked = $checkbox.is(':checked');
+                    $target.toggle(checked);
+                    $target.find('input, select, textarea').prop('disabled', ! checked);
+                };
+                $checkbox.on('change', update);
+                update();
+            });
+
+            const $plotShape = $('#property_plot_shape');
+            if ( $plotShape.length ) {
+                $plotShape.on('change', function(){
+                    const shape = $(this).val();
+                    $('[data-plot-shape]').each(function(){
+                        const allowed = ($(this).data('plot-shape') + '').split(',');
+                        $(this).toggle(allowed.includes(shape));
+                    });
+                }).trigger('change');
+            }
+
+            const mapContainer = document.getElementById('estate-office-map');
+            if ( mapContainer && typeof google !== 'undefined' && google.maps ) {
+                const latInput = document.getElementById('property_map_lat');
+                const lngInput = document.getElementById('property_map_lng');
+                const output = document.getElementById('estate-office-map-output');
+                const defaultLat = parseFloat(mapContainer.dataset.lat) || 52.2297;
+                const defaultLng = parseFloat(mapContainer.dataset.lng) || 21.0122;
+                const hasCoords = mapContainer.dataset.lat && mapContainer.dataset.lng;
+                const map = new google.maps.Map(mapContainer, {
+                    center: { lat: defaultLat, lng: defaultLng },
+                    zoom: hasCoords ? 15 : 6,
+                    mapTypeId: 'roadmap'
+                });
+                let marker = null;
+                if ( hasCoords ) {
+                    marker = new google.maps.Marker({
+                        map,
+                        position: { lat: parseFloat(mapContainer.dataset.lat), lng: parseFloat(mapContainer.dataset.lng) }
+                    });
+                }
+
+                const updateCoords = (lat, lng) => {
+                    if ( ! latInput || ! lngInput ) {
+                        return;
+                    }
+                    latInput.value = lat.toFixed(6);
+                    lngInput.value = lng.toFixed(6);
+                    if ( output ) {
+                        output.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                    }
+                };
+
+                map.addListener('click', (event) => {
+                    const position = event.latLng;
+                    if ( marker ) {
+                        marker.setPosition(position);
+                    } else {
+                        marker = new google.maps.Marker({ map, position });
+                    }
+                    updateCoords(position.lat(), position.lng());
+                });
+
+                const toggleButton = document.getElementById('property_map_trigger');
+                if ( toggleButton ) {
+                    toggleButton.addEventListener('click', () => {
+                        mapContainer.classList.toggle('is-visible');
+                        if ( mapContainer.classList.contains('is-visible') ) {
+                            google.maps.event.trigger(map, 'resize');
+                            map.setCenter(marker ? marker.getPosition() : { lat: defaultLat, lng: defaultLng });
+                        }
+                    });
+                }
+            }
         },
 
         setupTransactionMirrors() {
@@ -219,11 +397,13 @@
                         }
                         fallback = value;
                         $hidden.data('fallback', value);
+                        $hidden.trigger('transaction:update', [value]);
                     } else {
                         $hidden.val('');
                         if ( $display.length ) {
                             $display.val('');
                         }
+                        $hidden.trigger('transaction:update', ['']);
                     }
                 };
 

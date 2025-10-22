@@ -125,6 +125,83 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         if ( ! is_array( $tags ) ) {
             $tags = [];
         }
+
+        $maps_key   = get_option( 'estate_office_google_maps_api_key', '' );
+        $map_lat    = isset( $address['lat'] ) ? (string) $address['lat'] : '';
+        $map_lng    = isset( $address['lng'] ) ? (string) $address['lng'] : '';
+        $map_output = ( $map_lat && $map_lng ) ? $map_lat . ', ' . $map_lng : '';
+
+        $media_items = $property ? self::get_property_media( $property->id ) : [];
+        $gallery_ids = [];
+        $floor_2d    = 0;
+        $floor_3d    = 0;
+        $video_url   = '';
+        $virtual_url = '';
+        foreach ( $media_items as $item ) {
+            switch ( $item->media_type ) {
+                case 'gallery':
+                    if ( $item->attachment_id ) {
+                        $gallery_ids[] = (int) $item->attachment_id;
+                    }
+                    break;
+                case 'floor_2d':
+                    $floor_2d = (int) ( $item->attachment_id ?? 0 );
+                    break;
+                case 'floor_3d':
+                    $floor_3d = (int) ( $item->attachment_id ?? 0 );
+                    break;
+                case 'video':
+                    $video_url = $item->media_url ?? '';
+                    break;
+                case 'virtual':
+                    $virtual_url = $item->media_url ?? '';
+                    break;
+            }
+        }
+
+        $building   = isset( $details['building'] ) && is_array( $details['building'] ) ? $details['building'] : [];
+        $plot       = isset( $details['plot'] ) && is_array( $details['plot'] ) ? $details['plot'] : [];
+        $utilities  = isset( $details['utilities'] ) && is_array( $details['utilities'] ) ? $details['utilities'] : [];
+        $amenities  = isset( $details['amenities'] ) && is_array( $details['amenities'] ) ? $details['amenities'] : [];
+        $equipment  = isset( $details['equipment'] ) && is_array( $details['equipment'] ) ? $details['equipment'] : [];
+        $surfaces   = isset( $details['surfaces'] ) && is_array( $details['surfaces'] ) ? $details['surfaces'] : [];
+        $exposure   = isset( $building['exposure'] ) && is_array( $building['exposure'] ) ? $building['exposure'] : [];
+        $views      = isset( $building['view'] ) && is_array( $building['view'] ) ? $building['view'] : [];
+        $layout     = isset( $building['layout'] ) && is_array( $building['layout'] ) ? $building['layout'] : [];
+        $parking    = isset( $building['parking'] ) && is_array( $building['parking'] ) ? $building['parking'] : [];
+
+        $property_types = [ 'MIESZKANIE', 'DOM', 'DZIAŁKA', 'LOKAL H/U' ];
+        $house_types    = [ 'WOLNOSTOJĄCY', 'BLIŹNIAK', 'SZEREGOWIEC', 'WIELORODZINNY' ];
+        $finish_states  = [ 'DO WYKOŃCZENIA', 'DO REMONTU', 'PO REMONCIE', 'WYSOKI STANDARD' ];
+        $kitchen_types  = [ 'ANEKS', 'ODDZIELNA', 'Z SALONEM' ];
+        $heating_types  = [ 'MIEJSKIE', 'GAZOWE', 'ELEKTRYCZNE', 'POMPA CIEPŁA', 'OLEJOWE' ];
+        $water_types    = [ 'MIEJSKA', 'STUDNIA', 'UJĘCIE WŁASNE' ];
+        $sewage_types   = [ 'MIEJSKA', 'SZAMBO', 'PRZYDOMOWA OCZYSZCZALNIA' ];
+        $amenity_keys   = [
+            'winda'        => __( 'Winda', 'estate-office' ),
+            'umeblowanie'  => __( 'Umeblowanie', 'estate-office' ),
+            'klimatyzacja' => __( 'Klimatyzacja', 'estate-office' ),
+            'monitoring'   => __( 'Monitoring / Ochrona', 'estate-office' ),
+            'recepcja'     => __( 'Recepcja', 'estate-office' ),
+            'teren'        => __( 'Teren zamknięty', 'estate-office' ),
+            'domofon'      => __( 'Domofon', 'estate-office' ),
+        ];
+        $equipment_keys = [
+            'pralka'    => __( 'Pralka', 'estate-office' ),
+            'zmywarka'  => __( 'Zmywarka', 'estate-office' ),
+            'lodowka'   => __( 'Lodówka', 'estate-office' ),
+            'kuchenka'  => __( 'Kuchenka', 'estate-office' ),
+            'piekarnik' => __( 'Piekarnik', 'estate-office' ),
+            'telewizor' => __( 'Telewizor', 'estate-office' ),
+            'mikrofala' => __( 'Mikrofala', 'estate-office' ),
+        ];
+        $surface_keys = [
+            'balcony'   => __( 'Balkon', 'estate-office' ),
+            'terrace'   => __( 'Taras', 'estate-office' ),
+            'basement'  => __( 'Piwnica', 'estate-office' ),
+            'storage'   => __( 'Komórka lokatorska', 'estate-office' ),
+            'garden'    => __( 'Ogródek', 'estate-office' ),
+        ];
         ?>
         <div class="wrap estate-office-wrap estate-office-property-edit">
             <h1><?php echo esc_html( $property ? __( 'Edytuj nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ); ?></h1>
@@ -155,32 +232,86 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                     <p>
                         <label for="property_type_basic" class="required"><?php esc_html_e( 'Rodzaj nieruchomości', 'estate-office' ); ?></label>
                         <select id="property_type_basic" name="property_type" required>
-                            <?php foreach ( [ 'MIESZKANIE', 'DOM', 'DZIAŁKA', 'LOKAL H/U' ] as $type ) : ?>
+                            <?php foreach ( $property_types as $type ) : ?>
                                 <option value="<?php echo esc_attr( $type ); ?>" <?php selected( $property->property_type ?? 'MIESZKANIE', $type ); ?>><?php echo esc_html( $type ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </p>
-                    <p>
-                        <label for="property_price_basic" class="required"><?php esc_html_e( 'Cena', 'estate-office' ); ?></label>
-                        <input type="number" step="0.01" id="property_price_basic" name="details[price]" value="<?php echo esc_attr( $details['price'] ?? '' ); ?>" />
-                    </p>
-                <p>
-                    <label for="property_area_basic" class="required"><?php esc_html_e( 'Metraż', 'estate-office' ); ?></label>
-                    <input type="number" step="0.01" id="property_area_basic" name="details[area]" value="<?php echo esc_attr( $details['area'] ?? '' ); ?>" />
-                </p>
-                <p>
-                    <label for="property_price_basic_m2"><?php esc_html_e( 'Cena za m²', 'estate-office' ); ?></label>
-                    <input type="number" step="0.01" id="property_price_basic_m2" name="details[price_m2]" value="<?php echo esc_attr( $details['price_m2'] ?? '' ); ?>" readonly />
-                </p>
-                <p>
-                    <label for="property_rooms_basic"><?php esc_html_e( 'Liczba pokoi', 'estate-office' ); ?></label>
-                    <input type="number" id="property_rooms_basic" name="details[rooms]" value="<?php echo esc_attr( $details['rooms'] ?? '' ); ?>" />
-                </p>
                 </div>
 
                 <fieldset class="estate-office-fieldset">
-                    <legend><?php esc_html_e( 'Adres', 'estate-office' ); ?></legend>
+                    <legend><?php esc_html_e( 'Dane nieruchomości', 'estate-office' ); ?></legend>
                     <div class="estate-office-grid three-cols">
+                        <p>
+                            <label for="property_price_basic" class="required"><?php esc_html_e( 'Cena', 'estate-office' ); ?></label>
+                            <input type="number" step="0.01" id="property_price_basic" name="details[price]" value="<?php echo esc_attr( $details['price'] ?? '' ); ?>" />
+                            <span class="description" data-transaction-types="WYNAJEM"><?php esc_html_e( 'Dla wynajmu wpisz kwotę miesięczną.', 'estate-office' ); ?></span>
+                        </p>
+                        <p>
+                            <label for="property_admin_fee"><?php esc_html_e( 'Czynsz administracyjny', 'estate-office' ); ?></label>
+                            <input type="number" step="0.01" id="property_admin_fee" name="details[admin_fee]" value="<?php echo esc_attr( $details['admin_fee'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_area_basic" class="required"><?php esc_html_e( 'Metraż (m²)', 'estate-office' ); ?></label>
+                            <input type="number" step="0.01" id="property_area_basic" name="details[area]" value="<?php echo esc_attr( $details['area'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_price_basic_m2"><?php esc_html_e( 'Cena za m²', 'estate-office' ); ?></label>
+                            <input type="number" step="0.01" id="property_price_basic_m2" name="details[price_m2]" value="<?php echo esc_attr( $details['price_m2'] ?? '' ); ?>" readonly />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U">
+                            <label for="property_floor"><?php esc_html_e( 'Piętro', 'estate-office' ); ?></label>
+                            <input type="number" id="property_floor" name="details[floor]" value="<?php echo esc_attr( $details['floor'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_floors"><?php esc_html_e( 'Liczba pięter', 'estate-office' ); ?></label>
+                            <input type="number" id="property_floors" name="details[floors]" value="<?php echo esc_attr( $details['floors'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_rooms"><?php esc_html_e( 'Liczba pokoi', 'estate-office' ); ?></label>
+                            <input type="number" id="property_rooms" name="details[rooms]" value="<?php echo esc_attr( $details['rooms'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_bedrooms"><?php esc_html_e( 'Liczba sypialni', 'estate-office' ); ?></label>
+                            <input type="number" id="property_bedrooms" name="details[bedrooms]" value="<?php echo esc_attr( $details['bedrooms'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_bathrooms"><?php esc_html_e( 'Liczba łazienek', 'estate-office' ); ?></label>
+                            <input type="number" id="property_bathrooms" name="details[bathrooms]" value="<?php echo esc_attr( $details['bathrooms'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_toilets"><?php esc_html_e( 'Liczba toalet', 'estate-office' ); ?></label>
+                            <input type="number" id="property_toilets" name="details[toilets]" value="<?php echo esc_attr( $details['toilets'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U,DOM">
+                            <label for="property_year"><?php esc_html_e( 'Rok budowy', 'estate-office' ); ?></label>
+                            <input type="number" id="property_year" name="details[build_year]" value="<?php echo esc_attr( $details['build_year'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="DZIAŁKA">
+                            <label for="property_plot_shape"><?php esc_html_e( 'Kształt działki', 'estate-office' ); ?></label>
+                            <select id="property_plot_shape" name="details[plot][shape]">
+                                <option value="">&mdash;</option>
+                                <option value="REGULARNY" <?php selected( $plot['shape'] ?? '', 'REGULARNY' ); ?>><?php esc_html_e( 'Regularny', 'estate-office' ); ?></option>
+                                <option value="NIEREGULARNY" <?php selected( $plot['shape'] ?? '', 'NIEREGULARNY' ); ?>><?php esc_html_e( 'Nieregularny', 'estate-office' ); ?></option>
+                            </select>
+                        </p>
+                        <div data-property-types="DZIAŁKA" data-plot-shape="REGULARNY">
+                            <label for="property_plot_regular"><?php esc_html_e( 'Wymiary działki (dł./szer.)', 'estate-office' ); ?></label>
+                            <div class="estate-office-grid two-cols">
+                                <input type="number" step="0.01" id="property_plot_regular" name="details[plot][length]" value="<?php echo esc_attr( $plot['length'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Długość (m)', 'estate-office' ); ?>" />
+                                <input type="number" step="0.01" name="details[plot][width]" value="<?php echo esc_attr( $plot['width'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Szerokość (m)', 'estate-office' ); ?>" />
+                            </div>
+                        </div>
+                        <p data-property-types="DZIAŁKA" data-plot-shape="NIEREGULARNY">
+                            <label for="property_plot_irregular"><?php esc_html_e( 'Opis wymiarów', 'estate-office' ); ?></label>
+                            <textarea id="property_plot_irregular" name="details[plot][description]" rows="3"><?php echo esc_textarea( $plot['description'] ?? '' ); ?></textarea>
+                        </p>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Adres', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid three-cols" data-property-types="MIESZKANIE,LOKAL H/U">
                         <p>
                             <label for="property_address_street"><?php esc_html_e( 'Ulica', 'estate-office' ); ?></label>
                             <input type="text" id="property_address_street" name="address[street]" value="<?php echo esc_attr( $address['street'] ?? '' ); ?>" />
@@ -190,8 +321,85 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                             <input type="text" id="property_address_number" name="address[number]" value="<?php echo esc_attr( $address['number'] ?? '' ); ?>" />
                         </p>
                         <p>
+                            <label for="property_address_flat"><?php esc_html_e( 'Lokal', 'estate-office' ); ?></label>
+                            <input type="text" id="property_address_flat" name="address[flat]" value="<?php echo esc_attr( $address['flat'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_address_postal"><?php esc_html_e( 'Kod pocztowy', 'estate-office' ); ?></label>
+                            <input type="text" id="property_address_postal" name="address[postal]" value="<?php echo esc_attr( $address['postal'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_address_district"><?php esc_html_e( 'Dzielnica', 'estate-office' ); ?></label>
+                            <input type="text" id="property_address_district" name="address[district]" value="<?php echo esc_attr( $address['district'] ?? '' ); ?>" />
+                        </p>
+                        <p>
                             <label for="property_address_city"><?php esc_html_e( 'Miasto', 'estate-office' ); ?></label>
                             <input type="text" id="property_address_city" name="address[city]" value="<?php echo esc_attr( $address['city'] ?? '' ); ?>" />
+                        </p>
+                    </div>
+                    <div class="estate-office-grid three-cols" data-property-types="DOM">
+                        <p>
+                            <label for="property_house_type"><?php esc_html_e( 'Typ domu', 'estate-office' ); ?></label>
+                            <select id="property_house_type" name="details[house_type]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $house_types as $house ) : ?>
+                                    <option value="<?php echo esc_attr( $house ); ?>" <?php selected( $details['house_type'] ?? '', $house ); ?>><?php echo esc_html( $house ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label for="property_dom_street"><?php esc_html_e( 'Ulica', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_street" name="address[street]" value="<?php echo esc_attr( $address['street'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_number"><?php esc_html_e( 'Numer', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_number" name="address[number]" value="<?php echo esc_attr( $address['number'] ?? '' ); ?>" />
+                        </p>
+                        <p data-property-types="DOM">
+                            <label for="property_dom_flat"><?php esc_html_e( 'Lokal', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_flat" name="address[flat]" value="<?php echo esc_attr( $address['flat'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_county"><?php esc_html_e( 'Powiat', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_county" name="address[county]" value="<?php echo esc_attr( $address['county'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_district"><?php esc_html_e( 'Obręb', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_district" name="address[precinct]" value="<?php echo esc_attr( $address['precinct'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_plot"><?php esc_html_e( 'Numer działki', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_plot" name="address[plot_number]" value="<?php echo esc_attr( $address['plot_number'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_postal"><?php esc_html_e( 'Kod pocztowy', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_postal" name="address[postal]" value="<?php echo esc_attr( $address['postal'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_dom_city"><?php esc_html_e( 'Miasto', 'estate-office' ); ?></label>
+                            <input type="text" id="property_dom_city" name="address[city]" value="<?php echo esc_attr( $address['city'] ?? '' ); ?>" />
+                        </p>
+                    </div>
+                    <div class="estate-office-grid three-cols" data-property-types="DZIAŁKA">
+                        <p>
+                            <label for="property_plot_county"><?php esc_html_e( 'Powiat', 'estate-office' ); ?></label>
+                            <input type="text" id="property_plot_county" name="address[county]" value="<?php echo esc_attr( $address['county'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_plot_precinct"><?php esc_html_e( 'Obręb', 'estate-office' ); ?></label>
+                            <input type="text" id="property_plot_precinct" name="address[precinct]" value="<?php echo esc_attr( $address['precinct'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_plot_number"><?php esc_html_e( 'Numer działki', 'estate-office' ); ?></label>
+                            <input type="text" id="property_plot_number" name="address[plot_number]" value="<?php echo esc_attr( $address['plot_number'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_plot_postal"><?php esc_html_e( 'Kod pocztowy', 'estate-office' ); ?></label>
+                            <input type="text" id="property_plot_postal" name="address[postal]" value="<?php echo esc_attr( $address['postal'] ?? '' ); ?>" />
+                        </p>
+                        <p>
+                            <label for="property_plot_city"><?php esc_html_e( 'Miasto', 'estate-office' ); ?></label>
+                            <input type="text" id="property_plot_city" name="address[city]" value="<?php echo esc_attr( $address['city'] ?? '' ); ?>" />
                         </p>
                     </div>
                 </fieldset>
@@ -202,6 +410,7 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                         <p>
                             <label for="property_legal_kw"><?php esc_html_e( 'Numer KW', 'estate-office' ); ?></label>
                             <input type="text" id="property_legal_kw" name="legal[land_register]" value="<?php echo esc_attr( $legal['land_register'] ?? '' ); ?>" />
+                            <label><input type="checkbox" id="property_legal_no_kw" name="legal[no_register]" value="1" <?php checked( ! empty( $legal['no_register'] ) ); ?> /> <?php esc_html_e( 'Brak księgi wieczystej', 'estate-office' ); ?></label>
                         </p>
                         <p>
                             <label for="property_legal_state"><?php esc_html_e( 'Stan prawny', 'estate-office' ); ?></label>
@@ -220,6 +429,202 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                                 ?>
                             </select>
                         </p>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Lokalizacja na mapie', 'estate-office' ); ?></legend>
+                    <?php if ( $maps_key ) : ?>
+                        <div class="estate-office-map-controls">
+                            <button type="button" class="button" id="property_map_trigger"><?php esc_html_e( 'Zaznacz na mapie', 'estate-office' ); ?></button>
+                            <span class="description"><?php esc_html_e( 'Kliknij na mapę, aby ustawić pinezkę.', 'estate-office' ); ?></span>
+                            <span id="estate-office-map-output" class="estate-office-map-output"><?php echo esc_html( $map_output ); ?></span>
+                        </div>
+                        <div id="estate-office-map" data-lat="<?php echo esc_attr( $map_lat ); ?>" data-lng="<?php echo esc_attr( $map_lng ); ?>"></div>
+                        <input type="hidden" name="address[lat]" id="property_map_lat" value="<?php echo esc_attr( $map_lat ); ?>" />
+                        <input type="hidden" name="address[lng]" id="property_map_lng" value="<?php echo esc_attr( $map_lng ); ?>" />
+                    <?php else : ?>
+                        <p class="description"><?php esc_html_e( 'Dodaj klucz Google Maps w ustawieniach wtyczki, aby korzystać z mapy.', 'estate-office' ); ?></p>
+                    <?php endif; ?>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset" data-property-types="MIESZKANIE,DOM,LOKAL H/U">
+                    <legend><?php esc_html_e( 'Szczegóły nieruchomości', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid three-cols">
+                        <p>
+                            <label for="property_finish"><?php esc_html_e( 'Stan wykończenia', 'estate-office' ); ?></label>
+                            <select id="property_finish" name="details[building][finish_state]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $finish_states as $state ) : ?>
+                                    <option value="<?php echo esc_attr( $state ); ?>" <?php selected( $building['finish_state'] ?? '', $state ); ?>><?php echo esc_html( $state ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <div>
+                            <span class="label"><?php esc_html_e( 'Ekspozycja', 'estate-office' ); ?></span>
+                            <div class="estate-office-toggle-group">
+                                <?php
+                                $exposures = [
+                                    'north' => __( 'Północ', 'estate-office' ),
+                                    'south' => __( 'Południe', 'estate-office' ),
+                                    'east'  => __( 'Wschód', 'estate-office' ),
+                                    'west'  => __( 'Zachód', 'estate-office' ),
+                                ];
+                                foreach ( $exposures as $key => $label ) {
+                                    printf( '<label><input type="checkbox" name="details[building][exposure][%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $key ), esc_html( $label ), checked( ! empty( $exposure[ $key ] ), true, false ) );
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="label"><?php esc_html_e( 'Widok', 'estate-office' ); ?></span>
+                            <div class="estate-office-toggle-group">
+                                <?php
+                                $view_options = [
+                                    'panorama' => __( 'Panorama miasta', 'estate-office' ),
+                                    'park'     => __( 'Park / Zieleń', 'estate-office' ),
+                                    'street'   => __( 'Ulica', 'estate-office' ),
+                                    'water'    => __( 'Woda', 'estate-office' ),
+                                ];
+                                foreach ( $view_options as $key => $label ) {
+                                    printf( '<label><input type="checkbox" name="details[building][view][%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $key ), esc_html( $label ), checked( ! empty( $views[ $key ] ), true, false ) );
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <p>
+                            <label><input type="checkbox" name="details[building][attic]" value="1" <?php checked( ! empty( $building['attic'] ) ); ?> /> <?php esc_html_e( 'Poddasze', 'estate-office' ); ?></label>
+                        </p>
+                        <p data-property-types="MIESZKANIE,LOKAL H/U">
+                            <label><input type="checkbox" name="details[building][multilevel]" value="1" <?php checked( ! empty( $building['multilevel'] ) ); ?> /> <?php esc_html_e( 'Wielopoziomowe', 'estate-office' ); ?></label>
+                        </p>
+                        <div>
+                            <span class="label"><?php esc_html_e( 'Rozkład', 'estate-office' ); ?></span>
+                            <div class="estate-office-toggle-group">
+                                <?php
+                                $layout_options = [
+                                    'separate' => __( 'Oddzielne pokoje', 'estate-office' ),
+                                    'open'     => __( 'Otwarte przestrzenie', 'estate-office' ),
+                                    'walkthrough' => __( 'Pokoje przechodnie', 'estate-office' ),
+                                ];
+                                foreach ( $layout_options as $key => $label ) {
+                                    printf( '<label><input type="checkbox" name="details[building][layout][%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $key ), esc_html( $label ), checked( ! empty( $layout[ $key ] ), true, false ) );
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <p>
+                            <label for="property_kitchen"><?php esc_html_e( 'Kuchnia', 'estate-office' ); ?></label>
+                            <select id="property_kitchen" name="details[building][kitchen]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $kitchen_types as $kitchen ) : ?>
+                                    <option value="<?php echo esc_attr( $kitchen ); ?>" <?php selected( $building['kitchen'] ?? '', $kitchen ); ?>><?php echo esc_html( ucfirst( strtolower( $kitchen ) ) ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <div>
+                            <span class="label"><?php esc_html_e( 'Miejsce parkingowe', 'estate-office' ); ?></span>
+                            <div class="estate-office-toggle-group">
+                                <?php
+                                $parking_options = [
+                                    'rented'    => __( 'Najemne', 'estate-office' ),
+                                    'underground' => __( 'Podziemne', 'estate-office' ),
+                                    'garage'    => __( 'Garaż wolnostojący / przylegający', 'estate-office' ),
+                                ];
+                                foreach ( $parking_options as $key => $label ) {
+                                    printf( '<label><input type="checkbox" name="details[building][parking][%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $key ), esc_html( $label ), checked( ! empty( $parking[ $key ] ), true, false ) );
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Media', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid two-cols">
+                        <p>
+                            <label for="property_heating"><?php esc_html_e( 'Ogrzewanie', 'estate-office' ); ?></label>
+                            <select id="property_heating" name="details[utilities][heating]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $heating_types as $heating ) : ?>
+                                    <option value="<?php echo esc_attr( $heating ); ?>" <?php selected( $utilities['heating'] ?? '', $heating ); ?>><?php echo esc_html( $heating ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label for="property_water"><?php esc_html_e( 'Woda', 'estate-office' ); ?></label>
+                            <select id="property_water" name="details[utilities][water]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $water_types as $water ) : ?>
+                                    <option value="<?php echo esc_attr( $water ); ?>" <?php selected( $utilities['water'] ?? '', $water ); ?>><?php echo esc_html( $water ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label for="property_sewage"><?php esc_html_e( 'Kanalizacja', 'estate-office' ); ?></label>
+                            <select id="property_sewage" name="details[utilities][sewage]">
+                                <option value="">&mdash;</option>
+                                <?php foreach ( $sewage_types as $sewage ) : ?>
+                                    <option value="<?php echo esc_attr( $sewage ); ?>" <?php selected( $utilities['sewage'] ?? '', $sewage ); ?>><?php echo esc_html( $sewage ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label><input type="checkbox" name="details[utilities][gas]" value="1" <?php checked( ! empty( $utilities['gas'] ) ); ?> /> <?php esc_html_e( 'Gaz', 'estate-office' ); ?></label>
+                        </p>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Udogodnienia i wyposażenie', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid two-cols">
+                        <div>
+                            <span class="label"><?php esc_html_e( 'Udogodnienia', 'estate-office' ); ?></span>
+                            <div class="estate-office-toggle-group">
+                                <?php
+                                foreach ( $amenity_keys as $key => $label ) {
+                                    if ( 'umeblowanie' === $key ) {
+                                        continue;
+                                    }
+                                    printf( '<label><input type="checkbox" name="details[amenities][%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $key ), esc_html( $label ), checked( ! empty( $amenities[ $key ] ), true, false ) );
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <p>
+                            <label for="property_furnished"><?php esc_html_e( 'Umeblowanie', 'estate-office' ); ?></label>
+                            <select id="property_furnished" name="details[amenities][umeblowanie]">
+                                <option value="">&mdash;</option>
+                                <option value="TAK" <?php selected( $amenities['umeblowanie'] ?? '', 'TAK' ); ?>><?php esc_html_e( 'Tak', 'estate-office' ); ?></option>
+                                <option value="NIE" <?php selected( $amenities['umeblowanie'] ?? '', 'NIE' ); ?>><?php esc_html_e( 'Nie', 'estate-office' ); ?></option>
+                                <option value="CZĘŚCIOWE" <?php selected( $amenities['umeblowanie'] ?? '', 'CZĘŚCIOWE' ); ?>><?php esc_html_e( 'Częściowe', 'estate-office' ); ?></option>
+                            </select>
+                        </p>
+                        <div class="estate-office-toggle-group">
+                            <span class="label"><?php esc_html_e( 'Wyposażenie', 'estate-office' ); ?></span>
+                            <?php foreach ( $equipment_keys as $key => $label ) : ?>
+                                <label><input type="checkbox" name="details[equipment][<?php echo esc_attr( $key ); ?>]" value="1" <?php checked( ! empty( $equipment[ $key ] ) ); ?> /> <?php echo esc_html( $label ); ?></label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Powierzchnie dodatkowe', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid two-cols">
+                        <?php foreach ( $surface_keys as $key => $label ) :
+                            $surface = isset( $surfaces[ $key ] ) && is_array( $surfaces[ $key ] ) ? $surfaces[ $key ] : [];
+                            $checkbox_id = 'surface_' . $key;
+                            ?>
+                            <div>
+                                <label><input type="checkbox" id="<?php echo esc_attr( $checkbox_id ); ?>" name="details[surfaces][<?php echo esc_attr( $key ); ?>][enabled]" value="1" data-toggle-target="#<?php echo esc_attr( $checkbox_id ); ?>_details" <?php checked( ! empty( $surface['enabled'] ) ); ?> /> <?php echo esc_html( $label ); ?></label>
+                                <div id="<?php echo esc_attr( $checkbox_id ); ?>_details">
+                                    <input type="number" step="1" name="details[surfaces][<?php echo esc_attr( $key ); ?>][count]" value="<?php echo esc_attr( $surface['count'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Liczba', 'estate-office' ); ?>" />
+                                    <input type="number" step="0.01" name="details[surfaces][<?php echo esc_attr( $key ); ?>][area]" value="<?php echo esc_attr( $surface['area'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Powierzchnia (m²)', 'estate-office' ); ?>" />
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </fieldset>
 
@@ -252,19 +657,93 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                 <?php endif; ?>
 
                 <fieldset class="estate-office-fieldset">
+                    <legend><?php esc_html_e( 'Galeria i materiały dodatkowe', 'estate-office' ); ?></legend>
+                    <div class="estate-office-gallery" data-target="media[gallery]">
+                        <div class="estate-office-gallery-toolbar">
+                            <button type="button" class="button estate-office-gallery-select"><?php esc_html_e( 'Dodaj zdjęcia', 'estate-office' ); ?></button>
+                            <p class="description"><?php esc_html_e( 'Zdjęcia otrzymają znak wodny z ustawień.', 'estate-office' ); ?></p>
+                        </div>
+                        <p class="estate-office-gallery-empty" <?php echo empty( $gallery_ids ) ? '' : 'style="display:none"'; ?>><?php esc_html_e( 'Brak zdjęć w galerii.', 'estate-office' ); ?></p>
+                        <ul class="estate-office-gallery-list">
+                            <?php foreach ( $gallery_ids as $attachment_id ) : ?>
+                                <li>
+                                    <div class="estate-office-gallery-thumb"><?php echo wp_get_attachment_image( $attachment_id, 'thumbnail' ); ?></div>
+                                    <input type="hidden" name="media[gallery][]" value="<?php echo esc_attr( $attachment_id ); ?>" />
+                                    <button type="button" class="button-link estate-office-gallery-remove"><?php esc_html_e( 'Usuń', 'estate-office' ); ?></button>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <div class="estate-office-grid two-cols" style="margin-top:1.5rem;">
+                        <div class="estate-office-media-field" data-target="media[floor_2d]">
+                            <div class="estate-office-media-preview-wrap">
+                                <?php
+                                if ( $floor_2d ) {
+                                    echo wp_get_attachment_image( $floor_2d, 'thumbnail' );
+                                } else {
+                                    echo '<span class="placeholder">' . esc_html__( 'Brak podglądu', 'estate-office' ) . '</span>';
+                                }
+                                ?>
+                            </div>
+                            <div>
+                                <input type="hidden" name="media[floor_2d]" value="<?php echo esc_attr( $floor_2d ); ?>" />
+                                <button type="button" class="button estate-office-media-select"><?php esc_html_e( 'Wybierz rzut 2D', 'estate-office' ); ?></button>
+                                <button type="button" class="button-link estate-office-media-remove" <?php disabled( ! $floor_2d ); ?>><?php esc_html_e( 'Usuń', 'estate-office' ); ?></button>
+                            </div>
+                        </div>
+                        <div class="estate-office-media-field" data-target="media[floor_3d]">
+                            <div class="estate-office-media-preview-wrap">
+                                <?php
+                                if ( $floor_3d ) {
+                                    echo wp_get_attachment_image( $floor_3d, 'thumbnail' );
+                                } else {
+                                    echo '<span class="placeholder">' . esc_html__( 'Brak podglądu', 'estate-office' ) . '</span>';
+                                }
+                                ?>
+                            </div>
+                            <div>
+                                <input type="hidden" name="media[floor_3d]" value="<?php echo esc_attr( $floor_3d ); ?>" />
+                                <button type="button" class="button estate-office-media-select"><?php esc_html_e( 'Wybierz rzut 3D', 'estate-office' ); ?></button>
+                                <button type="button" class="button-link estate-office-media-remove" <?php disabled( ! $floor_3d ); ?>><?php esc_html_e( 'Usuń', 'estate-office' ); ?></button>
+                            </div>
+                        </div>
+                        <p class="full">
+                            <label for="property_media_video"><?php esc_html_e( 'Link do filmu', 'estate-office' ); ?></label>
+                            <input type="url" id="property_media_video" name="media[video]" value="<?php echo esc_attr( $video_url ); ?>" />
+                        </p>
+                        <p class="full">
+                            <label for="property_media_virtual"><?php esc_html_e( 'Link do wirtualnego spaceru', 'estate-office' ); ?></label>
+                            <input type="url" id="property_media_virtual" name="media[virtual]" value="<?php echo esc_attr( $virtual_url ); ?>" />
+                        </p>
+                    </div>
+                </fieldset>
+
+                <fieldset class="estate-office-fieldset">
                     <legend><?php esc_html_e( 'Znaczniki', 'estate-office' ); ?></legend>
                     <?php
                     $flags = [
                         'new_offer'   => __( 'Nowa oferta', 'estate-office' ),
                         'exclusive'   => __( 'Wyłączność', 'estate-office' ),
                         'new_price'   => __( 'Nowa cena', 'estate-office' ),
+                        'no_commission' => __( 'Bez prowizji', 'estate-office' ),
+                        'mls'         => __( 'Oferta MLS', 'estate-office' ),
                         'premium'     => __( 'Premium', 'estate-office' ),
+                        'sold'        => __( 'Sprzedane', 'estate-office' ),
+                        'rented'      => __( 'Wynajęte', 'estate-office' ),
                     ];
                     foreach ( $flags as $flag => $label ) {
-                        printf( '<label class="estate-office-flag"><input type="checkbox" name="tags[%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $flag ), esc_html( $label ), checked( ! empty( $tags[ $flag ] ), true, false ) );
+                        $attributes = 'class="estate-office-flag"';
+                        if ( 'sold' === $flag ) {
+                            $attributes .= ' data-transaction-types="SPRZEDAŻ"';
+                        }
+                        if ( 'rented' === $flag ) {
+                            $attributes .= ' data-transaction-types="WYNAJEM"';
+                        }
+                        printf( '<label %4$s><input type="checkbox" name="tags[%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $flag ), esc_html( $label ), checked( ! empty( $tags[ $flag ] ), true, false ), $attributes );
                     }
                     ?>
                     <label class="estate-office-flag"><input type="checkbox" name="export_www" value="1" <?php checked( ! empty( $property->export_www ) ); ?> /> <?php esc_html_e( 'Eksport na WWW', 'estate-office' ); ?></label>
+                    <label class="estate-office-flag"><input type="checkbox" name="export_portals" value="1" disabled /> <?php esc_html_e( 'Eksport na portale (w przygotowaniu)', 'estate-office' ); ?></label>
                 </fieldset>
 
                 <?php submit_button( $property ? __( 'Zapisz nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ); ?>
@@ -284,6 +763,12 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                 echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Wystąpił błąd podczas zapisu nieruchomości.', 'estate-office' ) . '</p></div>';
             }
         }
+    }
+
+    public static function get_property_media( int $property_id ): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_property_media';
+        return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE property_id = %d ORDER BY id ASC", $property_id ) );
     }
 
     public static function get_properties( string $search = '' ): array {
