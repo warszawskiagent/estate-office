@@ -302,7 +302,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
         global $wpdb;
         $table        = $wpdb->prefix . 'eo_clients';
         $agents_table = $wpdb->prefix . 'eo_agents';
-        $select       = "SELECT c.*, a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone FROM {$table} c LEFT JOIN {$agents_table} a ON a.id = c.agent_id";
+        $select       = "SELECT c.*, a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug FROM {$table} c LEFT JOIN {$agents_table} a ON a.id = c.agent_id";
 
         if ( empty( $search ) ) {
             return $wpdb->get_results( $select . ' ORDER BY c.created_at DESC' );

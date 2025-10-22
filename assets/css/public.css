@@ -340,6 +340,29 @@
     gap: 12px;
 }
 
+.estate-office-offer-image {
+    overflow: hidden;
+    background: #e5e7eb;
+    aspect-ratio: 4 / 3;
+}
+
+.estate-office-offer-card .estate-office-offer-image {
+    margin: -18px -18px 0;
+    border-radius: 12px 12px 0 0;
+}
+
+.estate-office-agent-offer .estate-office-offer-image {
+    margin: -1.5rem -1.5rem 0;
+    border-radius: 16px 16px 0 0;
+}
+
+.estate-office-offer-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .estate-office-offer-number {
     font-weight: 700;
     color: #2563eb;
@@ -412,5 +435,172 @@
 
     .estate-office-offers-calculators-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+.estate-office-agent-profile {
+    max-width: 1100px;
+    margin: 0 auto 4rem;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(25, 38, 62, 0.08);
+    padding: 2.5rem 3rem;
+}
+
+.estate-office-agent-header {
+    display: grid;
+    grid-template-columns: minmax(0, 220px) 1fr;
+    gap: 2.5rem;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.estate-office-agent-photo {
+    margin: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.estate-office-agent-photo-img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.estate-office-agent-summary h1 {
+    font-size: 2rem;
+    margin: 0 0 1rem;
+    color: #172b4d;
+}
+
+.estate-office-agent-contact {
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.estate-office-agent-contact li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    font-size: 0.95rem;
+}
+
+.estate-office-agent-contact span:first-child {
+    min-width: 140px;
+    font-weight: 600;
+    color: #42526e;
+}
+
+.estate-office-agent-contact a {
+    color: #0052cc;
+    text-decoration: none;
+}
+
+.estate-office-agent-contact a:hover,
+.estate-office-agent-contact a:focus {
+    text-decoration: underline;
+}
+
+.estate-office-agent-stats {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin: 0;
+}
+
+.estate-office-agent-stats dt {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #7a869a;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.03em;
+}
+
+.estate-office-agent-stats dd {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #091e42;
+}
+
+.estate-office-agent-about,
+.estate-office-agent-offers {
+    margin-top: 2.5rem;
+}
+
+.estate-office-agent-about h2,
+.estate-office-agent-offers h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #172b4d;
+}
+
+.estate-office-agent-content {
+    line-height: 1.7;
+    color: #253858;
+}
+
+.estate-office-agent-offers-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.estate-office-agent-offer {
+    border: 1px solid rgba(9, 30, 66, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    background: #f9fbff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.estate-office-agent-offer:hover,
+.estate-office-agent-offer:focus-within {
+    box-shadow: 0 16px 34px rgba(52, 72, 97, 0.15);
+    transform: translateY(-4px);
+}
+
+.estate-office-agent-offer header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.estate-office-agent-offer-type {
+    font-weight: 600;
+    color: #0065ff;
+    margin: 0;
+}
+
+.estate-office-agent-offer-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #172b4d;
+    margin: 0;
+}
+
+.estate-office-agent-offer .estate-office-button {
+    align-self: flex-start;
+}
+
+@media (max-width: 768px) {
+    .estate-office-agent-profile {
+        padding: 1.75rem;
+    }
+
+    .estate-office-agent-header {
+        grid-template-columns: 1fr;
+    }
+
+    .estate-office-agent-contact span:first-child {
+        min-width: 0;
     }
 }

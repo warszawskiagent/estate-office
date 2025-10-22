@@ -464,7 +464,7 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
                     FROM {$table} s
                     LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
                     LEFT JOIN {$agents_table} a ON a.id = s.agent_id
@@ -479,7 +479,7 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
                     JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
              FROM {$table} s
              LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
              LEFT JOIN {$agents_table} a ON a.id = s.agent_id

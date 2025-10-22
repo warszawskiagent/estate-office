@@ -15,11 +15,15 @@ class EstateOffice_Public {
      * Register WordPress hooks for the public module.
      */
     public function hooks(): void {
+        add_action( 'init', [ $this, 'register_rewrite_rules' ] );
         add_shortcode( 'estate_office_crm', [ $this, 'render_crm_shortcode' ] );
         add_shortcode( 'estate_office_offers', [ $this, 'render_offers_shortcode' ] );
         add_shortcode( 'estate_office_notary_calculator', [ $this, 'render_notary_calculator_shortcode' ] );
         add_shortcode( 'estate_office_mortgage_calculator', [ $this, 'render_mortgage_calculator_shortcode' ] );
         add_action( 'admin_bar_menu', [ $this, 'add_admin_bar_links' ], 100 );
+        add_filter( 'query_vars', [ $this, 'register_query_vars' ] );
+        add_filter( 'template_include', [ $this, 'template_loader' ] );
+        add_filter( 'body_class', [ $this, 'add_agent_body_class' ] );
     }
 
     /**
@@ -41,6 +45,82 @@ class EstateOffice_Public {
                 ]
             );
         }
+    }
+
+    /**
+     * Register rewrite rules for public agent profiles.
+     */
+    public function register_rewrite_rules(): void {
+        $base = estate_office_get_agent_base_slug();
+        add_rewrite_rule( $base . '/([^/]+)/?$', 'index.php?estate_office_agent=$matches[1]', 'top' );
+    }
+
+    /**
+     * Expose plugin query vars.
+     */
+    public function register_query_vars( array $vars ): array {
+        $vars[] = 'estate_office_agent';
+        return $vars;
+    }
+
+    /**
+     * Provide template for agent profile pages.
+     */
+    public function template_loader( string $template ): string {
+        $slug = get_query_var( 'estate_office_agent' );
+        if ( ! $slug ) {
+            return $template;
+        }
+
+        $agent = EstateOffice_Admin_Agents::get_agent_by_slug( $slug );
+        if ( ! $agent ) {
+            global $wp_query;
+            if ( $wp_query ) {
+                $wp_query->set_404();
+            }
+            status_header( 404 );
+            $fallback = get_404_template();
+            return $fallback ?: $template;
+        }
+
+        $this->enqueue_assets();
+
+        $GLOBALS['estate_office_agent_profile'] = [
+            'agent'     => $agent,
+            'relations' => EstateOffice_Admin_Agents::get_agent_relations( (int) $agent->id ),
+        ];
+
+        global $wp_query;
+        if ( $wp_query ) {
+            $wp_query->is_page     = true;
+            $wp_query->is_singular = true;
+            $wp_query->is_404      = false;
+        }
+
+        add_filter(
+            'pre_get_document_title',
+            static function () use ( $agent ) {
+                $name = EstateOffice_Admin_Agents::format_agent_name( $agent );
+                if ( '' === $name ) {
+                    $name = __( 'Agent EstateOffice', 'estate-office' );
+                }
+                return sprintf( __( '%s – EstateOffice', 'estate-office' ), $name );
+            },
+            20
+        );
+
+        return $this->locate_template( 'agent-profile.php' );
+    }
+
+    /**
+     * Append contextual class to body tag.
+     */
+    public function add_agent_body_class( array $classes ): array {
+        if ( get_query_var( 'estate_office_agent' ) ) {
+            $classes[] = 'estate-office-agent-page';
+        }
+
+        return $classes;
     }
 
     /**
@@ -167,9 +247,17 @@ class EstateOffice_Public {
                 <div class="estate-office-dashboard-section">
                     <h3><?php esc_html_e( 'Najlepsi agenci', 'estate-office' ); ?></h3>
                     <ul class="estate-office-list">
-                        <?php foreach ( $metrics['top_agents'] as $agent ) : ?>
+                        <?php foreach ( $metrics['top_agents'] as $agent ) :
+                            $agent_name = esc_html( $agent['name'] );
+                            ?>
                             <li>
-                                <span class="estate-office-list-primary"><?php echo esc_html( $agent['name'] ); ?></span>
+                                <span class="estate-office-list-primary">
+                                    <?php if ( ! empty( $agent['url'] ) ) : ?>
+                                        <a href="<?php echo esc_url( $agent['url'] ); ?>"><?php echo $agent_name; ?></a>
+                                    <?php else : ?>
+                                        <?php echo $agent_name; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                    <?php endif; ?>
+                                </span>
                                 <span><?php echo esc_html( sprintf( _n( '%d umowa', '%d umowy', $agent['contracts'], 'estate-office' ), $agent['contracts'] ) ); ?></span>
                             </li>
                         <?php endforeach; ?>
@@ -213,7 +301,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_currency( $property->price_m2 ) ); ?></td>
                                 <td><?php echo esc_html( $property->area ? $property->area . ' m²' : '' ); ?></td>
                                 <td><?php echo esc_html( $property->rooms ); ?></td>
-                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $property ) ?: '—' ); ?></td>
+                                <td><?php echo $this->render_agent_reference( $property ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -246,9 +334,8 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Pokoje', 'estate-office' ); ?></dt><dd><?php echo esc_html( $details['rooms'] ?? '' ); ?></dd></div>
                     <?php if ( ! empty( $property->agent_id ) ) :
                         $agent = EstateOffice_Admin_Agents::get_agent( (int) $property->agent_id );
-                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
                         ?>
-                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $property->agent_id ) ); ?></dd></div>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo $this->render_agent_reference_from_agent( $agent ); ?></dd></div>
                     <?php endif; ?>
                 </dl>
                 <h4><?php esc_html_e( 'Adres', 'estate-office' ); ?></h4>
@@ -308,7 +395,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_range( $criteria['budget_min'] ?? '', $criteria['budget_max'] ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $criteria['city'] ?? '' ); ?></td>
                                 <td><?php echo esc_html( $item->transaction_type ); ?></td>
-                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $item ) ?: '—' ); ?></td>
+                                <td><?php echo $this->render_agent_reference( $item ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -338,9 +425,8 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Liczba pokoi', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_range( $criteria['rooms_min'] ?? '', $criteria['rooms_max'] ?? '' ) ); ?></dd></div>
                     <?php if ( ! empty( $search->agent_id ) ) :
                         $agent = EstateOffice_Admin_Agents::get_agent( (int) $search->agent_id );
-                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
                         ?>
-                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $search->agent_id ) ); ?></dd></div>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo $this->render_agent_reference_from_agent( $agent ); ?></dd></div>
                     <?php endif; ?>
                 </dl>
             </div>
@@ -395,7 +481,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_date( $contract->start_date ) ); ?></td>
                                 <td><?php echo esc_html( $contract->indefinite ? __( 'Bezterminowa', 'estate-office' ) : $this->format_date( $contract->end_date ) ); ?></td>
                                 <td><?php echo esc_html( $this->format_stage( $contract->stage ) ); ?></td>
-                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $contract ) ?: '—' ); ?></td>
+                                <td><?php echo $this->render_agent_reference( $contract ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -438,9 +524,8 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'Prowizja', 'estate-office' ); ?></dt><dd><?php echo esc_html( $this->format_commission( $contract ) ); ?></dd></div>
                     <?php if ( ! empty( $contract->agent_id ) ) :
                         $agent = EstateOffice_Admin_Agents::get_agent( (int) $contract->agent_id );
-                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
                         ?>
-                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $contract->agent_id ) ); ?></dd></div>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo $this->render_agent_reference_from_agent( $agent ); ?></dd></div>
                     <?php endif; ?>
                 </dl>
                 <?php if ( ! empty( $clients ) ) : ?>
@@ -509,7 +594,7 @@ class EstateOffice_Public {
                                 <td><?php echo esc_html( $this->format_address_from_json( $client->address ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $client->phone ); ?></td>
                                 <td><?php echo esc_html( $client->email ); ?></td>
-                                <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $client ) ?: '—' ); ?></td>
+                                <td><?php echo $this->render_agent_reference( $client ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -548,9 +633,8 @@ class EstateOffice_Public {
                     <div><dt><?php esc_html_e( 'E-mail', 'estate-office' ); ?></dt><dd><?php echo esc_html( $client->email ); ?></dd></div>
                     <?php if ( ! empty( $client->agent_id ) ) :
                         $agent = EstateOffice_Admin_Agents::get_agent( (int) $client->agent_id );
-                        $agent_label = EstateOffice_Admin_Agents::format_agent_name( $agent );
                         ?>
-                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo esc_html( $agent_label ?: sprintf( __( 'Agent #%d', 'estate-office' ), (int) $client->agent_id ) ); ?></dd></div>
+                        <div><dt><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></dt><dd><?php echo $this->render_agent_reference_from_agent( $agent ); ?></dd></div>
                     <?php endif; ?>
                 </dl>
                 <?php if ( ! empty( $address ) ) : ?>
@@ -649,6 +733,11 @@ class EstateOffice_Public {
                                     <div class="estate-office-offers-grid">
                                         <?php foreach ( $items as $item ) : ?>
                                             <article class="estate-office-offer-card">
+                                                <?php if ( ! empty( $item['image_url'] ) ) : ?>
+                                                    <figure class="estate-office-offer-image">
+                                                        <img src="<?php echo esc_url( $item['image_url'] ); ?>" alt="<?php echo esc_attr( $item['image_alt'] ); ?>" loading="lazy" />
+                                                    </figure>
+                                                <?php endif; ?>
                                                 <header>
                                                     <span class="estate-office-offer-number"><?php echo esc_html( sprintf( '#%05d', $item['id'] ) ); ?></span>
                                                     <?php if ( ! empty( $item['tags'] ) ) : ?>
@@ -744,11 +833,28 @@ class EstateOffice_Public {
             return [];
         }
 
+        $property_ids = array_map(
+            static function ( $row ) {
+                return (int) $row->id;
+            },
+            $rows
+        );
+
+        $cover_media = EstateOffice_Admin_Properties::get_cover_media_for_properties( $property_ids );
+
         $offers = [];
         foreach ( $rows as $row ) {
             $details = $row->details ? json_decode( $row->details, true ) : [];
             $address = $row->address ? json_decode( $row->address, true ) : [];
             $tags    = $row->tags ? json_decode( $row->tags, true ) : [];
+
+            $media      = $cover_media[ (int) $row->id ] ?? [];
+            $image_id   = isset( $media['watermarked_id'] ) && $media['watermarked_id'] ? (int) $media['watermarked_id'] : (int) ( $media['attachment_id'] ?? 0 );
+            $image_url  = $image_id ? wp_get_attachment_image_url( $image_id, 'large' ) : '';
+            $image_alt  = $this->format_address( $address );
+            if ( ! $image_alt ) {
+                $image_alt = trim( $row->property_type . ' ' . $row->transaction_type );
+            }
 
             $offers[] = [
                 'id'            => (int) $row->id,
@@ -761,6 +867,9 @@ class EstateOffice_Public {
                 'area'          => $details['area'] ?? '',
                 'rooms'         => $details['rooms'] ?? '',
                 'tags'          => $this->map_offer_tags( $tags ),
+                'image_id'      => $image_id,
+                'image_url'     => $image_url,
+                'image_alt'     => $image_alt,
             ];
         }
 
@@ -838,7 +947,7 @@ class EstateOffice_Public {
         $contracts_table = $wpdb->prefix . 'eo_contracts';
         $agents_table    = $wpdb->prefix . 'eo_agents';
 
-        $sql = "SELECT a.id, a.first_name, a.last_name, COUNT(c.id) AS contracts
+        $sql = "SELECT a.id, a.first_name, a.last_name, a.slug, COUNT(c.id) AS contracts
                 FROM {$agents_table} a
                 LEFT JOIN {$contracts_table} c ON c.agent_id = a.id
                 GROUP BY a.id
@@ -848,7 +957,7 @@ class EstateOffice_Public {
 
         $rows = $wpdb->get_results( $sql );
         if ( empty( $rows ) ) {
-            $rows = $wpdb->get_results( "SELECT id, first_name, last_name, 0 AS contracts FROM {$agents_table} ORDER BY created_at DESC LIMIT 5" );
+            $rows = $wpdb->get_results( "SELECT id, first_name, last_name, slug, 0 AS contracts FROM {$agents_table} ORDER BY created_at DESC LIMIT 5" );
         }
 
         $agents = [];
@@ -861,6 +970,8 @@ class EstateOffice_Public {
                 'id'        => (int) $row->id,
                 'name'      => $name,
                 'contracts' => (int) $row->contracts,
+                'slug'      => $row->slug ?? '',
+                'url'       => estate_office_get_agent_url( $row->slug ?? '' ),
             ];
         }
 
@@ -922,6 +1033,72 @@ class EstateOffice_Public {
         }
 
         return $links;
+    }
+
+    /**
+     * Locate template file allowing theme overrides.
+     */
+    protected function locate_template( string $template ): string {
+        $paths = [
+            trailingslashit( get_stylesheet_directory() ) . 'estate-office/' . $template,
+            trailingslashit( get_template_directory() ) . 'estate-office/' . $template,
+            ESTATE_OFFICE_PATH . 'templates/' . $template,
+        ];
+
+        foreach ( $paths as $path ) {
+            if ( file_exists( $path ) ) {
+                return $path;
+            }
+        }
+
+        return $template;
+    }
+
+    /**
+     * Return formatted agent reference for list rows.
+     */
+    protected function render_agent_reference( $row ): string {
+        $label = EstateOffice_Admin_Agents::format_agent_from_row( $row );
+        if ( '' === $label ) {
+            return esc_html__( '—', 'estate-office' );
+        }
+
+        $slug = $row->agent_slug ?? '';
+        if ( $slug ) {
+            $url = estate_office_get_agent_url( $slug );
+            if ( $url ) {
+                return sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html( $label ) );
+            }
+        }
+
+        return esc_html( $label );
+    }
+
+    /**
+     * Return formatted agent reference for loaded agent objects.
+     */
+    protected function render_agent_reference_from_agent( $agent ): string {
+        if ( ! $agent ) {
+            return esc_html__( '—', 'estate-office' );
+        }
+
+        $label = EstateOffice_Admin_Agents::format_agent_name( $agent );
+        if ( '' === $label && ! empty( $agent->id ) ) {
+            $label = sprintf( __( 'Agent #%d', 'estate-office' ), (int) $agent->id );
+        }
+
+        if ( '' === $label ) {
+            return esc_html__( '—', 'estate-office' );
+        }
+
+        if ( ! empty( $agent->slug ) ) {
+            $url = estate_office_get_agent_url( $agent->slug );
+            if ( $url ) {
+                return sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html( $label ) );
+            }
+        }
+
+        return esc_html( $label );
     }
 
     /**
@@ -1012,33 +1189,7 @@ class EstateOffice_Public {
      * @return string
      */
     protected function format_address( array $address ): string {
-        if ( empty( $address ) ) {
-            return '';
-        }
-        $parts = [];
-        if ( ! empty( $address['street'] ) ) {
-            $street = $address['street'];
-            if ( ! empty( $address['number'] ) ) {
-                $street .= ' ' . $address['number'];
-            }
-            if ( ! empty( $address['unit'] ) ) {
-                $street .= '/' . $address['unit'];
-            }
-            $parts[] = $street;
-        }
-        if ( ! empty( $address['postal_code'] ) ) {
-            $parts[] = $address['postal_code'];
-        }
-        if ( ! empty( $address['district'] ) ) {
-            $parts[] = $address['district'];
-        }
-        if ( ! empty( $address['city'] ) ) {
-            $parts[] = $address['city'];
-        }
-        if ( ! empty( $address['country'] ) ) {
-            $parts[] = $address['country'];
-        }
-        return implode( ', ', $parts );
+        return estate_office_format_address( $address );
     }
 
     /**
@@ -1055,7 +1206,7 @@ class EstateOffice_Public {
         if ( ! is_array( $address ) ) {
             return '';
         }
-        return $this->format_address( $address );
+        return estate_office_format_address( $address );
     }
 
     /**
@@ -1097,14 +1248,7 @@ class EstateOffice_Public {
      * @return string
      */
     protected function get_crm_page_url(): string {
-        $page_id = (int) get_option( 'estate_office_crm_page_id' );
-        if ( $page_id ) {
-            $link = get_permalink( $page_id );
-            if ( $link ) {
-                return $link;
-            }
-        }
-        return home_url();
+        return estate_office_get_crm_page_url();
     }
 
     /**

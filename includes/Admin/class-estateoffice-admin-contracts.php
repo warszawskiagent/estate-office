@@ -900,7 +900,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
 
         if ( empty( $search ) ) {
             $sql = "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
                     FROM {$table} c
                     LEFT JOIN {$property_table} p ON p.contract_id = c.id
                     LEFT JOIN {$agents_table} a ON a.id = c.agent_id
@@ -911,7 +911,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         $like = '%' . $wpdb->esc_like( $search ) . '%';
         $sql  = $wpdb->prepare(
             "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
-             a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+             a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
              FROM {$table} c
              LEFT JOIN {$property_table} p ON p.contract_id = c.id
              LEFT JOIN {$agents_table} a ON a.id = c.agent_id

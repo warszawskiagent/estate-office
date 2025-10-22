@@ -177,6 +177,7 @@ class EstateOffice_Admin {
             'contact_data' => $this->prepare_json( $post['contact_data'] ?? [] ),
             'photo_id'     => isset( $post['photo_id'] ) ? absint( $post['photo_id'] ) : 0,
         ];
+        $data['slug'] = estate_office_generate_agent_slug( (string) ( $post['slug'] ?? '' ), $data['first_name'], $data['last_name'], $agent_id );
 
         $result = $this->save_table_record( 'eo_agents', $data, $agent_id );
 
@@ -229,14 +230,26 @@ class EstateOffice_Admin {
 
         $post = wp_unslash( $_POST );
 
+        $base_input = sanitize_title( $post['agent_slug_base'] ?? '' );
+        if ( '' === $base_input ) {
+            $base_input = 'agenci';
+        }
+
+        $old_base = get_option( 'estate_office_agent_slug_base', 'agenci' );
+
         $options = [
             'estate_office_google_maps_api_key' => sanitize_text_field( $post['google_maps_api_key'] ?? '' ),
             'estate_office_watermark_attachment' => isset( $post['watermark_attachment'] ) ? absint( $post['watermark_attachment'] ) : 0,
             'estate_office_office_logo_attachment' => isset( $post['office_logo_attachment'] ) ? absint( $post['office_logo_attachment'] ) : 0,
+            'estate_office_agent_slug_base'      => $base_input,
         ];
 
         foreach ( $options as $name => $value ) {
             update_option( $name, $value );
+        }
+
+        if ( $old_base !== $base_input ) {
+            update_option( 'estate_office_flush_rewrite', 1 );
         }
 
         $field_groups = [
@@ -748,6 +761,7 @@ class EstateOffice_Admin {
                 }
             }
         }
+        $gallery_items = $this->prepare_gallery_media_entries( $gallery );
         $floor_2d    = isset( $media_input['floor_2d'] ) ? absint( $media_input['floor_2d'] ) : 0;
         $floor_3d    = isset( $media_input['floor_3d'] ) ? absint( $media_input['floor_3d'] ) : 0;
         $video_url   = isset( $media_input['video'] ) ? esc_url_raw( $media_input['video'] ) : '';
@@ -791,7 +805,7 @@ class EstateOffice_Admin {
             $this->sync_property_media(
                 $saved_id,
                 [
-                    'gallery' => $gallery,
+                    'gallery' => $gallery_items,
                     'floor_2d' => $floor_2d,
                     'floor_3d' => $floor_3d,
                     'video'    => $video_url,
@@ -847,6 +861,44 @@ class EstateOffice_Admin {
     }
 
     /**
+     * Prepare gallery media entries including watermarked copies when configured.
+     *
+     * @param array<int,int> $attachment_ids Attachment identifiers.
+     * @return array<int,array<string,int>>
+     */
+    protected function prepare_gallery_media_entries( array $attachment_ids ): array {
+        if ( empty( $attachment_ids ) ) {
+            return [];
+        }
+
+        $watermark_id = estate_office_get_watermark_attachment_id();
+        $entries      = [];
+
+        foreach ( $attachment_ids as $attachment_id ) {
+            $attachment_id = absint( $attachment_id );
+            if ( ! $attachment_id ) {
+                continue;
+            }
+
+            $entry = [
+                'attachment_id'  => $attachment_id,
+                'watermarked_id' => 0,
+            ];
+
+            if ( $watermark_id ) {
+                $watermarked = estate_office_ensure_watermarked_attachment( $attachment_id, $watermark_id );
+                if ( $watermarked ) {
+                    $entry['watermarked_id'] = $watermarked;
+                }
+            }
+
+            $entries[] = $entry;
+        }
+
+        return $entries;
+    }
+
+    /**
      * Synchronize property media attachments and links.
      */
     protected function sync_property_media( int $property_id, array $media ): void {
@@ -857,9 +909,10 @@ class EstateOffice_Admin {
         $now = current_time( 'mysql' );
 
         if ( ! empty( $media['gallery'] ) && is_array( $media['gallery'] ) ) {
-            foreach ( $media['gallery'] as $attachment_id ) {
-                $id = absint( $attachment_id );
-                if ( ! $id ) {
+            foreach ( $media['gallery'] as $gallery_item ) {
+                $attachment_id  = absint( $gallery_item['attachment_id'] ?? 0 );
+                $watermarked_id = absint( $gallery_item['watermarked_id'] ?? 0 );
+                if ( ! $attachment_id ) {
                     continue;
                 }
                 $wpdb->insert(
@@ -867,7 +920,8 @@ class EstateOffice_Admin {
                     [
                         'property_id'    => $property_id,
                         'media_type'     => 'gallery',
-                        'attachment_id'  => $id,
+                        'attachment_id'  => $attachment_id,
+                        'watermarked_id' => $watermarked_id ?: null,
                         'media_url'      => null,
                         'created_at'     => $now,
                     ]

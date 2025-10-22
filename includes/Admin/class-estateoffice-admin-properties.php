@@ -795,6 +795,74 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE property_id = %d ORDER BY id ASC", $property_id ) );
     }
 
+    /**
+     * Retrieve cover media (first gallery image) for provided properties.
+     *
+     * @param array<int,int> $property_ids Property identifiers.
+     * @return array<int,array<string,int>>
+     */
+    public static function get_cover_media_for_properties( array $property_ids ): array {
+        $property_ids = array_values( array_filter( array_map( 'absint', $property_ids ) ) );
+        if ( empty( $property_ids ) ) {
+            return [];
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_property_media';
+        $placeholders = implode( ',', array_fill( 0, count( $property_ids ), '%d' ) );
+        $sql = $wpdb->prepare(
+            "SELECT id, property_id, attachment_id, watermarked_id FROM {$table} WHERE media_type = 'gallery' AND property_id IN ($placeholders) ORDER BY id ASC",
+            ...$property_ids
+        );
+        $rows = $wpdb->get_results( $sql );
+        if ( empty( $rows ) ) {
+            return [];
+        }
+
+        $watermark_attachment = estate_office_get_watermark_attachment_id();
+        $result               = [];
+
+        foreach ( $rows as $row ) {
+            $property_id = (int) ( $row->property_id ?? 0 );
+            if ( ! $property_id || isset( $result[ $property_id ] ) ) {
+                continue;
+            }
+
+            $attachment_id  = (int) ( $row->attachment_id ?? 0 );
+            $watermarked_id = (int) ( $row->watermarked_id ?? 0 );
+
+            if ( $attachment_id && ! $watermarked_id && $watermark_attachment ) {
+                $generated = estate_office_ensure_watermarked_attachment( $attachment_id, $watermark_attachment );
+                if ( $generated ) {
+                    $watermarked_id = $generated;
+                    $wpdb->update(
+                        $table,
+                        [ 'watermarked_id' => $generated ],
+                        [ 'id' => (int) $row->id ],
+                        [ '%d' ],
+                        [ '%d' ]
+                    );
+                }
+            }
+
+            $result[ $property_id ] = [
+                'attachment_id'  => $attachment_id,
+                'watermarked_id' => $watermarked_id,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Retrieve cover media for a single property.
+     */
+    public static function get_property_cover_media( int $property_id ): array {
+        $media = self::get_cover_media_for_properties( [ $property_id ] );
+
+        return $media[ $property_id ] ?? [ 'attachment_id' => 0, 'watermarked_id' => 0 ];
+    }
+
     public static function get_properties( string $search = '' ): array {
         global $wpdb;
         $table = $wpdb->prefix . 'eo_properties';
@@ -808,7 +876,7 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                     JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) AS area,
                     JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) AS rooms,
                     CONCAT_WS(', ', JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')), JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city'))) AS address_display,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
                     FROM {$table} p
                     LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
                     LEFT JOIN {$agents_table} a ON a.id = p.agent_id
@@ -824,7 +892,7 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                     JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) AS area,
                     JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) AS rooms,
                     CONCAT_WS(', ', JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')), JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city'))) AS address_display,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone
+                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
              FROM {$table} p
              LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
              LEFT JOIN {$agents_table} a ON a.id = p.agent_id

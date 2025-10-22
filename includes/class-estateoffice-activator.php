@@ -19,9 +19,13 @@ class EstateOffice_Activator {
         self::create_tables();
         self::seed_options();
         self::ensure_pages();
+        self::ensure_agent_slugs();
+        self::backfill_property_watermarks();
+        update_option( 'estate_office_flush_rewrite', 1 );
         if ( defined( 'ESTATE_OFFICE_VERSION' ) ) {
             update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
         }
+        flush_rewrite_rules();
     }
 
     /**
@@ -68,6 +72,9 @@ class EstateOffice_Activator {
         }
 
         self::create_tables();
+        self::ensure_agent_slugs();
+        self::backfill_property_watermarks();
+        update_option( 'estate_office_flush_rewrite', 1 );
         update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
     }
 
@@ -142,6 +149,7 @@ class EstateOffice_Activator {
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_agents (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             user_id BIGINT UNSIGNED DEFAULT NULL,
+            slug VARCHAR(200) NOT NULL,
             first_name VARCHAR(100) DEFAULT NULL,
             last_name VARCHAR(100) DEFAULT NULL,
             phone VARCHAR(50) DEFAULT NULL,
@@ -152,6 +160,7 @@ class EstateOffice_Activator {
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
+            UNIQUE KEY slug (slug),
             KEY user_id (user_id)
         ) $charset_collate;";
 
@@ -227,10 +236,12 @@ class EstateOffice_Activator {
             property_id BIGINT UNSIGNED NOT NULL,
             media_type VARCHAR(20) NOT NULL,
             attachment_id BIGINT UNSIGNED DEFAULT NULL,
+            watermarked_id BIGINT UNSIGNED DEFAULT NULL,
             media_url VARCHAR(255) DEFAULT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY property_id (property_id)
+            KEY property_id (property_id),
+            KEY watermarked_id (watermarked_id)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_searches (
@@ -281,6 +292,7 @@ class EstateOffice_Activator {
             'crm_page_id'           => 0,
             'sale_page_id'          => 0,
             'rent_page_id'          => 0,
+            'agent_slug_base'       => 'agenci',
         ];
 
         foreach ( $defaults as $option => $value ) {
@@ -360,6 +372,82 @@ class EstateOffice_Activator {
             if ( $page_id && ! is_wp_error( $page_id ) ) {
                 update_option( $option, $page_id );
             }
+        }
+    }
+
+    /**
+     * Ensure every agent record has a unique slug.
+     */
+    protected static function ensure_agent_slugs(): void {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'eo_agents';
+        if ( $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'slug'" ) ) {
+            $rows = $wpdb->get_results( "SELECT id, slug, first_name, last_name FROM {$table}" );
+            if ( empty( $rows ) ) {
+                return;
+            }
+
+            foreach ( $rows as $row ) {
+                $generated = estate_office_generate_agent_slug(
+                    (string) ( $row->slug ?? '' ),
+                    (string) ( $row->first_name ?? '' ),
+                    (string) ( $row->last_name ?? '' ),
+                    (int) $row->id
+                );
+
+                if ( $generated !== $row->slug ) {
+                    $wpdb->update(
+                        $table,
+                        [ 'slug' => $generated ],
+                        [ 'id' => (int) $row->id ],
+                        [ '%s' ],
+                        [ '%d' ]
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Ensure property media rows reference watermarked attachments when configured.
+     */
+    protected static function backfill_property_watermarks(): void {
+        $watermark_id = estate_office_get_watermark_attachment_id();
+        if ( ! $watermark_id ) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_property_media';
+        $rows  = $wpdb->get_results( "SELECT id, attachment_id, watermarked_id FROM {$table} WHERE media_type = 'gallery'" );
+        if ( empty( $rows ) ) {
+            return;
+        }
+
+        foreach ( $rows as $row ) {
+            $attachment_id = (int) ( $row->attachment_id ?? 0 );
+            if ( ! $attachment_id ) {
+                continue;
+            }
+
+            $current = (int) ( $row->watermarked_id ?? 0 );
+            if ( $current && estate_office_is_attachment_available( $current ) ) {
+                continue;
+            }
+
+            $generated = estate_office_ensure_watermarked_attachment( $attachment_id, $watermark_id );
+            if ( ! $generated ) {
+                continue;
+            }
+
+            $wpdb->update(
+                $table,
+                [ 'watermarked_id' => $generated ],
+                [ 'id' => (int) $row->id ],
+                [ '%d' ],
+                [ '%d' ]
+            );
         }
     }
 }

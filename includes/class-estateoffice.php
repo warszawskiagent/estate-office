@@ -46,6 +46,7 @@ class EstateOffice {
         add_action( 'init', [ 'EstateOffice_Activator', 'ensure_role_capabilities' ] );
         add_action( 'init', [ 'EstateOffice_Activator', 'maybe_upgrade_schema' ] );
         add_action( 'init', [ $this, 'expire_new_offer_flags' ], 20 );
+        add_action( 'init', [ $this, 'maybe_flush_rewrite' ], 30 );
         add_action( 'admin_init', [ 'EstateOffice_Activator', 'ensure_role_capabilities' ] );
         add_action( 'admin_init', [ 'EstateOffice_Activator', 'maybe_upgrade_schema' ] );
         if ( is_admin() ) {
@@ -169,5 +170,15 @@ class EstateOffice {
      */
     public function load_textdomain(): void {
         load_plugin_textdomain( 'estate-office', false, dirname( plugin_basename( ESTATE_OFFICE_FILE ) ) . '/languages/' );
+    }
+
+    /**
+     * Flush rewrite rules once after upgrades that require it.
+     */
+    public function maybe_flush_rewrite(): void {
+        if ( get_option( 'estate_office_flush_rewrite' ) ) {
+            flush_rewrite_rules( false );
+            delete_option( 'estate_office_flush_rewrite' );
+        }
     }
 }

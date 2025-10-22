@@ -28,9 +28,10 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
      * Render settings page.
      */
     public function render(): void {
-        $maps_key  = get_option( 'estate_office_google_maps_api_key', '' );
-        $watermark = (int) get_option( 'estate_office_watermark_attachment', 0 );
-        $logo      = (int) get_option( 'estate_office_office_logo_attachment', 0 );
+        $maps_key   = get_option( 'estate_office_google_maps_api_key', '' );
+        $watermark  = (int) get_option( 'estate_office_watermark_attachment', 0 );
+        $logo       = (int) get_option( 'estate_office_office_logo_attachment', 0 );
+        $agent_base = get_option( 'estate_office_agent_slug_base', estate_office_get_agent_base_slug() );
 
         $field_groups = [
             'property' => self::get_dynamic_fields( 'property' ),
@@ -66,6 +67,17 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
                             <th scope="row"><?php esc_html_e( 'Logo biura', 'estate-office' ); ?></th>
                             <td>
                                 <?php $this->render_media_field( 'office_logo_attachment', $logo ); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="agent_slug_base"><?php esc_html_e( 'Bazowy adres stron agentów', 'estate-office' ); ?></label></th>
+                            <td>
+                                <input type="text" id="agent_slug_base" name="agent_slug_base" class="regular-text" value="<?php echo esc_attr( $agent_base ); ?>" placeholder="<?php esc_attr_e( 'np. agenci', 'estate-office' ); ?>" />
+                                <p class="description">
+                                    <?php echo esc_html__( 'Strony agentów będą dostępne pod adresem', 'estate-office' ) . ' '; ?>
+                                    <code><?php echo esc_html( trailingslashit( home_url( trailingslashit( $agent_base ?: 'agenci' ) ) ) ); ?></code>
+                                    <?php echo esc_html__( 'imię-nazwisko.', 'estate-office' ); ?>
+                                </p>
                             </td>
                         </tr>
                     </tbody>

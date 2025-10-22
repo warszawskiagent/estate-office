@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.0.13
+Stable tag: 0.0.15
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.13 rozszerza obsługę znaczników ofert o automatyczne wygaszanie statusu „Nowa oferta” po siedmiu dniach, zachowując wcześniejsze kalkulatory oraz pełne przypisanie opiekunów do kart CRM.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.0.15 wprowadza automatyczne generowanie wersji zdjęć z naniesionym znakiem wodnym, odświeżone kafelki ofert z miniaturami w katalogu i na profilach agentów oraz mechanizm uzupełniający archiwalne galerie przy aktualizacji.
 
 == Funkcje ==
 
@@ -21,12 +21,14 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 * Publiczne listy ofert na sprzedaż i wynajem z grupowaniem po typie transakcji, rodzaju nieruchomości, mieście i dzielnicy (`[estate_office_offers transaction="SPRZEDAŻ"]`).
 * Automatyczne tworzenie stron „EstateOffice CRM”, „Oferty na sprzedaż” oraz „Oferty na wynajem” podczas aktywacji wtyczki.
 * Dynamiczne formularze z polami zależnymi od ustawień w sekcji **Estate Office CRM → Ustawienia**.
-* Integracja z Google Maps (wprowadzony klucz API) oraz automatyczny znak wodny na materiałach zdjęciowych.
+* Integracja z Google Maps (wprowadzony klucz API) oraz automatyczny znak wodny nanoszony na zdjęcia nieruchomości podczas zapisu i aktualizacji.
+* Publiczne listy i profile agentów prezentują miniatury ofert wygenerowane na podstawie zdjęć z nałożonym znakiem wodnym.
 * Automatyczna synchronizacja ról `administrator` i `estate_agent`, aby zachować dostęp do panelu CRM.
 * Możliwość przypisywania opiekuna (agenta) do klientów, umów, nieruchomości i poszukiwań z widoczną prezentacją na listach i profilach CRM.
 * Flaga „Nowa oferta” wyłącza się automatycznie po siedmiu dniach dzięki zapamiętaniu czasu aktywacji.
 * Walidacja unikalności numerów umów oraz oznaczeń statusów ofert dopasowanych do typu transakcji.
 * Kalkulator notarialny i kredytowy dostępne w shortcode'ach oraz jako sekcja towarzysząca ofertom eksportowanym na witrynę.
+* Publiczne profile agentów z biografiami, danymi kontaktowymi i listą ofert eksportowanych na WWW.
 
 == Instalacja ==
 
@@ -52,6 +54,16 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.0.15 =
+* Dodano pełny pipeline znaku wodnego – zapisywanie i edycja nieruchomości generuje chronione kopie zdjęć w dedykowanym katalogu.
+* Uzupełniono galerie historycznych ofert podczas aktualizacji wtyczki, aby wszystkie eksportowane zdjęcia posiadały znak wodny.
+* Publiczne listy ofert i karty agentów prezentują miniatury okładkowe z nałożonym znakiem wodnym oraz dostosowanym alt tekstem.
+
+= 0.0.14 =
+* Dodano publiczne strony agentów z biogramem, kontaktami oraz ofertami eksportowanymi na WWW wraz z linkami do panelu CRM.
+* Wprowadzono unikalne slugi agentów, możliwość konfiguracji bazowego adresu w ustawieniach oraz automatyczne odświeżanie reguł przepisywania.
+* Rozszerzono listy CRM o linki do profili agentów i dodano przycisk podglądu strony z poziomu panelu administracyjnego.
 
 = 0.0.13 =
 * Wprowadzono automatyczne wygaszanie znacznika „Nowa oferta” po siedmiu dniach wraz z zapisem czasu aktywacji.

@@ -50,6 +50,14 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
                                 <td><?php echo esc_html( $agent->phone ); ?></td>
                                 <td><?php echo esc_html( $agent->email ); ?></td>
                                 <td>
+                                    <?php
+                                    $public_url = ! empty( $agent->slug ) ? estate_office_get_agent_url( $agent->slug ) : '';
+                                    if ( $public_url ) :
+                                        ?>
+                                        <a class="button button-small" href="<?php echo esc_url( $public_url ); ?>" target="_blank" rel="noopener">
+                                            <?php esc_html_e( 'Podgląd strony', 'estate-office' ); ?>
+                                        </a>
+                                    <?php endif; ?>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&agent=' . absint( $agent->id ) ) ); ?>"><?php esc_html_e( 'Edytuj', 'estate-office' ); ?></a>
                                     <?php if ( current_user_can( 'manage_options' ) ) : ?>
                                         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="inline-form" onsubmit="return confirm('<?php echo esc_js( __( 'Czy na pewno chcesz usunąć tego agenta?', 'estate-office' ) ); ?>');">
@@ -81,6 +89,11 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
                     <p>
                         <label for="agent_last_name" class="required"><?php esc_html_e( 'Nazwisko', 'estate-office' ); ?></label>
                         <input type="text" id="agent_last_name" name="last_name" value="<?php echo esc_attr( $edit_data->last_name ?? '' ); ?>" required />
+                    </p>
+                    <p>
+                        <label for="agent_slug"><?php esc_html_e( 'Adres publiczny', 'estate-office' ); ?></label>
+                        <input type="text" id="agent_slug" name="slug" value="<?php echo esc_attr( $edit_data->slug ?? '' ); ?>" pattern="[a-z0-9\-]+" placeholder="<?php esc_attr_e( 'np. jan-kowalski', 'estate-office' ); ?>" />
+                        <span class="description"><?php esc_html_e( 'Pozostaw puste, aby wygenerować adres automatycznie na podstawie imienia i nazwiska.', 'estate-office' ); ?></span>
                     </p>
                     <p>
                         <label for="agent_phone"><?php esc_html_e( 'Telefon', 'estate-office' ); ?></label>
@@ -168,6 +181,16 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
         return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'eo_agents WHERE id = %d', $id ) );
     }
 
+    public static function get_agent_by_slug( string $slug ) {
+        global $wpdb;
+        $slug = sanitize_title( $slug );
+        if ( '' === $slug ) {
+            return null;
+        }
+
+        return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'eo_agents WHERE slug = %s', $slug ) );
+    }
+
     public static function format_agent_name( $agent ): string {
         if ( ! $agent ) {
             return '';
@@ -194,6 +217,66 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
             $row->agent_phone ?? '',
             $row->agent_id ?? 0
         );
+    }
+
+    /**
+     * Gather CRM relations for an agent.
+     */
+    public static function get_agent_relations( int $agent_id ): array {
+        global $wpdb;
+
+        $properties_table = $wpdb->prefix . 'eo_properties';
+        $contracts_table  = $wpdb->prefix . 'eo_contracts';
+        $clients_table    = $wpdb->prefix . 'eo_clients';
+        $searches_table   = $wpdb->prefix . 'eo_searches';
+
+        $properties = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT p.id, p.transaction_type, p.property_type, p.address, p.details, p.tags, p.export_www, p.contract_id, p.updated_at, c.contract_number
+                 FROM {$properties_table} p
+                 LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
+                 WHERE p.agent_id = %d
+                 ORDER BY p.updated_at DESC",
+                $agent_id
+            )
+        );
+
+        $searches = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, transaction_type, criteria, contract_id, updated_at
+                 FROM {$searches_table}
+                 WHERE agent_id = %d
+                 ORDER BY updated_at DESC",
+                $agent_id
+            )
+        );
+
+        $contracts = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, contract_number, transaction_type, start_date, end_date, indefinite, stage, updated_at
+                 FROM {$contracts_table}
+                 WHERE agent_id = %d
+                 ORDER BY updated_at DESC",
+                $agent_id
+            )
+        );
+
+        $clients = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, client_type, first_name, last_name, company_name, phone, email
+                 FROM {$clients_table}
+                 WHERE agent_id = %d
+                 ORDER BY updated_at DESC",
+                $agent_id
+            )
+        );
+
+        return [
+            'properties' => $properties,
+            'searches'   => $searches,
+            'contracts'  => $contracts,
+            'clients'    => $clients,
+        ];
     }
 
     protected static function compose_agent_label( string $first, string $last, string $email, string $phone, int $id ): string {
