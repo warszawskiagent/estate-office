@@ -17,6 +17,8 @@ class EstateOffice_Public {
     public function hooks(): void {
         add_shortcode( 'estate_office_crm', [ $this, 'render_crm_shortcode' ] );
         add_shortcode( 'estate_office_offers', [ $this, 'render_offers_shortcode' ] );
+        add_shortcode( 'estate_office_notary_calculator', [ $this, 'render_notary_calculator_shortcode' ] );
+        add_shortcode( 'estate_office_mortgage_calculator', [ $this, 'render_mortgage_calculator_shortcode' ] );
         add_action( 'admin_bar_menu', [ $this, 'add_admin_bar_links' ], 100 );
     }
 
@@ -655,8 +657,45 @@ class EstateOffice_Public {
                 </section>
             <?php endforeach; ?>
         </div>
+        <section class="estate-office-offers-calculators" aria-label="<?php esc_attr_e( 'Kalkulatory dla kupujących', 'estate-office' ); ?>">
+            <h2><?php esc_html_e( 'Kalkulatory dla kupujących', 'estate-office' ); ?></h2>
+            <div class="estate-office-offers-calculators-grid">
+                <?php echo $this->get_notary_calculator_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo $this->get_mortgage_calculator_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </div>
+            <?php
+            $notary_link   = $this->get_calculator_page_link( 'estate_office_notary_page_id' );
+            $mortgage_link = $this->get_calculator_page_link( 'estate_office_mortgage_page_id' );
+            if ( $notary_link || $mortgage_link ) :
+                ?>
+                <p class="estate-office-offers-calculators-links">
+                    <?php if ( $notary_link ) : ?>
+                        <a class="estate-office-button tertiary" href="<?php echo esc_url( $notary_link ); ?>"><?php esc_html_e( 'Pełny kalkulator notarialny', 'estate-office' ); ?></a>
+                    <?php endif; ?>
+                    <?php if ( $mortgage_link ) : ?>
+                        <a class="estate-office-button tertiary" href="<?php echo esc_url( $mortgage_link ); ?>"><?php esc_html_e( 'Pełny kalkulator kredytowy', 'estate-office' ); ?></a>
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
+        </section>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Render notary calculator shortcode.
+     */
+    public function render_notary_calculator_shortcode( array $atts ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+        $this->enqueue_assets();
+        return $this->get_notary_calculator_markup();
+    }
+
+    /**
+     * Render mortgage calculator shortcode.
+     */
+    public function render_mortgage_calculator_shortcode( array $atts ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+        $this->enqueue_assets();
+        return $this->get_mortgage_calculator_markup();
     }
 
     /**
@@ -1022,6 +1061,148 @@ class EstateOffice_Public {
             }
         }
         return home_url();
+    }
+
+    /**
+     * Retrieve calculator page permalink if registered.
+     *
+     * @param string $option Option name with stored page ID.
+     * @return string|null
+     */
+    protected function get_calculator_page_link( string $option ): ?string {
+        $page_id = (int) get_option( $option );
+        if ( $page_id ) {
+            $link = get_permalink( $page_id );
+            if ( $link ) {
+                return $link;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Build markup for the notary calculator widget.
+     */
+    protected function get_notary_calculator_markup(): string {
+        static $instance = 0;
+        $instance++;
+        $suffix = (string) $instance;
+
+        ob_start();
+        ?>
+        <section class="estate-office-calculator estate-office-calculator-notary" aria-labelledby="estate-office-notary-heading-<?php echo esc_attr( $suffix ); ?>">
+            <h3 id="estate-office-notary-heading-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Kalkulator notarialny', 'estate-office' ); ?></h3>
+            <form class="estate-office-calculator-form" data-calculator="notary">
+                <div class="estate-office-calculator-grid">
+                    <p class="full">
+                        <label for="eo-notary-price-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Wartość nieruchomości (PLN)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-notary-price-<?php echo esc_attr( $suffix ); ?>" name="price" min="0" step="1000" value="500000" />
+                    </p>
+                    <p>
+                        <label for="eo-notary-market-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Rynek', 'estate-office' ); ?></label>
+                        <select id="eo-notary-market-<?php echo esc_attr( $suffix ); ?>" name="market">
+                            <option value="primary"><?php esc_html_e( 'Pierwotny (PCC 0%)', 'estate-office' ); ?></option>
+                            <option value="secondary"><?php esc_html_e( 'Wtórny (PCC 2%)', 'estate-office' ); ?></option>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="eo-notary-mortgage-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Kwota kredytu (PLN)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-notary-mortgage-<?php echo esc_attr( $suffix ); ?>" name="mortgage" min="0" step="1000" value="0" />
+                    </p>
+                    <p>
+                        <label for="eo-notary-copies-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Liczba wypisów aktu', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-notary-copies-<?php echo esc_attr( $suffix ); ?>" name="copies" min="1" step="1" value="2" />
+                        <span class="description"><?php esc_html_e( 'Każdy wypis to 6 PLN.', 'estate-office' ); ?></span>
+                    </p>
+                    <p class="full checkbox-row">
+                        <label><input type="checkbox" name="registry" value="1" checked /> <?php esc_html_e( 'Wpis do księgi wieczystej (200 PLN)', 'estate-office' ); ?></label>
+                    </p>
+                    <p class="full checkbox-row">
+                        <label><input type="checkbox" name="hypothec" value="1" checked /> <?php esc_html_e( 'Ustanowienie hipoteki (200 PLN)', 'estate-office' ); ?></label>
+                    </p>
+                </div>
+            </form>
+            <div class="estate-office-calculator-results" aria-live="polite">
+                <dl>
+                    <div><dt><?php esc_html_e( 'Taksa notarialna (netto)', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-fee-net">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'VAT (23%)', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-fee-vat">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Taksa notarialna (brutto)', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-fee-total">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Podatek PCC', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-pcc">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Wpis do księgi', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-registry">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Hipoteka', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-mortgage">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Wypisy aktu', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-copies">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Łączny koszt', 'estate-office' ); ?></dt><dd><span data-eo-result="notary-total">0,00 PLN</span></dd></div>
+                </dl>
+                <p class="estate-office-calculator-hint"><?php esc_html_e( 'Wyliczenia bazują na maksymalnych stawkach i mają charakter informacyjny.', 'estate-office' ); ?></p>
+            </div>
+        </section>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Build markup for the mortgage calculator widget.
+     */
+    protected function get_mortgage_calculator_markup(): string {
+        static $instance = 0;
+        $instance++;
+        $suffix = (string) $instance;
+
+        ob_start();
+        ?>
+        <section class="estate-office-calculator estate-office-calculator-mortgage" aria-labelledby="estate-office-mortgage-heading-<?php echo esc_attr( $suffix ); ?>">
+            <h3 id="estate-office-mortgage-heading-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Kalkulator kredytowy', 'estate-office' ); ?></h3>
+            <form class="estate-office-calculator-form" data-calculator="mortgage">
+                <div class="estate-office-calculator-grid">
+                    <p>
+                        <label for="eo-mortgage-price-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Wartość nieruchomości (PLN)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-price-<?php echo esc_attr( $suffix ); ?>" name="price" min="0" step="1000" value="600000" />
+                    </p>
+                    <p>
+                        <label for="eo-mortgage-down-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Wkład własny (PLN)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-down-<?php echo esc_attr( $suffix ); ?>" name="down_payment" min="0" step="1000" value="120000" />
+                    </p>
+                    <p>
+                        <label for="eo-mortgage-amount-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Kwota kredytu (PLN)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-amount-<?php echo esc_attr( $suffix ); ?>" name="loan" min="0" step="1000" value="" placeholder="<?php esc_attr_e( 'Oblicz automatycznie', 'estate-office' ); ?>" />
+                        <span class="description"><?php esc_html_e( 'Pozostaw puste, aby wyliczyć kwotę na podstawie ceny i wkładu własnego.', 'estate-office' ); ?></span>
+                    </p>
+                    <p>
+                        <label for="eo-mortgage-interest-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Oprocentowanie roczne (%)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-interest-<?php echo esc_attr( $suffix ); ?>" name="interest" min="0" step="0.01" value="7" />
+                    </p>
+                    <p>
+                        <label for="eo-mortgage-years-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Okres spłaty (lata)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-years-<?php echo esc_attr( $suffix ); ?>" name="years" min="1" max="35" step="1" value="25" />
+                    </p>
+                    <p>
+                        <label for="eo-mortgage-commission-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Prowizja banku (%)', 'estate-office' ); ?></label>
+                        <input type="number" id="eo-mortgage-commission-<?php echo esc_attr( $suffix ); ?>" name="commission" min="0" step="0.1" value="0" />
+                    </p>
+                    <p class="full">
+                        <label for="eo-mortgage-type-<?php echo esc_attr( $suffix ); ?>"><?php esc_html_e( 'Rodzaj rat', 'estate-office' ); ?></label>
+                        <select id="eo-mortgage-type-<?php echo esc_attr( $suffix ); ?>" name="installment_type">
+                            <option value="annuity"><?php esc_html_e( 'Raty równe', 'estate-office' ); ?></option>
+                            <option value="decreasing"><?php esc_html_e( 'Raty malejące', 'estate-office' ); ?></option>
+                        </select>
+                    </p>
+                </div>
+            </form>
+            <div class="estate-office-calculator-results" aria-live="polite">
+                <dl>
+                    <div><dt><?php esc_html_e( 'Kwota kredytu', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-loan">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Miesięczna rata', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-monthly">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Prowizja banku', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-commission">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Łączne odsetki', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-interest">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Do spłaty łącznie', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-total">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Minimalny dochód netto (40% DTI)', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-income">0,00 PLN</span></dd></div>
+                    <div><dt><?php esc_html_e( 'Wkład własny', 'estate-office' ); ?></dt><dd><span data-eo-result="mortgage-down-percent">0%</span></dd></div>
+                </dl>
+                <p class="estate-office-calculator-hint"><?php esc_html_e( 'Wyniki są orientacyjne i nie stanowią oferty banku.', 'estate-office' ); ?></p>
+            </div>
+        </section>
+        <?php
+        return ob_get_clean();
     }
 
     /**

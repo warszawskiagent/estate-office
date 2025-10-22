@@ -73,6 +73,12 @@
     color: #111827;
 }
 
+.estate-office-button.tertiary {
+    background: transparent;
+    color: #2563eb;
+    border: 1px solid #2563eb;
+}
+
 .estate-office-button:hover {
     transform: translateY(-1px);
     background: #1d4ed8;
@@ -129,6 +135,126 @@
     max-height: 300px;
     overflow-y: auto;
     padding-right: 12px;
+}
+
+.estate-office-offers-calculators {
+    margin-top: 48px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+.estate-office-offers-calculators h2 {
+    margin-top: 0;
+    font-size: 24px;
+    margin-bottom: 24px;
+}
+
+.estate-office-offers-calculators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.estate-office-offers-calculators-links {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.estate-office-calculator {
+    background: #f9fafb;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.estate-office-calculator h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #111827;
+}
+
+.estate-office-calculator-form {
+    display: block;
+}
+
+.estate-office-calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.estate-office-calculator-grid .full {
+    grid-column: 1 / -1;
+}
+
+.estate-office-calculator-grid label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    color: #1f2937;
+}
+
+.estate-office-calculator-grid input,
+.estate-office-calculator-grid select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+    background: #fff;
+}
+
+.estate-office-calculator-grid .description {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.estate-office-calculator-grid .checkbox-row label {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estate-office-calculator-results {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+}
+
+.estate-office-calculator-results dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px 24px;
+    margin: 0 0 16px;
+}
+
+.estate-office-calculator-results dl div {
+    display: contents;
+}
+
+.estate-office-calculator-results dt {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.estate-office-calculator-results dd {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #111827;
+}
+
+.estate-office-calculator-hint {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
 }
 
 .estate-office-cards {
@@ -278,5 +404,13 @@
 
     .estate-office-crm-search input[type="search"] {
         width: 100%;
+    }
+
+    .estate-office-offers-calculators {
+        padding: 24px;
+    }
+
+    .estate-office-offers-calculators-grid {
+        grid-template-columns: 1fr;
     }
 }

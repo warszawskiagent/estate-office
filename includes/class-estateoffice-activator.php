@@ -286,6 +286,18 @@ class EstateOffice_Activator {
                 'post_content' => '[estate_office_offers transaction="WYNAJEM"]',
                 'post_status'  => 'publish',
             ],
+            'estate_office_notary_page_id' => [
+                'post_title'   => __( 'Kalkulator notarialny', 'estate-office' ),
+                'post_name'    => 'kalkulator-notarialny',
+                'post_content' => '[estate_office_notary_calculator]',
+                'post_status'  => 'publish',
+            ],
+            'estate_office_mortgage_page_id' => [
+                'post_title'   => __( 'Kalkulator kredytowy', 'estate-office' ),
+                'post_name'    => 'kalkulator-kredytowy',
+                'post_content' => '[estate_office_mortgage_calculator]',
+                'post_status'  => 'publish',
+            ],
         ];
 
         foreach ( $pages as $option => $page_args ) {
