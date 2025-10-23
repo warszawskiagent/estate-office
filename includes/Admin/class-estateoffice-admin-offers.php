@@ -26,7 +26,10 @@ class EstateOffice_Admin_Offers extends EstateOffice_Admin_Page {
         $offers = self::get_exported_properties( $search );
         ?>
         <div class="wrap estate-office-offers-page">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            </div>
             <?php $this->render_notice(); ?>
             <p class="description">
                 <?php esc_html_e( 'Lista prezentuje nieruchomości oznaczone do eksportu na stronę WWW wraz z wygenerowanymi stronami ofert.', 'estate-office' ); ?>

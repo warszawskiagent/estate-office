@@ -160,6 +160,9 @@ if ( ! empty( $contact_data['facebook'] ) ) {
 $crm_url = estate_office_get_crm_page_url();
 
 ?><main class="estate-office-agent-profile" aria-labelledby="estate-office-agent-title">
+    <div class="estate-office-agent-brand">
+        <?php echo estate_office_get_brand_badge_html( 'public' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    </div>
     <header class="estate-office-agent-header">
         <?php if ( $photo ) : ?>
             <figure class="estate-office-agent-photo"><?php echo $photo; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></figure>

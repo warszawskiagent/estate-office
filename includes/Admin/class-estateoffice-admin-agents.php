@@ -27,9 +27,14 @@ class EstateOffice_Admin_Agents extends EstateOffice_Admin_Page {
         $edit_data = $edit_id ? self::get_agent( $edit_id ) : null;
         ?>
         <div class="wrap estate-office-wrap estate-office-agents">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <?php $this->render_global_action(); ?>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
-            <?php $this->render_global_action(); ?>
             <h2 class="title"><?php esc_html_e( 'Lista agentów', 'estate-office' ); ?></h2>
             <table class="widefat striped">
                 <thead>

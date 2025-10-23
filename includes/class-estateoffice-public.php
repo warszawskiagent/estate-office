@@ -201,7 +201,10 @@ class EstateOffice_Public {
         ?>
         <div class="estate-office-crm" data-active-tab="<?php echo esc_attr( $tab ); ?>">
             <div class="estate-office-crm-header">
-                <h2><?php esc_html_e( 'EstateOffice CRM', 'estate-office' ); ?></h2>
+                <div class="estate-office-crm-heading">
+                    <?php echo estate_office_get_brand_badge_html( 'public' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <h2><?php esc_html_e( 'EstateOffice CRM', 'estate-office' ); ?></h2>
+                </div>
                 <a class="estate-office-button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=new' ) ); ?>">
                     <?php esc_html_e( 'Dodaj nową umowę', 'estate-office' ); ?>
                 </a>
@@ -755,6 +758,8 @@ class EstateOffice_Public {
             return '<div class="estate-office-offers-empty">' . esc_html__( 'Brak ofert spełniających kryteria.', 'estate-office' ) . '</div>';
         }
 
+        $transaction_label = estate_office_get_transaction_label( $transaction );
+
         $grouped = [];
         foreach ( $properties as $property ) {
             $grouped[ $property['property_type'] ][ $property['city'] ][ $property['district'] ][] = $property;
@@ -763,6 +768,10 @@ class EstateOffice_Public {
         ob_start();
         ?>
         <div class="estate-office-offers" data-transaction="<?php echo esc_attr( $transaction ); ?>">
+            <div class="estate-office-offers-header">
+                <?php echo estate_office_get_brand_badge_html( 'public' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <h2><?php printf( esc_html__( 'Oferty – %s', 'estate-office' ), esc_html( $transaction_label ) ); ?></h2>
+            </div>
             <?php foreach ( $grouped as $type => $cities ) : ?>
                 <section class="estate-office-offers-section">
                     <h3><?php echo esc_html( $type ); ?></h3>

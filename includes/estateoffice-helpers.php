@@ -136,6 +136,100 @@ if ( ! function_exists( 'estate_office_get_crm_page_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'estate_office_get_office_logo_attachment_id' ) ) {
+    /**
+     * Retrieve attachment identifier for configured office logo.
+     */
+    function estate_office_get_office_logo_attachment_id(): int {
+        $attachment_id = (int) get_option( 'estate_office_office_logo_attachment', 0 );
+        if ( ! $attachment_id ) {
+            return 0;
+        }
+
+        return estate_office_is_attachment_available( $attachment_id ) ? $attachment_id : 0;
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_office_branding' ) ) {
+    /**
+     * Build branding payload for the current office.
+     *
+     * @return array{url:string,alt:string,initials:string,name:string}
+     */
+    function estate_office_get_office_branding(): array {
+        $site_name = get_bloginfo( 'name' );
+        $brand_name = $site_name ? $site_name : __( 'Biuro nieruchomości', 'estate-office' );
+
+        $initials = '';
+        $words    = preg_split( '/[\s\-]+/u', wp_strip_all_tags( $brand_name ) );
+        if ( $words && is_array( $words ) ) {
+            foreach ( $words as $word ) {
+                $word = trim( $word );
+                if ( '' === $word ) {
+                    continue;
+                }
+
+                $letter = function_exists( 'mb_substr' ) ? mb_substr( $word, 0, 1 ) : substr( $word, 0, 1 );
+                if ( $letter ) {
+                    $initials .= function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $letter ) : strtoupper( $letter );
+                }
+
+                if ( strlen( $initials ) >= 3 ) {
+                    break;
+                }
+            }
+        }
+
+        if ( '' === $initials ) {
+            $initials = 'EO';
+        }
+
+        $logo_id = estate_office_get_office_logo_attachment_id();
+        $logo    = '';
+        $alt     = $brand_name;
+
+        if ( $logo_id ) {
+            $logo = wp_get_attachment_image_url( $logo_id, 'medium' );
+            $alt  = get_post_meta( $logo_id, '_wp_attachment_image_alt', true );
+            if ( ! $alt ) {
+                $alt = $brand_name;
+            }
+        }
+
+        return [
+            'url'       => $logo ? $logo : '',
+            'alt'       => $alt,
+            'initials'  => $initials,
+            'name'      => $brand_name,
+        ];
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_brand_badge_html' ) ) {
+    /**
+     * Render reusable branding badge.
+     */
+    function estate_office_get_brand_badge_html( string $context = 'admin' ): string {
+        $branding = estate_office_get_office_branding();
+        $context  = 'public' === $context ? 'public' : 'admin';
+
+        $classes = [ 'estate-office-brand-badge', 'estate-office-brand-badge--' . $context ];
+
+        ob_start();
+        ?>
+        <div class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>">
+            <?php if ( $branding['url'] ) : ?>
+                <img src="<?php echo esc_url( $branding['url'] ); ?>" alt="<?php echo esc_attr( $branding['alt'] ); ?>" class="estate-office-brand-logo" loading="lazy" />
+            <?php else : ?>
+                <span class="estate-office-brand-placeholder" aria-hidden="true"><?php echo esc_html( $branding['initials'] ); ?></span>
+            <?php endif; ?>
+            <span class="estate-office-brand-name"><?php echo esc_html( $branding['name'] ); ?></span>
+        </div>
+        <?php
+        return trim( (string) ob_get_clean() );
+    }
+}
+
 if ( ! function_exists( 'estate_office_get_watermark_attachment_id' ) ) {
     /**
      * Get configured watermark attachment when valid.

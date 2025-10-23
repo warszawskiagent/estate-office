@@ -42,9 +42,14 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
     protected function render_list( array $searches, string $query ): void {
         ?>
         <div class="wrap estate-office-wrap estate-office-searches">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj poszukiwanie', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj poszukiwanie', 'estate-office' ); ?></a>
 
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
@@ -162,8 +167,13 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         ];
         ?>
         <div class="wrap estate-office-wrap estate-office-search-edit">
-            <h1><?php echo esc_html( $search ? __( 'Edytuj poszukiwanie', 'estate-office' ) : __( 'Dodaj poszukiwanie', 'estate-office' ) ); ?></h1>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $search ? __( 'Edytuj poszukiwanie', 'estate-office' ) : __( 'Dodaj poszukiwanie', 'estate-office' ) ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="estate-office-search-form">
                 <?php wp_nonce_field( 'estate_office_save_search' ); ?>
                 <input type="hidden" name="action" value="estate_office_save_search" />

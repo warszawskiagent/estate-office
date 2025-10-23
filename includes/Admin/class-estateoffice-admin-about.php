@@ -24,7 +24,10 @@ class EstateOffice_Admin_About extends EstateOffice_Admin_Page {
     public function render(): void {
         ?>
         <div class="wrap estate-office-wrap">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            </div>
             <div class="card">
                 <h2><?php esc_html_e( 'EstateOffice CRM', 'estate-office' ); ?></h2>
                 <p><?php esc_html_e( 'EstateOffice to zaawansowany system CRM dla biur nieruchomości. Umożliwia pełne zarządzanie nieruchomościami, klientami, umowami, poszukiwaniami i agentami oraz integruje się z mapami Google i eksportem ofert.', 'estate-office' ); ?></p>

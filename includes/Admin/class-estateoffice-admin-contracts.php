@@ -54,9 +54,14 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
     protected function render_list( array $contracts, string $search ): void {
         ?>
         <div class="wrap estate-office-wrap estate-office-contracts">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj nową umowę', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj nową umowę', 'estate-office' ); ?></a>
 
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
@@ -124,8 +129,13 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         }, $stage_history );
         ?>
         <div class="wrap estate-office-wrap estate-office-contract-edit">
-            <h1><?php echo esc_html( $contract ? __( 'Edytuj umowę', 'estate-office' ) : __( 'Nowa umowa', 'estate-office' ) ); ?></h1>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $contract ? __( 'Edytuj umowę', 'estate-office' ) : __( 'Nowa umowa', 'estate-office' ) ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="estate-office-contract-form" data-transaction="<?php echo esc_attr( $transaction_type ); ?>">
                 <?php wp_nonce_field( 'estate_office_save_contract' ); ?>

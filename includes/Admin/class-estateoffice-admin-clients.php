@@ -29,9 +29,14 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
         $client   = $edit_id ? self::get_client( $edit_id ) : null;
         ?>
         <div class="wrap estate-office-wrap estate-office-clients">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <?php $this->render_global_action(); ?>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
-            <?php $this->render_global_action(); ?>
 
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />

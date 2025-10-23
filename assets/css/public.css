@@ -8,12 +8,60 @@
     font-family: 'Inter', sans-serif;
 }
 
+.estate-office-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.estate-office-brand-badge--public {
+    margin-bottom: 0;
+}
+
+.estate-office-brand-logo {
+    max-height: 56px;
+    width: auto;
+}
+
+.estate-office-brand-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.estate-office-brand-name {
+    font-size: 1.45rem;
+}
+
 .estate-office-crm-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
+}
+
+.estate-office-crm-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.estate-office-crm-heading h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    color: #0f172a;
 }
 
 .estate-office-crm-nav ul {
@@ -310,6 +358,22 @@
     max-width: 1200px;
 }
 
+.estate-office-offers-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    padding: 24px;
+}
+
+.estate-office-offers-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    color: #0b1324;
+}
+
 .estate-office-offers-section {
     background: #fff;
     border-radius: 16px;
@@ -416,6 +480,12 @@
         padding: 20px;
     }
 
+    .estate-office-brand-badge {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
     .estate-office-crm-header {
         flex-direction: column;
         align-items: flex-start;
@@ -445,6 +515,10 @@
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(25, 38, 62, 0.08);
     padding: 2.5rem 3rem;
+}
+
+.estate-office-agent-brand {
+    margin-bottom: 1.75rem;
 }
 
 .estate-office-agent-header {

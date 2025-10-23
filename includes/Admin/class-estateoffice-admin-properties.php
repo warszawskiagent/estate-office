@@ -42,9 +42,14 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
     protected function render_list( array $properties, string $search ): void {
         ?>
         <div class="wrap estate-office-wrap estate-office-properties">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj nieruchomość', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <?php $this->render_notice(); ?>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=new' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Dodaj nieruchomość', 'estate-office' ); ?></a>
 
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
@@ -214,8 +219,13 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         ];
         ?>
         <div class="wrap estate-office-wrap estate-office-property-edit">
-            <h1><?php echo esc_html( $property ? __( 'Edytuj nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ); ?></h1>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $property ? __( 'Edytuj nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ); ?>" class="page-title-action">&larr; <?php esc_html_e( 'Powrót do listy', 'estate-office' ); ?></a>
+                </div>
+            </div>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="estate-office-property-form">
                 <?php wp_nonce_field( 'estate_office_save_property' ); ?>
                 <input type="hidden" name="action" value="estate_office_save_property" />

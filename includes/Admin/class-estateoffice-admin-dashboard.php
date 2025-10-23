@@ -35,8 +35,13 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
         );
         ?>
         <div class="wrap estate-office-wrap estate-office-dashboard">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
-            <?php $this->render_global_action(); ?>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+                <div class="estate-office-admin-heading-actions">
+                    <?php $this->render_global_action(); ?>
+                </div>
+            </div>
             <div class="estate-office-grid">
                 <?php foreach ( $metrics['cards'] as $metric ) : ?>
                     <div class="estate-office-card">

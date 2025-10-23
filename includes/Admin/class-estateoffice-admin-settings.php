@@ -40,7 +40,10 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
         ];
         ?>
         <div class="wrap estate-office-wrap">
-            <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            <div class="estate-office-admin-heading">
+                <h1><?php echo esc_html( $this->page_title ); ?></h1>
+            </div>
             <?php $this->render_notice(); ?>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="estate-office-settings">
                 <?php wp_nonce_field( 'estate_office_save_settings' ); ?>
