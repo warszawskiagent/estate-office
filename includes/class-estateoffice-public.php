@@ -549,6 +549,12 @@ class EstateOffice_Public {
         if ( ! is_array( $stage_history ) ) {
             $stage_history = [];
         }
+        if ( empty( $stage_history ) ) {
+            $stage_history[] = [
+                'stage' => sanitize_key( $contract->stage ?? 'umowa_posrednictwa' ),
+                'date'  => sanitize_text_field( $contract->start_date ?? '' ),
+            ];
+        }
         $client_ids = EstateOffice_Admin_Contracts::get_contract_clients( (int) $contract->id );
         $clients    = [];
         foreach ( $client_ids as $client_id ) {

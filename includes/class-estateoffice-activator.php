@@ -21,6 +21,7 @@ class EstateOffice_Activator {
         self::seed_options();
         self::ensure_pages();
         self::ensure_agent_slugs();
+        self::backfill_contract_stage_history();
         self::backfill_property_watermarks();
         update_option( 'estate_office_flush_rewrite', 1 );
         if ( defined( 'ESTATE_OFFICE_VERSION' ) ) {
@@ -75,6 +76,7 @@ class EstateOffice_Activator {
         self::create_tables();
         self::add_missing_indexes();
         self::ensure_agent_slugs();
+        self::backfill_contract_stage_history();
         self::backfill_property_watermarks();
         update_option( 'estate_office_flush_rewrite', 1 );
         update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
@@ -479,6 +481,59 @@ class EstateOffice_Activator {
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Ensure property media rows reference watermarked attachments when configured.
+     */
+    protected static function backfill_contract_stage_history(): void {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'eo_contracts';
+        if ( ! $wpdb->get_var( "SHOW COLUMNS FROM {$table} LIKE 'stage_history'" ) ) {
+            return;
+        }
+
+        $rows = $wpdb->get_results( "SELECT id, stage, stage_history, start_date FROM {$table}" );
+        if ( empty( $rows ) ) {
+            return;
+        }
+
+        foreach ( $rows as $row ) {
+            $history = [];
+            if ( ! empty( $row->stage_history ) ) {
+                $decoded = json_decode( $row->stage_history, true );
+                if ( is_array( $decoded ) ) {
+                    $history = array_values( array_filter( $decoded, static function ( $entry ) {
+                        return is_array( $entry ) && ! empty( $entry['stage'] );
+                    } ) );
+                }
+            }
+
+            if ( ! empty( $history ) ) {
+                continue;
+            }
+
+            $stage = sanitize_key( $row->stage ?: 'umowa_posrednictwa' );
+            $date  = preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $row->start_date ) ? $row->start_date : current_time( 'Y-m-d' );
+
+            $wpdb->update(
+                $table,
+                [
+                    'stage_history' => wp_json_encode(
+                        [
+                            [
+                                'stage' => $stage,
+                                'date'  => $date,
+                            ],
+                        ]
+                    ),
+                ],
+                [ 'id' => (int) $row->id ],
+                [ '%s' ],
+                [ '%d' ]
+            );
         }
     }
 

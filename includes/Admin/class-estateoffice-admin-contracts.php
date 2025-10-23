@@ -42,6 +42,14 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             if ( ! is_array( $stage_history ) ) {
                 $stage_history = [];
             }
+            if ( empty( $stage_history ) ) {
+                $default_stage = $contract && $contract->stage ? sanitize_key( $contract->stage ) : 'umowa_posrednictwa';
+                $default_date  = $contract && ! empty( $contract->start_date ) ? sanitize_text_field( $contract->start_date ) : '';
+                $stage_history[] = [
+                    'stage' => $default_stage,
+                    'date'  => $default_date,
+                ];
+            }
             $this->render_form( $contract, $clients, $client_ids, $property, $search, $stage_history, $dynamic_contract_fields, $property_fields, $agents );
             return;
         }
@@ -218,6 +226,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
 
                 <section class="estate-office-section estate-office-stage-history estate-office-step" data-step="1">
                     <h2><?php esc_html_e( 'Historia etapów', 'estate-office' ); ?></h2>
+                    <p class="description"><?php esc_html_e( 'Pierwszy wpis odzwierciedla etap rozpoczęcia i synchronizuje się z datą zawarcia umowy.', 'estate-office' ); ?></p>
                     <table class="widefat striped estate-office-stage-table">
                         <thead>
                             <tr>

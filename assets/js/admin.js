@@ -144,7 +144,13 @@
                 return;
             }
 
+            const self = this;
             const $transactionType = $form.find('#transaction_type');
+            const $transactionStage = $form.find('#contract_stage');
+            const $stageTableBody = $form.find('.estate-office-stage-table tbody');
+            const $stageHistoryInput = $form.find('.estate-office-stage-history-json');
+            const $startDate = $form.find('#start_date');
+            const contractExists = $form.find('input[name="contract_id"]').length > 0;
             const $stepperItems = $form.find('.estate-office-stepper li');
             const steps = [];
             $form.find('.estate-office-step').each(function(){
@@ -166,6 +172,111 @@
                     $item.toggleClass('completed', stepValue < activeValue);
                 });
             };
+
+            const refreshStageHistoryJson = () => {
+                if ( ! $stageHistoryInput.length ) {
+                    return;
+                }
+                const stageData = [];
+                $stageTableBody.find('tr').each(function(){
+                    const $row = $(this);
+                    if ( $row.hasClass('no-items') ) {
+                        return;
+                    }
+                    const stage = $row.find('select').val();
+                    const date = $row.find('input[type="date"]').val();
+                    if ( stage ) {
+                        stageData.push({ stage: stage, date: date || '' });
+                    }
+                });
+                $stageHistoryInput.val(JSON.stringify(stageData));
+            };
+
+            const updateStageRemoveState = () => {
+                if ( ! $stageTableBody.length ) {
+                    return;
+                }
+                const $rows = $stageTableBody.find('tr').not('.no-items');
+                const allowRemoval = $rows.length > 1;
+                $rows.each(function(index){
+                    const $button = $(this).find('.estate-office-remove-row');
+                    if ( ! $button.length ) {
+                        return;
+                    }
+                    const shouldDisable = ! allowRemoval && index === 0;
+                    $button.prop('disabled', shouldDisable);
+                    if ( shouldDisable ) {
+                        $button.attr('aria-disabled', 'true');
+                    } else {
+                        $button.removeAttr('aria-disabled');
+                    }
+                });
+            };
+
+            const ensureStageBaseline = () => {
+                if ( ! $stageTableBody.length ) {
+                    return;
+                }
+                let $rows = $stageTableBody.find('tr').not('.no-items');
+                if ( ! $rows.length ) {
+                    const template = wp.template('estate-office-stage-row');
+                    $stageTableBody.html(template({ index: 0 }));
+                    $rows = $stageTableBody.find('tr').not('.no-items');
+                }
+                if ( ! $rows.length ) {
+                    return;
+                }
+                if ( ! contractExists ) {
+                    const stageValue = $transactionStage.val();
+                    if ( stageValue ) {
+                        $rows.first().find('select').val(stageValue);
+                    }
+                }
+                const startValue = $startDate.val();
+                if ( startValue ) {
+                    $rows.first().find('input[type="date"]').val(startValue);
+                }
+                updateStageRemoveState();
+                refreshStageHistoryJson();
+            };
+
+            const appendStageHistoryEntry = (stageValue) => {
+                if ( ! contractExists || ! $stageTableBody.length ) {
+                    return;
+                }
+                const normalized = (stageValue || '').toString();
+                if ( ! normalized.length ) {
+                    return;
+                }
+                let $rows = $stageTableBody.find('tr').not('.no-items');
+                if ( ! $rows.length ) {
+                    ensureStageBaseline();
+                    $rows = $stageTableBody.find('tr').not('.no-items');
+                }
+                if ( $rows.length ) {
+                    const lastStage = $rows.last().find('select').val();
+                    if ( lastStage === normalized ) {
+                        return;
+                    }
+                }
+                if ( $stageTableBody.find('.no-items').length ) {
+                    $stageTableBody.empty();
+                }
+                const template = wp.template('estate-office-stage-row');
+                const index = $stageTableBody.find('tr').length;
+                $stageTableBody.append(template({ index: index }));
+                const $newRow = $stageTableBody.find('tr').not('.no-items').last();
+                $newRow.find('select').val(normalized);
+                const now = new Date();
+                const formatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                $newRow.find('input[type="date"]').val(formatted);
+                updateStageRemoveState();
+                refreshStageHistoryJson();
+            };
+
+            self.refreshStageHistoryJson = refreshStageHistoryJson;
+            self.updateStageRemoveState = updateStageRemoveState;
+            self.ensureStageBaseline = ensureStageBaseline;
 
             const showStep = (index) => {
                 const stepValue = getStepValue(index);
@@ -321,50 +432,43 @@
                     $section.toggle(show);
                     $section.find('[data-required-for]').each(function(){
                         const $field = $(this);
-                        const requiredFor = $field.data('required-for');
+                        const requiredFor = ($field.data('required-for') || '').toString();
                         $field.prop('required', requiredFor === type);
                     });
-                });
-                $card.find('[data-required-for]').each(function(){
-                    const $field = $(this);
-                    const requiredFor = $field.data('required-for');
-                    $field.prop('required', requiredFor === type);
-                });
-                $card.find('.estate-office-address input[type="checkbox"][name$="[same]"]').each(function(){
-                    $(this).trigger('change');
                 });
             };
 
             const addNewClientCard = () => {
-                if ( typeof wp === 'undefined' || typeof wp.template === 'undefined' ) {
-                    return;
-                }
                 const template = wp.template('estate-office-new-client-template');
-                if ( ! template ) {
-                    return;
-                }
                 const index = $newClientsList.find('.estate-office-new-client-card').length;
                 const html = template({ index: index });
                 if ( $newClientsList.find('.empty').length ) {
                     $newClientsList.empty();
                 }
-                $newClientsList.append(html);
-                const $card = $newClientsList.find('.estate-office-new-client-card').last();
+                const $card = $(html);
+                $newClientsList.append($card);
                 updateNewClientCard($card);
-                $card.find('input, select, textarea').filter(':visible:first').focus();
             };
 
             const validateStep = (index) => {
-                const value = getStepValue(index);
-                if ( value === 2 ) {
-                    const hasSelected = $selectedList.find('li[data-client-id]').length > 0;
-                    const hasNew = $newClientsList.find('.estate-office-new-client-card').length > 0;
-                    if ( ! hasSelected && ! hasNew ) {
-                        window.alert(EstateOfficeData.clientsRequired || 'Dodaj co najmniej jednego klienta do umowy.');
+                const stepValue = getStepValue(index);
+                let isValid = true;
+                $form.find('.estate-office-step[data-step="' + stepValue + '"]').find('[required]').each(function(){
+                    const element = this;
+                    if ( element.offsetParent !== null && ! element.checkValidity() ) {
+                        element.reportValidity();
+                        isValid = false;
                         return false;
                     }
+                    return true;
+                });
+                if ( isValid && stepValue === 2 ) {
+                    if ( ! $selectedList.find('li[data-client-id]').length && ! $newClientsList.find('.estate-office-new-client-card').length ) {
+                        window.alert(EstateOfficeData.clientsRequired || 'Dodaj co najmniej jednego klienta do umowy.');
+                        isValid = false;
+                    }
                 }
-                return true;
+                return isValid;
             };
 
             $transactionType.on('change', () => {
@@ -448,25 +552,41 @@
                 }
             });
             ensureNewClientsPlaceholder();
+
+            ensureStageBaseline();
             showStep(0);
 
             $form.on('submit', function(){
-                const stageData = [];
-                $form.find('.estate-office-stage-table tbody tr').each(function(){
-                    const $row = $(this);
-                    if ( $row.hasClass('no-items') ) {
-                        return;
+                ensureStageBaseline();
+                refreshStageHistoryJson();
+            });
+
+            $form.on('change', '.estate-office-stage-table select, .estate-office-stage-table input[type="date"]', function(){
+                refreshStageHistoryJson();
+            });
+
+            $startDate.on('change', function(){
+                const value = $(this).val();
+                const $primaryRow = $stageTableBody.find('tr').not('.no-items').first();
+                if ( $primaryRow.length ) {
+                    $primaryRow.find('input[type="date"]').val(value);
+                }
+                refreshStageHistoryJson();
+            });
+
+            $transactionStage.on('change', function(){
+                const stageValue = $(this).val();
+                if ( ! contractExists ) {
+                    const $primaryRow = $stageTableBody.find('tr').not('.no-items').first();
+                    if ( $primaryRow.length ) {
+                        $primaryRow.find('select').val(stageValue);
                     }
-                    const stage = $row.find('select').val();
-                    const date = $row.find('input[type="date"]').val();
-                    if ( stage ) {
-                        stageData.push({ stage: stage, date: date });
-                    }
-                });
-                $form.find('.estate-office-stage-history-json').val(JSON.stringify(stageData));
+                    refreshStageHistoryJson();
+                    return;
+                }
+                appendStageHistoryEntry(stageValue);
             });
         },
-
         setupStageHistory() {
             $(document).on('click', '.estate-office-add-stage', function(){
                 const $table = $('.estate-office-stage-table tbody');
@@ -477,13 +597,31 @@
                     $table.empty();
                 }
                 $table.append(html);
+                if ( typeof EstateOfficeAdmin.updateStageRemoveState === 'function' ) {
+                    EstateOfficeAdmin.updateStageRemoveState();
+                }
+                if ( typeof EstateOfficeAdmin.refreshStageHistoryJson === 'function' ) {
+                    EstateOfficeAdmin.refreshStageHistoryJson();
+                }
             });
 
             $(document).on('click', '.estate-office-remove-row', function(){
                 const $table = $(this).closest('tbody');
+                const $rows = $table.find('tr').not('.no-items');
+                if ( $rows.length <= 1 ) {
+                    const message = EstateOfficeData.stageGuard || 'Nie możesz usunąć ostatniego etapu umowy.';
+                    window.alert(message);
+                    return;
+                }
                 $(this).closest('tr').remove();
                 if ( ! $table.find('tr').length ) {
                     $table.html('<tr class="no-items"><td colspan="3">' + (EstateOfficeData.emptyStages || 'Brak historii etapów.') + '</td></tr>');
+                }
+                if ( typeof EstateOfficeAdmin.updateStageRemoveState === 'function' ) {
+                    EstateOfficeAdmin.updateStageRemoveState();
+                }
+                if ( typeof EstateOfficeAdmin.refreshStageHistoryJson === 'function' ) {
+                    EstateOfficeAdmin.refreshStageHistoryJson();
                 }
             });
         },

@@ -159,6 +159,8 @@ class EstateOffice_Admin {
                 'removeImage'     => __( 'Usuń', 'estate-office' ),
                 'clientsRequired' => __( 'Dodaj co najmniej jednego klienta do umowy.', 'estate-office' ),
                 'removeClientLabel' => __( 'Usuń klienta %s', 'estate-office' ),
+                'emptyStages'     => __( 'Brak historii etapów.', 'estate-office' ),
+                'stageGuard'      => __( 'Nie możesz usunąć ostatniego etapu umowy.', 'estate-office' ),
             ]
         );
     }
@@ -456,6 +458,7 @@ class EstateOffice_Admin {
             }
         }
         $contract_id = isset( $post['contract_id'] ) ? absint( $post['contract_id'] ) : 0;
+        $existing_contract = $contract_id ? EstateOffice_Admin_Contracts::get_contract( $contract_id ) : null;
 
         $contract_number = sanitize_text_field( $post['contract_number'] ?? '' );
         if ( empty( $contract_number ) ) {
@@ -470,6 +473,9 @@ class EstateOffice_Admin {
         $commission_unit   = sanitize_text_field( $post['commission_unit'] ?? '' );
         $stage             = sanitize_text_field( $post['stage'] ?? 'umowa_posrednictwa' );
         $agent_id          = isset( $post['agent_id'] ) ? absint( $post['agent_id'] ) : 0;
+
+        $stage_history = $this->normalize_stage_history( $post['stage_history'] ?? [], $stage, $start_date, $existing_contract );
+        $post['stage_history'] = $stage_history;
 
         $table_name = $wpdb->prefix . 'eo_contracts';
         $duplicate_id = (int) $wpdb->get_var(
@@ -517,7 +523,7 @@ class EstateOffice_Admin {
             'commission_amount' => $commission_amount,
             'commission_unit'   => $commission_unit,
             'stage'             => $stage,
-            'stage_history'     => $this->prepare_json( $post['stage_history'] ?? [] ),
+            'stage_history'     => $this->prepare_json( $stage_history ),
             'agent_id'          => $agent_id ?: null,
         ];
 
@@ -1117,6 +1123,85 @@ class EstateOffice_Admin {
     protected function delete_table_record( string $table, int $id ): void {
         global $wpdb;
         $wpdb->delete( $wpdb->prefix . $table, [ 'id' => $id ], [ '%d' ] );
+    }
+
+    /**
+     * Normalize stage history payload before persisting.
+     */
+    protected function normalize_stage_history( $history, string $current_stage, string $start_date, $existing_contract = null ): array {
+        $normalized = [];
+
+        if ( is_array( $history ) ) {
+            foreach ( $history as $entry ) {
+                if ( ! is_array( $entry ) ) {
+                    continue;
+                }
+                $stage = sanitize_key( $entry['stage'] ?? '' );
+                if ( '' === $stage ) {
+                    continue;
+                }
+                $date = $this->sanitize_stage_date( $entry['date'] ?? '' );
+                $normalized[] = [
+                    'stage' => $stage,
+                    'date'  => $date,
+                ];
+            }
+        }
+
+        $sanitized_stage = sanitize_key( $current_stage ?: 'umowa_posrednictwa' );
+        $start_value     = $this->sanitize_stage_date( $start_date );
+
+        if ( empty( $normalized ) && $existing_contract && ! empty( $existing_contract->stage_history ) ) {
+            $decoded = json_decode( $existing_contract->stage_history, true );
+            if ( is_array( $decoded ) && ! empty( $decoded ) ) {
+                $first         = $decoded[0];
+                $initial_stage = sanitize_key( $first['stage'] ?? $sanitized_stage );
+                $initial_date  = $this->sanitize_stage_date( $first['date'] ?? $start_value );
+                $normalized[]  = [
+                    'stage' => $initial_stage ?: $sanitized_stage,
+                    'date'  => $initial_date ?: $start_value,
+                ];
+            }
+        }
+
+        if ( empty( $normalized ) ) {
+            $normalized[] = [
+                'stage' => $sanitized_stage ?: 'umowa_posrednictwa',
+                'date'  => $start_value,
+            ];
+        } else {
+            if ( empty( $normalized[0]['stage'] ) ) {
+                $normalized[0]['stage'] = $sanitized_stage ?: 'umowa_posrednictwa';
+            }
+            if ( $start_value ) {
+                $normalized[0]['date'] = $start_value;
+            }
+        }
+
+        $last_index = count( $normalized ) - 1;
+        if ( $last_index >= 0 ) {
+            if ( $normalized[ $last_index ]['stage'] !== $sanitized_stage ) {
+                $normalized[] = [
+                    'stage' => $sanitized_stage,
+                    'date'  => $this->sanitize_stage_date( current_time( 'Y-m-d' ) ),
+                ];
+            } elseif ( empty( $normalized[ $last_index ]['date'] ) ) {
+                $normalized[ $last_index ]['date'] = $this->sanitize_stage_date( current_time( 'Y-m-d' ) );
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Sanitize date string for stage history entries.
+     */
+    protected function sanitize_stage_date( $value ): string {
+        $value = sanitize_text_field( (string) $value );
+        if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ) {
+            return $value;
+        }
+        return '';
     }
 
     /**
