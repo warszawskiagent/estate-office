@@ -61,7 +61,7 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
                 <label for="estate-office-contract-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj umów', 'estate-office' ); ?></label>
-                <input type="search" id="estate-office-contract-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj po numerze umowy lub adresie', 'estate-office' ); ?>" />
+                <input type="search" id="estate-office-contract-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj w dowolnej kolumnie', 'estate-office' ); ?>" />
                 <button type="submit" class="button"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></button>
             </form>
 
@@ -898,28 +898,48 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
         $property_table = $wpdb->prefix . 'eo_properties';
         $agents_table   = $wpdb->prefix . 'eo_agents';
 
+        $select = "SELECT c.*, p.property_type,
+                JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')) AS property_street,
+                JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.number')) AS property_number,
+                JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.unit')) AS property_unit,
+                JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
+                JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.district')) AS property_district,
+                a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
+                FROM {$table} c
+                LEFT JOIN {$property_table} p ON p.contract_id = c.id
+                LEFT JOIN {$agents_table} a ON a.id = c.agent_id";
+
         if ( empty( $search ) ) {
-            $sql = "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-                    FROM {$table} c
-                    LEFT JOIN {$property_table} p ON p.contract_id = c.id
-                    LEFT JOIN {$agents_table} a ON a.id = c.agent_id
-                    ORDER BY c.created_at DESC";
-            return $wpdb->get_results( $sql );
+            return $wpdb->get_results( $select . ' ORDER BY c.created_at DESC' );
         }
 
-        $like = '%' . $wpdb->esc_like( $search ) . '%';
-        $sql  = $wpdb->prepare(
-            "SELECT c.*, p.property_type, JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) AS address,
-             a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-             FROM {$table} c
-             LEFT JOIN {$property_table} p ON p.contract_id = c.id
-             LEFT JOIN {$agents_table} a ON a.id = c.agent_id
-             WHERE c.contract_number LIKE %s OR JSON_EXTRACT(p.address, '$.city') LIKE %s
-             ORDER BY c.created_at DESC",
-            $like,
-            $like
-        );
+        $like       = '%' . $wpdb->esc_like( $search ) . '%';
+        $conditions = [
+            "CONCAT('#', LPAD(c.id, 5, '0')) LIKE %s",
+            'CAST(c.id AS CHAR) LIKE %s',
+            'c.contract_number LIKE %s',
+            'c.transaction_type LIKE %s',
+            'c.stage LIKE %s',
+            'c.commission_unit LIKE %s',
+            'CAST(c.commission_amount AS CHAR) LIKE %s',
+            'DATE_FORMAT(c.start_date, "%Y-%m-%d") LIKE %s',
+            'DATE_FORMAT(c.end_date, "%Y-%m-%d") LIKE %s',
+            'p.property_type LIKE %s',
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.number')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.unit')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.district')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.postal_code')) LIKE %s",
+            'CONCAT_WS(\' \', a.first_name, a.last_name) LIKE %s',
+            'a.email LIKE %s',
+            'a.phone LIKE %s',
+        ];
+
+        $params = array_fill( 0, count( $conditions ), $like );
+        array_unshift( $params, $select . ' WHERE ' . implode( ' OR ', $conditions ) . ' ORDER BY c.created_at DESC' );
+        $sql = call_user_func_array( [ $wpdb, 'prepare' ], $params );
+
         return $wpdb->get_results( $sql );
     }
 

@@ -17,6 +17,7 @@ class EstateOffice_Activator {
     public static function activate(): void {
         self::create_roles();
         self::create_tables();
+        self::add_missing_indexes();
         self::seed_options();
         self::ensure_pages();
         self::ensure_agent_slugs();
@@ -72,6 +73,7 @@ class EstateOffice_Activator {
         }
 
         self::create_tables();
+        self::add_missing_indexes();
         self::ensure_agent_slugs();
         self::backfill_property_watermarks();
         update_option( 'estate_office_flush_rewrite', 1 );
@@ -182,7 +184,11 @@ class EstateOffice_Activator {
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY agent_id (agent_id)
+            KEY agent_id (agent_id),
+            KEY last_name (last_name),
+            KEY company_name (company_name),
+            KEY phone (phone),
+            KEY email (email)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_contracts (
@@ -201,7 +207,11 @@ class EstateOffice_Activator {
             updated_at DATETIME NOT NULL,
             UNIQUE KEY contract_number (contract_number),
             PRIMARY KEY  (id),
-            KEY agent_id (agent_id)
+            KEY agent_id (agent_id),
+            KEY transaction_type (transaction_type),
+            KEY stage (stage),
+            KEY start_date (start_date),
+            KEY end_date (end_date)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_contract_clients (
@@ -230,7 +240,10 @@ class EstateOffice_Activator {
             PRIMARY KEY  (id),
             KEY contract_id (contract_id),
             KEY agent_id (agent_id),
-            KEY export_page_id (export_page_id)
+            KEY export_page_id (export_page_id),
+            KEY transaction_type (transaction_type),
+            KEY property_type (property_type),
+            KEY created_at (created_at)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_media (
@@ -257,7 +270,9 @@ class EstateOffice_Activator {
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY contract_id (contract_id),
-            KEY agent_id (agent_id)
+            KEY agent_id (agent_id),
+            KEY transaction_type (transaction_type),
+            KEY created_at (created_at)
         ) $charset_collate;";
 
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_custom_fields (
@@ -278,6 +293,62 @@ class EstateOffice_Activator {
         foreach ( $tables as $sql ) {
             dbDelta( $sql );
         }
+    }
+
+    /**
+     * Ensure auxiliary indexes exist for common search queries.
+     */
+    protected static function add_missing_indexes(): void {
+        global $wpdb;
+
+        $properties_table = $wpdb->prefix . 'eo_properties';
+        $contracts_table  = $wpdb->prefix . 'eo_contracts';
+        $clients_table    = $wpdb->prefix . 'eo_clients';
+        $searches_table   = $wpdb->prefix . 'eo_searches';
+
+        $definitions = [
+            $properties_table => [
+                'transaction_type' => "ALTER TABLE {$properties_table} ADD KEY transaction_type (transaction_type)",
+                'property_type'    => "ALTER TABLE {$properties_table} ADD KEY property_type (property_type)",
+                'created_at'       => "ALTER TABLE {$properties_table} ADD KEY created_at (created_at)",
+            ],
+            $contracts_table  => [
+                'transaction_type' => "ALTER TABLE {$contracts_table} ADD KEY transaction_type (transaction_type)",
+                'stage'            => "ALTER TABLE {$contracts_table} ADD KEY stage (stage)",
+                'start_date'       => "ALTER TABLE {$contracts_table} ADD KEY start_date (start_date)",
+                'end_date'         => "ALTER TABLE {$contracts_table} ADD KEY end_date (end_date)",
+            ],
+            $clients_table    => [
+                'last_name'    => "ALTER TABLE {$clients_table} ADD KEY last_name (last_name)",
+                'company_name' => "ALTER TABLE {$clients_table} ADD KEY company_name (company_name)",
+                'phone'        => "ALTER TABLE {$clients_table} ADD KEY phone (phone)",
+                'email'        => "ALTER TABLE {$clients_table} ADD KEY email (email)",
+            ],
+            $searches_table   => [
+                'transaction_type' => "ALTER TABLE {$searches_table} ADD KEY transaction_type (transaction_type)",
+                'created_at'       => "ALTER TABLE {$searches_table} ADD KEY created_at (created_at)",
+            ],
+        ];
+
+        foreach ( $definitions as $table => $indexes ) {
+            foreach ( $indexes as $name => $sql ) {
+                self::maybe_add_index( $table, $name, $sql );
+            }
+        }
+    }
+
+    /**
+     * Add an index if it does not yet exist.
+     */
+    protected static function maybe_add_index( string $table, string $index, string $sql ): void {
+        global $wpdb;
+
+        $exists = $wpdb->get_var( $wpdb->prepare( "SHOW INDEX FROM {$table} WHERE Key_name = %s", $index ) );
+        if ( $exists ) {
+            return;
+        }
+
+        $wpdb->query( $sql );
     }
 
     /**

@@ -49,7 +49,7 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
                 <label for="estate-office-search-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj poszukiwań', 'estate-office' ); ?></label>
-                <input type="search" id="estate-office-search-search" name="s" value="<?php echo esc_attr( $query ); ?>" placeholder="<?php esc_attr_e( 'Szukaj po typie nieruchomości lub lokalizacji', 'estate-office' ); ?>" />
+                <input type="search" id="estate-office-search-search" name="s" value="<?php echo esc_attr( $query ); ?>" placeholder="<?php esc_attr_e( 'Szukaj w dowolnej kolumnie', 'estate-office' ); ?>" />
                 <button type="submit" class="button"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></button>
             </form>
 
@@ -458,36 +458,56 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         $contracts_table = $wpdb->prefix . 'eo_contracts';
         $agents_table    = $wpdb->prefix . 'eo_agents';
 
+        $select = "SELECT s.*, c.contract_number,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_min')) AS area_min,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_max')) AS area_max,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_min')) AS rooms_min,
+                JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_max')) AS rooms_max,
+                a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
+                FROM {$table} s
+                LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
+                LEFT JOIN {$agents_table} a ON a.id = s.agent_id";
+
         if ( empty( $query ) ) {
-            $sql = "SELECT s.*, c.contract_number,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-                    FROM {$table} s
-                    LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
-                    LEFT JOIN {$agents_table} a ON a.id = s.agent_id
-                    ORDER BY s.created_at DESC";
-            return $wpdb->get_results( $sql );
+            return $wpdb->get_results( $select . ' ORDER BY s.created_at DESC' );
         }
 
-        $like = '%' . $wpdb->esc_like( $query ) . '%';
-        $sql  = $wpdb->prepare(
-            "SELECT s.*, c.contract_number,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
-                    JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) AS location,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-             FROM {$table} s
-             LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
-             LEFT JOIN {$agents_table} a ON a.id = s.agent_id
-             WHERE JSON_EXTRACT(s.criteria, '$.property_type') LIKE %s OR JSON_EXTRACT(s.criteria, '$.location') LIKE %s
-             ORDER BY s.created_at DESC",
-            $like,
-            $like
-        );
+        $like       = '%' . $wpdb->esc_like( $query ) . '%';
+        $conditions = [
+            "CONCAT('#S', LPAD(s.id, 4, '0')) LIKE %s",
+            'CAST(s.id AS CHAR) LIKE %s',
+            's.transaction_type LIKE %s',
+            'c.contract_number LIKE %s',
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.city')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.district')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.voivodeship')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_min')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_max')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_min')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_max')) LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.building') LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.utilities') LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.amenities') LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.equipment') LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.surfaces') LIKE %s",
+            "JSON_EXTRACT(s.criteria, '$.plot') LIKE %s",
+            'CONCAT_WS(\' \', a.first_name, a.last_name) LIKE %s',
+            'a.email LIKE %s',
+            'a.phone LIKE %s',
+        ];
+
+        $params = array_fill( 0, count( $conditions ), $like );
+        array_unshift( $params, $select . ' WHERE ' . implode( ' OR ', $conditions ) . ' ORDER BY s.created_at DESC' );
+        $sql = call_user_func_array( [ $wpdb, 'prepare' ], $params );
+
         return $wpdb->get_results( $sql );
     }
 

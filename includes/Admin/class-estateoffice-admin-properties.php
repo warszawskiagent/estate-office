@@ -49,7 +49,7 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
             <form method="get" class="estate-office-search-form">
                 <input type="hidden" name="page" value="<?php echo esc_attr( self::SLUG ); ?>" />
                 <label for="estate-office-property-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj nieruchomości', 'estate-office' ); ?></label>
-                <input type="search" id="estate-office-property-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj po adresie lub numerze umowy', 'estate-office' ); ?>" />
+                <input type="search" id="estate-office-property-search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj w dowolnej kolumnie', 'estate-office' ); ?>" />
                 <button type="submit" class="button"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></button>
             </form>
 
@@ -869,38 +869,60 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         $contracts_table = $wpdb->prefix . 'eo_contracts';
         $agents_table    = $wpdb->prefix . 'eo_agents';
 
+        $select = "SELECT p.*, c.contract_number,
+                JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) AS price,
+                JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price_m2')) AS price_m2,
+                JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) AS area,
+                JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) AS rooms,
+                CONCAT_WS(', ', JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')), JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city'))) AS address_display,
+                a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
+                FROM {$table} p
+                LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
+                LEFT JOIN {$agents_table} a ON a.id = p.agent_id";
+
         if ( empty( $search ) ) {
-            $sql = "SELECT p.*, c.contract_number,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) AS price,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price_m2')) AS price_m2,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) AS area,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) AS rooms,
-                    CONCAT_WS(', ', JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')), JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city'))) AS address_display,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-                    FROM {$table} p
-                    LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
-                    LEFT JOIN {$agents_table} a ON a.id = p.agent_id
-                    ORDER BY p.created_at DESC";
-            return $wpdb->get_results( $sql );
+            return $wpdb->get_results( $select . ' ORDER BY p.created_at DESC' );
         }
 
         $like = '%' . $wpdb->esc_like( $search ) . '%';
-        $sql  = $wpdb->prepare(
-            "SELECT p.*, c.contract_number,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) AS price,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price_m2')) AS price_m2,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) AS area,
-                    JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) AS rooms,
-                    CONCAT_WS(', ', JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')), JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city'))) AS address_display,
-                    a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-             FROM {$table} p
-             LEFT JOIN {$contracts_table} c ON c.id = p.contract_id
-             LEFT JOIN {$agents_table} a ON a.id = p.agent_id
-             WHERE c.contract_number LIKE %s OR JSON_EXTRACT(p.address, '$.city') LIKE %s
-             ORDER BY p.created_at DESC",
-            $like,
-            $like
-        );
+        $conditions = [
+            "CONCAT('#', LPAD(p.id, 5, '0')) LIKE %s",
+            'CAST(p.id AS CHAR) LIKE %s',
+            'c.contract_number LIKE %s',
+            'p.transaction_type LIKE %s',
+            'p.property_type LIKE %s',
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.street')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.number')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.unit')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.district')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.city')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.address, '$.postal_code')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price_m2')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.area')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.rooms')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.bedrooms')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.bathrooms')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.toilets')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.building.finish_state')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.building.kitchen')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.building.layout')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.building.view')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.utilities.heating')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.utilities.water')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.utilities.sewage')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.amenities')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.equipment')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.surfaces')) LIKE %s",
+            'CONCAT_WS(\' \', a.first_name, a.last_name) LIKE %s',
+            'a.email LIKE %s',
+            'a.phone LIKE %s',
+        ];
+
+        $params = array_fill( 0, count( $conditions ), $like );
+        array_unshift( $params, $select . ' WHERE ' . implode( ' OR ', $conditions ) . ' ORDER BY p.created_at DESC' );
+        $sql = call_user_func_array( [ $wpdb, 'prepare' ], $params );
+
         return $wpdb->get_results( $sql );
     }
 

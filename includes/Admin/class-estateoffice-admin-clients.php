@@ -308,11 +308,45 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
             return $wpdb->get_results( $select . ' ORDER BY c.created_at DESC' );
         }
 
-        $like = '%' . $wpdb->esc_like( $search ) . '%';
-        $sql  = $wpdb->prepare(
-            $select . ' WHERE c.first_name LIKE %1$s OR c.last_name LIKE %1$s OR c.company_name LIKE %1$s OR c.phone LIKE %1$s OR c.email LIKE %1$s ORDER BY c.created_at DESC',
-            $like
-        );
+        $like       = '%' . $wpdb->esc_like( $search ) . '%';
+        $conditions = [
+            "CONCAT('#C', LPAD(c.id, 5, '0')) LIKE %s",
+            'CAST(c.id AS CHAR) LIKE %s',
+            'c.client_type LIKE %s',
+            'c.first_name LIKE %s',
+            'c.last_name LIKE %s',
+            'c.company_name LIKE %s',
+            'c.representative_name LIKE %s',
+            'c.phone LIKE %s',
+            'c.email LIKE %s',
+            'c.website LIKE %s',
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.pesel')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.document_number')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.document_type')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.nip')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.krs')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.identification, '$.regon')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.street')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.number')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.unit')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.postal_code')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.city')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.address, '$.country')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.street')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.number')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.unit')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.postal_code')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.city')) LIKE %s",
+            "JSON_UNQUOTE(JSON_EXTRACT(c.correspondence_address, '$.country')) LIKE %s",
+            'CONCAT_WS(\' \', a.first_name, a.last_name) LIKE %s',
+            'a.email LIKE %s',
+            'a.phone LIKE %s',
+        ];
+
+        $params = array_fill( 0, count( $conditions ), $like );
+        array_unshift( $params, $select . ' WHERE ' . implode( ' OR ', $conditions ) . ' ORDER BY c.created_at DESC' );
+        $sql = call_user_func_array( [ $wpdb, 'prepare' ], $params );
+
         return $wpdb->get_results( $sql );
     }
 
