@@ -32,6 +32,7 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
         $watermark  = (int) get_option( 'estate_office_watermark_attachment', 0 );
         $logo       = (int) get_option( 'estate_office_office_logo_attachment', 0 );
         $agent_base = get_option( 'estate_office_agent_slug_base', estate_office_get_agent_base_slug() );
+        $portals    = self::get_portals();
 
         $field_groups = [
             'property' => self::get_dynamic_fields( 'property' ),
@@ -85,6 +86,55 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
                         </tr>
                     </tbody>
                 </table>
+
+                <h2 class="title"><?php esc_html_e( 'Eksport na portale', 'estate-office' ); ?></h2>
+                <p><?php esc_html_e( 'Skonfiguruj listę portali, na które mogą być eksportowane nieruchomości. Zaznaczone portale pojawią się w formularzach, a ich wybór zostanie zapisany przy eksporcie.', 'estate-office' ); ?></p>
+                <table class="widefat striped estate-office-portals-table">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e( 'Nazwa portalu', 'estate-office' ); ?></th>
+                            <th><?php esc_html_e( 'Identyfikator', 'estate-office' ); ?></th>
+                            <th><?php esc_html_e( 'Status', 'estate-office' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ( empty( $portals ) ) : ?>
+                            <tr class="no-items"><td colspan="3"><?php esc_html_e( 'Brak skonfigurowanych portali.', 'estate-office' ); ?></td></tr>
+                        <?php else : ?>
+                            <?php foreach ( $portals as $portal ) : ?>
+                                <tr>
+                                    <td>
+                                        <input type="hidden" name="portals[<?php echo esc_attr( $portal['id'] ); ?>][id]" value="<?php echo esc_attr( $portal['id'] ); ?>" />
+                                        <input type="text" class="regular-text" name="portals[<?php echo esc_attr( $portal['id'] ); ?>][name]" value="<?php echo esc_attr( $portal['name'] ); ?>" required />
+                                    </td>
+                                    <td>
+                                        <code><?php echo esc_html( $portal['slug'] ); ?></code>
+                                        <input type="hidden" name="portals[<?php echo esc_attr( $portal['id'] ); ?>][slug]" value="<?php echo esc_attr( $portal['slug'] ); ?>" />
+                                    </td>
+                                    <td>
+                                        <label><input type="checkbox" name="portals[<?php echo esc_attr( $portal['id'] ); ?>][enabled]" value="1" <?php checked( ! empty( $portal['is_enabled'] ) ); ?> /> <?php esc_html_e( 'Aktywny', 'estate-office' ); ?></label>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <p class="description"><?php esc_html_e( 'Wyłączony portal pozostaje zapisany w systemie, ale nie jest dostępny w formularzach nieruchomości.', 'estate-office' ); ?></p>
+
+                <fieldset class="estate-office-fieldset estate-office-new-portal">
+                    <legend><?php esc_html_e( 'Dodaj nowy portal', 'estate-office' ); ?></legend>
+                    <div class="estate-office-grid two-cols">
+                        <p>
+                            <label for="estate_office_new_portal_name"><?php esc_html_e( 'Nazwa', 'estate-office' ); ?></label>
+                            <input type="text" id="estate_office_new_portal_name" name="new_portal[name]" class="regular-text" autocomplete="off" />
+                        </p>
+                        <p>
+                            <label for="estate_office_new_portal_slug"><?php esc_html_e( 'Identyfikator', 'estate-office' ); ?></label>
+                            <input type="text" id="estate_office_new_portal_slug" name="new_portal[slug]" class="regular-text" pattern="[a-z0-9\-]+" autocomplete="off" placeholder="<?php esc_attr_e( 'np. otodom', 'estate-office' ); ?>" />
+                            <span class="description"><?php esc_html_e( 'Dozwolone są małe litery, cyfry i myślniki.', 'estate-office' ); ?></span>
+                        </p>
+                    </div>
+                </fieldset>
 
                 <h2 class="title"><?php esc_html_e( 'Pola dynamiczne', 'estate-office' ); ?></h2>
                 <p><?php esc_html_e( 'Dodaj dodatkowe pola dla nieruchomości, umów i klientów. Pola te będą widoczne w odpowiednich formularzach.', 'estate-office' ); ?></p>
@@ -298,5 +348,82 @@ class EstateOffice_Admin_Settings extends EstateOffice_Admin_Page {
         }
 
         return $filtered;
+    }
+
+    /**
+     * Retrieve configured export portals.
+     */
+    public static function get_portals(): array {
+        return estate_office_get_portals();
+    }
+
+    /**
+     * Persist portal configuration changes.
+     */
+    public static function save_portals( array $portals, array $new_portal ): void {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'eo_portals';
+        $now   = current_time( 'mysql' );
+
+        foreach ( $portals as $portal_id => $portal ) {
+            $portal_id = absint( $portal_id );
+            if ( ! $portal_id ) {
+                continue;
+            }
+
+            $name    = sanitize_text_field( $portal['name'] ?? '' );
+            $enabled = ! empty( $portal['enabled'] ) ? 1 : 0;
+
+            if ( '' === $name ) {
+                continue;
+            }
+
+            $wpdb->update(
+                $table,
+                [
+                    'name'       => $name,
+                    'is_enabled' => $enabled,
+                    'updated_at' => $now,
+                ],
+                [ 'id' => $portal_id ],
+                [ '%s', '%d', '%s' ],
+                [ '%d' ]
+            );
+        }
+
+        $new_name = sanitize_text_field( $new_portal['name'] ?? '' );
+        $new_slug = sanitize_title( $new_portal['slug'] ?? '' );
+
+        if ( $new_name && $new_slug ) {
+            $existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s", $new_slug ) );
+
+            if ( $existing_id ) {
+                $wpdb->update(
+                    $table,
+                    [
+                        'name'       => $new_name,
+                        'is_enabled' => 1,
+                        'updated_at' => $now,
+                    ],
+                    [ 'id' => (int) $existing_id ],
+                    [ '%s', '%d', '%s' ],
+                    [ '%d' ]
+                );
+            } else {
+                $wpdb->insert(
+                    $table,
+                    [
+                        'slug'       => $new_slug,
+                        'name'       => $new_name,
+                        'is_enabled' => 1,
+                        'settings'   => null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ],
+                    [ '%s', '%s', '%d', '%s', '%s' ]
+                );
+            }
+        }
     }
 }

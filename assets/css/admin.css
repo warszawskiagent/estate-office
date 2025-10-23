@@ -295,6 +295,23 @@
     gap: 0.4rem;
 }
 
+.estate-office-portal-targets {
+    margin-top: .75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+
+.estate-office-portal-targets .description {
+    margin-left: .5rem;
+    color: #6c7781;
+    font-size: 12px;
+}
+
+.estate-office-flag-disabled {
+    opacity: .7;
+}
+
 .estate-office-search-form {
     margin: 1rem 0;
     display: flex;

@@ -550,6 +550,9 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
             $tags = [];
         }
 
+        $available_portals = estate_office_get_portals();
+        $selected_portals  = $property ? EstateOffice_Admin_Properties::get_property_portal_slugs( (int) $property->id ) : [];
+
         $normalized_transaction = strtoupper( $transaction_type );
         $price_label_default    = __( 'Cena', 'estate-office' );
         $price_label_rent       = sprintf( __( 'Cena (%s)', 'estate-office' ), __( 'miesięcznie', 'estate-office' ) );
@@ -791,8 +794,33 @@ class EstateOffice_Admin_Contracts extends EstateOffice_Admin_Page {
                     );
                 }
                 ?>
+                <?php $export_portals_checked = ! empty( $property->export_portals ) || ! empty( $selected_portals ); ?>
                 <label class="estate-office-flag"><input type="checkbox" name="property[export_www]" value="1" <?php checked( ! empty( $property->export_www ) ); ?> /> <?php esc_html_e( 'Eksport na WWW', 'estate-office' ); ?></label>
-                <label class="estate-office-flag"><input type="checkbox" name="property[export_portals]" value="1" <?php checked( ! empty( $property->export_portals ) ); ?> disabled /> <?php esc_html_e( 'Eksport na portale (w przygotowaniu)', 'estate-office' ); ?></label>
+                <label class="estate-office-flag"><input type="checkbox" name="property[export_portals]" value="1" <?php checked( $export_portals_checked ); ?> data-toggle-target="#estate-office-contract-portals" /> <?php esc_html_e( 'Eksport na portale', 'estate-office' ); ?></label>
+                <div id="estate-office-contract-portals" class="estate-office-portal-targets">
+                    <?php if ( empty( $available_portals ) ) : ?>
+                        <p class="description"><?php esc_html_e( 'Brak aktywnych portali. Dodaj je w ustawieniach w sekcji „Eksport na portale”.', 'estate-office' ); ?></p>
+                    <?php else : ?>
+                        <?php foreach ( $available_portals as $portal ) :
+                            $slug = sanitize_title( $portal['slug'] ?? '' );
+                            if ( '' === $slug ) {
+                                continue;
+                            }
+                            $is_enabled = ! empty( $portal['is_enabled'] );
+                            if ( ! $is_enabled && ! in_array( $slug, $selected_portals, true ) ) {
+                                continue;
+                            }
+                            ?>
+                            <label class="estate-office-flag<?php echo $is_enabled ? '' : ' estate-office-flag-disabled'; ?>">
+                                <input type="checkbox" name="property[portals][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $selected_portals, true ) ); ?> <?php disabled( ! $is_enabled ); ?> />
+                                <?php echo esc_html( $portal['name'] ?? $slug ); ?>
+                                <?php if ( ! $is_enabled ) : ?>
+                                    <span class="description"><?php esc_html_e( 'Portal wyłączony w ustawieniach', 'estate-office' ); ?></span>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </fieldset>
         </section>
         <?php

@@ -862,10 +862,24 @@
                 if ( ! $target.length ) {
                     return;
                 }
+                $target.find('input, select, textarea').each(function(){
+                    const $field = $(this);
+                    if ( typeof $field.data('initial-disabled') === 'undefined' ) {
+                        $field.data('initial-disabled', $field.prop('disabled'));
+                    }
+                });
                 const update = () => {
                     const checked = $checkbox.is(':checked');
                     $target.toggle(checked);
-                    $target.find('input, select, textarea').prop('disabled', ! checked);
+                    $target.find('input, select, textarea').each(function(){
+                        const $field = $(this);
+                        const initialDisabled = !! $field.data('initial-disabled');
+                        if ( checked ) {
+                            $field.prop('disabled', initialDisabled);
+                        } else {
+                            $field.prop('disabled', true);
+                        }
+                    });
                 };
                 $checkbox.on('change', update);
                 update();

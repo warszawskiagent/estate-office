@@ -41,6 +41,16 @@ class EstateOffice_Admin_About extends EstateOffice_Admin_Page {
                     <li><?php esc_html_e( 'Wersja 1.0 – System licencji i moduły kalkulatorów (notarialny i kredytowy).', 'estate-office' ); ?></li>
                 </ol>
             </div>
+            <div class="card">
+                <h2><?php esc_html_e( 'Shortcode’y', 'estate-office' ); ?></h2>
+                <ul>
+                    <li><code>[estate_office_crm]</code> – <?php esc_html_e( 'Frontowy panel CRM dostępny po zalogowaniu użytkowników z uprawnieniem `eo_view_crm`.', 'estate-office' ); ?></li>
+                    <li><code>[estate_office_offers transaction="SPRZEDAŻ"]</code> – <?php esc_html_e( 'Lista ofert eksportowanych na WWW z filtrem typu transakcji.', 'estate-office' ); ?></li>
+                    <li><code>[estate_office_offer id="123"]</code> – <?php esc_html_e( 'Pełna strona pojedynczej oferty z galerią, mapą, kalkulatorami i kartą agenta.', 'estate-office' ); ?></li>
+                    <li><code>[estate_office_notary_calculator]</code> – <?php esc_html_e( 'Kalkulator kosztów notarialnych dostępny na dedykowanej stronie lub w treści oferty.', 'estate-office' ); ?></li>
+                    <li><code>[estate_office_mortgage_calculator]</code> – <?php esc_html_e( 'Kalkulator kredytowy dla kupujących, który można osadzić na dowolnej stronie.', 'estate-office' ); ?></li>
+                </ul>
+            </div>
         </div>
         <?php
     }

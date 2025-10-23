@@ -19,6 +19,7 @@ class EstateOffice_Activator {
         self::create_tables();
         self::add_missing_indexes();
         self::seed_options();
+        self::seed_portals();
         self::ensure_pages();
         self::ensure_agent_slugs();
         self::backfill_contract_stage_history();
@@ -78,6 +79,7 @@ class EstateOffice_Activator {
         self::ensure_agent_slugs();
         self::backfill_contract_stage_history();
         self::backfill_property_watermarks();
+        self::seed_portals();
         update_option( 'estate_office_flush_rewrite', 1 );
         update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
     }
@@ -248,6 +250,26 @@ class EstateOffice_Activator {
             KEY created_at (created_at)
         ) $charset_collate;";
 
+        $tables[] = "CREATE TABLE {$wpdb->prefix}eo_portals (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            slug VARCHAR(191) NOT NULL,
+            name VARCHAR(191) NOT NULL,
+            is_enabled TINYINT(1) DEFAULT 1,
+            settings LONGTEXT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY slug (slug),
+            KEY is_enabled (is_enabled)
+        ) $charset_collate;";
+
+        $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_portals (
+            property_id BIGINT UNSIGNED NOT NULL,
+            portal_id BIGINT UNSIGNED NOT NULL,
+            PRIMARY KEY  (property_id, portal_id),
+            KEY portal_id (portal_id)
+        ) $charset_collate;";
+
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_media (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             property_id BIGINT UNSIGNED NOT NULL,
@@ -351,6 +373,46 @@ class EstateOffice_Activator {
         }
 
         $wpdb->query( $sql );
+    }
+
+    /**
+     * Seed default portal configuration if none exist.
+     */
+    protected static function seed_portals(): void {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'eo_portals';
+
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+        if ( $table_exists !== $table_name ) {
+            return;
+        }
+
+        $count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
+        if ( $count > 0 ) {
+            return;
+        }
+
+        $now      = current_time( 'mysql' );
+        $defaults = [
+            [ 'slug' => 'otodom',  'name' => __( 'Otodom', 'estate-office' ) ],
+            [ 'slug' => 'gratka',  'name' => __( 'Gratka', 'estate-office' ) ],
+            [ 'slug' => 'morizon', 'name' => __( 'Morizon', 'estate-office' ) ],
+        ];
+
+        foreach ( $defaults as $portal ) {
+            $wpdb->insert(
+                $table_name,
+                [
+                    'slug'       => sanitize_title( $portal['slug'] ),
+                    'name'       => sanitize_text_field( $portal['name'] ),
+                    'is_enabled' => 1,
+                    'settings'   => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
     }
 
     /**

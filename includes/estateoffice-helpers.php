@@ -147,6 +147,74 @@ if ( ! function_exists( 'estate_office_get_property_types' ) ) {
     }
 }
 
+if ( ! function_exists( 'estate_office_get_portals' ) ) {
+    /**
+     * Retrieve configured export portals.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    function estate_office_get_portals( bool $enabled_only = false ): array {
+        static $cache = [];
+        $cache_key    = $enabled_only ? 'enabled' : 'all';
+
+        if ( isset( $cache[ $cache_key ] ) ) {
+            return $cache[ $cache_key ];
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_portals';
+        $where = $enabled_only ? 'WHERE is_enabled = 1' : '';
+
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( $table_exists !== $table ) {
+            $cache[ $cache_key ] = [];
+            return $cache[ $cache_key ];
+        }
+
+        $rows = $wpdb->get_results( "SELECT id, slug, name, is_enabled, settings FROM {$table} {$where} ORDER BY name ASC", ARRAY_A );
+        if ( ! is_array( $rows ) ) {
+            $rows = [];
+        }
+
+        $normalized = [];
+        foreach ( $rows as $row ) {
+            $normalized[] = [
+                'id'         => (int) ( $row['id'] ?? 0 ),
+                'slug'       => $row['slug'] ?? '',
+                'name'       => $row['name'] ?? '',
+                'is_enabled' => (int) ( $row['is_enabled'] ?? 0 ),
+                'settings'   => $row['settings'] ?? null,
+            ];
+        }
+
+        $cache[ $cache_key ] = $normalized;
+
+        return $cache[ $cache_key ];
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_portal_choices' ) ) {
+    /**
+     * Return map of portal slug to name for selector fields.
+     *
+     * @return array<string,string>
+     */
+    function estate_office_get_portal_choices( bool $enabled_only = true ): array {
+        $portals = estate_office_get_portals( $enabled_only );
+        $choices = [];
+
+        foreach ( $portals as $portal ) {
+            $slug = sanitize_title( $portal['slug'] ?? '' );
+            if ( '' === $slug ) {
+                continue;
+            }
+            $choices[ $slug ] = $portal['name'] ?? $slug;
+        }
+
+        return $choices;
+    }
+}
+
 if ( ! function_exists( 'estate_office_locate_template' ) ) {
     /**
      * Locate template file that can be overridden in the active theme.

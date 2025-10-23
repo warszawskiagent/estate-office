@@ -158,6 +158,8 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         }
 
         $maps_key   = get_option( 'estate_office_google_maps_api_key', '' );
+        $available_portals = estate_office_get_portals();
+        $selected_portals  = $property ? self::get_property_portal_slugs( (int) $property->id ) : [];
         $map_lat    = isset( $address['lat'] ) ? (string) $address['lat'] : '';
         $map_lng    = isset( $address['lng'] ) ? (string) $address['lng'] : '';
         $map_output = ( $map_lat && $map_lng ) ? $map_lat . ', ' . $map_lng : '';
@@ -792,8 +794,33 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                         printf( '<label %4$s><input type="checkbox" name="tags[%1$s]" value="1" %3$s /> %2$s</label>', esc_attr( $flag ), esc_html( $label ), checked( ! empty( $tags[ $flag ] ), true, false ), $attributes );
                     }
                     ?>
+                    <?php $export_portals_checked = ! empty( $property->export_portals ) || ! empty( $selected_portals ); ?>
                     <label class="estate-office-flag"><input type="checkbox" name="export_www" value="1" <?php checked( ! empty( $property->export_www ) ); ?> /> <?php esc_html_e( 'Eksport na WWW', 'estate-office' ); ?></label>
-                    <label class="estate-office-flag"><input type="checkbox" name="export_portals" value="1" disabled /> <?php esc_html_e( 'Eksport na portale (w przygotowaniu)', 'estate-office' ); ?></label>
+                    <label class="estate-office-flag"><input type="checkbox" name="export_portals" value="1" <?php checked( $export_portals_checked ); ?> data-toggle-target="#estate-office-property-portals" /> <?php esc_html_e( 'Eksport na portale', 'estate-office' ); ?></label>
+                    <div id="estate-office-property-portals" class="estate-office-portal-targets">
+                        <?php if ( empty( $available_portals ) ) : ?>
+                            <p class="description"><?php esc_html_e( 'Brak aktywnych portali. Dodaj je w ustawieniach w sekcji „Eksport na portale”.', 'estate-office' ); ?></p>
+                        <?php else : ?>
+                            <?php foreach ( $available_portals as $portal ) :
+                                $slug = sanitize_title( $portal['slug'] ?? '' );
+                                if ( '' === $slug ) {
+                                    continue;
+                                }
+                                $is_enabled = ! empty( $portal['is_enabled'] );
+                                if ( ! $is_enabled && ! in_array( $slug, $selected_portals, true ) ) {
+                                    continue;
+                                }
+                                ?>
+                                <label class="estate-office-flag<?php echo $is_enabled ? '' : ' estate-office-flag-disabled'; ?>">
+                                    <input type="checkbox" name="portals[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $selected_portals, true ) ); ?> <?php disabled( ! $is_enabled ); ?> />
+                                    <?php echo esc_html( $portal['name'] ?? $slug ); ?>
+                                    <?php if ( ! $is_enabled ) : ?>
+                                        <span class="description"><?php esc_html_e( 'Portal wyłączony w ustawieniach', 'estate-office' ); ?></span>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </fieldset>
 
                 <?php submit_button( $property ? __( 'Zapisz nieruchomość', 'estate-office' ) : __( 'Dodaj nieruchomość', 'estate-office' ) ); ?>
@@ -819,6 +846,110 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         global $wpdb;
         $table = $wpdb->prefix . 'eo_property_media';
         return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE property_id = %d ORDER BY id ASC", $property_id ) );
+    }
+
+    /**
+     * Retrieve portals assigned to a property.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public static function get_property_portals( int $property_id ): array {
+        $property_id = absint( $property_id );
+        if ( ! $property_id ) {
+            return [];
+        }
+
+        global $wpdb;
+        $pivot_table  = $wpdb->prefix . 'eo_property_portals';
+        $portal_table = $wpdb->prefix . 'eo_portals';
+
+        $sql  = $wpdb->prepare( "SELECT p.id, p.slug, p.name, p.is_enabled FROM {$pivot_table} pp INNER JOIN {$portal_table} p ON p.id = pp.portal_id WHERE pp.property_id = %d ORDER BY p.name ASC", $property_id );
+        $rows = $wpdb->get_results( $sql, ARRAY_A );
+
+        return is_array( $rows ) ? $rows : [];
+    }
+
+    /**
+     * Retrieve portal slugs assigned to property.
+     *
+     * @return array<int,string>
+     */
+    public static function get_property_portal_slugs( int $property_id ): array {
+        $portals = self::get_property_portals( $property_id );
+        if ( empty( $portals ) ) {
+            return [];
+        }
+
+        $slugs = [];
+        foreach ( $portals as $portal ) {
+            $slug = sanitize_title( $portal['slug'] ?? '' );
+            if ( '' === $slug ) {
+                continue;
+            }
+            $slugs[] = $slug;
+        }
+
+        return array_values( array_unique( $slugs ) );
+    }
+
+    /**
+     * Synchronize portal assignment for property.
+     *
+     * @param array<int,string> $portal_slugs Portal slugs.
+     */
+    public static function sync_property_portals( int $property_id, array $portal_slugs ): void {
+        $property_id = absint( $property_id );
+        if ( ! $property_id ) {
+            return;
+        }
+
+        global $wpdb;
+        $pivot_table  = $wpdb->prefix . 'eo_property_portals';
+        $portal_table = $wpdb->prefix . 'eo_portals';
+
+        $wpdb->delete( $pivot_table, [ 'property_id' => $property_id ], [ '%d' ] );
+
+        if ( empty( $portal_slugs ) ) {
+            return;
+        }
+
+        $portal_slugs = array_values( array_filter( array_unique( array_map( 'sanitize_title', $portal_slugs ) ) ) );
+        if ( empty( $portal_slugs ) ) {
+            return;
+        }
+
+        $placeholders = implode( ',', array_fill( 0, count( $portal_slugs ), '%s' ) );
+        $query        = $wpdb->prepare( "SELECT id, slug FROM {$portal_table} WHERE slug IN ({$placeholders})", ...$portal_slugs );
+        $rows         = $wpdb->get_results( $query, ARRAY_A );
+
+        if ( empty( $rows ) ) {
+            return;
+        }
+
+        $id_map = [];
+        foreach ( $rows as $row ) {
+            $slug = sanitize_title( $row['slug'] ?? '' );
+            $id   = isset( $row['id'] ) ? (int) $row['id'] : 0;
+            if ( '' === $slug || ! $id ) {
+                continue;
+            }
+            $id_map[ $slug ] = $id;
+        }
+
+        foreach ( $portal_slugs as $slug ) {
+            if ( empty( $id_map[ $slug ] ) ) {
+                continue;
+            }
+
+            $wpdb->insert(
+                $pivot_table,
+                [
+                    'property_id' => $property_id,
+                    'portal_id'   => (int) $id_map[ $slug ],
+                ],
+                [ '%d', '%d' ]
+            );
+        }
     }
 
     /**

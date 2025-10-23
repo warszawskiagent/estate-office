@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.5.0 rozszerza publiczne widoki o modularny system szablonów oferty z możliwością nadpisania w motywie, zachowując rozbudowany moduł raportowania z wykresami, legendami i eksportem CSV.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.6.0 dodaje konfigurację portali eksportowych wraz z możliwością wyboru konkretnych serwisów w formularzach nieruchomości i kreatorze umów, jednocześnie rozwijając modułowe szablony ofert oraz raportowanie CRM.
 
 == Funkcje ==
 
@@ -21,6 +21,7 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 * Publiczne listy ofert na sprzedaż i wynajem z grupowaniem po typie transakcji, rodzaju nieruchomości, mieście i dzielnicy (`[estate_office_offers transaction="SPRZEDAŻ"]`).
 * Automatyczne tworzenie stron „EstateOffice CRM”, „Oferty na sprzedaż” oraz „Oferty na wynajem” podczas aktywacji wtyczki.
 * Panel „Oferty” w kokpicie administratora pozwala przeglądać i ręcznie synchronizować strony eksportowanych nieruchomości.
+* Sekcja ustawień „Eksport na portale” umożliwia definiowanie i aktywowanie serwisów zewnętrznych, które można wskazać w formularzach nieruchomości.
 * Dynamiczne formularze z polami zależnymi od ustawień w sekcji **Estate Office CRM → Ustawienia**.
 * Historia etapów umowy wypełnia się automatycznie, pilnując daty zawarcia i blokując usunięcie etapu startowego przy zmianach.
 * Integracja z Google Maps (wprowadzony klucz API) oraz automatyczny znak wodny nanoszony na zdjęcia nieruchomości podczas zapisu i aktualizacji.
@@ -51,6 +52,9 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 
 * `[estate_office_crm]` – wyświetla panel CRM na froncie (wymagane zalogowanie i uprawnienie `eo_view_crm`).
 * `[estate_office_offers transaction="SPRZEDAŻ"]` – prezentuje listę ofert eksportowanych na WWW. Dostępne wartości parametru `transaction`: `SPRZEDAŻ`, `KUPNO`, `WYNAJEM`, `NAJEM`.
+* `[estate_office_offer id="123"]` – generuje pełną stronę oferty z galerią, mapą, kalkulatorami i kartą agenta.
+* `[estate_office_notary_calculator]` – wyświetla kalkulator notarialny do wykorzystania na stronie lub w treści oferty.
+* `[estate_office_mortgage_calculator]` – wyświetla kalkulator kredytowy obliczający raty i koszty finansowania.
 
 == Często zadawane pytania ==
 
@@ -63,6 +67,12 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.6.0 =
+* Dodano sekcję ustawień „Eksport na portale” z listą konfigurowalnych serwisów oraz domyślnymi wpisami Otodom, Gratka i Morizon.
+* Formularze nieruchomości w panelu i w kreatorze umów pozwalają zaznaczać aktywne portale eksportowe w oparciu o wybraną konfigurację.
+* Zapisy nieruchomości synchronizują powiązaną tabelę portali, a usunięcie rekordu sprząta relacje i zachowuje stan eksportu.
+* Zaktualizowano stronę „O wtyczce” o listę dostępnych shortcode’ów oraz rozbudowano dokumentację o nowe funkcje.
 
 = 0.5.0 =
 * Przepisano shortcode `[estate_office_offer]`, aby korzystał z modularnego systemu szablonów w katalogu `templates/offers/` z możliwością nadpisania w motywie.

@@ -301,6 +301,10 @@ class EstateOffice_Admin {
             EstateOffice_Admin_Settings::save_dynamic_fields( $group, $fields );
         }
 
+        $portals_input = isset( $post['portals'] ) && is_array( $post['portals'] ) ? $post['portals'] : [];
+        $new_portal    = isset( $post['new_portal'] ) && is_array( $post['new_portal'] ) ? $post['new_portal'] : [];
+        EstateOffice_Admin_Settings::save_portals( $portals_input, $new_portal );
+
         $redirect = add_query_arg(
             [
                 'page'   => EstateOffice_Admin_Settings::SLUG,
@@ -651,8 +655,14 @@ class EstateOffice_Admin {
             $this->delete_table_record( 'eo_contracts', $contract_id );
             global $wpdb;
             $wpdb->delete( $wpdb->prefix . 'eo_contract_clients', [ 'contract_id' => $contract_id ], [ '%d' ] );
+            $property_ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . $wpdb->prefix . 'eo_properties WHERE contract_id = %d', $contract_id ) );
             $wpdb->delete( $wpdb->prefix . 'eo_properties', [ 'contract_id' => $contract_id ], [ '%d' ] );
             $wpdb->delete( $wpdb->prefix . 'eo_searches', [ 'contract_id' => $contract_id ], [ '%d' ] );
+            if ( ! empty( $property_ids ) ) {
+                $placeholders = implode( ',', array_fill( 0, count( $property_ids ), '%d' ) );
+                $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $wpdb->prefix . 'eo_property_media WHERE property_id IN (' . $placeholders . ')', ...$property_ids ) );
+                $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $wpdb->prefix . 'eo_property_portals WHERE property_id IN (' . $placeholders . ')', ...$property_ids ) );
+            }
             EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
 
@@ -709,6 +719,7 @@ class EstateOffice_Admin {
             }
             $this->delete_table_record( 'eo_properties', $property_id );
             $this->delete_property_media( $property_id );
+            $this->delete_property_portals( $property_id );
             EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
         $redirect = add_query_arg(
@@ -883,6 +894,23 @@ class EstateOffice_Admin {
             return false;
         }
 
+        $portal_selection = [];
+        if ( isset( $data['portals'] ) && is_array( $data['portals'] ) ) {
+            $portal_selection = $data['portals'];
+        } elseif ( isset( $data['portal_targets'] ) && is_array( $data['portal_targets'] ) ) {
+            $portal_selection = $data['portal_targets'];
+        }
+
+        $portal_selection = array_map( 'sanitize_title', (array) $portal_selection );
+        $portal_selection = array_values( array_filter( array_unique( $portal_selection ) ) );
+
+        $available_portals = estate_office_get_portal_choices( false );
+        if ( empty( $available_portals ) ) {
+            $portal_selection = [];
+        } elseif ( ! empty( $portal_selection ) ) {
+            $portal_selection = array_values( array_intersect( $portal_selection, array_keys( $available_portals ) ) );
+        }
+
         $address = $this->sanitize_recursive( $data['address'] ?? [] );
         $legal   = $this->sanitize_recursive( $data['legal'] ?? [] );
         $details = $this->sanitize_recursive( $data['details'] ?? [] );
@@ -948,6 +976,11 @@ class EstateOffice_Admin {
             return false;
         }
 
+        $export_portals_enabled = ! empty( $data['export_portals'] );
+        if ( ! $export_portals_enabled ) {
+            $portal_selection = [];
+        }
+
         $record = [
             'contract_id'      => $contract_id ?: null,
             'transaction_type' => $transaction_type,
@@ -958,12 +991,14 @@ class EstateOffice_Admin {
             'description'      => wp_kses_post( $data['description'] ?? '' ),
             'tags'             => ! empty( $tags ) ? wp_json_encode( $tags ) : null,
             'export_www'       => ! empty( $data['export_www'] ) ? 1 : 0,
-            'export_portals'   => ! empty( $data['export_portals'] ) ? 1 : 0,
+            'export_portals'   => ( $export_portals_enabled && ! empty( $portal_selection ) ) ? 1 : 0,
             'agent_id'         => $agent_id ?: null,
         ];
 
         $saved_id = $this->save_table_record( 'eo_properties', $record, $property_id );
         if ( $saved_id ) {
+            EstateOffice_Admin_Properties::sync_property_portals( $saved_id, $record['export_portals'] ? $portal_selection : [] );
+
             $this->sync_property_media(
                 $saved_id,
                 [
@@ -1135,6 +1170,14 @@ class EstateOffice_Admin {
     protected function delete_property_media( int $property_id ): void {
         global $wpdb;
         $wpdb->delete( $wpdb->prefix . 'eo_property_media', [ 'property_id' => $property_id ], [ '%d' ] );
+    }
+
+    /**
+     * Delete portal assignments for property.
+     */
+    protected function delete_property_portals( int $property_id ): void {
+        global $wpdb;
+        $wpdb->delete( $wpdb->prefix . 'eo_property_portals', [ 'property_id' => $property_id ], [ '%d' ] );
     }
 
     /**
