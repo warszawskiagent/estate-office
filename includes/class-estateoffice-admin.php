@@ -191,6 +191,10 @@ class EstateOffice_Admin {
 
         $result = $this->save_table_record( 'eo_agents', $data, $agent_id );
 
+        if ( $result ) {
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
+        }
+
         $redirect = add_query_arg(
             [
                 'page'   => EstateOffice_Admin_Agents::SLUG,
@@ -215,6 +219,7 @@ class EstateOffice_Admin {
         $agent_id = isset( $_POST['agent_id'] ) ? absint( $_POST['agent_id'] ) : 0;
         if ( $agent_id > 0 ) {
             $this->delete_table_record( 'eo_agents', $agent_id );
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
 
         $redirect = add_query_arg(
@@ -329,6 +334,10 @@ class EstateOffice_Admin {
 
         $result = $this->save_table_record( 'eo_clients', $data, $client_id );
 
+        if ( $result ) {
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
+        }
+
         $redirect = add_query_arg(
             [
                 'page'   => EstateOffice_Admin_Clients::SLUG,
@@ -425,6 +434,7 @@ class EstateOffice_Admin {
             $this->delete_table_record( 'eo_clients', $client_id );
             global $wpdb;
             $wpdb->delete( $wpdb->prefix . 'eo_contract_clients', [ 'client_id' => $client_id ], [ '%d' ] );
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
 
         $redirect = add_query_arg(
@@ -590,6 +600,8 @@ class EstateOffice_Admin {
             $this->persist_search_from_contract( $search_data );
         }
 
+        EstateOffice_Admin_Dashboard::flush_metrics_cache();
+
         $redirect = add_query_arg(
             [
                 'page'   => EstateOffice_Admin_Contracts::SLUG,
@@ -617,6 +629,7 @@ class EstateOffice_Admin {
             $wpdb->delete( $wpdb->prefix . 'eo_contract_clients', [ 'contract_id' => $contract_id ], [ '%d' ] );
             $wpdb->delete( $wpdb->prefix . 'eo_properties', [ 'contract_id' => $contract_id ], [ '%d' ] );
             $wpdb->delete( $wpdb->prefix . 'eo_searches', [ 'contract_id' => $contract_id ], [ '%d' ] );
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
 
         $redirect = add_query_arg(
@@ -641,6 +654,8 @@ class EstateOffice_Admin {
         check_admin_referer( 'estate_office_save_property' );
         $post = wp_unslash( $_POST );
         $this->persist_property_from_contract( $post );
+
+        EstateOffice_Admin_Dashboard::flush_metrics_cache();
 
         $redirect = add_query_arg(
             [
@@ -670,6 +685,7 @@ class EstateOffice_Admin {
             }
             $this->delete_table_record( 'eo_properties', $property_id );
             $this->delete_property_media( $property_id );
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
         $redirect = add_query_arg(
             [
@@ -749,7 +765,11 @@ class EstateOffice_Admin {
 
         check_admin_referer( 'estate_office_save_search' );
         $post = wp_unslash( $_POST );
-        $this->persist_search_from_contract( $post );
+        $search_id = $this->persist_search_from_contract( $post );
+
+        if ( $search_id ) {
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
+        }
 
         $redirect = add_query_arg(
             [
@@ -774,6 +794,7 @@ class EstateOffice_Admin {
         $search_id = isset( $_POST['search_id'] ) ? absint( $_POST['search_id'] ) : 0;
         if ( $search_id ) {
             $this->delete_table_record( 'eo_searches', $search_id );
+            EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
         $redirect = add_query_arg(
             [

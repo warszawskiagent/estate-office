@@ -13,6 +13,8 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
 
     public const SLUG = 'estate-office-crm-searches';
 
+    protected const PER_PAGE = 20;
+
     public function __construct( string $parent_slug ) {
         parent::__construct( $parent_slug );
         $this->slug       = self::SLUG;
@@ -26,20 +28,23 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         $search_id = isset( $_GET['search'] ) ? absint( $_GET['search'] ) : 0;
 
         if ( 'new' === $action || ( 'edit' === $action && $search_id ) ) {
-            $search    = $search_id ? self::get_search( $search_id ) : null;
-            $contracts = EstateOffice_Admin_Contracts::get_contracts();
+            $search          = $search_id ? self::get_search( $search_id ) : null;
+            $contracts_data  = EstateOffice_Admin_Contracts::get_contracts( '', 1, 0 );
+            $contracts       = $contracts_data['items'];
             $agents    = EstateOffice_Admin_Agents::get_agents();
             $dynamic   = EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' );
             $this->render_form( $search, $contracts, $dynamic, $agents );
             return;
         }
 
-        $query = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
-        $searches = self::get_searches( $query );
-        $this->render_list( $searches, $query );
+        $query        = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+        $current_page = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+        $per_page     = self::PER_PAGE;
+        $results      = self::get_searches( $query, $current_page, $per_page );
+        $this->render_list( $results['items'], $query, $current_page, $per_page, $results['total'] );
     }
 
-    protected function render_list( array $searches, string $query ): void {
+    protected function render_list( array $searches, string $query, int $current_page, int $per_page, int $total ): void {
         ?>
         <div class="wrap estate-office-wrap estate-office-searches">
             <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -99,6 +104,17 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php
+            $this->render_pagination(
+                $total,
+                $per_page,
+                $current_page,
+                [
+                    'page' => self::SLUG,
+                    's'    => $query,
+                ]
+            );
+            ?>
         </div>
         <?php
     }
@@ -462,13 +478,17 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
         }
     }
 
-    public static function get_searches( string $query = '' ): array {
+    public static function get_searches( string $query = '', int $page = 1, int $per_page = self::PER_PAGE ): array {
         global $wpdb;
-        $table = $wpdb->prefix . 'eo_searches';
+        $table           = $wpdb->prefix . 'eo_searches';
         $contracts_table = $wpdb->prefix . 'eo_contracts';
         $agents_table    = $wpdb->prefix . 'eo_agents';
 
-        $select = "SELECT s.*, c.contract_number,
+        $page     = max( 1, (int) $page );
+        $per_page = (int) $per_page;
+        $limit    = $per_page > 0;
+
+        $select_fields = "SELECT s.*, c.contract_number,
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) AS price_min,
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) AS price_max,
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) AS property_type,
@@ -477,48 +497,80 @@ class EstateOffice_Admin_Searches extends EstateOffice_Admin_Page {
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_max')) AS area_max,
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_min')) AS rooms_min,
                 JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_max')) AS rooms_max,
-                a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug
-                FROM {$table} s
-                LEFT JOIN {$contracts_table} c ON c.id = s.contract_id
-                LEFT JOIN {$agents_table} a ON a.id = s.agent_id";
+                a.first_name AS agent_first_name, a.last_name AS agent_last_name, a.email AS agent_email, a.phone AS agent_phone, a.slug AS agent_slug";
 
-        if ( empty( $query ) ) {
-            return $wpdb->get_results( $select . ' ORDER BY s.created_at DESC' );
+        $from = " FROM {$table} s"
+            . " LEFT JOIN {$contracts_table} c ON c.id = s.contract_id"
+            . " LEFT JOIN {$agents_table} a ON a.id = s.agent_id";
+
+        $where  = '';
+        $params = [];
+
+        if ( '' !== $query ) {
+            $like = '%' . $wpdb->esc_like( $query ) . '%';
+            $conditions = [
+                "CONCAT('#S', LPAD(s.id, 4, '0')) LIKE %s",
+                'CAST(s.id AS CHAR) LIKE %s',
+                's.transaction_type LIKE %s',
+                'c.contract_number LIKE %s',
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.city')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.district')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.voivodeship')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_min')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_max')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_min')) LIKE %s",
+                "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_max')) LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.building') LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.utilities') LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.amenities') LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.equipment') LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.surfaces') LIKE %s",
+                "JSON_EXTRACT(s.criteria, '$.plot') LIKE %s",
+                "CONCAT_WS(' ', a.first_name, a.last_name) LIKE %s",
+                'a.email LIKE %s',
+                'a.phone LIKE %s',
+            ];
+            $where  = ' WHERE ' . implode( ' OR ', $conditions );
+            $params = array_fill( 0, count( $conditions ), $like );
         }
 
-        $like       = '%' . $wpdb->esc_like( $query ) . '%';
-        $conditions = [
-            "CONCAT('#S', LPAD(s.id, 4, '0')) LIKE %s",
-            'CAST(s.id AS CHAR) LIKE %s',
-            's.transaction_type LIKE %s',
-            'c.contract_number LIKE %s',
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.property_type')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.location')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.city')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.district')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.voivodeship')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_min')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.price_max')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_min')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.area_max')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_min')) LIKE %s",
-            "JSON_UNQUOTE(JSON_EXTRACT(s.criteria, '$.rooms_max')) LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.building') LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.utilities') LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.amenities') LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.equipment') LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.surfaces') LIKE %s",
-            "JSON_EXTRACT(s.criteria, '$.plot') LIKE %s",
-            'CONCAT_WS(\' \', a.first_name, a.last_name) LIKE %s',
-            'a.email LIKE %s',
-            'a.phone LIKE %s',
+        $order_by = ' ORDER BY s.created_at DESC';
+
+        $items_sql    = $select_fields . $from . $where . $order_by;
+        $items_params = $params;
+
+        if ( $limit ) {
+            $items_sql      .= ' LIMIT %d OFFSET %d';
+            $items_params[]  = $per_page;
+            $items_params[]  = ( $page - 1 ) * $per_page;
+        }
+
+        if ( ! empty( $items_params ) ) {
+            $items_sql = $wpdb->prepare( $items_sql, ...$items_params );
+        }
+
+        $items = $wpdb->get_results( $items_sql );
+
+        if ( $limit ) {
+            $count_sql = 'SELECT COUNT(*)' . $from . $where;
+            if ( ! empty( $params ) ) {
+                $count_sql = $wpdb->prepare( $count_sql, ...$params );
+            }
+            $total = (int) $wpdb->get_var( $count_sql );
+        } else {
+            $total = count( $items );
+        }
+
+        return [
+            'items'    => $items,
+            'total'    => $total,
+            'page'     => $limit ? $page : 1,
+            'per_page' => $limit ? $per_page : ( $total ? $total : 0 ),
         ];
-
-        $params = array_fill( 0, count( $conditions ), $like );
-        array_unshift( $params, $select . ' WHERE ' . implode( ' OR ', $conditions ) . ' ORDER BY s.created_at DESC' );
-        $sql = call_user_func_array( [ $wpdb, 'prepare' ], $params );
-
-        return $wpdb->get_results( $sql );
     }
 
     public static function get_search( int $id ) {

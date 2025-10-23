@@ -18,6 +18,8 @@ class EstateOffice_Public {
      */
     protected $offer_map_script_enqueued = false;
 
+    protected const CRM_PER_PAGE = 10;
+
     /**
      * Register WordPress hooks for the public module.
      */
@@ -193,7 +195,9 @@ class EstateOffice_Public {
             $tab = 'dashboard';
         }
 
-        $search = isset( $_GET['eo_search'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_search'] ) ) : '';
+        $search       = isset( $_GET['eo_search'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_search'] ) ) : '';
+        $current_page = isset( $_GET['eo_page'] ) ? max( 1, absint( $_GET['eo_page'] ) ) : 1;
+        $per_page     = self::CRM_PER_PAGE;
 
         $base_url = $this->get_current_url();
 
@@ -220,7 +224,8 @@ class EstateOffice_Public {
             </nav>
             <form method="get" class="estate-office-crm-search">
                 <input type="hidden" name="eo_tab" value="<?php echo esc_attr( $tab ); ?>" />
-                <label for="estate-office-crm-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></label>
+                <label for="estate-office-crm-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj', 'estate-office' );?></label>
+                <input type="hidden" name="eo_page" value="1" />
                 <input type="search" id="estate-office-crm-search" name="eo_search" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj w bieżącej sekcji', 'estate-office' ); ?>" />
                 <button type="submit" class="estate-office-button secondary"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></button>
             </form>
@@ -228,16 +233,16 @@ class EstateOffice_Public {
                 <?php
                 switch ( $tab ) {
                     case 'properties':
-                        $this->render_properties_table( $search, $base_url );
+                        $this->render_properties_table( $search, $base_url, $current_page, $per_page );
                         break;
                     case 'searches':
-                        $this->render_searches_table( $search, $base_url );
+                        $this->render_searches_table( $search, $base_url, $current_page, $per_page );
                         break;
                     case 'contracts':
-                        $this->render_contracts_table( $search, $base_url );
+                        $this->render_contracts_table( $search, $base_url, $current_page, $per_page );
                         break;
                     case 'clients':
-                        $this->render_clients_table( $search, $base_url );
+                        $this->render_clients_table( $search, $base_url, $current_page, $per_page );
                         break;
                     case 'dashboard':
                     default:
@@ -318,8 +323,10 @@ class EstateOffice_Public {
     /**
      * Render properties table view.
      */
-    protected function render_properties_table( string $search, string $base_url ): void {
-        $properties     = EstateOffice_Admin_Properties::get_properties( $search );
+    protected function render_properties_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+        $results        = EstateOffice_Admin_Properties::get_properties( $search, $current_page, $per_page );
+        $properties     = $results['items'];
+        $total          = $results['total'];
         $selected       = isset( $_GET['eo_property'] ) ? absint( $_GET['eo_property'] ) : 0;
         $selected_entry = $selected ? EstateOffice_Admin_Properties::get_property( $selected ) : null;
         ?>
@@ -342,7 +349,7 @@ class EstateOffice_Public {
                     <?php else : ?>
                         <?php foreach ( $properties as $property ) : ?>
                             <tr class="<?php echo (int) $property->id === $selected ? 'is-selected' : ''; ?>">
-                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'properties', 'eo_property' => (int) $property->id ], $base_url ) ); ?>"><?php echo esc_html( sprintf( '#%05d', $property->id ) ); ?></a></td>
+                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'properties', 'eo_search' => $search, 'eo_page' => $current_page, 'eo_property' => (int) $property->id ], $base_url ) ); ?>"><?php echo esc_html( sprintf( '#%05d', $property->id ) ); ?></a></td>
                                 <td><?php echo esc_html( $property->address_display ); ?></td>
                                 <td><?php echo esc_html( $this->format_currency( $property->price ) ); ?></td>
                                 <td><?php echo esc_html( $this->format_currency( $property->price_m2 ) ); ?></td>
@@ -354,6 +361,7 @@ class EstateOffice_Public {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php $this->render_public_pagination( $total, $per_page, $current_page, [ 'eo_tab' => 'properties', 'eo_search' => $search ] ); ?>
             <?php if ( $selected_entry ) : ?>
                 <?php $this->render_property_profile( $selected_entry ); ?>
             <?php endif; ?>
@@ -399,7 +407,7 @@ class EstateOffice_Public {
                     $contract = EstateOffice_Admin_Contracts::get_contract( $contract_id );
                     if ( $contract ) {
                         ?>
-                        <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => $contract_id ], $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Przejdź do umowy', 'estate-office' ); ?></a></p>
+                        <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => $contract_id ] ), $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Przejdź do umowy', 'estate-office' ); ?></a></p>
                         <?php
                     }
                 }
@@ -412,8 +420,10 @@ class EstateOffice_Public {
     /**
      * Render searches table view.
      */
-    protected function render_searches_table( string $search, string $base_url ): void {
-        $searches = EstateOffice_Admin_Searches::get_searches( $search );
+    protected function render_searches_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+        $results  = EstateOffice_Admin_Searches::get_searches( $search, $current_page, $per_page );
+        $searches = $results['items'];
+        $total    = $results['total'];
         $selected = isset( $_GET['eo_search_id'] ) ? absint( $_GET['eo_search_id'] ) : 0;
         $entry    = $selected ? EstateOffice_Admin_Searches::get_search( $selected ) : null;
         ?>
@@ -437,7 +447,7 @@ class EstateOffice_Public {
                             $criteria = $item->criteria ? json_decode( $item->criteria, true ) : [];
                             ?>
                             <tr class="<?php echo (int) $item->id === $selected ? 'is-selected' : ''; ?>">
-                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'searches', 'eo_search_id' => (int) $item->id ], $base_url ) ); ?>"><?php echo esc_html( sprintf( '#POS%05d', $item->id ) ); ?></a></td>
+                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'searches', 'eo_search' => $search, 'eo_page' => $current_page, 'eo_search_id' => (int) $item->id ], $base_url ) ); ?>"><?php echo esc_html( sprintf( '#POS%05d', $item->id ) ); ?></a></td>
                                 <td><?php echo esc_html( $criteria['property_type'] ?? '' ); ?></td>
                                 <td><?php echo esc_html( $this->format_range( $criteria['budget_min'] ?? '', $criteria['budget_max'] ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $criteria['city'] ?? '' ); ?></td>
@@ -448,6 +458,7 @@ class EstateOffice_Public {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php $this->render_public_pagination( $total, $per_page, $current_page, [ 'eo_tab' => 'searches', 'eo_search' => $search ] ); ?>
             <?php if ( $entry ) : ?>
                 <?php $this->render_search_profile( $entry ); ?>
             <?php endif; ?>
@@ -484,7 +495,7 @@ class EstateOffice_Public {
                 $contract_id = (int) $search->contract_id;
                 if ( $contract_id ) {
                     ?>
-                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => $contract_id ], $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Przejdź do umowy', 'estate-office' ); ?></a></p>
+                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => $contract_id ] ), $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Przejdź do umowy', 'estate-office' ); ?></a></p>
                     <?php
                 }
                 ?>
@@ -496,8 +507,10 @@ class EstateOffice_Public {
     /**
      * Render contracts table view.
      */
-    protected function render_contracts_table( string $search, string $base_url ): void {
-        $contracts = EstateOffice_Admin_Contracts::get_contracts( $search );
+    protected function render_contracts_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+        $results   = EstateOffice_Admin_Contracts::get_contracts( $search, $current_page, $per_page );
+        $contracts = $results['items'];
+        $total     = $results['total'];
         $selected  = isset( $_GET['eo_contract'] ) ? absint( $_GET['eo_contract'] ) : 0;
         $entry     = $selected ? EstateOffice_Admin_Contracts::get_contract( $selected ) : null;
         ?>
@@ -521,7 +534,7 @@ class EstateOffice_Public {
                     <?php else : ?>
                         <?php foreach ( $contracts as $contract ) : ?>
                             <tr class="<?php echo (int) $contract->id === $selected ? 'is-selected' : ''; ?>">
-                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => (int) $contract->id ], $base_url ) ); ?>"><?php echo esc_html( $contract->contract_number ); ?></a></td>
+                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'contracts', 'eo_search' => $search, 'eo_page' => $current_page, 'eo_contract' => (int) $contract->id ], $base_url ) ); ?>"><?php echo esc_html( $contract->contract_number ); ?></a></td>
                                 <td><?php echo esc_html( $contract->transaction_type ); ?></td>
                                 <td><?php echo esc_html( $contract->property_type ?? '' ); ?></td>
                                 <td><?php echo esc_html( $contract->address ?? '' ); ?></td>
@@ -534,6 +547,7 @@ class EstateOffice_Public {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php $this->render_public_pagination( $total, $per_page, $current_page, [ 'eo_tab' => 'contracts', 'eo_search' => $search ] ); ?>
             <?php if ( $entry ) : ?>
                 <?php $this->render_contract_profile( $entry ); ?>
             <?php endif; ?>
@@ -585,14 +599,14 @@ class EstateOffice_Public {
                     <h4><?php esc_html_e( 'Klienci', 'estate-office' ); ?></h4>
                     <ul class="estate-office-list">
                         <?php foreach ( $clients as $client ) : ?>
-                            <li><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'clients', 'eo_client' => (int) $client->id ], $this->get_current_url() ) ); ?>"><?php echo esc_html( $this->format_client_name( $client ) ); ?></a></li>
+                            <li><a href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'clients', 'eo_client' => (int) $client->id ] ), $this->get_current_url() ) ); ?>"><?php echo esc_html( $this->format_client_name( $client ) ); ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
                 <?php if ( $property ) : ?>
-                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'properties', 'eo_property' => (int) $property->id ], $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Powiązana nieruchomość', 'estate-office' ); ?></a></p>
+                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'properties', 'eo_property' => (int) $property->id ] ), $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Powiązana nieruchomość', 'estate-office' ); ?></a></p>
                 <?php elseif ( $search ) : ?>
-                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'searches', 'eo_search_id' => (int) $search->id ], $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Powiązane poszukiwanie', 'estate-office' ); ?></a></p>
+                    <p><a class="estate-office-button secondary" href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'searches', 'eo_search_id' => (int) $search->id ] ), $this->get_current_url() ) ); ?>"><?php esc_html_e( 'Powiązane poszukiwanie', 'estate-office' ); ?></a></p>
                 <?php endif; ?>
             </div>
             <div>
@@ -621,8 +635,10 @@ class EstateOffice_Public {
     /**
      * Render clients table view.
      */
-    protected function render_clients_table( string $search, string $base_url ): void {
-        $clients  = EstateOffice_Admin_Clients::get_clients( $search );
+    protected function render_clients_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+        $results  = EstateOffice_Admin_Clients::get_clients( $search, $current_page, $per_page );
+        $clients  = $results['items'];
+        $total    = $results['total'];
         $selected = isset( $_GET['eo_client'] ) ? absint( $_GET['eo_client'] ) : 0;
         $entry    = $selected ? EstateOffice_Admin_Clients::get_client( $selected ) : null;
         ?>
@@ -643,7 +659,7 @@ class EstateOffice_Public {
                     <?php else : ?>
                         <?php foreach ( $clients as $client ) : ?>
                             <tr class="<?php echo (int) $client->id === $selected ? 'is-selected' : ''; ?>">
-                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'clients', 'eo_client' => (int) $client->id ], $base_url ) ); ?>"><?php echo esc_html( $this->format_client_name( $client ) ); ?></a></td>
+                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'clients', 'eo_search' => $search, 'eo_page' => $current_page, 'eo_client' => (int) $client->id ], $base_url ) ); ?>"><?php echo esc_html( $this->format_client_name( $client ) ); ?></a></td>
                                 <td><?php echo esc_html( $this->format_address_from_json( $client->address ?? '' ) ); ?></td>
                                 <td><?php echo esc_html( $client->phone ); ?></td>
                                 <td><?php echo esc_html( $client->email ); ?></td>
@@ -653,11 +669,65 @@ class EstateOffice_Public {
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php $this->render_public_pagination( $total, $per_page, $current_page, [ 'eo_tab' => 'clients', 'eo_search' => $search ] ); ?>
             <?php if ( $entry ) : ?>
                 <?php $this->render_client_profile( $entry ); ?>
             <?php endif; ?>
         </section>
         <?php
+    }
+
+    /**
+     * Render pagination for public CRM tables.
+     */
+    protected function render_public_pagination( int $total_items, int $per_page, int $current_page, array $query_args ): void {
+        if ( $per_page <= 0 ) {
+            return;
+        }
+
+        $total_pages = (int) ceil( $total_items / $per_page );
+        if ( $total_pages <= 1 ) {
+            return;
+        }
+
+        $query_args = array_filter(
+            $query_args,
+            static function ( $value ) {
+                return '' !== $value && null !== $value;
+            }
+        );
+
+        unset( $query_args['eo_page'] );
+
+        $base        = add_query_arg( array_merge( $query_args, [ 'eo_page' => '%#%' ] ), $this->get_current_url() );
+        $placeholder = rawurlencode( '%#%' );
+        $base        = str_replace( $placeholder, '%#%', $base );
+
+        $links = paginate_links(
+            [
+                'base'      => $base,
+                'format'    => '',
+                'current'   => max( 1, $current_page ),
+                'total'     => $total_pages,
+                'type'      => 'array',
+                'prev_text' => __( 'Poprzednia', 'estate-office' ),
+                'next_text' => __( 'Następna', 'estate-office' ),
+            ]
+        );
+
+        if ( empty( $links ) ) {
+            return;
+        }
+
+        echo '<nav class="estate-office-pagination" aria-label="' . esc_attr__( 'Paginacja wyników', 'estate-office' ) . '">';
+        echo '<ul class="estate-office-pagination__list">';
+
+        foreach ( $links as $link ) {
+            echo '<li class="estate-office-pagination__item">' . $link . '</li>';
+        }
+
+        echo '</ul>';
+        echo '</nav>';
     }
 
     /**
@@ -720,7 +790,7 @@ class EstateOffice_Public {
                     <h3><?php esc_html_e( 'Powiązane umowy', 'estate-office' ); ?></h3>
                     <ul class="estate-office-list">
                         <?php foreach ( $contracts as $contract ) : ?>
-                            <li><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => (int) $contract->id ], $this->get_current_url() ) ); ?>"><?php echo esc_html( $contract->contract_number ); ?></a></li>
+                            <li><a href="<?php echo esc_url( add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'contracts', 'eo_contract' => (int) $contract->id ] ), $this->get_current_url() ) ); ?>"><?php echo esc_html( $contract->contract_number ); ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
@@ -972,17 +1042,17 @@ class EstateOffice_Public {
      * @return array<string,mixed>
      */
     protected function get_dashboard_metrics(): array {
-        global $wpdb;
-        $metrics = [
-            'properties'       => (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'eo_properties' ),
-            'contracts'        => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}eo_contracts WHERE indefinite = 1 OR end_date >= CURDATE()" ),
-            'searches'         => (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'eo_searches' ),
-            'clients'          => (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'eo_clients' ),
-            'recent_contracts' => $wpdb->get_results( 'SELECT id, contract_number, start_date FROM ' . $wpdb->prefix . 'eo_contracts ORDER BY created_at DESC LIMIT 5' ),
+        $metrics = EstateOffice_Admin_Dashboard::get_metrics();
+        $counts  = $metrics['counts'] ?? [];
+
+        return [
+            'properties'       => (int) ( $counts['properties'] ?? 0 ),
+            'contracts'        => (int) ( $counts['contracts'] ?? 0 ),
+            'searches'         => (int) ( $counts['searches'] ?? 0 ),
+            'clients'          => (int) ( $counts['clients'] ?? 0 ),
+            'recent_contracts' => $metrics['recent_contracts'] ?? [],
             'top_agents'       => $this->get_top_agents(),
         ];
-
-        return $metrics;
     }
 
     /**
@@ -1071,13 +1141,13 @@ class EstateOffice_Public {
         $links = [];
         foreach ( $wpdb->get_results( $sql_properties ) as $row ) {
             $links[] = [
-                'url'   => add_query_arg( [ 'eo_tab' => 'properties', 'eo_property' => (int) $row->id ], $this->get_current_url() ),
+                'url'   => add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'properties', 'eo_property' => (int) $row->id ] ), $this->get_current_url() ),
                 'label' => sprintf( __( 'Nieruchomość #%1$05d', 'estate-office' ), (int) $row->id ),
             ];
         }
         foreach ( $wpdb->get_results( $sql_searches ) as $row ) {
             $links[] = [
-                'url'   => add_query_arg( [ 'eo_tab' => 'searches', 'eo_search_id' => (int) $row->id ], $this->get_current_url() ),
+                'url'   => add_query_arg( $this->add_current_page_arg( [ 'eo_tab' => 'searches', 'eo_search_id' => (int) $row->id ] ), $this->get_current_url() ),
                 'label' => sprintf( __( 'Poszukiwanie #%1$05d', 'estate-office' ), (int) $row->id ),
             ];
         }
@@ -1290,6 +1360,34 @@ class EstateOffice_Public {
             }
         }
         return $request;
+    }
+
+    /**
+     * Append current pagination context to query arguments.
+     *
+     * @param array<string,mixed> $args Base query arguments.
+     * @return array<string,mixed>
+     */
+    protected function add_current_page_arg( array $args ): array {
+        $page = $this->get_current_page_number();
+        if ( $page > 0 ) {
+            $args['eo_page'] = $page;
+        }
+        return $args;
+    }
+
+    /**
+     * Resolve current page number from query.
+     */
+    protected function get_current_page_number(): int {
+        if ( isset( $_GET['eo_page'] ) ) {
+            $page = absint( wp_unslash( $_GET['eo_page'] ) );
+            if ( $page > 0 ) {
+                return $page;
+            }
+        }
+
+        return 0;
     }
 
     /**

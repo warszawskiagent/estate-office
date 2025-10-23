@@ -154,6 +154,13 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
      * Collect metrics for dashboard.
      */
     public static function get_metrics(): array {
+        $cache_key = 'estate_office_dashboard_metrics';
+        $cached    = get_transient( $cache_key );
+
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+
         global $wpdb;
 
         $contracts_table  = $wpdb->prefix . 'eo_contracts';
@@ -161,22 +168,29 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
         $clients_table    = $wpdb->prefix . 'eo_clients';
         $searches_table   = $wpdb->prefix . 'eo_searches';
 
+        $counts = [
+            'properties' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$properties_table}" ),
+            'contracts'  => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$contracts_table} WHERE indefinite = 1 OR end_date >= CURDATE()" ),
+            'searches'   => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$searches_table}" ),
+            'clients'    => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$clients_table}" ),
+        ];
+
         $cards = [
             [
                 'label' => __( 'Nieruchomości', 'estate-office' ),
-                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$properties_table}" ),
+                'value' => $counts['properties'],
             ],
             [
                 'label' => __( 'Aktywne umowy', 'estate-office' ),
-                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$contracts_table} WHERE indefinite = 1 OR end_date >= CURDATE()" ),
+                'value' => $counts['contracts'],
             ],
             [
                 'label' => __( 'Poszukiwania', 'estate-office' ),
-                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$searches_table}" ),
+                'value' => $counts['searches'],
             ],
             [
                 'label' => __( 'Klienci', 'estate-office' ),
-                'value' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$clients_table}" ),
+                'value' => $counts['clients'],
             ],
         ];
 
@@ -188,12 +202,24 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
             "SELECT id, contract_number, end_date FROM {$contracts_table} WHERE end_date IS NOT NULL AND end_date >= CURDATE() AND end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) ORDER BY end_date ASC LIMIT 5"
         );
 
-        return [
+        $metrics = [
+            'counts'             => $counts,
             'cards'              => $cards,
             'recent_contracts'   => $recent_contracts,
             'upcoming_contracts' => $upcoming_contracts,
             'top_agents'         => self::get_top_agents(),
         ];
+
+        set_transient( $cache_key, $metrics, MINUTE_IN_SECONDS * 10 );
+
+        return $metrics;
+    }
+
+    /**
+     * Clear cached dashboard metrics.
+     */
+    public static function flush_metrics_cache(): void {
+        delete_transient( 'estate_office_dashboard_metrics' );
     }
 
     /**

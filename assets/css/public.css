@@ -987,3 +987,44 @@
         min-width: 0;
     }
 }
+
+
+.estate-office-pagination {
+    margin: 24px 0 0;
+    display: flex;
+    justify-content: center;
+}
+
+.estate-office-pagination__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.estate-office-pagination__item .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 8px 14px;
+    border: 1px solid var(--eo-border, #e0e0e0);
+    border-radius: 999px;
+    background: var(--eo-surface, #ffffff);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.estate-office-pagination__item .page-numbers:hover {
+    border-color: var(--eo-accent, #1d4ed8);
+    color: var(--eo-accent, #1d4ed8);
+}
+
+.estate-office-pagination__item .page-numbers.current {
+    background: var(--eo-accent, #1d4ed8);
+    border-color: var(--eo-accent, #1d4ed8);
+    color: #fff;
+}

@@ -118,4 +118,61 @@ abstract class EstateOffice_Admin_Page {
      * Render page contents.
      */
     abstract public function render(): void;
+
+    /**
+     * Output pagination controls for list screens.
+     *
+     * @param int   $total_items  Total number of records.
+     * @param int   $per_page     Items displayed per page.
+     * @param int   $current_page Current page number (1-indexed).
+     * @param array $query_args   Additional query arguments to preserve.
+     */
+    protected function render_pagination( int $total_items, int $per_page, int $current_page, array $query_args = [] ): void {
+        if ( $per_page <= 0 ) {
+            return;
+        }
+
+        $total_pages = (int) ceil( $total_items / $per_page );
+        if ( $total_pages <= 1 ) {
+            return;
+        }
+
+        $query_args = array_filter(
+            $query_args,
+            static function ( $value ) {
+                return '' !== $value && null !== $value;
+            }
+        );
+
+        unset( $query_args['paged'] );
+
+        $base = esc_url_raw( add_query_arg( 'paged', '%#%', admin_url( 'admin.php' ) ) );
+
+        $links = paginate_links(
+            [
+                'base'      => $base,
+                'format'    => '',
+                'current'   => max( 1, $current_page ),
+                'total'     => $total_pages,
+                'type'      => 'array',
+                'add_args'  => $query_args,
+                'prev_text' => '&laquo;',
+                'next_text' => '&raquo;',
+            ]
+        );
+
+        if ( empty( $links ) ) {
+            return;
+        }
+
+        echo '<nav class="estate-office-pagination" aria-label="' . esc_attr__( 'Paginacja wyników', 'estate-office' ) . '">';
+        echo '<ul class="estate-office-pagination__list">';
+
+        foreach ( $links as $link ) {
+            echo '<li class="estate-office-pagination__item">' . $link . '</li>';
+        }
+
+        echo '</ul>';
+        echo '</nav>';
+    }
 }
