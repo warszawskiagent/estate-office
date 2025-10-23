@@ -136,6 +136,73 @@ if ( ! function_exists( 'estate_office_get_crm_page_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'estate_office_get_property_types' ) ) {
+    /**
+     * Provide canonical list of property types used across the plugin.
+     *
+     * @return array<int,string>
+     */
+    function estate_office_get_property_types(): array {
+        return [ 'MIESZKANIE', 'DOM', 'DZIAŁKA', 'LOKAL H/U' ];
+    }
+}
+
+if ( ! function_exists( 'estate_office_locate_template' ) ) {
+    /**
+     * Locate template file that can be overridden in the active theme.
+     */
+    function estate_office_locate_template( string $slug ): string {
+        $slug      = ltrim( $slug, '/' );
+        $templates = [ 'estate-office/' . $slug, $slug ];
+
+        $located = '';
+        if ( function_exists( 'locate_template' ) ) {
+            $located = locate_template( $templates, false, false );
+        }
+
+        if ( $located && file_exists( $located ) ) {
+            return $located;
+        }
+
+        $default = ESTATE_OFFICE_PATH . 'templates/' . $slug;
+        return file_exists( $default ) ? $default : '';
+    }
+}
+
+if ( ! function_exists( 'estate_office_render_template' ) ) {
+    /**
+     * Render template file with provided context and return HTML string.
+     *
+     * @param string               $slug    Template slug relative to templates directory.
+     * @param array<string,mixed>  $context Variables available inside template.
+     */
+    function estate_office_render_template( string $slug, array $context = [] ): string {
+        $template = estate_office_locate_template( $slug );
+        if ( ! $template ) {
+            return '';
+        }
+
+        ob_start();
+        if ( ! empty( $context ) ) {
+            extract( $context, EXTR_SKIP ); // phpcs:ignore WordPress.PHP.DontExtract.extract_extract
+        }
+        include $template;
+        return ob_get_clean();
+    }
+}
+
+if ( ! function_exists( 'estate_office_output_template' ) ) {
+    /**
+     * Echo template output.
+     *
+     * @param string              $slug    Template slug.
+     * @param array<string,mixed> $context Template context.
+     */
+    function estate_office_output_template( string $slug, array $context = [] ): void {
+        echo estate_office_render_template( $slug, $context ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    }
+}
+
 if ( ! function_exists( 'estate_office_get_office_logo_attachment_id' ) ) {
     /**
      * Retrieve attachment identifier for configured office logo.

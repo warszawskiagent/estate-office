@@ -198,68 +198,151 @@ class EstateOffice_Public {
         $search       = isset( $_GET['eo_search'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_search'] ) ) : '';
         $current_page = isset( $_GET['eo_page'] ) ? max( 1, absint( $_GET['eo_page'] ) ) : 1;
         $per_page     = self::CRM_PER_PAGE;
+        $base_url     = $this->get_current_url();
 
-        $base_url = $this->get_current_url();
+        $property_filters        = $this->get_property_filters_from_request();
+        $property_filters_markup = $this->render_property_filters( $property_filters, $base_url, $search );
 
         ob_start();
-        ?>
-        <div class="estate-office-crm" data-active-tab="<?php echo esc_attr( $tab ); ?>">
-            <div class="estate-office-crm-header">
-                <div class="estate-office-crm-heading">
-                    <?php echo estate_office_get_brand_badge_html( 'public' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                    <h2><?php esc_html_e( 'EstateOffice CRM', 'estate-office' ); ?></h2>
-                </div>
-                <a class="estate-office-button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=new' ) ); ?>">
-                    <?php esc_html_e( 'Dodaj nową umowę', 'estate-office' ); ?>
-                </a>
-            </div>
-            <nav class="estate-office-crm-nav" aria-label="<?php esc_attr_e( 'Nawigacja CRM', 'estate-office' ); ?>">
-                <ul>
-                    <?php foreach ( $tabs as $key => $label ) : ?>
-                        <li class="<?php echo $key === $tab ? 'is-active' : ''; ?>">
-                            <a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => $key, 'eo_search' => '' ], $base_url ) ); ?>"><?php echo esc_html( $label ); ?></a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </nav>
-            <form method="get" class="estate-office-crm-search">
-                <input type="hidden" name="eo_tab" value="<?php echo esc_attr( $tab ); ?>" />
-                <label for="estate-office-crm-search" class="screen-reader-text"><?php esc_html_e( 'Szukaj', 'estate-office' );?></label>
-                <input type="hidden" name="eo_page" value="1" />
-                <input type="search" id="estate-office-crm-search" name="eo_search" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php esc_attr_e( 'Szukaj w bieżącej sekcji', 'estate-office' ); ?>" />
-                <button type="submit" class="estate-office-button secondary"><?php esc_html_e( 'Szukaj', 'estate-office' ); ?></button>
-            </form>
-            <div class="estate-office-crm-body">
-                <?php
-                switch ( $tab ) {
-                    case 'properties':
-                        $this->render_properties_table( $search, $base_url, $current_page, $per_page );
-                        break;
-                    case 'searches':
-                        $this->render_searches_table( $search, $base_url, $current_page, $per_page );
-                        break;
-                    case 'contracts':
-                        $this->render_contracts_table( $search, $base_url, $current_page, $per_page );
-                        break;
-                    case 'clients':
-                        $this->render_clients_table( $search, $base_url, $current_page, $per_page );
-                        break;
-                    case 'dashboard':
-                    default:
-                        $this->render_dashboard();
-                        break;
-                }
-                ?>
-            </div>
-        </div>
-        <?php
-        return ob_get_clean();
+        switch ( $tab ) {
+            case 'properties':
+                $this->render_properties_table( $search, $base_url, $current_page, $per_page, $property_filters );
+                break;
+            case 'searches':
+                $this->render_searches_table( $search, $base_url, $current_page, $per_page );
+                break;
+            case 'contracts':
+                $this->render_contracts_table( $search, $base_url, $current_page, $per_page );
+                break;
+            case 'clients':
+                $this->render_clients_table( $search, $base_url, $current_page, $per_page );
+                break;
+            case 'dashboard':
+            default:
+                $this->render_dashboard();
+                break;
+        }
+        $tab_content = ob_get_clean();
+
+        return estate_office_render_template(
+            'public/crm/layout.php',
+            [
+                'brand_badge_html'      => estate_office_get_brand_badge_html( 'public' ),
+                'tabs'                  => $tabs,
+                'active_tab'            => $tab,
+                'base_url'              => $base_url,
+                'search'                => $search,
+                'search_placeholder'    => __( 'Szukaj w bieżącej sekcji', 'estate-office' ),
+                'tab_content'           => $tab_content,
+                'property_filters_html' => 'properties' === $tab ? $property_filters_markup : '',
+                'add_contract_url'      => admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=new' ),
+            ]
+        );
+    }
+
+    /**
+     * Parse property filters from current request.
+     */
+    protected function get_property_filters_from_request(): array {
+        $transaction = isset( $_GET['eo_transaction'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_transaction'] ) ) : '';
+        if ( ! in_array( $transaction, EstateOffice_Admin_Contracts::TRANSACTION_TYPES, true ) ) {
+            $transaction = '';
+        }
+
+        $property_type = isset( $_GET['eo_property_type'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_property_type'] ) ) : '';
+        if ( ! in_array( $property_type, estate_office_get_property_types(), true ) ) {
+            $property_type = '';
+        }
+
+        $price_min = isset( $_GET['eo_price_min'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_price_min'] ) ) : '';
+        $price_max = isset( $_GET['eo_price_max'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_price_max'] ) ) : '';
+
+        $min = $this->normalize_price_filter_value( $price_min );
+        $max = $this->normalize_price_filter_value( $price_max );
+
+        return [
+            'transaction'    => $transaction,
+            'property_type'  => $property_type,
+            'price_min'      => $min['value'],
+            'price_max'      => $max['value'],
+            'price_min_raw'  => $min['raw'],
+            'price_max_raw'  => $max['raw'],
+        ];
+    }
+
+    /**
+     * Normalize price filter value to float and sanitized string.
+     *
+     * @param string $value Raw query value.
+     * @return array{raw:string,value:float|null}
+     */
+    protected function normalize_price_filter_value( string $value ): array {
+        $filtered = preg_replace( '/[^0-9,.]/', '', $value );
+        if ( null === $filtered ) {
+            $filtered = '';
+        }
+
+        $normalized = str_replace( ',', '.', str_replace( ' ', '', $filtered ) );
+        $numeric    = is_numeric( $normalized ) ? (float) $normalized : null;
+        if ( null !== $numeric && $numeric <= 0 ) {
+            $numeric = null;
+        }
+
+        return [
+            'raw'   => $filtered,
+            'value' => $numeric,
+        ];
+    }
+
+    /**
+     * Render markup for property filters form.
+     */
+    protected function render_property_filters( array $filters, string $base_url, string $search ): string {
+        $transaction_options = [];
+        foreach ( EstateOffice_Admin_Contracts::TRANSACTION_TYPES as $type ) {
+            $transaction_options[ $type ] = estate_office_get_transaction_label( $type );
+        }
+
+        return estate_office_render_template(
+            'public/crm/property-filters.php',
+            [
+                'base_url'            => $base_url,
+                'search'              => $search,
+                'filters'             => $filters,
+                'transaction_options' => $transaction_options,
+                'property_types'      => estate_office_get_property_types(),
+            ]
+        );
+    }
+
+    /**
+     * Append property filter query arguments to provided array.
+     *
+     * @param array<string,mixed> $args    Query arguments.
+     * @param array<string,mixed> $filters Active filters.
+     * @return array<string,mixed>
+     */
+    protected function append_property_filters_to_args( array $args, array $filters ): array {
+        if ( ! empty( $filters['transaction'] ) ) {
+            $args['eo_transaction'] = $filters['transaction'];
+        }
+        if ( ! empty( $filters['property_type'] ) ) {
+            $args['eo_property_type'] = $filters['property_type'];
+        }
+        if ( ! empty( $filters['price_min_raw'] ) ) {
+            $args['eo_price_min'] = $filters['price_min_raw'];
+        }
+        if ( ! empty( $filters['price_max_raw'] ) ) {
+            $args['eo_price_max'] = $filters['price_max_raw'];
+        }
+
+        return $args;
     }
 
     /**
      * Render dashboard summary section.
      */
-    protected function render_dashboard(): void {
+    public function render_dashboard(): void {
         $metrics = $this->get_dashboard_metrics();
         ?>
         <section class="estate-office-dashboard">
@@ -323,8 +406,15 @@ class EstateOffice_Public {
     /**
      * Render properties table view.
      */
-    protected function render_properties_table( string $search, string $base_url, int $current_page, int $per_page ): void {
-        $results        = EstateOffice_Admin_Properties::get_properties( $search, $current_page, $per_page );
+    public function render_properties_table( string $search, string $base_url, int $current_page, int $per_page, array $filters = [] ): void {
+        $query_filters = [
+            'transaction'   => $filters['transaction'] ?? '',
+            'property_type' => $filters['property_type'] ?? '',
+            'price_min'     => $filters['price_min'] ?? null,
+            'price_max'     => $filters['price_max'] ?? null,
+        ];
+
+        $results        = EstateOffice_Admin_Properties::get_properties( $search, $current_page, $per_page, $query_filters );
         $properties     = $results['items'];
         $total          = $results['total'];
         $selected       = isset( $_GET['eo_property'] ) ? absint( $_GET['eo_property'] ) : 0;
@@ -347,9 +437,19 @@ class EstateOffice_Public {
                     <?php if ( empty( $properties ) ) : ?>
                         <tr><td colspan="7"><?php esc_html_e( 'Brak nieruchomości.', 'estate-office' ); ?></td></tr>
                     <?php else : ?>
-                        <?php foreach ( $properties as $property ) : ?>
+                        <?php foreach ( $properties as $property ) :
+                            $row_args = $this->append_property_filters_to_args(
+                                [
+                                    'eo_tab'      => 'properties',
+                                    'eo_search'   => $search,
+                                    'eo_page'     => $current_page,
+                                    'eo_property' => (int) $property->id,
+                                ],
+                                $filters
+                            );
+                            ?>
                             <tr class="<?php echo (int) $property->id === $selected ? 'is-selected' : ''; ?>">
-                                <td><a href="<?php echo esc_url( add_query_arg( [ 'eo_tab' => 'properties', 'eo_search' => $search, 'eo_page' => $current_page, 'eo_property' => (int) $property->id ], $base_url ) ); ?>"><?php echo esc_html( sprintf( '#%05d', $property->id ) ); ?></a></td>
+                                <td><a href="<?php echo esc_url( add_query_arg( $row_args, $base_url ) ); ?>"><?php echo esc_html( sprintf( '#%05d', $property->id ) ); ?></a></td>
                                 <td><?php echo esc_html( $property->address_display ); ?></td>
                                 <td><?php echo esc_html( $this->format_currency( $property->price ) ); ?></td>
                                 <td><?php echo esc_html( $this->format_currency( $property->price_m2 ) ); ?></td>
@@ -361,7 +461,16 @@ class EstateOffice_Public {
                     <?php endif; ?>
                 </tbody>
             </table>
-            <?php $this->render_public_pagination( $total, $per_page, $current_page, [ 'eo_tab' => 'properties', 'eo_search' => $search ] ); ?>
+            <?php
+            $pagination_args = $this->append_property_filters_to_args(
+                [
+                    'eo_tab'    => 'properties',
+                    'eo_search' => $search,
+                ],
+                $filters
+            );
+            $this->render_public_pagination( $total, $per_page, $current_page, $pagination_args );
+            ?>
             <?php if ( $selected_entry ) : ?>
                 <?php $this->render_property_profile( $selected_entry ); ?>
             <?php endif; ?>
@@ -420,7 +529,7 @@ class EstateOffice_Public {
     /**
      * Render searches table view.
      */
-    protected function render_searches_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+    public function render_searches_table( string $search, string $base_url, int $current_page, int $per_page ): void {
         $results  = EstateOffice_Admin_Searches::get_searches( $search, $current_page, $per_page );
         $searches = $results['items'];
         $total    = $results['total'];
@@ -507,7 +616,7 @@ class EstateOffice_Public {
     /**
      * Render contracts table view.
      */
-    protected function render_contracts_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+    public function render_contracts_table( string $search, string $base_url, int $current_page, int $per_page ): void {
         $results   = EstateOffice_Admin_Contracts::get_contracts( $search, $current_page, $per_page );
         $contracts = $results['items'];
         $total     = $results['total'];
@@ -635,7 +744,7 @@ class EstateOffice_Public {
     /**
      * Render clients table view.
      */
-    protected function render_clients_table( string $search, string $base_url, int $current_page, int $per_page ): void {
+    public function render_clients_table( string $search, string $base_url, int $current_page, int $per_page ): void {
         $results  = EstateOffice_Admin_Clients::get_clients( $search, $current_page, $per_page );
         $clients  = $results['items'];
         $total    = $results['total'];
@@ -829,7 +938,10 @@ class EstateOffice_Public {
 
         $this->enqueue_assets();
 
-        $properties = $this->get_public_offers( $transaction );
+        $filters  = $this->get_offer_filters_from_request();
+        $base_url = $this->get_current_url();
+
+        $properties = $this->get_public_offers( $transaction, $filters );
         if ( empty( $properties ) ) {
             return '<div class="estate-office-offers-empty">' . esc_html__( 'Brak ofert spełniających kryteria.', 'estate-office' ) . '</div>';
         }
@@ -841,102 +953,54 @@ class EstateOffice_Public {
             $grouped[ $property['property_type'] ][ $property['city'] ][ $property['district'] ][] = $property;
         }
 
-        ob_start();
-        ?>
-        <div class="estate-office-offers" data-transaction="<?php echo esc_attr( $transaction ); ?>">
-            <div class="estate-office-offers-header">
-                <?php echo estate_office_get_brand_badge_html( 'public' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <h2><?php printf( esc_html__( 'Oferty – %s', 'estate-office' ), esc_html( $transaction_label ) ); ?></h2>
-            </div>
-            <?php foreach ( $grouped as $type => $cities ) : ?>
-                <section class="estate-office-offers-section">
-                    <h3><?php echo esc_html( $type ); ?></h3>
-                    <?php foreach ( $cities as $city => $districts ) : ?>
-                        <div class="estate-office-offers-city">
-                            <h4><?php echo esc_html( $city ); ?></h4>
-                            <?php foreach ( $districts as $district => $items ) : ?>
-                                <div class="estate-office-offers-district">
-                                    <?php if ( $district ) : ?>
-                                        <h5><?php echo esc_html( $district ); ?></h5>
-                                    <?php endif; ?>
-                                    <div class="estate-office-offers-grid">
-                                        <?php foreach ( $items as $item ) : ?>
-                                            <article class="estate-office-offer-card">
-                                                <?php if ( ! empty( $item['image_url'] ) ) : ?>
-                                                    <figure class="estate-office-offer-image">
-                                                        <img src="<?php echo esc_url( $item['image_url'] ); ?>" alt="<?php echo esc_attr( $item['image_alt'] ); ?>" loading="lazy" />
-                                                    </figure>
-                                                <?php endif; ?>
-                                                <header>
-                                                    <span class="estate-office-offer-number"><?php echo esc_html( sprintf( '#%05d', $item['id'] ) ); ?></span>
-                                                    <?php if ( ! empty( $item['tags'] ) ) : ?>
-                                                        <ul class="estate-office-offer-tags">
-                                                            <?php foreach ( $item['tags'] as $tag ) : ?>
-                                                                <li><?php echo esc_html( $tag ); ?></li>
-                                                            <?php endforeach; ?>
-                                                        </ul>
-                                                    <?php endif; ?>
-                                                </header>
-                                                <p class="estate-office-offer-address"><?php echo esc_html( $item['address'] ); ?></p>
-                                                <p class="estate-office-offer-price"><?php echo esc_html( $this->format_currency( $item['price'] ) ); ?></p>
-                                                <ul class="estate-office-offer-meta">
-                                                    <?php if ( $item['area'] ) : ?>
-                                                        <li><?php echo esc_html( $item['area'] . ' m²' ); ?></li>
-                                                    <?php endif; ?>
-                                                    <?php if ( $item['rooms'] ) : ?>
-                                                        <li><?php echo esc_html( sprintf( _n( '%d pokój', '%d pokoje', (int) $item['rooms'], 'estate-office' ), (int) $item['rooms'] ) ); ?></li>
-                                                    <?php endif; ?>
-                                                    <?php if ( $item['price_m2'] ) : ?>
-                                                        <li><?php echo esc_html( sprintf( __( '%s / m²', 'estate-office' ), $this->format_currency( $item['price_m2'] ) ) ); ?></li>
-                                                    <?php endif; ?>
-                                                </ul>
-                                                <?php
-                                                $crm_link  = add_query_arg(
-                                                    [
-                                                        'eo_tab'      => 'properties',
-                                                        'eo_property' => (int) $item['id'],
-                                                    ],
-                                                    $this->get_crm_page_url()
-                                                );
-                                                $target_url   = ! empty( $item['page_url'] ) ? $item['page_url'] : $crm_link;
-                                                $button_label = ! empty( $item['page_url'] )
-                                                    ? __( 'Zobacz ofertę', 'estate-office' )
-                                                    : __( 'Szczegóły w CRM', 'estate-office' );
-                                                ?>
-                                                <a class="estate-office-button secondary" href="<?php echo esc_url( $target_url ); ?>"><?php echo esc_html( $button_label ); ?></a>
-                                            </article>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </section>
-            <?php endforeach; ?>
-        </div>
-        <section class="estate-office-offers-calculators" aria-label="<?php esc_attr_e( 'Kalkulatory dla kupujących', 'estate-office' ); ?>">
-            <h2><?php esc_html_e( 'Kalkulatory dla kupujących', 'estate-office' ); ?></h2>
-            <div class="estate-office-offers-calculators-grid">
-                <?php echo $this->get_notary_calculator_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <?php echo $this->get_mortgage_calculator_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-            </div>
-            <?php
-            $notary_link   = $this->get_calculator_page_link( 'estate_office_notary_page_id' );
-            $mortgage_link = $this->get_calculator_page_link( 'estate_office_mortgage_page_id' );
-            if ( $notary_link || $mortgage_link ) :
-                ?>
-                <p class="estate-office-offers-calculators-links">
-                    <?php if ( $notary_link ) : ?>
-                        <a class="estate-office-button tertiary" href="<?php echo esc_url( $notary_link ); ?>"><?php esc_html_e( 'Pełny kalkulator notarialny', 'estate-office' ); ?></a>
-                    <?php endif; ?>
-                    <?php if ( $mortgage_link ) : ?>
-                        <a class="estate-office-button tertiary" href="<?php echo esc_url( $mortgage_link ); ?>"><?php esc_html_e( 'Pełny kalkulator kredytowy', 'estate-office' ); ?></a>
-                    <?php endif; ?>
-                </p>
-            <?php endif; ?>
-        </section>
-        <?php
-        return ob_get_clean();
+        $filters_markup = estate_office_render_template(
+            'public/offers/filters.php',
+            [
+                'base_url'       => $base_url,
+                'transaction'    => $transaction,
+                'filters'        => $filters,
+                'property_types' => estate_office_get_property_types(),
+            ]
+        );
+
+        return estate_office_render_template(
+            'public/offers/list.php',
+            [
+                'brand_badge_html'  => estate_office_get_brand_badge_html( 'public' ),
+                'transaction_label' => $transaction_label,
+                'transaction'       => $transaction,
+                'groups'            => $grouped,
+                'filters_markup'    => $filters_markup,
+                'notary_markup'     => $this->get_notary_calculator_markup(),
+                'mortgage_markup'   => $this->get_mortgage_calculator_markup(),
+                'notary_link'       => $this->get_calculator_page_link( 'estate_office_notary_page_id' ),
+                'mortgage_link'     => $this->get_calculator_page_link( 'estate_office_mortgage_page_id' ),
+            ]
+        );
+    }
+
+    /**
+     * Parse offer filters from current request.
+     */
+    protected function get_offer_filters_from_request(): array {
+        $property_type = isset( $_GET['eo_offer_type'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_offer_type'] ) ) : '';
+        if ( ! in_array( $property_type, estate_office_get_property_types(), true ) ) {
+            $property_type = '';
+        }
+
+        $price_min = isset( $_GET['eo_offer_price_min'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_offer_price_min'] ) ) : '';
+        $price_max = isset( $_GET['eo_offer_price_max'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_offer_price_max'] ) ) : '';
+
+        $min = $this->normalize_price_filter_value( $price_min );
+        $max = $this->normalize_price_filter_value( $price_max );
+
+        return [
+            'property_type'  => $property_type,
+            'price_min'      => $min['value'],
+            'price_max'      => $max['value'],
+            'price_min_raw'  => $min['raw'],
+            'price_max_raw'  => $max['raw'],
+        ];
     }
 
     /**
@@ -961,14 +1025,33 @@ class EstateOffice_Public {
      * @param string $transaction Transaction type.
      * @return array<int,array<string,mixed>>
      */
-    protected function get_public_offers( string $transaction ): array {
+    protected function get_public_offers( string $transaction, array $filters = [] ): array {
         global $wpdb;
         $table = $wpdb->prefix . 'eo_properties';
 
-        $sql = $wpdb->prepare(
-            "SELECT id, property_type, address, details, tags, export_page_id FROM {$table} WHERE export_www = 1 AND transaction_type = %s ORDER BY created_at DESC",
-            $transaction
-        );
+        $where  = 'WHERE export_www = 1 AND transaction_type = %s';
+        $params = [ $transaction ];
+
+        $property_type = $filters['property_type'] ?? '';
+        if ( $property_type && in_array( $property_type, estate_office_get_property_types(), true ) ) {
+            $where   .= ' AND property_type = %s';
+            $params[] = $property_type;
+        }
+
+        $price_min = isset( $filters['price_min'] ) ? (float) $filters['price_min'] : null;
+        if ( null !== $price_min && $price_min > 0 ) {
+            $where   .= " AND CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.price')) AS DECIMAL(18,2)) >= %f";
+            $params[] = $price_min;
+        }
+
+        $price_max = isset( $filters['price_max'] ) ? (float) $filters['price_max'] : null;
+        if ( null !== $price_max && $price_max > 0 ) {
+            $where   .= " AND CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.price')) AS DECIMAL(18,2)) <= %f";
+            $params[] = $price_max;
+        }
+
+        $query = "SELECT id, property_type, address, details, tags, export_page_id FROM {$table} {$where} ORDER BY created_at DESC";
+        $sql   = $wpdb->prepare( $query, $params );
 
         $rows = $wpdb->get_results( $sql );
         if ( empty( $rows ) ) {

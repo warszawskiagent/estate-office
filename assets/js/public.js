@@ -149,6 +149,71 @@
         });
     }
 
+    function formatRangeLabel(min, max) {
+        if (!min && !max) {
+            return '';
+        }
+        if (min && max) {
+            return formatCurrency(min) + ' – ' + formatCurrency(max);
+        }
+        if (min) {
+            return window.estateOfficeFiltersLabels && window.estateOfficeFiltersLabels.from ? window.estateOfficeFiltersLabels.from + ' ' + formatCurrency(min) : 'Od ' + formatCurrency(min);
+        }
+        return (window.estateOfficeFiltersLabels && window.estateOfficeFiltersLabels.to ? window.estateOfficeFiltersLabels.to : 'Do') + ' ' + formatCurrency(max);
+    }
+
+    function initFilters() {
+        $('.estate-office-filters').each(function () {
+            var $form = $(this);
+            var $min = $form.find('[data-filter-min]');
+            var $max = $form.find('[data-filter-max]');
+            var $display = $form.find('[data-filter-display]');
+
+            function refreshRange() {
+                var minValue = parseNumber($min.val());
+                var maxValue = parseNumber($max.val());
+                if (!$display.length) {
+                    return;
+                }
+
+                var label = formatRangeLabel(minValue > 0 ? minValue : 0, maxValue > 0 ? maxValue : 0);
+                $display.text(label);
+            }
+
+            refreshRange();
+
+            $form.on('input change', '[data-filter-min], [data-filter-max]', function () {
+                refreshRange();
+            });
+
+            $form.on('click', '[data-filter-reset]', function (event) {
+                event.preventDefault();
+                $form.find('select').each(function () {
+                    this.selectedIndex = 0;
+                });
+                if ($min.length) {
+                    $min.val('');
+                }
+                if ($max.length) {
+                    $max.val('');
+                }
+                var $page = $form.find('input[name="eo_page"]');
+                if ($page.length) {
+                    $page.val('1');
+                }
+                $form.trigger('submit');
+            });
+
+            $form.on('change', 'select[data-auto-submit="1"]', function () {
+                var $page = $form.find('input[name="eo_page"]');
+                if ($page.length) {
+                    $page.val('1');
+                }
+                $form.trigger('submit');
+            });
+        });
+    }
+
     function populateMapDataset() {
         if (!window.estateOfficeOfferMap || typeof window.estateOfficeOfferMap !== 'object') {
             return;
@@ -232,6 +297,7 @@
 
     $(function () {
         initCalculators();
+        initFilters();
         maybeRenderOfferMap();
     });
 

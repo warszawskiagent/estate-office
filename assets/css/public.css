@@ -94,6 +94,69 @@
     gap: 12px;
 }
 
+.estate-office-filters {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.estate-office-filters__fields {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.estate-office-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.estate-office-field select,
+.estate-office-field input[type="number"] {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 100%;
+}
+
+.estate-office-filters__range {
+    background: #fff;
+    border: 1px dashed #cbd5f5;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.estate-office-filters__range-inputs {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.estate-office-filters__range-inputs label {
+    flex: 1 1 160px;
+}
+
+.estate-office-filters__range-display {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.estate-office-filters__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .estate-office-crm-search input[type="search"] {
     flex: 1;
     padding: 10px 14px;

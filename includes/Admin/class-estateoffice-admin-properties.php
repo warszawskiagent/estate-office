@@ -889,7 +889,7 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
         return $media[ $property_id ] ?? [ 'attachment_id' => 0, 'watermarked_id' => 0 ];
     }
 
-    public static function get_properties( string $search = '', int $page = 1, int $per_page = self::PER_PAGE ): array {
+    public static function get_properties( string $search = '', int $page = 1, int $per_page = self::PER_PAGE, array $filters = [] ): array {
         global $wpdb;
         $table           = $wpdb->prefix . 'eo_properties';
         $contracts_table = $wpdb->prefix . 'eo_contracts';
@@ -911,8 +911,8 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
             . " LEFT JOIN {$contracts_table} c ON c.id = p.contract_id"
             . " LEFT JOIN {$agents_table} a ON a.id = p.agent_id";
 
-        $where  = '';
-        $params = [];
+        $where_clauses = [];
+        $params        = [];
 
         if ( '' !== $search ) {
             $like = '%' . $wpdb->esc_like( $search ) . '%';
@@ -949,9 +949,35 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                 'a.email LIKE %s',
                 'a.phone LIKE %s',
             ];
-            $where  = ' WHERE ' . implode( ' OR ', $conditions );
-            $params = array_fill( 0, count( $conditions ), $like );
+            $where_clauses[] = '( ' . implode( ' OR ', $conditions ) . ' )';
+            $params          = array_merge( $params, array_fill( 0, count( $conditions ), $like ) );
         }
+
+        $transaction = $filters['transaction'] ?? '';
+        if ( $transaction && in_array( $transaction, EstateOffice_Admin_Contracts::TRANSACTION_TYPES, true ) ) {
+            $where_clauses[] = 'p.transaction_type = %s';
+            $params[]        = $transaction;
+        }
+
+        $property_type = $filters['property_type'] ?? '';
+        if ( $property_type && in_array( $property_type, estate_office_get_property_types(), true ) ) {
+            $where_clauses[] = 'p.property_type = %s';
+            $params[]        = $property_type;
+        }
+
+        $price_min = isset( $filters['price_min'] ) ? (float) $filters['price_min'] : null;
+        if ( null !== $price_min && $price_min > 0 ) {
+            $where_clauses[] = "CAST(JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) AS DECIMAL(18,2)) >= %f";
+            $params[]        = $price_min;
+        }
+
+        $price_max = isset( $filters['price_max'] ) ? (float) $filters['price_max'] : null;
+        if ( null !== $price_max && $price_max > 0 ) {
+            $where_clauses[] = "CAST(JSON_UNQUOTE(JSON_EXTRACT(p.details, '$.price')) AS DECIMAL(18,2)) <= %f";
+            $params[]        = $price_max;
+        }
+
+        $where = $where_clauses ? ' WHERE ' . implode( ' AND ', $where_clauses ) : '';
 
         $order_by = ' ORDER BY p.created_at DESC';
 
