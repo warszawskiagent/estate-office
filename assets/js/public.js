@@ -149,6 +149,143 @@
         });
     }
 
+    function initReports() {
+        var container = document.querySelector('[data-estate-office-reports]');
+        if (!container || container.dataset.initialized) {
+            return;
+        }
+        container.dataset.initialized = '1';
+
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
+        var payload = container.getAttribute('data-estate-office-reports');
+        if (!payload) {
+            return;
+        }
+
+        var data;
+        try {
+            data = JSON.parse(payload);
+        } catch (error) {
+            return;
+        }
+
+        if (!data || typeof data !== 'object' || !data.charts) {
+            return;
+        }
+
+        var renderLegend = function (card, config) {
+            if (!card) {
+                return;
+            }
+            var existing = card.querySelector('.estate-office-report-legend');
+            if (existing) {
+                existing.remove();
+            }
+            var labels = config.labels || [];
+            var datasets = config.datasets || [];
+            if (!labels.length || !datasets.length) {
+                return;
+            }
+            var dataset = datasets[0];
+            var values = Array.isArray(dataset.data) ? dataset.data : [];
+            var colors = dataset.backgroundColor || dataset.borderColor || '#2563eb';
+            var list = document.createElement('ul');
+            list.className = 'estate-office-report-legend';
+            labels.forEach(function (label, index) {
+                var item = document.createElement('li');
+                var swatch = document.createElement('span');
+                swatch.className = 'estate-office-report-legend__swatch';
+                swatch.style.backgroundColor = Array.isArray(colors) ? (colors[index % colors.length] || '#2563eb') : colors;
+                var text = document.createElement('span');
+                var value = typeof values[index] !== 'undefined' ? values[index] : '';
+                text.textContent = value !== '' ? label + ' (' + value + ')' : String(label);
+                item.appendChild(swatch);
+                item.appendChild(text);
+                list.appendChild(item);
+            });
+            card.appendChild(list);
+        };
+
+        Object.keys(data.charts).forEach(function (key) {
+            var config = data.charts[key];
+            if (!config || typeof config !== 'object') {
+                return;
+            }
+
+            var canvas = container.querySelector('canvas[data-report="' + key + '"]');
+            if (!canvas) {
+                return;
+            }
+
+            var card = canvas.closest('.estate-office-report-card');
+
+            var context = canvas.getContext('2d');
+            if (!context) {
+                return;
+            }
+
+            var datasets = (config.datasets || []).map(function (dataset) {
+                var defaults = {
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: config.type === 'line',
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    borderColor: '#2563eb'
+                };
+                return $.extend({}, defaults, dataset || {});
+            });
+
+            var options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: datasets.length > 0
+                    },
+                    title: {
+                        display: !!config.title,
+                        text: config.title || ''
+                    }
+                }
+            };
+
+            if (config.type !== 'doughnut' && config.type !== 'pie') {
+                options.scales = {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    }
+                };
+            }
+
+            var chartInstance = new Chart(context, {
+                type: config.type || 'bar',
+                data: {
+                    labels: config.labels || [],
+                    datasets: datasets
+                },
+                options: options
+            });
+
+            if (chartInstance && card) {
+                renderLegend(card, config);
+                card.classList.add('is-ready');
+            }
+        });
+    }
+
     function formatRangeLabel(min, max) {
         if (!min && !max) {
             return '';
@@ -298,8 +435,10 @@
     $(function () {
         initCalculators();
         initFilters();
+        initReports();
         maybeRenderOfferMap();
     });
 
     window.addEventListener('load', maybeRenderOfferMap);
+    window.addEventListener('load', initReports);
 })(jQuery);

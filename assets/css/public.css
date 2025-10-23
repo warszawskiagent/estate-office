@@ -392,6 +392,88 @@
     margin-top: 24px;
 }
 
+.estate-office-dashboard-section--reports {
+    padding: 24px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid var(--eo-border, #e5e7eb);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.estate-office-dashboard-section--reports > h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 20px;
+}
+
+.estate-office-report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.estate-office-report-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    background: var(--eo-surface-alt, #f8fafc);
+    border: 1px solid var(--eo-border, #e5e7eb);
+}
+
+.estate-office-report-card__header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.estate-office-report-card__chart {
+    position: relative;
+    min-height: 200px;
+}
+
+.estate-office-report-card__chart canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.estate-office-report-card__fallback {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.estate-office-report-card.is-ready .estate-office-report-card__fallback {
+    display: none;
+}
+
+.estate-office-report-legend {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.estate-office-report-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.estate-office-report-legend__swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    margin-right: 6px;
+}
+
 .estate-office-list {
     list-style: none;
     margin: 0;
@@ -1026,6 +1108,14 @@
 
     .estate-office-offer-hero h1 {
         font-size: 2rem;
+    }
+
+    .estate-office-dashboard-section--reports {
+        padding: 20px;
+    }
+
+    .estate-office-report-grid {
+        grid-template-columns: 1fr;
     }
 
     .estate-office-offer-agent-card {

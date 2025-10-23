@@ -18,6 +18,13 @@ class EstateOffice_Public {
      */
     protected $offer_map_script_enqueued = false;
 
+    /**
+     * Flag indicating whether chart assets should be loaded.
+     *
+     * @var bool
+     */
+    protected $requires_chart_assets = false;
+
     protected const CRM_PER_PAGE = 10;
 
     /**
@@ -180,7 +187,7 @@ class EstateOffice_Public {
             return '<div class="estate-office-notice">' . esc_html__( 'Ten obszar jest dostępny wyłącznie dla zespołu biura.', 'estate-office' ) . '</div>';
         }
 
-        $this->enqueue_assets();
+        $this->requires_chart_assets = false;
 
         $tabs = [
             'dashboard'   => __( 'Pulpit', 'estate-office' ),
@@ -194,6 +201,9 @@ class EstateOffice_Public {
         if ( ! isset( $tabs[ $tab ] ) ) {
             $tab = 'dashboard';
         }
+
+        $this->requires_chart_assets = ( 'dashboard' === $tab );
+        $this->enqueue_assets();
 
         $search       = isset( $_GET['eo_search'] ) ? sanitize_text_field( wp_unslash( $_GET['eo_search'] ) ) : '';
         $current_page = isset( $_GET['eo_page'] ) ? max( 1, absint( $_GET['eo_page'] ) ) : 1;
@@ -343,7 +353,9 @@ class EstateOffice_Public {
      * Render dashboard summary section.
      */
     public function render_dashboard(): void {
-        $metrics = $this->get_dashboard_metrics();
+        $metrics      = $this->get_dashboard_metrics();
+        $reports      = is_array( $metrics['reports'] ?? null ) ? $metrics['reports'] : [];
+        $reports_json = $reports ? wp_json_encode( $reports ) : '';
         ?>
         <section class="estate-office-dashboard">
             <div class="estate-office-cards">
@@ -364,6 +376,24 @@ class EstateOffice_Public {
                     <p class="estate-office-card-value"><?php echo esc_html( $metrics['clients'] ); ?></p>
                 </article>
             </div>
+            <?php if ( ! empty( $reports['charts'] ) && $reports_json ) : ?>
+                <div class="estate-office-dashboard-section estate-office-dashboard-section--reports" data-estate-office-reports="<?php echo esc_attr( (string) $reports_json ); ?>">
+                    <h3><?php esc_html_e( 'Raporty CRM', 'estate-office' ); ?></h3>
+                    <div class="estate-office-report-grid">
+                        <?php foreach ( $reports['charts'] as $key => $chart ) : ?>
+                            <article class="estate-office-report-card">
+                                <header class="estate-office-report-card__header">
+                                    <h4><?php echo esc_html( $chart['title'] ?? '' ); ?></h4>
+                                </header>
+                                <div class="estate-office-report-card__chart">
+                                    <canvas data-report="<?php echo esc_attr( (string) $key ); ?>" role="img" aria-label="<?php echo esc_attr( $chart['title'] ?? '' ); ?>"></canvas>
+                                </div>
+                                <p class="estate-office-report-card__fallback"><?php esc_html_e( 'Aktywuj JavaScript, aby zobaczyć wykres.', 'estate-office' ); ?></p>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <?php if ( ! empty( $metrics['recent_contracts'] ) ) : ?>
                 <div class="estate-office-dashboard-section">
                     <h3><?php esc_html_e( 'Ostatnie umowy', 'estate-office' ); ?></h3>
@@ -1135,6 +1165,7 @@ class EstateOffice_Public {
             'clients'          => (int) ( $counts['clients'] ?? 0 ),
             'recent_contracts' => $metrics['recent_contracts'] ?? [],
             'top_agents'       => $this->get_top_agents(),
+            'reports'          => $metrics['reports'] ?? [],
         ];
     }
 
@@ -2231,8 +2262,27 @@ class EstateOffice_Public {
         if ( ! wp_style_is( 'estate-office-public', 'enqueued' ) ) {
             wp_enqueue_style( 'estate-office-public', ESTATE_OFFICE_URL . 'assets/css/public.css', [], ESTATE_OFFICE_VERSION );
         }
-        if ( ! wp_script_is( 'estate-office-public', 'enqueued' ) ) {
-            wp_enqueue_script( 'estate-office-public', ESTATE_OFFICE_URL . 'assets/js/public.js', [ 'jquery' ], ESTATE_OFFICE_VERSION, true );
+        if ( ! wp_script_is( 'estate-office-chart', 'registered' ) ) {
+            wp_register_script( 'estate-office-chart', ESTATE_OFFICE_URL . 'assets/js/vendor/estate-office-charts.js', [], ESTATE_OFFICE_VERSION, true );
         }
+
+        $requires_chart              = $this->requires_chart_assets;
+        $this->requires_chart_assets = false;
+
+        $deps = [ 'jquery' ];
+        if ( $requires_chart ) {
+            $deps[] = 'estate-office-chart';
+        }
+
+        wp_register_script( 'estate-office-public', ESTATE_OFFICE_URL . 'assets/js/public.js', $deps, ESTATE_OFFICE_VERSION, true );
+        $chart_labels = wp_json_encode(
+            [
+                'total' => __( 'Łącznie', 'estate-office' ),
+            ]
+        );
+        if ( $chart_labels ) {
+            wp_add_inline_script( 'estate-office-public', 'window.EstateOfficeChartLabels = window.EstateOfficeChartLabels || ' . $chart_labels . ';', 'before' );
+        }
+        wp_enqueue_script( 'estate-office-public' );
     }
 }

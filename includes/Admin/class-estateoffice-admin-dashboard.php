@@ -31,8 +31,11 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
                 'top_agents'         => [],
                 'recent_contracts'   => [],
                 'upcoming_contracts' => [],
+                'reports'            => [],
             ]
         );
+        $reports = is_array( $metrics['reports'] ?? null ) ? $metrics['reports'] : self::get_report_datasets();
+        $reports_json = $reports ? wp_json_encode( $reports ) : '';
         ?>
         <div class="wrap estate-office-wrap estate-office-dashboard">
             <?php echo estate_office_get_brand_badge_html( 'admin' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -51,6 +54,36 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
                 <?php endforeach; ?>
             </div>
             <div class="estate-office-panels">
+                <?php if ( ! empty( $reports['charts'] ) && $reports_json ) : ?>
+                    <div class="estate-office-panel estate-office-panel--reports" data-estate-office-reports="<?php echo esc_attr( (string) $reports_json ); ?>">
+                        <div class="estate-office-report-grid">
+                            <?php foreach ( $reports['charts'] as $key => $chart ) : ?>
+                                <figure class="estate-office-report-card">
+                                    <header class="estate-office-report-card__header">
+                                        <h2><?php echo esc_html( $chart['title'] ?? '' ); ?></h2>
+                                    </header>
+                                    <div class="estate-office-report-card__chart">
+                                        <canvas data-report="<?php echo esc_attr( (string) $key ); ?>" role="img" aria-label="<?php echo esc_attr( $chart['title'] ?? '' ); ?>"></canvas>
+                                    </div>
+                                    <p class="estate-office-report-card__fallback"><?php esc_html_e( 'Aby wyświetlić wykres, upewnij się, że JavaScript jest włączony.', 'estate-office' ); ?></p>
+                                </figure>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if ( ! empty( $reports['exports'] ) ) : ?>
+                            <form class="estate-office-report-export" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                                <?php wp_nonce_field( 'estate_office_export_report', '_estate_office_export_nonce' ); ?>
+                                <input type="hidden" name="action" value="estate_office_export_report" />
+                                <label for="estate-office-report-export-select"><?php esc_html_e( 'Eksportuj raport', 'estate-office' ); ?></label>
+                                <select id="estate-office-report-export-select" name="report">
+                                    <?php foreach ( $reports['exports'] as $export_key => $export ) : ?>
+                                        <option value="<?php echo esc_attr( (string) $export_key ); ?>"><?php echo esc_html( $export['label'] ?? $export_key ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" class="button button-secondary"><?php esc_html_e( 'Pobierz CSV', 'estate-office' ); ?></button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if ( ! empty( $metrics['top_agents'] ) ) : ?>
                     <div class="estate-office-panel">
                         <h2><?php esc_html_e( 'Najlepsi agenci', 'estate-office' ); ?></h2>
@@ -208,11 +241,48 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
             'recent_contracts'   => $recent_contracts,
             'upcoming_contracts' => $upcoming_contracts,
             'top_agents'         => self::get_top_agents(),
+            'reports'            => self::get_report_datasets(),
         ];
 
         set_transient( $cache_key, $metrics, MINUTE_IN_SECONDS * 10 );
 
         return $metrics;
+    }
+
+    /**
+     * Provide chart and export datasets used by CRM reports.
+     *
+     * @return array<string,mixed>
+     */
+    public static function get_report_datasets(): array {
+        $contracts   = self::prepare_contracts_by_month_dataset();
+        $properties  = self::prepare_properties_by_type_dataset();
+        $transactions = self::prepare_transactions_by_type_dataset();
+
+        $charts = [
+            'contracts_by_month'    => $contracts['chart'],
+            'properties_by_type'    => $properties['chart'],
+            'transactions_by_type'  => $transactions['chart'],
+        ];
+
+        $exports = [
+            'contracts_by_month'   => $contracts['export'],
+            'properties_by_type'   => $properties['export'],
+            'transactions_by_type' => $transactions['export'],
+        ];
+
+        return [
+            'charts'  => $charts,
+            'exports' => $exports,
+        ];
+    }
+
+    /**
+     * Retrieve export dataset by key.
+     */
+    public static function get_export_dataset( string $key ): array {
+        $reports = self::get_report_datasets();
+        return $reports['exports'][ $key ] ?? [];
     }
 
     /**
@@ -240,5 +310,240 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
                 LIMIT 5";
 
         return $wpdb->get_results( $sql );
+    }
+
+    /**
+     * Prepare dataset counting contracts per month for the last twelve months.
+     *
+     * @return array<string,mixed>
+     */
+    protected static function prepare_contracts_by_month_dataset(): array {
+        global $wpdb;
+
+        $contracts_table = $wpdb->prefix . 'eo_contracts';
+        $start_timestamp = strtotime( 'first day of -11 month midnight' );
+        $periods         = [];
+
+        for ( $i = 0; $i < 12; $i++ ) {
+            $timestamp           = strtotime( sprintf( '+%d month', $i ), $start_timestamp );
+            $key                 = gmdate( 'Y-m', $timestamp );
+            $periods[ $key ]     = [
+                'timestamp' => $timestamp,
+                'label'     => wp_date( 'F Y', $timestamp ),
+                'value'     => 0,
+            ];
+        }
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT DATE_FORMAT(start_date, '%%Y-%%m') AS period, COUNT(*) AS total
+                FROM {$contracts_table}
+                WHERE start_date IS NOT NULL AND start_date >= %s
+                GROUP BY period
+                ORDER BY period ASC",
+                gmdate( 'Y-m-01', $start_timestamp )
+            )
+        );
+
+        foreach ( $results as $row ) {
+            $key = $row->period;
+            if ( isset( $periods[ $key ] ) ) {
+                $periods[ $key ]['value'] = (int) $row->total;
+            }
+        }
+
+        $labels = [];
+        $values = [];
+        foreach ( $periods as $period ) {
+            $labels[] = $period['label'];
+            $values[] = $period['value'];
+        }
+
+        return [
+            'chart'  => [
+                'title'    => __( 'Umowy wg miesięcy', 'estate-office' ),
+                'type'     => 'line',
+                'labels'   => $labels,
+                'datasets' => [
+                    [
+                        'label'           => __( 'Umowy', 'estate-office' ),
+                        'data'            => $values,
+                        'borderColor'     => '#2563eb',
+                        'backgroundColor' => 'rgba(37, 99, 235, 0.2)',
+                        'borderWidth'     => 2,
+                        'fill'            => true,
+                        'tension'         => 0.3,
+                    ],
+                ],
+            ],
+            'export' => [
+                'label'    => __( 'Umowy wg miesięcy', 'estate-office' ),
+                'filename' => 'estate-office-contracts-by-month-' . gmdate( 'Ymd' ) . '.csv',
+                'headers'  => [ __( 'Okres', 'estate-office' ), __( 'Liczba umów', 'estate-office' ) ],
+                'rows'     => array_map(
+                    static function ( string $label, int $value ): array {
+                        return [ $label, (string) $value ];
+                    },
+                    $labels,
+                    $values
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Prepare dataset describing inventory by property type.
+     *
+     * @return array<string,mixed>
+     */
+    protected static function prepare_properties_by_type_dataset(): array {
+        global $wpdb;
+
+        $table          = $wpdb->prefix . 'eo_properties';
+        $types          = estate_office_get_property_types();
+        $type_counts    = array_fill_keys( $types, 0 );
+
+        $placeholders = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+        $results      = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT property_type, COUNT(*) AS total FROM {$table} WHERE property_type IN ({$placeholders}) GROUP BY property_type",
+                ...$types
+            )
+        );
+
+        foreach ( $results as $row ) {
+            $type = $row->property_type;
+            if ( isset( $type_counts[ $type ] ) ) {
+                $type_counts[ $type ] = (int) $row->total;
+            }
+        }
+
+        $labels = array_values( $types );
+        $values = array_map(
+            static function ( string $type ) use ( $type_counts ): int {
+                return (int) ( $type_counts[ $type ] ?? 0 );
+            },
+            $types
+        );
+
+        $palette = self::get_chart_palette();
+        $colors  = [];
+        foreach ( $labels as $index => $label ) {
+            $colors[] = $palette[ $index % count( $palette ) ];
+        }
+
+        return [
+            'chart'  => [
+                'title'    => __( 'Struktura nieruchomości', 'estate-office' ),
+                'type'     => 'doughnut',
+                'labels'   => $labels,
+                'datasets' => [
+                    [
+                        'label'           => __( 'Nieruchomości', 'estate-office' ),
+                        'data'            => $values,
+                        'backgroundColor' => $colors,
+                        'borderColor'     => '#ffffff',
+                        'borderWidth'     => 1,
+                    ],
+                ],
+            ],
+            'export' => [
+                'label'    => __( 'Struktura nieruchomości', 'estate-office' ),
+                'filename' => 'estate-office-properties-by-type-' . gmdate( 'Ymd' ) . '.csv',
+                'headers'  => [ __( 'Rodzaj nieruchomości', 'estate-office' ), __( 'Liczba', 'estate-office' ) ],
+                'rows'     => array_map(
+                    static function ( string $label, int $value ): array {
+                        return [ $label, (string) $value ];
+                    },
+                    $labels,
+                    $values
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Prepare dataset summarising contracts by transaction type.
+     *
+     * @return array<string,mixed>
+     */
+    protected static function prepare_transactions_by_type_dataset(): array {
+        global $wpdb;
+
+        $contracts_table = $wpdb->prefix . 'eo_contracts';
+        $types           = [ 'SPRZEDAŻ', 'KUPNO', 'WYNAJEM', 'NAJEM' ];
+        $counts          = array_fill_keys( $types, 0 );
+
+        $placeholders = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+        $results      = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT transaction_type, COUNT(*) AS total FROM {$contracts_table} WHERE transaction_type IN ({$placeholders}) GROUP BY transaction_type",
+                ...$types
+            )
+        );
+
+        foreach ( $results as $row ) {
+            $type = $row->transaction_type;
+            if ( isset( $counts[ $type ] ) ) {
+                $counts[ $type ] = (int) $row->total;
+            }
+        }
+
+        $labels = $types;
+        $values = array_map(
+            static function ( string $type ) use ( $counts ): int {
+                return (int) ( $counts[ $type ] ?? 0 );
+            },
+            $types
+        );
+
+        $palette = self::get_chart_palette();
+
+        return [
+            'chart'  => [
+                'title'    => __( 'Typy transakcji', 'estate-office' ),
+                'type'     => 'bar',
+                'labels'   => $labels,
+                'datasets' => [
+                    [
+                        'label'           => __( 'Umowy', 'estate-office' ),
+                        'data'            => $values,
+                        'backgroundColor' => array_slice( $palette, 0, count( $labels ) ),
+                        'borderColor'     => '#0f172a',
+                        'borderWidth'     => 1,
+                    ],
+                ],
+            ],
+            'export' => [
+                'label'    => __( 'Typy transakcji', 'estate-office' ),
+                'filename' => 'estate-office-contracts-by-transaction-' . gmdate( 'Ymd' ) . '.csv',
+                'headers'  => [ __( 'Typ transakcji', 'estate-office' ), __( 'Liczba umów', 'estate-office' ) ],
+                'rows'     => array_map(
+                    static function ( string $label, int $value ): array {
+                        return [ $label, (string) $value ];
+                    },
+                    $labels,
+                    $values
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Provide colour palette shared by charts.
+     *
+     * @return array<int,string>
+     */
+    protected static function get_chart_palette(): array {
+        return [
+            '#2563eb',
+            '#10b981',
+            '#f59e0b',
+            '#ef4444',
+            '#8b5cf6',
+            '#ec4899',
+            '#14b8a6',
+            '#9333ea',
+        ];
     }
 }

@@ -13,6 +13,7 @@
             this.setupClientForm();
             this.setupAddressToggle();
             this.setupStageHistory();
+            this.setupDashboardReports();
         },
 
         setupMediaFields() {
@@ -622,6 +623,146 @@
                 }
                 if ( typeof EstateOfficeAdmin.refreshStageHistoryJson === 'function' ) {
                     EstateOfficeAdmin.refreshStageHistoryJson();
+                }
+            });
+        },
+
+        setupDashboardReports() {
+            const container = document.querySelector('[data-estate-office-reports]');
+            if ( ! container || container.dataset.initialized ) {
+                return;
+            }
+            container.dataset.initialized = '1';
+
+            if ( typeof Chart === 'undefined' ) {
+                return;
+            }
+
+            let payload = container.getAttribute('data-estate-office-reports');
+            if ( ! payload && typeof EstateOfficeData !== 'undefined' && EstateOfficeData.reports ) {
+                payload = JSON.stringify(EstateOfficeData.reports);
+            }
+
+            if ( ! payload ) {
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(payload);
+            } catch (error) {
+                return;
+            }
+
+            if ( ! data || typeof data !== 'object' || ! data.charts ) {
+                return;
+            }
+
+            const charts = data.charts;
+
+            const renderLegend = (card, config) => {
+                if ( ! card ) {
+                    return;
+                }
+                const existing = card.querySelector('.estate-office-report-legend');
+                if ( existing ) {
+                    existing.remove();
+                }
+                const labels = config.labels || [];
+                const datasets = config.datasets || [];
+                if ( ! labels.length || ! datasets.length ) {
+                    return;
+                }
+                const dataset = datasets[0];
+                const values = Array.isArray(dataset.data) ? dataset.data : [];
+                const colors = dataset.backgroundColor || dataset.borderColor || '#2563eb';
+                const list = document.createElement('ul');
+                list.className = 'estate-office-report-legend';
+                labels.forEach((label, index) => {
+                    const item = document.createElement('li');
+                    const swatch = document.createElement('span');
+                    swatch.className = 'estate-office-report-legend__swatch';
+                    swatch.style.backgroundColor = Array.isArray(colors) ? (colors[index % colors.length] || '#2563eb') : colors;
+                    const text = document.createElement('span');
+                    const value = typeof values[index] !== 'undefined' ? values[index] : '';
+                    text.textContent = value !== '' ? label + ' (' + value + ')' : String(label);
+                    item.appendChild(swatch);
+                    item.appendChild(text);
+                    list.appendChild(item);
+                });
+                card.appendChild(list);
+            };
+
+            Object.keys(charts).forEach((key) => {
+                const config = charts[key];
+                if ( ! config || typeof config !== 'object' ) {
+                    return;
+                }
+                const canvas = container.querySelector('canvas[data-report="' + key + '"]');
+                if ( ! canvas ) {
+                    return;
+                }
+                const card = canvas.closest('.estate-office-report-card');
+                const context = canvas.getContext('2d');
+                if ( ! context ) {
+                    return;
+                }
+
+                const datasets = (config.datasets || []).map((dataset) => {
+                    const defaults = {
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: config.type === 'line',
+                        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                        borderColor: '#2563eb'
+                    };
+                    return $.extend({}, defaults, dataset || {});
+                });
+
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: datasets.length > 0
+                        },
+                        title: {
+                            display: !!config.title,
+                            text: config.title || ''
+                        }
+                    }
+                };
+
+                if ( config.type !== 'doughnut' && config.type !== 'pie' ) {
+                    chartOptions.scales = {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        }
+                    };
+                }
+
+                const chartInstance = new Chart(context, {
+                    type: config.type || 'bar',
+                    data: {
+                        labels: config.labels || [],
+                        datasets: datasets
+                    },
+                    options: chartOptions
+                });
+
+                if ( chartInstance && card ) {
+                    renderLegend(card, config);
+                    card.classList.add('is-ready');
                 }
             });
         },

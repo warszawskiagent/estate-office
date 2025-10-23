@@ -613,6 +613,92 @@
     color: #fff;
 }
 
+.estate-office-panel--reports {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.estate-office-report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.estate-office-report-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.estate-office-report-card__header h2,
+.estate-office-report-card__header h3,
+.estate-office-report-card__header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.estate-office-report-card__chart {
+    position: relative;
+    min-height: 220px;
+}
+
+.estate-office-report-card__chart canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.estate-office-report-card__fallback {
+    margin: 0;
+    font-size: 12px;
+    color: #6c7781;
+}
+
+.estate-office-report-card.is-ready .estate-office-report-card__fallback {
+    display: none;
+}
+
+.estate-office-report-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 12px;
+    color: #1f2937;
+}
+
+.estate-office-report-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.estate-office-report-legend__swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 6px;
+}
+
+.estate-office-report-export {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.estate-office-report-export label {
+    font-weight: 600;
+}
+
 @media (max-width: 782px) {
     .estate-office-grid.two-cols,
     .estate-office-grid.three-cols {
@@ -622,5 +708,9 @@
     .estate-office-media-field {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .estate-office-report-grid {
+        grid-template-columns: 1fr;
     }
 }

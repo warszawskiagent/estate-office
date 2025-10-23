@@ -53,6 +53,7 @@ class EstateOffice_Admin {
         add_action( 'admin_post_estate_office_delete_search', [ $this, 'handle_delete_search' ] );
         add_action( 'admin_post_estate_office_sync_offer', [ $this, 'handle_sync_offer' ] );
         add_action( 'admin_post_estate_office_sync_offers', [ $this, 'handle_sync_offers' ] );
+        add_action( 'admin_post_estate_office_export_report', [ $this, 'handle_export_report' ] );
     }
 
     /**
@@ -134,35 +135,58 @@ class EstateOffice_Admin {
         wp_enqueue_media();
         wp_enqueue_style( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/css/admin.css', [], ESTATE_OFFICE_VERSION );
 
-        $script_deps = [ 'jquery', 'wp-util' ];
-        $maps_key    = get_option( 'estate_office_google_maps_api_key', '' );
+        if ( ! wp_script_is( 'estate-office-chart', 'registered' ) ) {
+            wp_register_script( 'estate-office-chart', ESTATE_OFFICE_URL . 'assets/js/vendor/estate-office-charts.js', [], ESTATE_OFFICE_VERSION, true );
+        }
+
+        $script_deps  = [ 'jquery', 'wp-util' ];
+        $is_dashboard = false !== strpos( $hook, EstateOffice_Admin_Dashboard::SLUG );
+
+        if ( $is_dashboard ) {
+            $script_deps[] = 'estate-office-chart';
+        }
+
+        $maps_key = get_option( 'estate_office_google_maps_api_key', '' );
         if ( $maps_key ) {
             wp_enqueue_script( 'estate-office-google-maps', 'https://maps.googleapis.com/maps/api/js?key=' . rawurlencode( $maps_key ), [], null, true );
             $script_deps[] = 'estate-office-google-maps';
         }
 
         wp_enqueue_script( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/js/admin.js', $script_deps, ESTATE_OFFICE_VERSION, true );
-        wp_localize_script(
-            'estate-office-admin',
-            'EstateOfficeData',
+
+        $localize = [
+            'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
+            'nonce'              => wp_create_nonce( 'estate_office_ajax' ),
+            'stages'             => EstateOffice_Admin_Contracts::get_stages(),
+            'propertyFields'     => EstateOffice_Admin_Settings::get_dynamic_fields( 'property' ),
+            'contractFields'     => EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' ),
+            'clientFields'       => EstateOffice_Admin_Settings::get_dynamic_fields( 'client' ),
+            'mediaTitle'         => __( 'Wybierz plik', 'estate-office' ),
+            'mediaButton'        => __( 'Użyj pliku', 'estate-office' ),
+            'galleryTitle'       => __( 'Wybierz zdjęcia', 'estate-office' ),
+            'galleryButton'      => __( 'Dodaj zdjęcia', 'estate-office' ),
+            'removeImage'        => __( 'Usuń', 'estate-office' ),
+            'clientsRequired'    => __( 'Dodaj co najmniej jednego klienta do umowy.', 'estate-office' ),
+            'removeClientLabel'  => __( 'Usuń klienta %s', 'estate-office' ),
+            'emptyStages'        => __( 'Brak historii etapów.', 'estate-office' ),
+            'stageGuard'         => __( 'Nie możesz usunąć ostatniego etapu umowy.', 'estate-office' ),
+        ];
+
+        if ( $is_dashboard ) {
+            $localize['reports'] = EstateOffice_Admin_Dashboard::get_report_datasets();
+        }
+
+        wp_localize_script( 'estate-office-admin', 'EstateOfficeData', $localize );
+
+        $chart_labels = wp_json_encode(
             [
-                'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-                'nonce'           => wp_create_nonce( 'estate_office_ajax' ),
-                'stages'          => EstateOffice_Admin_Contracts::get_stages(),
-                'propertyFields'  => EstateOffice_Admin_Settings::get_dynamic_fields( 'property' ),
-                'contractFields'  => EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' ),
-                'clientFields'    => EstateOffice_Admin_Settings::get_dynamic_fields( 'client' ),
-                'mediaTitle'      => __( 'Wybierz plik', 'estate-office' ),
-                'mediaButton'     => __( 'Użyj pliku', 'estate-office' ),
-                'galleryTitle'    => __( 'Wybierz zdjęcia', 'estate-office' ),
-                'galleryButton'   => __( 'Dodaj zdjęcia', 'estate-office' ),
-                'removeImage'     => __( 'Usuń', 'estate-office' ),
-                'clientsRequired' => __( 'Dodaj co najmniej jednego klienta do umowy.', 'estate-office' ),
-                'removeClientLabel' => __( 'Usuń klienta %s', 'estate-office' ),
-                'emptyStages'     => __( 'Brak historii etapów.', 'estate-office' ),
-                'stageGuard'      => __( 'Nie możesz usunąć ostatniego etapu umowy.', 'estate-office' ),
+                'total' => __( 'Łącznie', 'estate-office' ),
             ]
         );
+
+        if ( $chart_labels ) {
+            wp_add_inline_script( 'estate-office-admin', 'window.EstateOfficeChartLabels = window.EstateOfficeChartLabels || ' . $chart_labels . ';', 'before' );
+        }
     }
 
     /**
@@ -804,6 +828,48 @@ class EstateOffice_Admin {
             admin_url( 'admin.php' )
         );
         wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Export CRM report as CSV.
+     */
+    public function handle_export_report(): void {
+        if ( ! current_user_can( 'eo_view_crm' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do eksportu raportu.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_export_report', '_estate_office_export_nonce' );
+
+        $report_key = isset( $_POST['report'] ) ? sanitize_key( wp_unslash( $_POST['report'] ) ) : '';
+        $dataset    = EstateOffice_Admin_Dashboard::get_export_dataset( $report_key );
+
+        if ( empty( $dataset ) || empty( $dataset['rows'] ) ) {
+            wp_die( esc_html__( 'Wybrany raport jest niedostępny.', 'estate-office' ) );
+        }
+
+        $filename = $dataset['filename'] ?? 'estate-office-report.csv';
+        $headers  = (array) ( $dataset['headers'] ?? [] );
+        $rows     = (array) $dataset['rows'];
+
+        nocache_headers();
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename=' . sanitize_file_name( $filename ) );
+
+        $output = fopen( 'php://output', 'w' );
+        if ( false === $output ) {
+            wp_die( esc_html__( 'Nie udało się zainicjować eksportu.', 'estate-office' ) );
+        }
+
+        if ( ! empty( $headers ) ) {
+            fputcsv( $output, $headers, ';' );
+        }
+
+        foreach ( $rows as $row ) {
+            fputcsv( $output, array_map( 'strval', (array) $row ), ';' );
+        }
+
+        fclose( $output );
         exit;
     }
 
