@@ -45,6 +45,7 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
                     <?php $this->render_global_action(); ?>
                 </div>
             </div>
+            <?php $this->render_portal_alerts_panel(); ?>
             <div class="estate-office-grid">
                 <?php foreach ( $metrics['cards'] as $metric ) : ?>
                     <div class="estate-office-card">
@@ -181,6 +182,50 @@ class EstateOffice_Admin_Dashboard extends EstateOffice_Admin_Page {
             esc_url( $url ),
             esc_html__( 'Dodaj nową umowę', 'estate-office' )
         );
+    }
+
+    /**
+     * Render portal alert panel if failures exist.
+     */
+    protected function render_portal_alerts_panel(): void {
+        if ( ! function_exists( 'estate_office_get_portal_alerts' ) ) {
+            return;
+        }
+
+        $alerts = array_slice( estate_office_get_portal_alerts(), 0, 5 );
+        if ( empty( $alerts ) ) {
+            return;
+        }
+
+        $exports_url = admin_url( 'admin.php?page=' . EstateOffice_Admin_Exports::SLUG );
+        ?>
+        <div class="estate-office-alert-panel">
+            <h2><?php esc_html_e( 'Alerty eksportu portali', 'estate-office' ); ?></h2>
+            <ul>
+                <?php foreach ( $alerts as $alert ) :
+                    $property_id = (int) ( $alert['property_id'] ?? 0 );
+                    $portal_name = $alert['portal_name'] ?? '';
+                    $message     = $alert['message'] ?? '';
+                    $timestamp   = isset( $alert['timestamp'] ) ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $alert['timestamp'] ) : '';
+                    $property_url = $property_id ? admin_url( 'admin.php?page=' . EstateOffice_Admin_Properties::SLUG . '&action=edit&property=' . $property_id ) : '';
+                    ?>
+                    <li>
+                        <strong><?php echo esc_html( sprintf( '#%05d – %s', $property_id, $portal_name ?: __( 'Portal', 'estate-office' ) ) ); ?></strong>
+                        <?php if ( $timestamp ) : ?>
+                            <span class="description"><?php echo esc_html( $timestamp ); ?></span>
+                        <?php endif; ?>
+                        <?php if ( $message ) : ?>
+                            <div class="description"><?php echo esc_html( $message ); ?></div>
+                        <?php endif; ?>
+                        <?php if ( $property_url ) : ?>
+                            <a class="estate-office-alert-link" href="<?php echo esc_url( $property_url ); ?>"><?php esc_html_e( 'Edytuj nieruchomość', 'estate-office' ); ?></a>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <p><a class="button" href="<?php echo esc_url( $exports_url ); ?>"><?php esc_html_e( 'Zobacz kolejkę eksportów', 'estate-office' ); ?></a></p>
+        </div>
+        <?php
     }
 
     /**

@@ -3,7 +3,7 @@
  * Plugin Name:       EstateOffice CRM
  * Plugin URI:        https://example.com/estateoffice
  * Description:       EstateOffice to zaawansowany CRM dla biur nieruchomości integrujący zarządzanie nieruchomościami, klientami, umowami i agentami.
- * Version:           0.6.0
+ * Version:           0.8.0
  * Author:            EstateOffice Team
  * Author URI:        https://example.com
  * Text Domain:       estate-office
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'ESTATE_OFFICE_VERSION' ) ) {
-    define( 'ESTATE_OFFICE_VERSION', '0.6.0' );
+    define( 'ESTATE_OFFICE_VERSION', '0.8.0' );
 }
 
 define( 'ESTATE_OFFICE_FILE', __FILE__ );
@@ -30,6 +30,7 @@ define( 'ESTATE_OFFICE_MIN_CAPABILITY', 'manage_options' );
 require_once ESTATE_OFFICE_PATH . 'includes/estateoffice-helpers.php';
 require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice-activator.php';
 require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice-deactivator.php';
+require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice-portal-manager.php';
 require_once ESTATE_OFFICE_PATH . 'includes/class-estateoffice.php';
 
 register_activation_hook( __FILE__, [ 'EstateOffice_Activator', 'activate' ] );

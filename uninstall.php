@@ -16,6 +16,7 @@ $option_keys = [
     'estate_office_property_custom_fields',
     'estate_office_contract_custom_fields',
     'estate_office_client_custom_fields',
+    'estate_office_portal_alerts',
 ];
 
 foreach ( $option_keys as $option ) {

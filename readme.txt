@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.6.0
+Stable tag: 0.8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.6.0 dodaje konfigurację portali eksportowych wraz z możliwością wyboru konkretnych serwisów w formularzach nieruchomości i kreatorze umów, jednocześnie rozwijając modułowe szablony ofert oraz raportowanie CRM.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.8.0 automatyzuje eksport na portale – harmonogram dba o wysyłki, a system powiadomień e-mail i alertów w kokpicie informuje o błędach oraz pozwala natychmiast ponowić wysyłkę.
 
 == Funkcje ==
 
@@ -22,7 +22,10 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 * Automatyczne tworzenie stron „EstateOffice CRM”, „Oferty na sprzedaż” oraz „Oferty na wynajem” podczas aktywacji wtyczki.
 * Panel „Oferty” w kokpicie administratora pozwala przeglądać i ręcznie synchronizować strony eksportowanych nieruchomości.
 * Sekcja ustawień „Eksport na portale” umożliwia definiowanie i aktywowanie serwisów zewnętrznych, które można wskazać w formularzach nieruchomości.
+* Panel „Eksporty” prezentuje status kolejki portali, historię logów i umożliwia ręczne ponawianie wysyłek oraz natychmiastowe wywołanie eksportu pojedynczej pozycji.
+* Automatyczne powiadomienia e-mail i alerty w kokpicie informują o nieudanych eksportach, oferując szybkie przejście do kolejki i czyszczenie alertów.
 * Dynamiczne formularze z polami zależnymi od ustawień w sekcji **Estate Office CRM → Ustawienia**.
+* Statusy eksportów widoczne przy nieruchomościach w CRM wraz z planowanymi próbami i komunikatami portali.
 * Historia etapów umowy wypełnia się automatycznie, pilnując daty zawarcia i blokując usunięcie etapu startowego przy zmianach.
 * Integracja z Google Maps (wprowadzony klucz API) oraz automatyczny znak wodny nanoszony na zdjęcia nieruchomości podczas zapisu i aktualizacji.
 * Publiczne listy i profile agentów prezentują miniatury ofert wygenerowane na podstawie zdjęć z nałożonym znakiem wodnym.
@@ -67,6 +70,20 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.8.0 =
+* Zoptymalizowano kolejkę eksportów na portale: dodano obsługę statusu „Wstrzymano”, sterowanie opóźnieniami i natychmiastowe przetwarzanie pojedynczych pozycji.
+* Wprowadzono powiadomienia e-mail oraz alerty w kokpicie i na pulpicie CRM informujące o nieudanych eksportach, wraz z możliwością wyczyszczenia komunikatów.
+* Rozszerzono panel „Eksporty” o akcję „Wyślij teraz” i wsparcie dla ponowień elementów w stanie „Wstrzymano”.
+* Dodano widoczność statusów portali na liście nieruchomości w CRM, łącznie z kolejną zaplanowaną próbą i ostatnim komunikatem portalu.
+* Odświeżono style administracyjne dla alertów oraz kolumny eksportów i zaktualizowano dokumentację/sekcję About.
+
+= 0.7.0 =
+* Dodano kolejkę eksportów na portale uruchamianą przez WP-Cron co 5 minut, uzupełnioną o logowanie każdej próby oraz mechanizm ograniczania liczby ponowień.
+* Wprowadzono stronę administracyjną „Eksporty” z filtrami statusów, podglądem logów i przyciskiem natychmiastowego uruchomienia eksportu.
+* Rozszerzono zapisywanie nieruchomości o automatyczne kolejkowanie portali, czyszczenie przypisań przy wyłączeniu eksportu oraz hooki dla integracji zewnętrznych.
+* Uzupełniono instalator o nowe tabele `eo_portal_queue` i `eo_portal_logs` wraz z migracją kolejki dla istniejących danych.
+* Odświeżono dokumentację (README i About) o opis dostępnych shortcode’ów i nowej kolejki portali.
 
 = 0.6.0 =
 * Dodano sekcję ustawień „Eksport na portale” z listą konfigurowalnych serwisów oraz domyślnymi wpisami Otodom, Gratka i Morizon.

@@ -24,6 +24,7 @@ class EstateOffice_Activator {
         self::ensure_agent_slugs();
         self::backfill_contract_stage_history();
         self::backfill_property_watermarks();
+        self::backfill_portal_queue();
         update_option( 'estate_office_flush_rewrite', 1 );
         if ( defined( 'ESTATE_OFFICE_VERSION' ) ) {
             update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
@@ -80,6 +81,7 @@ class EstateOffice_Activator {
         self::backfill_contract_stage_history();
         self::backfill_property_watermarks();
         self::seed_portals();
+        self::backfill_portal_queue();
         update_option( 'estate_office_flush_rewrite', 1 );
         update_option( 'estate_office_db_version', ESTATE_OFFICE_VERSION );
     }
@@ -270,6 +272,41 @@ class EstateOffice_Activator {
             KEY portal_id (portal_id)
         ) $charset_collate;";
 
+        $tables[] = "CREATE TABLE {$wpdb->prefix}eo_portal_queue (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            property_id BIGINT UNSIGNED NOT NULL,
+            portal_id BIGINT UNSIGNED NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            attempts INT UNSIGNED NOT NULL DEFAULT 0,
+            last_error TEXT NULL,
+            scheduled_at DATETIME DEFAULT NULL,
+            processed_at DATETIME DEFAULT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY property_portal (property_id, portal_id),
+            KEY portal_id (portal_id),
+            KEY property_id (property_id),
+            KEY status (status),
+            KEY scheduled_at (scheduled_at)
+        ) $charset_collate;";
+
+        $tables[] = "CREATE TABLE {$wpdb->prefix}eo_portal_logs (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            queue_id BIGINT UNSIGNED DEFAULT NULL,
+            property_id BIGINT UNSIGNED NOT NULL,
+            portal_id BIGINT UNSIGNED NOT NULL,
+            status VARCHAR(20) NOT NULL,
+            message TEXT NULL,
+            context LONGTEXT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY queue_id (queue_id),
+            KEY portal_id (portal_id),
+            KEY property_id (property_id),
+            KEY status (status)
+        ) $charset_collate;";
+
         $tables[] = "CREATE TABLE {$wpdb->prefix}eo_property_media (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             property_id BIGINT UNSIGNED NOT NULL,
@@ -329,6 +366,8 @@ class EstateOffice_Activator {
         $contracts_table  = $wpdb->prefix . 'eo_contracts';
         $clients_table    = $wpdb->prefix . 'eo_clients';
         $searches_table   = $wpdb->prefix . 'eo_searches';
+        $queue_table      = $wpdb->prefix . 'eo_portal_queue';
+        $logs_table       = $wpdb->prefix . 'eo_portal_logs';
 
         $definitions = [
             $properties_table => [
@@ -351,6 +390,19 @@ class EstateOffice_Activator {
             $searches_table   => [
                 'transaction_type' => "ALTER TABLE {$searches_table} ADD KEY transaction_type (transaction_type)",
                 'created_at'       => "ALTER TABLE {$searches_table} ADD KEY created_at (created_at)",
+            ],
+            $queue_table      => [
+                'property_portal' => "ALTER TABLE {$queue_table} ADD UNIQUE KEY property_portal (property_id, portal_id)",
+                'status'          => "ALTER TABLE {$queue_table} ADD KEY status (status)",
+                'scheduled_at'    => "ALTER TABLE {$queue_table} ADD KEY scheduled_at (scheduled_at)",
+                'property_id'     => "ALTER TABLE {$queue_table} ADD KEY property_id (property_id)",
+                'portal_id'       => "ALTER TABLE {$queue_table} ADD KEY portal_id (portal_id)",
+            ],
+            $logs_table       => [
+                'queue_id'    => "ALTER TABLE {$logs_table} ADD KEY queue_id (queue_id)",
+                'portal_id'   => "ALTER TABLE {$logs_table} ADD KEY portal_id (portal_id)",
+                'property_id' => "ALTER TABLE {$logs_table} ADD KEY property_id (property_id)",
+                'status'      => "ALTER TABLE {$logs_table} ADD KEY status (status)",
             ],
         ];
 
@@ -639,5 +691,64 @@ class EstateOffice_Activator {
                 [ '%d' ]
             );
         }
+    }
+
+    /**
+     * Ensure queue entries exist for properties already oznaczone do eksportu.
+     */
+    protected static function backfill_portal_queue(): void {
+        global $wpdb;
+
+        $queue_table = $wpdb->prefix . 'eo_portal_queue';
+        $pivot_table = $wpdb->prefix . 'eo_property_portals';
+        $properties_table = $wpdb->prefix . 'eo_properties';
+
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $queue_table ) ) !== $queue_table ) {
+            return;
+        }
+
+        $now = current_time( 'mysql' );
+
+        $rows = $wpdb->get_results(
+            "SELECT pp.property_id, pp.portal_id
+             FROM {$pivot_table} pp
+             INNER JOIN {$properties_table} p ON p.id = pp.property_id
+             WHERE p.export_portals = 1",
+            ARRAY_A
+        );
+
+        if ( ! empty( $rows ) ) {
+            foreach ( $rows as $row ) {
+                $property_id = (int) ( $row['property_id'] ?? 0 );
+                $portal_id   = (int) ( $row['portal_id'] ?? 0 );
+                if ( ! $property_id || ! $portal_id ) {
+                    continue;
+                }
+
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "INSERT INTO {$queue_table} (property_id, portal_id, status, attempts, last_error, scheduled_at, processed_at, created_at, updated_at)
+                         VALUES (%d, %d, 'pending', 0, NULL, %s, NULL, %s, %s)
+                         ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                        $property_id,
+                        $portal_id,
+                        $now,
+                        $now,
+                        $now
+                    )
+                );
+            }
+        }
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$queue_table} q
+                 LEFT JOIN {$properties_table} p ON p.id = q.property_id
+                 SET q.status = 'cancelled', q.last_error = %s, q.scheduled_at = NULL, q.processed_at = NULL, q.updated_at = %s
+                 WHERE (p.id IS NULL OR p.export_portals = 0) AND q.status NOT IN ('sent','cancelled')",
+                __( 'Eksport wyłączony dla nieruchomości.', 'estate-office' ),
+                $now
+            )
+        );
     }
 }

@@ -17,6 +17,7 @@ require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-prope
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-searches.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-agents.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-offers.php';
+require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-exports.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-settings.php';
 require_once ESTATE_OFFICE_PATH . 'includes/Admin/class-estateoffice-admin-about.php';
 
@@ -54,6 +55,11 @@ class EstateOffice_Admin {
         add_action( 'admin_post_estate_office_sync_offer', [ $this, 'handle_sync_offer' ] );
         add_action( 'admin_post_estate_office_sync_offers', [ $this, 'handle_sync_offers' ] );
         add_action( 'admin_post_estate_office_export_report', [ $this, 'handle_export_report' ] );
+        add_action( 'admin_post_estate_office_run_portal_exports', [ $this, 'handle_run_portal_exports' ] );
+        add_action( 'admin_post_estate_office_retry_portal_export', [ $this, 'handle_retry_portal_export' ] );
+        add_action( 'admin_post_estate_office_process_portal_export', [ $this, 'handle_process_portal_export' ] );
+        add_action( 'admin_post_estate_office_clear_portal_alerts', [ $this, 'handle_clear_portal_alerts' ] );
+        add_action( 'admin_notices', [ $this, 'render_portal_alert_notice' ] );
     }
 
     /**
@@ -84,6 +90,11 @@ class EstateOffice_Admin {
         $this->maybe_allow_administrator_fallback( $offers );
         $offers->register();
         $this->pages['offers'] = $offers;
+
+        $exports = new EstateOffice_Admin_Exports( $parent_slug );
+        $this->maybe_allow_administrator_fallback( $exports );
+        $exports->register();
+        $this->pages['exports'] = $exports;
 
         $searches = new EstateOffice_Admin_Searches( $parent_slug );
         $this->maybe_allow_administrator_fallback( $searches );
@@ -720,6 +731,7 @@ class EstateOffice_Admin {
             $this->delete_table_record( 'eo_properties', $property_id );
             $this->delete_property_media( $property_id );
             $this->delete_property_portals( $property_id );
+            do_action( 'estate_office_property_deleted', $property_id );
             EstateOffice_Admin_Dashboard::flush_metrics_cache();
         }
         $redirect = add_query_arg(
@@ -788,6 +800,151 @@ class EstateOffice_Admin {
         );
         wp_safe_redirect( $redirect );
         exit;
+    }
+
+    /**
+     * Trigger portal export queue processing manually.
+     */
+    public function handle_run_portal_exports(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do uruchomienia eksportu.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_run_portal_exports' );
+
+        EstateOffice_Portal_Manager::process_queue( 10 );
+
+        $redirect = add_query_arg(
+            [
+                'page'   => EstateOffice_Admin_Exports::SLUG,
+                'status' => 'processed',
+            ],
+            admin_url( 'admin.php' )
+        );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Retry specific queue item.
+     */
+    public function handle_retry_portal_export(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do ponowienia eksportu.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_retry_portal_export' );
+
+        $queue_id = isset( $_POST['queue_id'] ) ? absint( $_POST['queue_id'] ) : 0;
+        $status   = EstateOffice_Portal_Manager::retry_queue_item( $queue_id ) ? 'requeued' : 'failed';
+
+        $redirect = add_query_arg(
+            [
+                'page'   => EstateOffice_Admin_Exports::SLUG,
+                'status' => $status,
+            ],
+            admin_url( 'admin.php' )
+        );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Process queue item immediately.
+     */
+    public function handle_process_portal_export(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do uruchomienia eksportu.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_process_portal_export' );
+
+        $queue_id = isset( $_POST['queue_id'] ) ? absint( $_POST['queue_id'] ) : 0;
+        $status   = EstateOffice_Portal_Manager::process_queue_item( $queue_id ) ? 'processed' : 'failed';
+
+        $redirect = add_query_arg(
+            [
+                'page'   => EstateOffice_Admin_Exports::SLUG,
+                'status' => $status,
+            ],
+            admin_url( 'admin.php' )
+        );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Clear stored portal alerts.
+     */
+    public function handle_clear_portal_alerts(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Brak uprawnień do czyszczenia powiadomień.', 'estate-office' ) );
+        }
+
+        check_admin_referer( 'estate_office_clear_portal_alerts' );
+
+        if ( function_exists( 'estate_office_clear_portal_alerts' ) ) {
+            estate_office_clear_portal_alerts();
+        }
+
+        $redirect = wp_get_referer() ?: admin_url( 'admin.php?page=' . EstateOffice_Admin_Exports::SLUG );
+        wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * Display admin notice for failed exports.
+     */
+    public function render_portal_alert_notice(): void {
+        if ( ! current_user_can( 'eo_manage_properties' ) && ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( ! function_exists( 'estate_office_get_portal_alerts' ) ) {
+            return;
+        }
+
+        $alerts = array_slice( estate_office_get_portal_alerts(), 0, 3 );
+        if ( empty( $alerts ) ) {
+            return;
+        }
+
+        $exports_url = admin_url( 'admin.php?page=' . EstateOffice_Admin_Exports::SLUG );
+        ?>
+        <div class="notice notice-error estate-office-portal-alert">
+            <p><strong><?php esc_html_e( 'Eksport nieruchomości wymaga uwagi.', 'estate-office' ); ?></strong></p>
+            <ul>
+                <?php foreach ( $alerts as $alert ) :
+                    $property_id = (int) ( $alert['property_id'] ?? 0 );
+                    $portal_name = $alert['portal_name'] ?? '';
+                    $message     = $alert['message'] ?? '';
+                    $timestamp   = isset( $alert['timestamp'] ) ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $alert['timestamp'] ) : '';
+                    $property_url = $property_id ? admin_url( 'admin.php?page=' . EstateOffice_Admin_Properties::SLUG . '&action=edit&property=' . $property_id ) : '';
+                    ?>
+                    <li>
+                        <strong><?php echo esc_html( sprintf( '#%05d – %s', $property_id, $portal_name ?: __( 'Portal', 'estate-office' ) ) ); ?></strong>
+                        <?php if ( $timestamp ) : ?>
+                            <span class="description"><?php echo esc_html( $timestamp ); ?></span>
+                        <?php endif; ?>
+                        <?php if ( $message ) : ?>
+                            <div class="description"><?php echo esc_html( $message ); ?></div>
+                        <?php endif; ?>
+                        <?php if ( $property_url ) : ?>
+                            <a href="<?php echo esc_url( $property_url ); ?>" class="estate-office-alert-link"><?php esc_html_e( 'Edytuj nieruchomość', 'estate-office' ); ?></a>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <p>
+                <a class="button button-primary" href="<?php echo esc_url( $exports_url ); ?>"><?php esc_html_e( 'Przejdź do kolejki eksportów', 'estate-office' ); ?></a>
+            </p>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <?php wp_nonce_field( 'estate_office_clear_portal_alerts' ); ?>
+                <input type="hidden" name="action" value="estate_office_clear_portal_alerts" />
+                <button type="submit" class="button-link estate-office-alert-dismiss"><?php esc_html_e( 'Ukryj powiadomienia', 'estate-office' ); ?></button>
+            </form>
+        </div>
+        <?php
     }
 
     /**
@@ -1014,6 +1171,8 @@ class EstateOffice_Admin {
             if ( $stored_property ) {
                 estate_office_sync_property_page( $saved_id, ! empty( $record['export_www'] ), $stored_property );
             }
+
+            do_action( 'estate_office_property_saved', $saved_id, $record, $record['export_portals'] ? $portal_selection : [] );
         }
 
         return $saved_id;

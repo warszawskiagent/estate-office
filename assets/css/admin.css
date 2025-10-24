@@ -263,6 +263,139 @@
     vertical-align: top;
 }
 
+.estate-office-exports-table details {
+    max-width: 280px;
+}
+
+.estate-office-exports-table details summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.estate-office-exports-table details ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.estate-office-exports-table details li {
+    margin-bottom: 6px;
+}
+
+.estate-office-status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.4;
+    background: #dcdcde;
+    color: #3c434a;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.estate-office-status-badge.status-pending {
+    background: #fce6c8;
+    color: #7a4100;
+}
+
+.estate-office-status-badge.status-processing {
+    background: #dce9ff;
+    color: #1d4a94;
+}
+
+.estate-office-status-badge.status-retry {
+    background: #fff5c2;
+    color: #7a6400;
+}
+
+.estate-office-status-badge.status-throttled {
+    background: #fbe4b9;
+    color: #7a4a00;
+    border: 1px solid #d89f3d;
+}
+
+.estate-office-status-badge.status-sent {
+    background: #d3f6d5;
+    color: #1f6f1f;
+}
+
+.estate-office-status-badge.status-failed {
+    background: #ffd9d9;
+    color: #8a1a1a;
+}
+
+.estate-office-status-badge.status-cancelled,
+.estate-office-status-badge.status-skipped {
+    background: #eceff4;
+    color: #465061;
+}
+
+.estate-office-portal-status-list {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.estate-office-portal-status-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.estate-office-portal-status-list strong {
+    font-weight: 600;
+}
+
+.estate-office-exports-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.estate-office-inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.estate-office-portal-alert {
+    border-left-color: #d63638;
+}
+
+.estate-office-portal-alert ul {
+    margin: 0 0 1rem 1.5rem;
+    padding: 0;
+}
+
+.estate-office-portal-alert li {
+    margin-bottom: 0.5rem;
+}
+
+.estate-office-portal-alert .estate-office-alert-link,
+.estate-office-portal-alert .estate-office-alert-dismiss {
+    display: inline-block;
+    margin-top: 0.25rem;
+}
+
+.estate-office-alert-panel {
+    background: #fff;
+    border-left: 4px solid #d63638;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.estate-office-alert-panel ul {
+    margin: 0 0 1rem 1.5rem;
+    padding: 0;
+}
+
+.estate-office-alert-panel li {
+    margin-bottom: 0.5rem;
+}
+
 .estate-office-toggle-group {
     display: flex;
     flex-direction: column;

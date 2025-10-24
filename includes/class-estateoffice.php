@@ -49,6 +49,7 @@ class EstateOffice {
         add_action( 'init', [ $this, 'maybe_flush_rewrite' ], 30 );
         add_action( 'admin_init', [ 'EstateOffice_Activator', 'ensure_role_capabilities' ] );
         add_action( 'admin_init', [ 'EstateOffice_Activator', 'maybe_upgrade_schema' ] );
+        EstateOffice_Portal_Manager::hooks();
         if ( is_admin() ) {
             $this->admin->hooks();
         }

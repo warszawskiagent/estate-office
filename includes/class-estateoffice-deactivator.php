@@ -16,5 +16,8 @@ class EstateOffice_Deactivator {
      */
     public static function deactivate(): void {
         // Keep data for compliance. Future cleanup can be added via uninstall.php.
+        if ( class_exists( 'EstateOffice_Portal_Manager' ) ) {
+            wp_unschedule_hook( EstateOffice_Portal_Manager::CRON_HOOK );
+        }
     }
 }

@@ -37,7 +37,8 @@ class EstateOffice_Admin_About extends EstateOffice_Admin_Page {
                 <ol>
                     <li><?php esc_html_e( 'Wersja 0.0.1 – Fundamenty bazy danych, formularze CRM w panelu administracyjnym.', 'estate-office' ); ?></li>
                     <li><?php esc_html_e( 'Wersja 0.5.0 – Integracja z front-endem, generowanie stron ofert i profile agentów.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 0.8.0 – Automatyzacja eksportów na portale oraz rozbudowany marketing ofert.', 'estate-office' ); ?></li>
+                    <li><?php esc_html_e( 'Wersja 0.7.0 – Kolejka eksportów na portale z logami i panelem monitoringu.', 'estate-office' ); ?></li>
+                    <li><?php esc_html_e( 'Wersja 0.8.0 – Automatyzacja eksportów na portale z alertami, powiadomieniami i ręcznym sterowaniem kolejką.', 'estate-office' ); ?></li>
                     <li><?php esc_html_e( 'Wersja 1.0 – System licencji i moduły kalkulatorów (notarialny i kredytowy).', 'estate-office' ); ?></li>
                 </ol>
             </div>

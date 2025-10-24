@@ -215,6 +215,100 @@ if ( ! function_exists( 'estate_office_get_portal_choices' ) ) {
     }
 }
 
+if ( ! function_exists( 'estate_office_get_portal_status_labels' ) ) {
+    /**
+     * Provide human readable queue status labels.
+     *
+     * @return array<string,string>
+     */
+    function estate_office_get_portal_status_labels(): array {
+        return [
+            'pending'    => __( 'Oczekuje', 'estate-office' ),
+            'processing' => __( 'W trakcie', 'estate-office' ),
+            'retry'      => __( 'Do ponowienia', 'estate-office' ),
+            'throttled'  => __( 'Wstrzymano', 'estate-office' ),
+            'sent'       => __( 'Wysłano', 'estate-office' ),
+            'failed'     => __( 'Błąd', 'estate-office' ),
+            'cancelled'  => __( 'Anulowano', 'estate-office' ),
+            'skipped'    => __( 'Pominięto', 'estate-office' ),
+        ];
+    }
+}
+
+if ( ! function_exists( 'estate_office_add_portal_alert' ) ) {
+    /**
+     * Persist portal failure alert for cockpit display.
+     *
+     * @param array<string,mixed> $alert Alert data.
+     */
+    function estate_office_add_portal_alert( array $alert ): void {
+        $stored = get_option( 'estate_office_portal_alerts', [] );
+        if ( ! is_array( $stored ) ) {
+            $stored = [];
+        }
+
+        $record = [
+            'queue_id'    => isset( $alert['queue_id'] ) ? (int) $alert['queue_id'] : 0,
+            'property_id' => isset( $alert['property_id'] ) ? (int) $alert['property_id'] : 0,
+            'portal_id'   => isset( $alert['portal_id'] ) ? (int) $alert['portal_id'] : 0,
+            'portal_name' => isset( $alert['portal_name'] ) ? sanitize_text_field( (string) $alert['portal_name'] ) : '',
+            'message'     => isset( $alert['message'] ) ? wp_strip_all_tags( (string) $alert['message'] ) : '',
+            'timestamp'   => current_time( 'timestamp' ),
+        ];
+
+        $stored = array_values( array_filter( $stored, static function ( $existing ) use ( $record ) {
+            if ( ! is_array( $existing ) ) {
+                return false;
+            }
+
+            return (int) ( $existing['queue_id'] ?? 0 ) !== $record['queue_id'] || ! $record['queue_id'];
+        } ) );
+
+        array_unshift( $stored, $record );
+
+        if ( count( $stored ) > 20 ) {
+            $stored = array_slice( $stored, 0, 20 );
+        }
+
+        update_option( 'estate_office_portal_alerts', $stored, false );
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_portal_alerts' ) ) {
+    /**
+     * Retrieve stored portal alerts.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    function estate_office_get_portal_alerts(): array {
+        $stored = get_option( 'estate_office_portal_alerts', [] );
+        if ( ! is_array( $stored ) ) {
+            return [];
+        }
+
+        usort(
+            $stored,
+            static function ( $a, $b ) {
+                $a_time = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
+                $b_time = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
+
+                return $b_time <=> $a_time;
+            }
+        );
+
+        return $stored;
+    }
+}
+
+if ( ! function_exists( 'estate_office_clear_portal_alerts' ) ) {
+    /**
+     * Remove stored portal alerts.
+     */
+    function estate_office_clear_portal_alerts(): void {
+        delete_option( 'estate_office_portal_alerts' );
+    }
+}
+
 if ( ! function_exists( 'estate_office_locate_template' ) ) {
     /**
      * Locate template file that can be overridden in the active theme.
@@ -841,6 +935,230 @@ if ( ! function_exists( 'estate_office_get_property_page_url' ) ) {
         $link = get_permalink( $page_id );
 
         return $link ?: '';
+    }
+}
+
+if ( ! function_exists( 'estate_office_get_contract_stage_label' ) ) {
+    /**
+     * Retrieve human-readable stage label.
+     */
+    function estate_office_get_contract_stage_label( string $stage ): string {
+        $stage = sanitize_key( $stage );
+        if ( '' === $stage ) {
+            return '';
+        }
+
+        if ( class_exists( 'EstateOffice_Admin_Contracts' ) ) {
+            $stages = EstateOffice_Admin_Contracts::get_stages();
+            if ( isset( $stages[ $stage ] ) ) {
+                return $stages[ $stage ];
+            }
+        }
+
+        return $stage;
+    }
+}
+
+if ( ! function_exists( 'estate_office_build_portal_payload' ) ) {
+    /**
+     * Assemble structured payload for portal export.
+     *
+     * @param int                  $property_id Property identifier.
+     * @param array<string,mixed>  $portal      Portal context.
+     * @return array<string,mixed>
+     */
+    function estate_office_build_portal_payload( int $property_id, array $portal = [] ): array {
+        $property_id = absint( $property_id );
+        if ( ! $property_id ) {
+            return [];
+        }
+
+        $property = EstateOffice_Admin_Properties::get_property( $property_id );
+        if ( ! $property ) {
+            return [];
+        }
+
+        $address = $property->address ? json_decode( $property->address, true ) : [];
+        if ( ! is_array( $address ) ) {
+            $address = [];
+        }
+
+        $legal = $property->legal ? json_decode( $property->legal, true ) : [];
+        if ( ! is_array( $legal ) ) {
+            $legal = [];
+        }
+
+        $details = $property->details ? json_decode( $property->details, true ) : [];
+        if ( ! is_array( $details ) ) {
+            $details = [];
+        }
+
+        $tags = $property->tags ? json_decode( $property->tags, true ) : [];
+        if ( ! is_array( $tags ) ) {
+            $tags = [];
+        }
+
+        $media_rows = EstateOffice_Admin_Properties::get_property_media( $property_id );
+        $media      = [];
+        foreach ( $media_rows as $media_row ) {
+            $media_url        = '';
+            $watermarked_url  = '';
+            $attachment_id    = (int) ( $media_row->attachment_id ?? 0 );
+            $watermarked_id   = (int) ( $media_row->watermarked_id ?? 0 );
+            $media_type       = $media_row->media_type ?? '';
+            $raw_media_url    = $media_row->media_url ?? '';
+
+            if ( $attachment_id ) {
+                $media_url = wp_get_attachment_url( $attachment_id ) ?: '';
+            }
+
+            if ( $watermarked_id ) {
+                $watermarked_url = wp_get_attachment_url( $watermarked_id ) ?: '';
+            }
+
+            if ( '' === $media_url && '' !== $raw_media_url ) {
+                $media_url = $raw_media_url;
+            }
+
+            $media[] = [
+                'type'            => $media_type,
+                'attachment_id'   => $attachment_id,
+                'watermarked_id'  => $watermarked_id,
+                'url'             => $media_url,
+                'watermarked_url' => $watermarked_url,
+                'position'        => (int) ( $media_row->id ?? 0 ),
+            ];
+        }
+
+        $contract_data = null;
+        $clients       = [];
+        if ( ! empty( $property->contract_id ) ) {
+            $contract = EstateOffice_Admin_Contracts::get_contract( (int) $property->contract_id );
+            if ( $contract ) {
+                $history = $contract->stage_history ? json_decode( $contract->stage_history, true ) : [];
+                if ( ! is_array( $history ) ) {
+                    $history = [];
+                }
+
+                $contract_data = [
+                    'id'          => (int) $contract->id,
+                    'number'      => $contract->contract_number,
+                    'stage'       => $contract->stage,
+                    'stage_label' => estate_office_get_contract_stage_label( (string) $contract->stage ),
+                    'stage_history' => $history,
+                    'start_date'  => $contract->start_date,
+                    'end_date'    => $contract->end_date,
+                    'open_ended'  => (bool) $contract->is_open_ended,
+                    'commission'  => [
+                        'amount' => $contract->commission_amount,
+                        'unit'   => $contract->commission_unit,
+                    ],
+                ];
+
+                $client_ids = EstateOffice_Admin_Contracts::get_contract_clients( (int) $contract->id );
+                foreach ( $client_ids as $client_id ) {
+                    $client = EstateOffice_Admin_Clients::get_client( (int) $client_id );
+                    if ( ! $client ) {
+                        continue;
+                    }
+
+                    $identification = $client->identification ? json_decode( $client->identification, true ) : [];
+                    if ( ! is_array( $identification ) ) {
+                        $identification = [];
+                    }
+
+                    $client_address = $client->address ? json_decode( $client->address, true ) : [];
+                    if ( ! is_array( $client_address ) ) {
+                        $client_address = [];
+                    }
+
+                    $correspondence = $client->correspondence_address ? json_decode( $client->correspondence_address, true ) : [];
+                    if ( ! is_array( $correspondence ) ) {
+                        $correspondence = [];
+                    }
+
+                    $custom_data = $client->custom_data ? json_decode( $client->custom_data, true ) : [];
+                    if ( ! is_array( $custom_data ) ) {
+                        $custom_data = [];
+                    }
+
+                    $name = '';
+                    if ( 'company' === $client->client_type ) {
+                        $name = $client->company_name ?: __( 'Firma', 'estate-office' );
+                        if ( ! empty( $client->representative_name ) ) {
+                            $name .= ' – ' . $client->representative_name;
+                        }
+                    } else {
+                        $name = trim( (string) ( $client->first_name ?? '' ) . ' ' . (string) ( $client->last_name ?? '' ) );
+                    }
+
+                    $clients[] = [
+                        'id'                   => (int) $client->id,
+                        'type'                 => $client->client_type,
+                        'name'                 => $name,
+                        'phone'                => $client->phone,
+                        'email'                => $client->email,
+                        'website'              => $client->website,
+                        'identification'       => $identification,
+                        'address'              => $client_address,
+                        'correspondence'       => $correspondence,
+                        'custom_fields'        => $custom_data,
+                        'agent_id'             => (int) ( $client->agent_id ?? 0 ),
+                    ];
+                }
+            }
+        }
+
+        $agent_payload = null;
+        if ( ! empty( $property->agent_id ) ) {
+            $agent = EstateOffice_Admin_Agents::get_agent( (int) $property->agent_id );
+            if ( $agent ) {
+                $contact_data = $agent->contact_data ? json_decode( $agent->contact_data, true ) : [];
+                if ( ! is_array( $contact_data ) ) {
+                    $contact_data = [];
+                }
+
+                $agent_payload = [
+                    'id'           => (int) $agent->id,
+                    'name'         => EstateOffice_Admin_Agents::format_agent_name( $agent ),
+                    'phone'        => $agent->phone,
+                    'email'        => $agent->email,
+                    'contact_data' => $contact_data,
+                ];
+            }
+        }
+
+        $portal_context = [
+            'id'   => (int) ( $portal['id'] ?? 0 ),
+            'slug' => sanitize_title( $portal['slug'] ?? '' ),
+            'name' => $portal['name'] ?? '',
+        ];
+
+        $payload = [
+            'id'               => (int) $property->id,
+            'updated_at'       => $property->updated_at,
+            'created_at'       => $property->created_at,
+            'transaction_type' => $property->transaction_type,
+            'transaction_label'=> estate_office_get_transaction_label( (string) $property->transaction_type ),
+            'property_type'    => $property->property_type,
+            'address'          => $address,
+            'legal'            => $legal,
+            'details'          => $details,
+            'tags'             => $tags,
+            'description'      => wp_strip_all_tags( (string) $property->description ),
+            'media'            => $media,
+            'export'           => [
+                'www'      => (bool) $property->export_www,
+                'portals'  => (bool) $property->export_portals,
+                'page_url' => estate_office_get_property_page_url( $property_id ),
+            ],
+            'contract'         => $contract_data,
+            'clients'          => $clients,
+            'agent'            => $agent_payload,
+            'portal'           => $portal_context,
+        ];
+
+        return $payload;
     }
 }
 

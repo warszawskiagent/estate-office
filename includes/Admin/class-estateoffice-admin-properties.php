@@ -73,14 +73,18 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                         <th><?php esc_html_e( 'Metraż', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Liczba pokoi', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Opiekun', 'estate-office' ); ?></th>
+                        <th><?php esc_html_e( 'Eksporty', 'estate-office' ); ?></th>
                         <th><?php esc_html_e( 'Akcje', 'estate-office' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ( empty( $properties ) ) : ?>
-                        <tr><td colspan="8"><?php esc_html_e( 'Brak nieruchomości.', 'estate-office' ); ?></td></tr>
+                        <tr><td colspan="9"><?php esc_html_e( 'Brak nieruchomości.', 'estate-office' ); ?></td></tr>
                     <?php else : ?>
-                        <?php foreach ( $properties as $property ) : ?>
+                        <?php foreach ( $properties as $property ) :
+                            $portal_statuses = EstateOffice_Portal_Manager::get_property_statuses( (int) $property->id );
+                            $status_labels   = estate_office_get_portal_status_labels();
+                            ?>
                             <tr>
                                 <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=edit&property=' . absint( $property->id ) ) ); ?>"><?php echo esc_html( sprintf( '#%05d', $property->id ) ); ?></a></td>
                                 <td><?php echo esc_html( $property->address_display ); ?></td>
@@ -89,6 +93,32 @@ class EstateOffice_Admin_Properties extends EstateOffice_Admin_Page {
                                 <td><?php echo esc_html( $property->area ? $property->area . ' m²' : '' ); ?></td>
                                 <td><?php echo esc_html( $property->rooms ); ?></td>
                                 <td><?php echo esc_html( EstateOffice_Admin_Agents::format_agent_from_row( $property ) ?: '—' ); ?></td>
+                                <td>
+                                    <?php if ( empty( $portal_statuses ) ) : ?>
+                                        <span class="description">&mdash;</span>
+                                    <?php else : ?>
+                                        <ul class="estate-office-portal-status-list">
+                                            <?php foreach ( $portal_statuses as $portal_status ) :
+                                                $status_key   = $portal_status['status'] ?? '';
+                                                $status_label = $status_labels[ $status_key ] ?? $status_key;
+                                                $portal_name  = $portal_status['portal_name'] ?? $portal_status['portal_slug'] ?? '';
+                                                $scheduled    = ! empty( $portal_status['scheduled_at'] ) ? mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $portal_status['scheduled_at'] ) : '';
+                                                $last_error   = $portal_status['last_error'] ?? '';
+                                                ?>
+                                                <li>
+                                                    <strong><?php echo esc_html( $portal_name ); ?></strong>
+                                                    <span class="estate-office-status-badge status-<?php echo esc_attr( $status_key ); ?>"><?php echo esc_html( $status_label ); ?></span>
+                                                    <?php if ( $scheduled && in_array( $status_key, [ 'pending', 'retry', 'throttled' ], true ) ) : ?>
+                                                        <span class="description"><?php echo esc_html( sprintf( __( 'Następna próba: %s', 'estate-office' ), $scheduled ) ); ?></span>
+                                                    <?php endif; ?>
+                                                    <?php if ( $last_error && in_array( $status_key, [ 'failed', 'retry', 'throttled', 'cancelled', 'skipped' ], true ) ) : ?>
+                                                        <span class="description"><?php echo esc_html( $last_error ); ?></span>
+                                                    <?php endif; ?>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::SLUG . '&action=edit&property=' . absint( $property->id ) ) ); ?>"><?php esc_html_e( 'Edytuj', 'estate-office' ); ?></a>
                                     <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=edit&contract=' . absint( $property->contract_id ) ) ); ?>"><?php esc_html_e( 'Umowa', 'estate-office' ); ?></a>
