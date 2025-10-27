@@ -1,13 +1,15 @@
 # EstateOffice CRM
 
-Wersja 0.0.1 stanowi fundament wtyczki CRM dla biur nieruchomości. Rozszerzenie dostarcza:
+Wersja 0.1 rozwija fundament wtyczki CRM dla biur nieruchomości i wprowadza pełne operacje CRUD dla kluczowych encji. Rozszerzenie dostarcza:
 
 - strukturę menu administracyjnego *Estate Office CRM* wraz z podstronami Pulpit, Agenci, Ustawienia, About oraz Licencja;
-- moduł zarządzania agentami działający w oparciu o dedykowaną tabelę bazy danych;
+- moduły zarządzania agentami, klientami, umowami, nieruchomościami oraz poszukiwaniami, działające w oparciu o dedykowane tabele bazy danych;
+- walidowane formularze CRUD z dynamicznymi sekcjami zależnymi od wyborów użytkownika (np. typ klienta, typ nieruchomości);
 - konfigurację pól dynamicznych dla nieruchomości, umów i klientów;
 - podstawowe ustawienia globalne (klucz API Map Google, znak wodny, logo biura);
+- dedykowane repozytoria PHP odpowiadające za bezpieczny zapis i aktualizację danych;
 - zestaw niestandardowych tabel przygotowanych pod obsługę umów, nieruchomości, klientów i poszukiwań;
-- rolę użytkownika *estate_agent* ograniczoną do funkcji CRM.
+- rozbudowaną rolę użytkownika *estate_agent* z granularnymi uprawnieniami obejmującymi wybrane moduły CRM.
 
 ## Roadmapa rozwoju
 

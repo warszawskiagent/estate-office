@@ -62,3 +62,75 @@ box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 .eo-crm-roadmap li + li {
 margin-top: 0.75rem;
 }
+
+.eo-crm-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.eo-crm-inline {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.eo-crm-inline input,
+.eo-crm-inline select {
+    max-width: 160px;
+}
+
+.eo-crm-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.eo-crm-tags label {
+    background: #f0f4f8;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+.eo-crm-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.eo-crm-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.eo-crm-card__value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.25rem 0 0;
+}
+
+.eo-crm-client-section,
+.eo-crm-property-section {
+    display: none;
+}
+
+.eo-crm-client-section.is-active,
+.eo-crm-property-section.is-active,
+.eo-crm-property-section--lot-regular.is-visible,
+.eo-crm-property-section--lot-irregular.is-visible {
+    display: table-row;
+}
+
+.eo-crm-correspondence {
+    transition: all 0.2s ease-in-out;
+}
+
+.eo-crm-list table .row-actions {
+    visibility: visible;
+    opacity: 1;
+}

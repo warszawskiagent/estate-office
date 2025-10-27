@@ -9,6 +9,8 @@ namespace EstateOfficeCRM\Database;
 
 defined( 'ABSPATH' ) || exit;
 
+use EstateOfficeCRM\Capabilities;
+
 /**
  * Handle plugin activation and schema management.
  */
@@ -26,6 +28,7 @@ class Install {
     public static function activate(): void {
         self::create_roles();
         self::create_tables();
+        Capabilities::ensure_roles_have_caps();
         update_option( 'eo_crm_version', EO_CRM_VERSION );
     }
 
@@ -44,6 +47,7 @@ class Install {
 
         if ( version_compare( $version, EO_CRM_VERSION, '<' ) ) {
             self::create_tables();
+            Capabilities::ensure_roles_have_caps();
             update_option( 'eo_crm_version', EO_CRM_VERSION );
         }
     }
@@ -55,20 +59,10 @@ class Install {
         add_role(
             'estate_agent',
             __( 'Agent nieruchomości', 'estate-office-crm' ),
-            [
-                'read'           => true,
-                'upload_files'   => true,
-                'edit_posts'     => false,
-                'delete_posts'   => false,
-                'publish_posts'  => false,
-                'list_users'     => false,
-                'promote_users'  => false,
-                'delete_users'   => false,
-                'create_users'   => false,
-                'edit_users'     => false,
-                'assign_terms'   => false,
-            ]
+            Capabilities::agent_role_defaults()
         );
+
+        Capabilities::ensure_roles_have_caps();
     }
 
     /**

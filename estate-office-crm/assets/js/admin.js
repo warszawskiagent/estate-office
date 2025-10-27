@@ -95,9 +95,127 @@ $(this).closest('.eo-crm-dynamic-field').remove();
 });
 }
 
+function initialiseClientForm(){
+const typeField = $('#client_type');
+if (!typeField.length){
+return;
+}
+
+const sections = $('.eo-crm-client-section');
+const correspondenceCheckbox = $('input[name="correspondence_same"]');
+const correspondenceWrapper = $('.eo-crm-correspondence');
+
+function toggleClientSections(){
+const type = typeField.val();
+sections.removeClass('is-active');
+sections.filter('.eo-crm-client-section--' + type).addClass('is-active');
+}
+
+function toggleCorrespondence(){
+if (correspondenceCheckbox.is(':checked')){
+correspondenceWrapper.slideUp(150);
+} else {
+correspondenceWrapper.slideDown(150);
+}
+}
+
+typeField.on('change', toggleClientSections);
+correspondenceCheckbox.on('change', toggleCorrespondence);
+
+toggleClientSections();
+toggleCorrespondence();
+}
+
+function initialiseContractForm(){
+const openEnded = $('#is_open_ended');
+const endDate = $('#end_date');
+
+if (!openEnded.length){
+return;
+}
+
+function toggleEndDate(){
+if (openEnded.is(':checked')){
+endDate.prop('disabled', true).val('');
+} else {
+endDate.prop('disabled', false);
+}
+}
+
+openEnded.on('change', toggleEndDate);
+toggleEndDate();
+}
+
+function initialisePropertyForm(){
+const propertyType = $('#property_type');
+const lotShape = $('#lot_shape');
+const sections = $('.eo-crm-property-section');
+const lotRegular = $('.eo-crm-property-section--lot-regular');
+const lotIrregular = $('.eo-crm-property-section--lot-irregular');
+const priceField = $('#price');
+const sizeField = $('#size_total');
+const pricePerSqmField = $('#price_per_sqm');
+
+if (!propertyType.length){
+return;
+}
+
+function togglePropertySections(){
+const type = propertyType.val();
+sections.removeClass('is-active');
+
+if ('DZIAŁKA' === type){
+sections.filter('.eo-crm-property-section--lot').addClass('is-active');
+} else if ('DOM' === type){
+sections.filter('.eo-crm-property-section--rooms, .eo-crm-property-section--floors, .eo-crm-property-section--build-year').addClass('is-active');
+sections.filter('.eo-crm-property-section--lot').addClass('is-active');
+} else {
+sections.filter('.eo-crm-property-section--rooms, .eo-crm-property-section--storey, .eo-crm-property-section--floors, .eo-crm-property-section--build-year').addClass('is-active');
+}
+
+    if ('DOM' !== type && 'DZIAŁKA' !== type){
+        sections.filter('.eo-crm-property-section--storey').addClass('is-active');
+    }
+}
+
+function toggleLotSections(){
+lotRegular.removeClass('is-visible');
+lotIrregular.removeClass('is-visible');
+
+if ('REGULARNY' === lotShape.val()){
+lotRegular.addClass('is-visible');
+} else if ('NIEREGULARNY' === lotShape.val()){
+lotIrregular.addClass('is-visible');
+}
+}
+
+function recalculatePricePerSqm(){
+const price = parseFloat(priceField.val());
+const size = parseFloat(sizeField.val());
+
+if (price > 0 && size > 0){
+pricePerSqmField.val((price / size).toFixed(2));
+} else {
+pricePerSqmField.val('');
+}
+}
+
+propertyType.on('change', togglePropertySections);
+lotShape.on('change', toggleLotSections);
+priceField.on('input', recalculatePricePerSqm);
+sizeField.on('input', recalculatePricePerSqm);
+
+togglePropertySections();
+toggleLotSections();
+recalculatePricePerSqm();
+}
+
 $(function(){
 initialiseMediaControls();
 initialiseDynamicFields();
+initialiseClientForm();
+initialiseContractForm();
+initialisePropertyForm();
 });
 
 })(jQuery);

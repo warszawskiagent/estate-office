@@ -11,7 +11,16 @@ defined( 'ABSPATH' ) || exit;
 
 use EstateOfficeCRM\Admin\Pages\About_Page;
 use EstateOfficeCRM\Admin\Pages\Agents_Page;
+use EstateOfficeCRM\Admin\Pages\Clients_Page;
+use EstateOfficeCRM\Admin\Pages\Contracts_Page;
+use EstateOfficeCRM\Admin\Pages\Properties_Page;
+use EstateOfficeCRM\Admin\Pages\Searches_Page;
 use EstateOfficeCRM\Admin\Pages\Settings_Page;
+use EstateOfficeCRM\Capabilities;
+use EstateOfficeCRM\Database\Repositories\Clients_Repository;
+use EstateOfficeCRM\Database\Repositories\Contracts_Repository;
+use EstateOfficeCRM\Database\Repositories\Properties_Repository;
+use EstateOfficeCRM\Database\Repositories\Searches_Repository;
 
 /**
  * Admin menu registration.
@@ -30,12 +39,10 @@ class Admin_Menu {
      * Register the admin menu structure.
      */
     public function register_menu(): void {
-        $capability = 'manage_options';
-
         add_menu_page(
             __( 'Estate Office CRM', 'estate-office-crm' ),
             __( 'Estate Office CRM', 'estate-office-crm' ),
-            $capability,
+            Capabilities::ACCESS_DASHBOARD,
             'estate-office-crm',
             [ $this, 'render_dashboard_page' ],
             'dashicons-building'
@@ -45,7 +52,7 @@ class Admin_Menu {
             'estate-office-crm',
             __( 'Pulpit', 'estate-office-crm' ),
             __( 'Pulpit', 'estate-office-crm' ),
-            $capability,
+            Capabilities::ACCESS_DASHBOARD,
             'estate-office-crm'
         );
 
@@ -53,16 +60,52 @@ class Admin_Menu {
             'estate-office-crm',
             __( 'Agenci', 'estate-office-crm' ),
             __( 'Agenci', 'estate-office-crm' ),
-            $capability,
+            Capabilities::MANAGE_AGENTS,
             'estate-office-crm-agents',
             [ $this, 'render_agents_page' ]
         );
 
         add_submenu_page(
             'estate-office-crm',
+            __( 'Klienci', 'estate-office-crm' ),
+            __( 'Klienci', 'estate-office-crm' ),
+            Capabilities::MANAGE_CLIENTS,
+            'estate-office-crm-clients',
+            [ $this, 'render_clients_page' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __( 'Umowy', 'estate-office-crm' ),
+            __( 'Umowy', 'estate-office-crm' ),
+            Capabilities::MANAGE_CONTRACTS,
+            'estate-office-crm-contracts',
+            [ $this, 'render_contracts_page' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __( 'Nieruchomości', 'estate-office-crm' ),
+            __( 'Nieruchomości', 'estate-office-crm' ),
+            Capabilities::MANAGE_PROPERTIES,
+            'estate-office-crm-properties',
+            [ $this, 'render_properties_page' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __( 'Poszukiwania', 'estate-office-crm' ),
+            __( 'Poszukiwania', 'estate-office-crm' ),
+            Capabilities::MANAGE_SEARCHES,
+            'estate-office-crm-searches',
+            [ $this, 'render_searches_page' ]
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
             __( 'Ustawienia', 'estate-office-crm' ),
             __( 'Ustawienia', 'estate-office-crm' ),
-            $capability,
+            Capabilities::MANAGE_SETTINGS,
             'estate-office-crm-settings',
             [ $this, 'render_settings_page' ]
         );
@@ -71,7 +114,7 @@ class Admin_Menu {
             'estate-office-crm',
             __( 'About', 'estate-office-crm' ),
             __( 'About', 'estate-office-crm' ),
-            $capability,
+            Capabilities::ACCESS_DASHBOARD,
             'estate-office-crm-about',
             [ $this, 'render_about_page' ]
         );
@@ -80,7 +123,7 @@ class Admin_Menu {
             'estate-office-crm',
             __( 'Licencja', 'estate-office-crm' ),
             __( 'Licencja', 'estate-office-crm' ),
-            $capability,
+            Capabilities::MANAGE_SETTINGS,
             'estate-office-crm-license',
             [ $this, 'render_license_page' ]
         );
@@ -160,6 +203,11 @@ class Admin_Menu {
      * Render main dashboard placeholder.
      */
     public function render_dashboard_page(): void {
+        $clients_count   = ( new Clients_Repository() )->count();
+        $contracts_count = ( new Contracts_Repository() )->count();
+        $properties_count = ( new Properties_Repository() )->count();
+        $searches_count  = ( new Searches_Repository() )->count();
+
         require __DIR__ . '/views/dashboard.php';
     }
 
@@ -168,6 +216,34 @@ class Admin_Menu {
      */
     public function render_agents_page(): void {
         ( new Agents_Page() )->render();
+    }
+
+    /**
+     * Render clients page.
+     */
+    public function render_clients_page(): void {
+        ( new Clients_Page() )->render();
+    }
+
+    /**
+     * Render contracts page.
+     */
+    public function render_contracts_page(): void {
+        ( new Contracts_Page() )->render();
+    }
+
+    /**
+     * Render properties page.
+     */
+    public function render_properties_page(): void {
+        ( new Properties_Page() )->render();
+    }
+
+    /**
+     * Render searches page.
+     */
+    public function render_searches_page(): void {
+        ( new Searches_Page() )->render();
     }
 
     /**

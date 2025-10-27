@@ -54,7 +54,7 @@ final class Plugin {
      * Define frequently used constants.
      */
     private function define_constants(): void {
-        define( 'EO_CRM_VERSION', '0.0.1' );
+        define( 'EO_CRM_VERSION', '0.1.0' );
         define( 'EO_CRM_DIR', dirname( __DIR__ ) );
         define( 'EO_CRM_FILE', EO_CRM_DIR . '/estate-office-crm.php' );
         define( 'EO_CRM_PATH', plugin_dir_path( EO_CRM_FILE ) );

@@ -3,7 +3,7 @@
  * Plugin Name:       EstateOffice CRM
  * Plugin URI:        https://example.com/estateoffice-crm
  * Description:       EstateOffice to kompleksowy CRM dla biur nieruchomości integrujący zarządzanie nieruchomościami, umowami, klientami i agentami.
- * Version:           0.0.1
+ * Version:           0.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            EstateOffice Team

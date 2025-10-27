@@ -1,24 +1,33 @@
 <?php
-/**
- * Agents management page.
- *
- * @package EstateOfficeCRM\Admin\Pages
- */
-
 namespace EstateOfficeCRM\Admin\Pages;
 
 defined( 'ABSPATH' ) || exit;
+
+use EstateOfficeCRM\Capabilities;
+use EstateOfficeCRM\Database\Repositories\Agents_Repository;
 
 /**
  * Render the agents management view.
  */
 class Agents_Page {
+    private Agents_Repository $repository;
+
+    private ?array $current_agent = null;
+
+    public function __construct() {
+        $this->repository = new Agents_Repository();
+    }
+
     /**
      * Render page.
      */
     public function render(): void {
+        $this->handle_delete();
         $this->handle_form_submission();
-        $agents = $this->get_agents();
+        $this->current_agent = $this->get_current_agent();
+        $current_agent       = $this->current_agent;
+        $agents              = $this->repository->all();
+
         require __DIR__ . '/../views/agents.php';
     }
 
@@ -30,7 +39,7 @@ class Agents_Page {
             return;
         }
 
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( Capabilities::MANAGE_AGENTS ) ) {
             return;
         }
 
@@ -52,8 +61,6 @@ class Agents_Page {
             return;
         }
 
-        global $wpdb;
-
         $data = [
             'first_name'    => $first_name,
             'last_name'     => $last_name,
@@ -68,23 +75,66 @@ class Agents_Page {
             'country'       => $country,
         ];
 
-        $table = $wpdb->prefix . 'eo_agents';
-
         if ( $agent_id > 0 ) {
-            $wpdb->update( $table, $data, [ 'id' => $agent_id ] );
+            $this->repository->update( $agent_id, $data );
             add_settings_error( 'estate-office-crm-agents', 'updated', __( 'Agent zaktualizowany.', 'estate-office-crm' ), 'updated' );
         } else {
-            $wpdb->insert( $table, $data );
+            $this->repository->create( $data );
             add_settings_error( 'estate-office-crm-agents', 'created', __( 'Dodano nowego agenta.', 'estate-office-crm' ), 'updated' );
         }
+
+        wp_safe_redirect( $this->get_page_url() );
+        exit;
     }
 
     /**
-     * Fetch registered agents.
+     * Handle delete action.
      */
-    private function get_agents(): array {
-        global $wpdb;
+    private function handle_delete(): void {
+        if ( ! isset( $_GET['action'], $_GET['agent'], $_GET['_wpnonce'] ) || 'delete' !== $_GET['action'] ) {
+            return;
+        }
 
-        return (array) $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'eo_agents ORDER BY last_name ASC' );
+        if ( ! current_user_can( Capabilities::MANAGE_AGENTS ) || ! current_user_can( Capabilities::DELETE_RECORDS ) ) {
+            return;
+        }
+
+        $agent_id = absint( $_GET['agent'] );
+
+        if ( $agent_id <= 0 ) {
+            return;
+        }
+
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'eo_crm_delete_agent_' . $agent_id ) ) {
+            return;
+        }
+
+        $this->repository->delete( $agent_id );
+        add_settings_error( 'estate-office-crm-agents', 'deleted', __( 'Agent usunięty.', 'estate-office-crm' ), 'updated' );
+
+        wp_safe_redirect( $this->get_page_url() );
+        exit;
+    }
+
+    private function get_current_agent(): ?array {
+        if ( isset( $_GET['action'], $_GET['agent'] ) && 'edit' === $_GET['action'] ) {
+            $agent_id = absint( $_GET['agent'] );
+
+            if ( $agent_id > 0 ) {
+                return $this->repository->find( $agent_id );
+            }
+        }
+
+        return null;
+    }
+
+    private function get_page_url( array $args = [] ): string {
+        $base = admin_url( 'admin.php?page=estate-office-crm-agents' );
+
+        return $args ? add_query_arg( $args, $base ) : $base;
+    }
+
+    public function get_current_agent_data(): ?array {
+        return $this->current_agent;
     }
 }
