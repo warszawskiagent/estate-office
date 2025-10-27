@@ -1,0 +1,64 @@
+.eo-crm-flex {
+display: flex;
+gap: 2rem;
+align-items: flex-start;
+}
+
+.eo-crm-form,
+.eo-crm-list {
+flex: 1;
+background: #fff;
+padding: 1.5rem;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+border-radius: 8px;
+}
+
+.eo-crm-form table.form-table th {
+width: 180px;
+}
+
+.eo-crm-media-preview img {
+max-width: 140px;
+height: auto;
+display: block;
+margin-top: 0.5rem;
+border-radius: 4px;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.eo-crm-dynamic-field {
+position: relative;
+border: 1px solid #ccd0d4;
+padding: 1rem;
+margin-bottom: 1rem;
+border-radius: 6px;
+background: #f8f9fa;
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 1rem;
+}
+
+.eo-crm-dynamic-field p {
+margin: 0;
+}
+
+.eo-crm-remove-field {
+position: absolute;
+top: 0.5rem;
+right: 0.75rem;
+font-size: 1.5rem;
+line-height: 1;
+color: #b32d2e;
+}
+
+.eo-crm-roadmap {
+list-style: decimal inside;
+background: #fff;
+padding: 1.5rem;
+border-radius: 8px;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.eo-crm-roadmap li + li {
+margin-top: 0.75rem;
+}
