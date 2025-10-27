@@ -413,7 +413,7 @@ class EstateOffice_Admin_Clients extends EstateOffice_Admin_Page {
         return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'eo_clients WHERE id = %d', $id ) );
     }
 
-    protected static function format_client_name( $row ): string {
+    public static function format_client_name( $row ): string {
         if ( 'company' === $row->client_type ) {
             return $row->company_name ?: __( 'Firma', 'estate-office' );
         }
