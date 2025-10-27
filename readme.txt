@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.8.0
+Stable tag: 0.8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,12 +12,13 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.8.0 automatyzuje eksport na portale – harmonogram dba o wysyłki, a system powiadomień e-mail i alertów w kokpicie informuje o błędach oraz pozwala natychmiast ponowić wysyłkę.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.8.1 umożliwia dodawanie umów, nieruchomości, poszukiwań i klientów bezpośrednio z frontowego CRM, natomiast 0.8.0 automatyzuje eksport na portale – harmonogram dba o wysyłki, a system powiadomień e-mail i alertów w kokpicie informuje o błędach oraz pozwala natychmiast ponowić wysyłkę.
 
 == Funkcje ==
 
 * Dedykowane tabele `wp_eo_*` na potrzeby klientów, umów, nieruchomości, poszukiwań i agentów.
 * Frontowy panel CRM dostępny po zalogowaniu dzięki stronie „EstateOffice CRM” (`[estate_office_crm]`).
+* Formularze dodawania umów, nieruchomości, poszukiwań i klientów na froncie z obsługą dynamicznych pól, galerii i map Google.
 * Publiczne listy ofert na sprzedaż i wynajem z grupowaniem po typie transakcji, rodzaju nieruchomości, mieście i dzielnicy (`[estate_office_offers transaction="SPRZEDAŻ"]`).
 * Automatyczne tworzenie stron „EstateOffice CRM”, „Oferty na sprzedaż” oraz „Oferty na wynajem” podczas aktywacji wtyczki.
 * Panel „Oferty” w kokpicie administratora pozwala przeglądać i ręcznie synchronizować strony eksportowanych nieruchomości.
@@ -70,6 +71,11 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= 0.8.1 =
+* Formularze dodawania umów, nieruchomości, poszukiwań i klientów są dostępne bezpośrednio w shortcode `[estate_office_crm]`, dzięki czemu agenci mogą pracować z CRM na froncie.
+* Frontowe kreatory korzystają z tych samych dynamicznych pól, galerii mediów, map Google i historii etapów co panel administracyjny.
+* Rozszerzono styling publiczny o nagłówki formularzy i branding biura oraz dodano dynamiczne przyciski akcji dla każdej zakładki CRM.
 
 = 0.8.0 =
 * Zoptymalizowano kolejkę eksportów na portale: dodano obsługę statusu „Wstrzymano”, sterowanie opóźnieniami i natychmiastowe przetwarzanie pojedynczych pozycji.

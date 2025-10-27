@@ -202,6 +202,14 @@ class EstateOffice_Public {
             $tab = 'dashboard';
         }
 
+        $action = isset( $_GET['eo_action'] ) ? sanitize_key( wp_unslash( $_GET['eo_action'] ) ) : '';
+        if ( $action ) {
+            $form_markup = $this->render_crm_form_action( $action, $tab );
+            if ( '' !== $form_markup ) {
+                return $form_markup;
+            }
+        }
+
         $this->requires_chart_assets = ( 'dashboard' === $tab );
         $this->enqueue_assets();
 
@@ -234,6 +242,8 @@ class EstateOffice_Public {
         }
         $tab_content = ob_get_clean();
 
+        $action_button = $this->get_crm_tab_action_button( $tab );
+
         return estate_office_render_template(
             'public/crm/layout.php',
             [
@@ -245,7 +255,7 @@ class EstateOffice_Public {
                 'search_placeholder'    => __( 'Szukaj w bieżącej sekcji', 'estate-office' ),
                 'tab_content'           => $tab_content,
                 'property_filters_html' => 'properties' === $tab ? $property_filters_markup : '',
-                'add_contract_url'      => admin_url( 'admin.php?page=' . EstateOffice_Admin_Contracts::SLUG . '&action=new' ),
+                'action_button'         => $action_button,
             ]
         );
     }
@@ -347,6 +357,317 @@ class EstateOffice_Public {
         }
 
         return $args;
+    }
+
+    /**
+     * Resolve action button metadata for the active CRM tab.
+     */
+    protected function get_crm_tab_action_button( string $tab ): array {
+        $config = [
+            'dashboard'  => [
+                'action' => 'new_contract',
+                'label'  => __( 'Dodaj nową umowę', 'estate-office' ),
+                'tab'    => 'contracts',
+                'caps'   => [ 'eo_manage_contracts', 'manage_options' ],
+            ],
+            'contracts'  => [
+                'action' => 'new_contract',
+                'label'  => __( 'Dodaj nową umowę', 'estate-office' ),
+                'tab'    => 'contracts',
+                'caps'   => [ 'eo_manage_contracts', 'manage_options' ],
+            ],
+            'properties' => [
+                'action' => 'new_property',
+                'label'  => __( 'Dodaj nieruchomość', 'estate-office' ),
+                'tab'    => 'properties',
+                'caps'   => [ 'eo_manage_properties', 'manage_options' ],
+            ],
+            'searches'   => [
+                'action' => 'new_search',
+                'label'  => __( 'Dodaj poszukiwanie', 'estate-office' ),
+                'tab'    => 'searches',
+                'caps'   => [ 'eo_manage_searches', 'manage_options' ],
+            ],
+            'clients'    => [
+                'action' => 'new_client',
+                'label'  => __( 'Dodaj klienta', 'estate-office' ),
+                'tab'    => 'clients',
+                'caps'   => [ 'eo_manage_clients', 'manage_options' ],
+            ],
+        ];
+
+        if ( ! isset( $config[ $tab ] ) ) {
+            return [];
+        }
+
+        $entry   = $config[ $tab ];
+        $allowed = false;
+        foreach ( $entry['caps'] as $cap ) {
+            if ( current_user_can( $cap ) ) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if ( ! $allowed ) {
+            return [];
+        }
+
+        $crm_url = $this->get_crm_page_url();
+        if ( ! $crm_url ) {
+            $crm_url = $this->get_current_url();
+        }
+
+        $query_args = [
+            'eo_tab'    => $entry['tab'],
+            'eo_action' => $entry['action'],
+        ];
+
+        return [
+            'url'   => add_query_arg( $query_args, $crm_url ),
+            'label' => $entry['label'],
+        ];
+    }
+
+    /**
+     * Render front-end CRM form action when requested.
+     */
+    protected function render_crm_form_action( string $action, string $current_tab ): string {
+        $actions = [
+            'new_contract' => [
+                'tab'   => 'contracts',
+                'slug'  => EstateOffice_Admin_Contracts::SLUG,
+                'caps'  => [ 'eo_manage_contracts', 'manage_options' ],
+                'title' => __( 'Nowa umowa', 'estate-office' ),
+                'callback' => [ $this, 'get_contract_form_markup' ],
+            ],
+            'new_property' => [
+                'tab'   => 'properties',
+                'slug'  => EstateOffice_Admin_Properties::SLUG,
+                'caps'  => [ 'eo_manage_properties', 'manage_options' ],
+                'title' => __( 'Dodaj nieruchomość', 'estate-office' ),
+                'callback' => [ $this, 'get_property_form_markup' ],
+            ],
+            'new_search' => [
+                'tab'   => 'searches',
+                'slug'  => EstateOffice_Admin_Searches::SLUG,
+                'caps'  => [ 'eo_manage_searches', 'manage_options' ],
+                'title' => __( 'Dodaj poszukiwanie', 'estate-office' ),
+                'callback' => [ $this, 'get_search_form_markup' ],
+            ],
+            'new_client' => [
+                'tab'   => 'clients',
+                'slug'  => EstateOffice_Admin_Clients::SLUG,
+                'caps'  => [ 'eo_manage_clients', 'manage_options' ],
+                'title' => __( 'Dodaj klienta', 'estate-office' ),
+                'callback' => [ $this, 'get_client_form_markup' ],
+            ],
+        ];
+
+        if ( ! isset( $actions[ $action ] ) ) {
+            return '';
+        }
+
+        $entry   = $actions[ $action ];
+        $allowed = false;
+        foreach ( $entry['caps'] as $cap ) {
+            if ( current_user_can( $cap ) ) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if ( ! $allowed ) {
+            return '<div class="estate-office-notice">' . esc_html__( 'Brak uprawnień do wykonania tej akcji.', 'estate-office' ) . '</div>';
+        }
+
+        $this->enqueue_form_assets();
+
+        $markup = call_user_func( $entry['callback'] );
+        if ( '' === $markup ) {
+            return '<div class="estate-office-notice">' . esc_html__( 'Nie udało się załadować formularza.', 'estate-office' ) . '</div>';
+        }
+
+        $target_tab = $entry['tab'] ?: $current_tab;
+
+        return $this->transform_admin_form_markup( $markup, $target_tab, $entry['slug'], $entry['title'] );
+    }
+
+    /**
+     * Ensure administrative assets required by complex forms are loaded on the front-end.
+     */
+    protected function enqueue_form_assets(): void {
+        $this->enqueue_assets();
+
+        if ( function_exists( 'wp_enqueue_media' ) ) {
+            wp_enqueue_media();
+        }
+
+        if ( ! wp_style_is( 'estate-office-admin', 'enqueued' ) ) {
+            wp_enqueue_style( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/css/admin.css', [], ESTATE_OFFICE_VERSION );
+        }
+
+        if ( ! wp_script_is( 'estate-office-chart', 'registered' ) ) {
+            wp_register_script( 'estate-office-chart', ESTATE_OFFICE_URL . 'assets/js/vendor/estate-office-charts.js', [], ESTATE_OFFICE_VERSION, true );
+        }
+
+        $deps     = [ 'jquery', 'wp-util' ];
+        $maps_key = get_option( 'estate_office_google_maps_api_key', '' );
+        if ( $maps_key && ! wp_script_is( 'estate-office-google-maps', 'enqueued' ) ) {
+            wp_enqueue_script( 'estate-office-google-maps', 'https://maps.googleapis.com/maps/api/js?key=' . rawurlencode( $maps_key ), [], null, true );
+            $deps[] = 'estate-office-google-maps';
+        }
+
+        if ( ! wp_script_is( 'estate-office-admin', 'registered' ) ) {
+            wp_register_script( 'estate-office-admin', ESTATE_OFFICE_URL . 'assets/js/admin.js', $deps, ESTATE_OFFICE_VERSION, true );
+        }
+
+        static $localized = false;
+        if ( ! $localized ) {
+            $localize = [
+                'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
+                'nonce'             => wp_create_nonce( 'estate_office_ajax' ),
+                'stages'            => EstateOffice_Admin_Contracts::get_stages(),
+                'propertyFields'    => EstateOffice_Admin_Settings::get_dynamic_fields( 'property' ),
+                'contractFields'    => EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' ),
+                'clientFields'      => EstateOffice_Admin_Settings::get_dynamic_fields( 'client' ),
+                'mediaTitle'        => __( 'Wybierz plik', 'estate-office' ),
+                'mediaButton'       => __( 'Użyj pliku', 'estate-office' ),
+                'galleryTitle'      => __( 'Wybierz zdjęcia', 'estate-office' ),
+                'galleryButton'     => __( 'Dodaj zdjęcia', 'estate-office' ),
+                'removeImage'       => __( 'Usuń', 'estate-office' ),
+                'clientsRequired'   => __( 'Dodaj co najmniej jednego klienta do umowy.', 'estate-office' ),
+                'removeClientLabel' => __( 'Usuń klienta %s', 'estate-office' ),
+                'emptyStages'       => __( 'Brak historii etapów.', 'estate-office' ),
+                'stageGuard'        => __( 'Nie możesz usunąć ostatniego etapu umowy.', 'estate-office' ),
+            ];
+
+            wp_localize_script( 'estate-office-admin', 'EstateOfficeData', $localize );
+
+            $chart_labels = wp_json_encode(
+                [
+                    'total' => __( 'Łącznie', 'estate-office' ),
+                ]
+            );
+            if ( $chart_labels ) {
+                wp_add_inline_script( 'estate-office-admin', 'window.EstateOfficeChartLabels = window.EstateOfficeChartLabels || ' . $chart_labels . ';', 'before' );
+            }
+
+            $localized = true;
+        }
+
+        wp_enqueue_script( 'estate-office-admin' );
+    }
+
+    /**
+     * Retrieve rendered markup for the contract creation form.
+     */
+    protected function get_contract_form_markup(): string {
+        $clients_data = EstateOffice_Admin_Clients::get_clients( '', 1, 0 );
+        $clients      = $clients_data['items'];
+        $agents       = EstateOffice_Admin_Agents::get_agents();
+        $contract_fields = EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' );
+        $property_fields = EstateOffice_Admin_Settings::get_dynamic_fields( 'property' );
+        $stage_history   = [
+            [
+                'stage' => 'umowa_posrednictwa',
+                'date'  => current_time( 'Y-m-d' ),
+            ],
+        ];
+
+        $page   = new EstateOffice_Admin_Contracts( EstateOffice_Admin::MENU_SLUG );
+        $method = new ReflectionMethod( EstateOffice_Admin_Contracts::class, 'render_form' );
+        $method->setAccessible( true );
+
+        ob_start();
+        $method->invoke( $page, null, $clients, [], null, null, $stage_history, $contract_fields, $property_fields, $agents );
+        return ob_get_clean();
+    }
+
+    /**
+     * Retrieve rendered markup for the property creation form.
+     */
+    protected function get_property_form_markup(): string {
+        $contracts_data = EstateOffice_Admin_Contracts::get_contracts( '', 1, 0 );
+        $contracts      = $contracts_data['items'];
+        $dynamic_fields = EstateOffice_Admin_Settings::get_dynamic_fields( 'property' );
+        $agents         = EstateOffice_Admin_Agents::get_agents();
+
+        $page   = new EstateOffice_Admin_Properties( EstateOffice_Admin::MENU_SLUG );
+        $method = new ReflectionMethod( EstateOffice_Admin_Properties::class, 'render_form' );
+        $method->setAccessible( true );
+
+        ob_start();
+        $method->invoke( $page, null, $contracts, $dynamic_fields, $agents );
+        return ob_get_clean();
+    }
+
+    /**
+     * Retrieve rendered markup for the search creation form.
+     */
+    protected function get_search_form_markup(): string {
+        $contracts_data = EstateOffice_Admin_Contracts::get_contracts( '', 1, 0 );
+        $contracts      = $contracts_data['items'];
+        $dynamic_fields = EstateOffice_Admin_Settings::get_dynamic_fields( 'contract' );
+        $agents         = EstateOffice_Admin_Agents::get_agents();
+
+        $page   = new EstateOffice_Admin_Searches( EstateOffice_Admin::MENU_SLUG );
+        $method = new ReflectionMethod( EstateOffice_Admin_Searches::class, 'render_form' );
+        $method->setAccessible( true );
+
+        ob_start();
+        $method->invoke( $page, null, $contracts, $dynamic_fields, $agents );
+        return ob_get_clean();
+    }
+
+    /**
+     * Retrieve rendered markup for the client creation form.
+     */
+    protected function get_client_form_markup(): string {
+        $agents = EstateOffice_Admin_Agents::get_agents();
+
+        $page   = new EstateOffice_Admin_Clients( EstateOffice_Admin::MENU_SLUG );
+        $method = new ReflectionMethod( EstateOffice_Admin_Clients::class, 'render_form' );
+        $method->setAccessible( true );
+
+        ob_start();
+        $method->invoke( $page, null, $agents );
+        return ob_get_clean();
+    }
+
+    /**
+     * Adjust administrative markup so it fits the public CRM context.
+     */
+    protected function transform_admin_form_markup( string $html, string $target_tab, string $slug, string $title ): string {
+        if ( '' === $html ) {
+            return '';
+        }
+
+        $crm_url = $this->get_crm_page_url();
+        if ( ! $crm_url ) {
+            $crm_url = $this->get_current_url();
+        }
+        $back_url   = add_query_arg( [ 'eo_tab' => $target_tab ], $crm_url );
+        $admin_back = esc_url( admin_url( 'admin.php?page=' . $slug ) );
+
+        if ( $admin_back ) {
+            $html = str_replace( $admin_back, esc_url( $back_url ), $html );
+        }
+
+        $html = str_replace( 'estate-office-badge--admin', 'estate-office-badge--public', $html );
+        $html = str_replace( 'wrap estate-office-wrap', 'wrap estate-office-wrap estate-office-wrap--public', $html );
+
+        if ( EstateOffice_Admin_Clients::SLUG === $slug ) {
+            $header  = '<div class="estate-office-front-form-header">';
+            $header .= estate_office_get_brand_badge_html( 'public' );
+            $header .= '<div class="estate-office-front-form-heading">';
+            $header .= '<h2>' . esc_html( $title ) . '</h2>';
+            $header .= '<a class="estate-office-button secondary" href="' . esc_url( $back_url ) . '">&larr; ' . esc_html__( 'Powrót do CRM', 'estate-office' ) . '</a>';
+            $header .= '</div></div>';
+            $html    = $header . '<div class="estate-office-wrap estate-office-wrap--public">' . $html . '</div>';
+        }
+
+        return '<div class="estate-office-front-form">' . $html . '</div>';
     }
 
     /**

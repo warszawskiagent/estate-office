@@ -10,7 +10,7 @@
  * @var string               $search_placeholder
  * @var string               $tab_content
  * @var string               $property_filters_html
- * @var string               $add_contract_url
+ * @var array<string,string> $action_button
  */
 ?>
 <div class="estate-office-crm" data-active-tab="<?php echo esc_attr( $active_tab ); ?>">
@@ -19,9 +19,11 @@
             <?php echo $brand_badge_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <h2><?php esc_html_e( 'EstateOffice CRM', 'estate-office' ); ?></h2>
         </div>
-        <a class="estate-office-button" href="<?php echo esc_url( $add_contract_url ); ?>">
-            <?php esc_html_e( 'Dodaj nową umowę', 'estate-office' ); ?>
-        </a>
+        <?php if ( ! empty( $action_button['url'] ?? '' ) ) : ?>
+            <a class="estate-office-button" href="<?php echo esc_url( $action_button['url'] ); ?>">
+                <?php echo esc_html( $action_button['label'] ?? __( 'Dodaj', 'estate-office' ) ); ?>
+            </a>
+        <?php endif; ?>
     </div>
     <nav class="estate-office-crm-nav" aria-label="<?php esc_attr_e( 'Nawigacja CRM', 'estate-office' ); ?>">
         <ul>
