@@ -60,6 +60,11 @@ EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bez
 * `[estate_office_notary_calculator]` – wyświetla kalkulator notarialny do wykorzystania na stronie lub w treści oferty.
 * `[estate_office_mortgage_calculator]` – wyświetla kalkulator kredytowy obliczający raty i koszty finansowania.
 
+== Roadmapa (do zrobienia) ==
+
+* **0.9.0 – Moduł licencji (UI + backend):** Formularz aktywacji klucza, walidacja z serwerem licencyjnym, cykliczne sprawdzanie ważności i komunikaty w panelu/frontowych shortcode'ach.
+* **1.0.0 – Egzekwowanie licencji i release:** Blokada eksportów oraz tryb „read-only” CRM przy nieważnej licencji, komunikaty administracyjne, finalny przegląd bezpieczeństwa i pakiet wydaniowy ZIP/Tag.
+
 == Często zadawane pytania ==
 
 = Czy wtyczka tworzy własne tabele w bazie danych? =
@@ -71,6 +76,10 @@ Tak. EstateOffice CRM korzysta z dedykowanych tabel (`wp_eo_*`) dla agentów, kl
 Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w panelu CRM bez dostępu do pełnej administracji WordPress.
 
 == Changelog ==
+
+= Nadchodzące =
+* 0.9.0 – Moduł licencji z walidacją cykliczną, komunikatami oraz panelowym formularzem aktywacji.
+* 1.0.0 – Egzekwowanie licencji: blokada eksportów przy braku klucza, tryb „read-only” CRM oraz finalny release pakietu.
 
 = 0.8.1 =
 * Formularze dodawania umów, nieruchomości, poszukiwań i klientów są dostępne bezpośrednio w shortcode `[estate_office_crm]`, dzięki czemu agenci mogą pracować z CRM na froncie.

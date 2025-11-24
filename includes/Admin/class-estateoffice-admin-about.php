@@ -35,12 +35,9 @@ class EstateOffice_Admin_About extends EstateOffice_Admin_Page {
             <div class="card">
                 <h2><?php esc_html_e( 'Roadmapa', 'estate-office' ); ?></h2>
                 <ol>
-                    <li><?php esc_html_e( 'Wersja 0.0.1 – Fundamenty bazy danych, formularze CRM w panelu administracyjnym.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 0.5.0 – Integracja z front-endem, generowanie stron ofert i profile agentów.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 0.7.0 – Kolejka eksportów na portale z logami i panelem monitoringu.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 0.8.0 – Automatyzacja eksportów na portale z alertami, powiadomieniami i ręcznym sterowaniem kolejką.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 0.8.1 – Formularze dodawania umów, nieruchomości, poszukiwań i klientów dostępne z frontowego CRM.', 'estate-office' ); ?></li>
-                    <li><?php esc_html_e( 'Wersja 1.0 – System licencji i moduły kalkulatorów (notarialny i kredytowy).', 'estate-office' ); ?></li>
+                    <li><?php esc_html_e( 'Wersja 0.8.1 – Frontowe formularze umów, nieruchomości, poszukiwań i klientów (wdrożone).', 'estate-office' ); ?></li>
+                    <li><?php esc_html_e( 'Wersja 0.9.0 – Moduł licencji (UI + backend): aktywacja klucza, walidacja cykliczna, komunikaty w panelu i shortcode’ach (do wdrożenia).', 'estate-office' ); ?></li>
+                    <li><?php esc_html_e( 'Wersja 1.0.0 – Egzekwowanie licencji i release: blokada eksportów, tryb „read-only” CRM, komunikaty administracyjne oraz pakiet wydaniowy (planowane).', 'estate-office' ); ?></li>
                 </ol>
             </div>
             <div class="card">
