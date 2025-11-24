@@ -4,7 +4,7 @@ Tags: crm, real-estate, agencies, contracts, properties
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.8.1
+Stable tag: 0.8.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ EstateOffice to kompleksowy CRM dla biur nieruchomości z obsługą nieruchomoś
 
 == Opis ==
 
-EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.8.1 umożliwia dodawanie umów, nieruchomości, poszukiwań i klientów bezpośrednio z frontowego CRM, natomiast 0.8.0 automatyzuje eksport na portale – harmonogram dba o wysyłki, a system powiadomień e-mail i alertów w kokpicie informuje o błędach oraz pozwala natychmiast ponowić wysyłkę.
+EstateOffice CRM zapewnia profesjonalne zarządzanie ofertami nieruchomości bezpośrednio z panelu WordPress. Wtyczka umożliwia tworzenie wieloetapowego procesu obsługi umów, prowadzenie kart klientów oraz pracę na dedykowanych bazach danych. Panel administracyjny zawiera pulpity z podsumowaniami, listy nieruchomości, poszukiwań, umów i klientów, a także moduł zarządzania agentami. Konfigurowalne pola dynamiczne pozwalają dostosować formularze do potrzeb biura, a integracja z Google Maps ułatwia oznaczanie nieruchomości na mapie wraz z pełnymi danymi budynku, mediów, udogodnień i galerii. Wersja 0.8.2 odświeża styl wszystkich frontowych formularzy (kreatory umów, nieruchomości, poszukiwań i klientów), a 0.8.1 wprowadziła obsługę tych formularzy w shortcode CRM. Wersja 0.8.0 automatyzuje eksport na portale – harmonogram dba o wysyłki, a system powiadomień e-mail i alertów w kokpicie informuje o błędach oraz pozwala natychmiast ponowić wysyłkę.
 
 == Funkcje ==
 
@@ -80,6 +80,9 @@ Tak, wtyczka dodaje rolę `estate_agent` z odpowiednimi uprawnieniami do pracy w
 = Nadchodzące =
 * 0.9.0 – Moduł licencji z walidacją cykliczną, komunikatami oraz panelowym formularzem aktywacji.
 * 1.0.0 – Egzekwowanie licencji: blokada eksportów przy braku klucza, tryb „read-only” CRM oraz finalny release pakietu.
+
+= 0.8.2 =
+* Uporządkowano wygląd frontowych formularzy (CRM oraz kreatory umów/nieruchomości/poszukiwań/klientów) – nowa typografia, pola z wyraźnym fokusem, sekcje kartowe oraz lepszy układ na urządzeniach mobilnych.
 
 = 0.8.1 =
 * Formularze dodawania umów, nieruchomości, poszukiwań i klientów są dostępne bezpośrednio w shortcode `[estate_office_crm]`, dzięki czemu agenci mogą pracować z CRM na froncie.

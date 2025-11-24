@@ -1219,3 +1219,173 @@
     align-items: center;
     gap: 0.4rem;
 }
+
+.estate-office-front-form .form-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 14px;
+}
+
+.estate-office-front-form .form-table th {
+    width: 240px;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.96rem;
+    padding: 10px 10px 10px 0;
+    vertical-align: top;
+}
+
+.estate-office-front-form .form-table td {
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px -25px rgba(15, 23, 42, 0.35);
+    padding: 16px 18px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.estate-office-front-form .form-table tr:hover td {
+    border-color: var(--eo-accent, #2563eb);
+    box-shadow: 0 24px 50px -28px rgba(37, 99, 235, 0.35);
+}
+
+.estate-office-front-form .form-table .description,
+.estate-office-front-form .form-table p.description {
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.estate-office-front-form input[type="text"],
+.estate-office-front-form input[type="email"],
+.estate-office-front-form input[type="number"],
+.estate-office-front-form input[type="tel"],
+.estate-office-front-form input[type="url"],
+.estate-office-front-form input[type="date"],
+.estate-office-front-form input[type="search"],
+.estate-office-front-form select,
+.estate-office-front-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d8dee9;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 0.98rem;
+    color: #0f172a;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.estate-office-front-form input[type="text"]:focus,
+.estate-office-front-form input[type="email"]:focus,
+.estate-office-front-form input[type="number"]:focus,
+.estate-office-front-form input[type="tel"]:focus,
+.estate-office-front-form input[type="url"]:focus,
+.estate-office-front-form input[type="date"]:focus,
+.estate-office-front-form input[type="search"]:focus,
+.estate-office-front-form select:focus,
+.estate-office-front-form textarea:focus {
+    border-color: var(--eo-accent, #2563eb);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.estate-office-front-form textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.estate-office-front-form input::placeholder,
+.estate-office-front-form textarea::placeholder {
+    color: #9ca3af;
+}
+
+.estate-office-front-form input[type="checkbox"],
+.estate-office-front-form input[type="radio"] {
+    accent-color: var(--eo-accent, #2563eb);
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+}
+
+.estate-office-front-form .button,
+.estate-office-front-form .button-primary,
+.estate-office-front-form .page-title-action {
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+    box-shadow: 0 12px 30px -18px rgba(37, 99, 235, 0.55);
+}
+
+.estate-office-front-form .button-primary,
+.estate-office-front-form .page-title-action {
+    background: linear-gradient(135deg, var(--eo-accent, #2563eb), #1e40af);
+    border-color: transparent;
+    color: #fff;
+}
+
+.estate-office-front-form .button:hover,
+.estate-office-front-form .button-primary:hover,
+.estate-office-front-form .page-title-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 36px -18px rgba(37, 99, 235, 0.65);
+}
+
+.estate-office-front-form .button-secondary,
+.estate-office-front-form .page-title-action.secondary,
+.estate-office-front-form .page-title-action.eo-back {
+    background: #e5e7eb;
+    color: #111827;
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
+
+.estate-office-front-form .eo-form-section-header,
+.estate-office-front-form .eo-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.estate-office-front-form .eo-section-helper {
+    color: #6b7280;
+    font-size: 0.93rem;
+    margin-bottom: 14px;
+}
+
+.estate-office-front-form .eo-grid,
+.estate-office-front-form .eo-grid-2,
+.estate-office-front-form .eo-grid-3 {
+    display: grid;
+    gap: 14px 16px;
+}
+
+.estate-office-front-form .eo-grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.estate-office-front-form .eo-grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+@media (max-width: 782px) {
+    .estate-office-front-form .form-table {
+        border-spacing: 0 10px;
+    }
+
+    .estate-office-front-form .form-table th {
+        width: 100%;
+        display: block;
+        padding: 10px 0 4px;
+    }
+
+    .estate-office-front-form .form-table td {
+        display: block;
+        padding: 14px;
+    }
+}
