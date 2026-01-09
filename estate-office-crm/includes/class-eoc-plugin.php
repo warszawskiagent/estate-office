@@ -12,6 +12,9 @@ class EOC_Plugin {
         $menu = new EOC_Admin_Menu();
         $menu->register();
 
+        $crm_pages = new EOC_CRM_Pages();
+        $crm_pages->register();
+
         EOC_Settings::register();
     }
 }

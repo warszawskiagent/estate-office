@@ -23,3 +23,48 @@
     border: 1px solid #ccd0d4;
     border-radius: 4px;
 }
+
+.eoc-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.eoc-metric {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.eoc-metric__label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #646970;
+    margin-bottom: 8px;
+}
+
+.eoc-metric__value {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.eoc-list-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+.eoc-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eoc-list-table td {
+    vertical-align: middle;
+}
