@@ -1,0 +1,25 @@
+.eoc-field-list__items {
+    margin: 0 0 12px;
+    padding: 0;
+}
+
+.eoc-field-list__item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.eoc-media-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 320px;
+}
+
+.eoc-media-preview {
+    display: block;
+    max-width: 100%;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
