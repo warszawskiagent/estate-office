@@ -15,6 +15,9 @@ class EOC_Plugin {
         $crm_pages = new EOC_CRM_Pages();
         $crm_pages->register();
 
+        $contracts = new EOC_Contracts();
+        $contracts->register();
+
         EOC_Settings::register();
     }
 }

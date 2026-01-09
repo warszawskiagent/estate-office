@@ -21,6 +21,16 @@ class EOC_CRM_Pages {
             array(),
             EOC_PLUGIN_VERSION
         );
+
+        if ($hook === 'estate-office-crm_page_estate-office-crm-contracts-add') {
+            wp_enqueue_script(
+                'eoc-contracts',
+                EOC_PLUGIN_URL . 'assets/admin/contracts.js',
+                array('jquery'),
+                EOC_PLUGIN_VERSION,
+                true
+            );
+        }
     }
 
     public function register_pages(): void {
@@ -157,9 +167,75 @@ class EOC_CRM_Pages {
     }
 
     public function render_contract_add(): void {
+        $error = isset($_GET['eoc_error']) ? sanitize_text_field(wp_unslash($_GET['eoc_error'])) : '';
+        $success = isset($_GET['eoc_success']) ? sanitize_text_field(wp_unslash($_GET['eoc_success'])) : '';
+
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Nowa umowa', 'estate-office-crm') . '</h1>';
-        echo '<p>' . esc_html__('Formularz dodawania umowy zostanie wdrożony w kolejnym etapie.', 'estate-office-crm') . '</p>';
+
+        if ($error === 'duplicate') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Numer umowy już istnieje. Użyj innego numeru.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane pola umowy.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wystąpił błąd zapisu umowy. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
+        } elseif ($success === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Umowa została zapisana. Przejdź do dodawania klienta.', 'estate-office-crm') . '</p></div>';
+        }
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('eoc_save_contract', 'eoc_contract_nonce');
+        echo '<input type="hidden" name="action" value="eoc_save_contract" />';
+
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-contract-number">' . esc_html__('Numer umowy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-contract-number" name="eoc_contract[contract_number]" class="regular-text" required /></td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-transaction-type">' . esc_html__('Typ transakcji', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-transaction-type" name="eoc_contract[transaction_type]" required>';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office-crm') . '</option>';
+        echo '<option value="SPRZEDAZ">' . esc_html__('SPRZEDAŻ', 'estate-office-crm') . '</option>';
+        echo '<option value="KUPNO">' . esc_html__('KUPNO', 'estate-office-crm') . '</option>';
+        echo '<option value="WYNAJEM">' . esc_html__('WYNAJEM', 'estate-office-crm') . '</option>';
+        echo '<option value="NAJEM">' . esc_html__('NAJEM', 'estate-office-crm') . '</option>';
+        echo '</select></td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-start-date">' . esc_html__('Data zawarcia', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="date" id="eoc-start-date" name="eoc_contract[start_date]" /></td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-end-date">' . esc_html__('Data zakończenia', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="date" id="eoc-end-date" name="eoc_contract[end_date]" /></td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<th scope="row">' . esc_html__('Umowa bezterminowa', 'estate-office-crm') . '</th>';
+        echo '<td><label><input type="checkbox" id="eoc-open-ended" name="eoc_contract[is_open_ended]" value="1" /> ' . esc_html__('Brak daty zakończenia', 'estate-office-crm') . '</label></td>';
+        echo '</tr>';
+
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-commission-amount">' . esc_html__('Wysokość prowizji', 'estate-office-crm') . '</label></th>';
+        echo '<td>';
+        echo '<input type="text" id="eoc-commission-amount" name="eoc_contract[commission_amount]" class="small-text" />';
+        echo '<select id="eoc-commission-unit" name="eoc_contract[commission_unit]">';
+        echo '<option value="">' . esc_html__('Jednostka', 'estate-office-crm') . '</option>';
+        echo '<option value="%">%</option>';
+        echo '<option value="PLN">PLN</option>';
+        echo '<option value="EUR">EUR</option>';
+        echo '<option value="USD">USD</option>';
+        echo '</select>';
+        echo '</td>';
+        echo '</tr>';
+        echo '</table>';
+
+        submit_button(__('Dalej', 'estate-office-crm'));
+        echo '</form>';
         echo '</div>';
     }
 
