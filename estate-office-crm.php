@@ -16,6 +16,7 @@ class Estate_Office_CRM {
     private const ROLE_AGENT = 'estate_agent';
     private const CAP_ACCESS = 'estate_office_access';
     private const CAP_ADMIN = 'estate_office_admin';
+    private const NONCE_ACTION = 'estate_office_crm_save';
 
     public function register(): void {
         register_activation_hook(__FILE__, [self::class, 'activate']);
@@ -104,6 +105,30 @@ class Estate_Office_CRM {
         echo '<p class="description">' . esc_html($description) . '</p>';
     }
 
+    private function render_table_header(array $headers): void {
+        echo '<thead><tr>';
+        foreach ($headers as $header) {
+            echo '<th>' . esc_html($header) . '</th>';
+        }
+        echo '</tr></thead>';
+    }
+
+    private function render_table_rows(array $rows): void {
+        echo '<tbody>';
+        foreach ($rows as $row) {
+            echo '<tr>';
+            foreach ($row as $cell) {
+                echo '<td>' . wp_kses_post($cell) . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</tbody>';
+    }
+
+    private function render_nonce(): void {
+        wp_nonce_field(self::NONCE_ACTION, 'estate_office_crm_nonce');
+    }
+
     public function render_dashboard(): void {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Estate Office CRM', 'estate-office-crm') . '</h1>';
@@ -115,11 +140,11 @@ class Estate_Office_CRM {
         );
 
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Rola</th><th>Uprawnienia</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>Administrator</td><td>Pełny dostęp do wszystkich podstron (licencja, ustawienia, about, agenci).</td></tr>';
-        echo '<tr><td>Agent</td><td>Dostęp do CRM i sekcji Agenci (bez ustawień oraz licencji).</td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Rola', 'Uprawnienia']);
+        $this->render_table_rows([
+            ['Administrator', 'Pełny dostęp do wszystkich podstron (licencja, ustawienia, about, agenci).'],
+            ['Agent', 'Dostęp do CRM i sekcji Agenci (bez ustawień oraz licencji).'],
+        ]);
         echo '</table>';
 
         echo '</div>';
@@ -132,6 +157,7 @@ class Estate_Office_CRM {
         $this->render_section_heading('Dane licencji', 'Wprowadź dane licencyjne dla aktywacji wtyczki.');
 
         echo '<form method="post" action="">';
+        $this->render_nonce();
         echo '<table class="form-table">';
         echo '<tr><th scope="row">Klucz licencji</th><td><input type="text" class="regular-text" placeholder="XXXX-XXXX-XXXX" /></td></tr>';
         echo '<tr><th scope="row">E-mail właściciela</th><td><input type="email" class="regular-text" placeholder="biuro@example.com" /></td></tr>';
@@ -145,11 +171,11 @@ class Estate_Office_CRM {
         $this->render_section_heading('Historia aktywacji', 'Podgląd aktywacji i wykorzystania licencji.');
 
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Data</th><th>Akcja</th><th>Użytkownik</th><th>Status</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>2024-01-01</td><td>Aktywacja</td><td>admin</td><td>Aktywna</td></tr>';
-        echo '<tr><td>2024-03-15</td><td>Odnowienie</td><td>admin</td><td>Aktywna</td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Data', 'Akcja', 'Użytkownik', 'Status']);
+        $this->render_table_rows([
+            ['2024-01-01', 'Aktywacja', 'admin', 'Aktywna'],
+            ['2024-03-15', 'Odnowienie', 'admin', 'Aktywna'],
+        ]);
         echo '</table>';
 
         echo '</div>';
@@ -162,11 +188,11 @@ class Estate_Office_CRM {
         $this->render_section_heading('Lista agentów', 'Zarządzaj agentami mającymi dostęp do CRM.');
 
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Agent</th><th>E-mail</th><th>Telefon</th><th>Status</th><th>Akcje</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>Anna Kowalska</td><td>anna@example.com</td><td>+48 600 000 000</td><td>Aktywna</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '<tr><td>Piotr Nowak</td><td>piotr@example.com</td><td>+48 600 111 111</td><td>Aktywna</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Agent', 'E-mail', 'Telefon', 'Status', 'Akcje']);
+        $this->render_table_rows([
+            ['Anna Kowalska', 'anna@example.com', '+48 600 000 000', 'Aktywna', '<a href="#">Edytuj</a>'],
+            ['Piotr Nowak', 'piotr@example.com', '+48 600 111 111', 'Aktywna', '<a href="#">Edytuj</a>'],
+        ]);
         echo '</table>';
 
         echo '<hr />';
@@ -174,6 +200,7 @@ class Estate_Office_CRM {
         $this->render_section_heading('Nowy agent', 'Dodaj nowego agenta i nadaj mu uprawnienia.');
 
         echo '<form method="post" action="">';
+        $this->render_nonce();
         echo '<table class="form-table">';
         echo '<tr><th scope="row">Zdjęcie</th><td><input type="file" /></td></tr>';
         echo '<tr><th scope="row">Imię i nazwisko</th><td><input type="text" class="regular-text" /></td></tr>';
@@ -196,6 +223,7 @@ class Estate_Office_CRM {
         $this->render_section_heading('Integracje i branding', 'Skonfiguruj podstawowe integracje i elementy wizualne.');
 
         echo '<form method="post" action="">';
+        $this->render_nonce();
         echo '<table class="form-table">';
         echo '<tr><th scope="row">API Map Google</th><td><input type="text" class="regular-text" placeholder="Wklej klucz API" /></td></tr>';
         echo '<tr><th scope="row">Znak wodny</th><td><input type="file" /><p class="description">Znak wodny nanoszony na zdjęcia nieruchomości.</p></td></tr>';
@@ -206,11 +234,12 @@ class Estate_Office_CRM {
 
         $this->render_section_heading('Pola nieruchomości', 'Dodaj lub usuń pola oferty nieruchomości.');
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Nazwa pola</th><th>Typ</th><th>Aktywne</th><th>Akcje</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>Rok budowy</td><td>Tekst</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '<tr><td>Piętro</td><td>Liczba</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Nazwa pola', 'Typ', 'Aktywne', 'Akcje']);
+        $this->render_table_rows([
+            ['Rok budowy', 'Tekst', 'Tak', '<a href="#">Edytuj</a>'],
+            ['Piętro', 'Liczba', 'Tak', '<a href="#">Edytuj</a>'],
+            ['Liczba pokoi', 'Liczba', 'Tak', '<a href="#">Edytuj</a>'],
+        ]);
         echo '</table>';
         echo '<p><button class="button">Dodaj pole nieruchomości</button></p>';
 
@@ -218,11 +247,12 @@ class Estate_Office_CRM {
 
         $this->render_section_heading('Pola umów', 'Dodaj lub usuń pola umów.');
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Nazwa pola</th><th>Typ</th><th>Aktywne</th><th>Akcje</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>Wysokość prowizji</td><td>Liczba</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '<tr><td>Data zakończenia</td><td>Data</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Nazwa pola', 'Typ', 'Aktywne', 'Akcje']);
+        $this->render_table_rows([
+            ['Wysokość prowizji', 'Liczba', 'Tak', '<a href="#">Edytuj</a>'],
+            ['Data zakończenia', 'Data', 'Tak', '<a href="#">Edytuj</a>'],
+            ['Typ transakcji', 'Lista', 'Tak', '<a href="#">Edytuj</a>'],
+        ]);
         echo '</table>';
         echo '<p><button class="button">Dodaj pole umowy</button></p>';
 
@@ -230,11 +260,12 @@ class Estate_Office_CRM {
 
         $this->render_section_heading('Pola klientów', 'Dodaj lub usuń pola profilu klienta.');
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Nazwa pola</th><th>Typ</th><th>Aktywne</th><th>Akcje</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>Numer dokumentu</td><td>Tekst</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '<tr><td>Adres korespondencyjny</td><td>Tekst</td><td>Tak</td><td><a href="#">Edytuj</a></td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Nazwa pola', 'Typ', 'Aktywne', 'Akcje']);
+        $this->render_table_rows([
+            ['Numer dokumentu', 'Tekst', 'Tak', '<a href="#">Edytuj</a>'],
+            ['Adres korespondencyjny', 'Tekst', 'Tak', '<a href="#">Edytuj</a>'],
+            ['PESEL / NIP', 'Tekst', 'Tak', '<a href="#">Edytuj</a>'],
+        ]);
         echo '</table>';
         echo '<p><button class="button">Dodaj pole klienta</button></p>';
 
@@ -257,12 +288,12 @@ class Estate_Office_CRM {
         $this->render_section_heading('Roadmapa wersji', 'Najważniejsze etapy rozwoju wtyczki.');
 
         echo '<table class="widefat striped">';
-        echo '<thead><tr><th>Wersja</th><th>Zakres</th><th>Status</th></tr></thead>';
-        echo '<tbody>';
-        echo '<tr><td>0.1</td><td>Menu administracyjne i role</td><td>W przygotowaniu</td></tr>';
-        echo '<tr><td>0.5</td><td>Obsługa CRM oraz formularzy</td><td>Planowane</td></tr>';
-        echo '<tr><td>1.0</td><td>Pełna integracja i eksport</td><td>Planowane</td></tr>';
-        echo '</tbody>';
+        $this->render_table_header(['Wersja', 'Zakres', 'Status']);
+        $this->render_table_rows([
+            ['0.1', 'Menu administracyjne i role', 'W przygotowaniu'],
+            ['0.5', 'Obsługa CRM oraz formularzy', 'Planowane'],
+            ['1.0', 'Pełna integracja i eksport', 'Planowane'],
+        ]);
         echo '</table>';
 
         echo '</div>';
