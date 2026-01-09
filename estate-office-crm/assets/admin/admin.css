@@ -68,3 +68,27 @@
 .eoc-list-table td {
     vertical-align: middle;
 }
+
+.eoc-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.eoc-inline-options {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.eoc-existing-clients ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.eoc-client-fields--company,
+.eoc-mailing-fields {
+    display: none;
+}

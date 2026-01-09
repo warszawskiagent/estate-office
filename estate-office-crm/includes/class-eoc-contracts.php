@@ -76,7 +76,10 @@ class EOC_Contracts {
             $this->redirect_with_error('db');
         }
 
-        wp_safe_redirect(add_query_arg('eoc_success', '1', admin_url('admin.php?page=estate-office-crm-contracts')));
+        wp_safe_redirect(add_query_arg(array(
+            'contract_id' => (int) $wpdb->insert_id,
+            'eoc_success' => '1',
+        ), admin_url('admin.php?page=estate-office-crm-clients-add')));
         exit;
     }
 

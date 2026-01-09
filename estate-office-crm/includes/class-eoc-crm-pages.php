@@ -31,6 +31,16 @@ class EOC_CRM_Pages {
                 true
             );
         }
+
+        if ($hook === 'estate-office-crm_page_estate-office-crm-clients-add') {
+            wp_enqueue_script(
+                'eoc-clients',
+                EOC_PLUGIN_URL . 'assets/admin/clients.js',
+                array('jquery'),
+                EOC_PLUGIN_VERSION,
+                true
+            );
+        }
     }
 
     public function register_pages(): void {
@@ -88,6 +98,33 @@ class EOC_CRM_Pages {
             $capability,
             'estate-office-crm-contracts-add',
             array($this, 'render_contract_add')
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __('Dodaj klienta', 'estate-office-crm'),
+            __('Dodaj klienta', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-clients-add',
+            array($this, 'render_client_add')
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __('Dodaj nieruchomość', 'estate-office-crm'),
+            __('Dodaj nieruchomość', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-properties-add',
+            array($this, 'render_property_add')
+        );
+
+        add_submenu_page(
+            'estate-office-crm',
+            __('Dodaj poszukiwanie', 'estate-office-crm'),
+            __('Dodaj poszukiwanie', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-searches-add',
+            array($this, 'render_search_add')
         );
     }
 
@@ -239,6 +276,249 @@ class EOC_CRM_Pages {
         echo '</div>';
     }
 
+    public function render_client_add(): void {
+        $error = isset($_GET['eoc_error']) ? sanitize_text_field(wp_unslash($_GET['eoc_error'])) : '';
+        $success = isset($_GET['eoc_success']) ? sanitize_text_field(wp_unslash($_GET['eoc_success'])) : '';
+        $contract_id = isset($_GET['contract_id']) ? absint($_GET['contract_id']) : 0;
+
+        $search_term = isset($_GET['eoc_client_search']) ? sanitize_text_field(wp_unslash($_GET['eoc_client_search'])) : '';
+        $existing_clients = $this->get_client_search_results($search_term);
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Dodaj klienta', 'estate-office-crm') . '</h1>';
+
+        if (!$contract_id) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Brak powiązanej umowy. Wróć do dodawania umowy.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        if ($error === 'missing_contract') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono powiązanej umowy.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane pola klienta.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wystąpił błąd zapisu klienta. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
+        } elseif ($success === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Klient został przypisany do umowy.', 'estate-office-crm') . '</p></div>';
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Wyszukiwarka klientów', 'estate-office-crm') . '</h2>';
+        echo '<form method="get" class="eoc-search-form">';
+        echo '<input type="hidden" name="page" value="estate-office-crm-clients-add" />';
+        echo '<input type="hidden" name="contract_id" value="' . esc_attr((string) $contract_id) . '" />';
+        echo '<input type="search" name="eoc_client_search" value="' . esc_attr($search_term) . '" placeholder="' . esc_attr__('Imię, nazwisko, telefon lub e-mail', 'estate-office-crm') . '" class="regular-text" />';
+        echo '<button type="submit" class="button">' . esc_html__('Szukaj', 'estate-office-crm') . '</button>';
+        echo '</form>';
+
+        if (empty($existing_clients) && $search_term !== '') {
+            echo '<p>' . esc_html__('Brak wyników dla podanego wyszukiwania.', 'estate-office-crm') . '</p>';
+        }
+        echo '</div>';
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('eoc_save_client', 'eoc_client_nonce');
+        echo '<input type="hidden" name="action" value="eoc_save_client" />';
+        echo '<input type="hidden" name="eoc_client[contract_id]" value="' . esc_attr((string) $contract_id) . '" />';
+
+        if (!empty($existing_clients)) {
+            echo '<div class="eoc-section eoc-existing-clients">';
+            echo '<h2>' . esc_html__('Wybierz istniejącego klienta', 'estate-office-crm') . '</h2>';
+            echo '<ul>';
+            foreach ($existing_clients as $client) {
+                $label = sprintf(
+                    '%s %s (%s)',
+                    esc_html($client['display_name']),
+                    $client['phone'] ? esc_html($client['phone']) : esc_html__('brak telefonu', 'estate-office-crm'),
+                    $client['email'] ? esc_html($client['email']) : esc_html__('brak e-maila', 'estate-office-crm')
+                );
+                echo '<li><label><input type="radio" name="eoc_client[existing_client_id]" value="' . esc_attr((string) $client['id']) . '" /> ' . $label . '</label></li>';
+            }
+            echo '</ul>';
+            echo '</div>';
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dodaj nowego klienta', 'estate-office-crm') . '</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-client-type">' . esc_html__('Typ klienta', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-client-type" name="eoc_client[client_type]" required>';
+        echo '<option value="PERSON">' . esc_html__('Osoba fizyczna', 'estate-office-crm') . '</option>';
+        echo '<option value="COMPANY">' . esc_html__('Firma', 'estate-office-crm') . '</option>';
+        echo '</select></td>';
+        echo '</tr>';
+        echo '</table>';
+
+        echo '<div class="eoc-client-fields eoc-client-fields--person">';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-first-name">' . esc_html__('Imię', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-first-name" name="eoc_client[first_name]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-last-name">' . esc_html__('Nazwisko', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-last-name" name="eoc_client[last_name]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<div class="eoc-client-fields eoc-client-fields--company">';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-company-name">' . esc_html__('Nazwa firmy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-company-name" name="eoc_client[company_name]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-representative">' . esc_html__('Imię i nazwisko reprezentanta', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-representative" name="eoc_client[representative_name]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<h3>' . esc_html__('Dane kontaktowe', 'estate-office-crm') . '</h3>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-phone">' . esc_html__('Numer telefonu', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-phone" name="eoc_client[phone]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-email">' . esc_html__('Adres e-mail', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="email" id="eoc-email" name="eoc_client[email]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr class="eoc-client-fields eoc-client-fields--company">'; 
+        echo '<th scope="row"><label for="eoc-website">' . esc_html__('Strona WWW', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="url" id="eoc-website" name="eoc_client[website]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+
+        echo '<h3>' . esc_html__('Dane identyfikacyjne', 'estate-office-crm') . '</h3>';
+        echo '<div class="eoc-client-fields eoc-client-fields--person">';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-pesel">' . esc_html__('PESEL', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-pesel" name="eoc_client[pesel]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-id-type">' . esc_html__('Rodzaj dokumentu', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-id-type" name="eoc_client[id_type]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office-crm') . '</option>';
+        echo '<option value="ID">' . esc_html__('Dowód osobisty', 'estate-office-crm') . '</option>';
+        echo '<option value="PASSPORT">' . esc_html__('Paszport', 'estate-office-crm') . '</option>';
+        echo '<option value="RESIDENCE">' . esc_html__('Karta pobytu', 'estate-office-crm') . '</option>';
+        echo '</select></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-id-number">' . esc_html__('Numer dokumentu', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-id-number" name="eoc_client[id_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<div class="eoc-client-fields eoc-client-fields--company">';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-tax-id">' . esc_html__('NIP', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-tax-id" name="eoc_client[tax_id]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-krs">' . esc_html__('KRS', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-krs" name="eoc_client[krs]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-regon">' . esc_html__('REGON', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-regon" name="eoc_client[regon]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<h3>' . esc_html__('Adres zamieszkania / rejestrowy', 'estate-office-crm') . '</h3>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-street">' . esc_html__('Ulica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-street" name="eoc_client[street]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-building-number">' . esc_html__('Numer', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-building-number" name="eoc_client[building_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-unit-number">' . esc_html__('Lokal', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-unit-number" name="eoc_client[unit_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-postal-code">' . esc_html__('Kod pocztowy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-postal-code" name="eoc_client[postal_code]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-city">' . esc_html__('Miasto', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-city" name="eoc_client[city]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-country">' . esc_html__('Kraj', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-country" name="eoc_client[country]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+
+        echo '<h3>' . esc_html__('Adres korespondencyjny', 'estate-office-crm') . '</h3>';
+        echo '<p><label><input type="checkbox" id="eoc-mailing-same" name="eoc_client[mailing_same]" value="1" checked /> ' . esc_html__('Adres korespondencyjny taki sam', 'estate-office-crm') . '</label></p>';
+
+        echo '<div class="eoc-mailing-fields">';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-street">' . esc_html__('Ulica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-street" name="eoc_client[mailing_street]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-building-number">' . esc_html__('Numer', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-building-number" name="eoc_client[mailing_building_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-unit-number">' . esc_html__('Lokal', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-unit-number" name="eoc_client[mailing_unit_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-postal-code">' . esc_html__('Kod pocztowy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-postal-code" name="eoc_client[mailing_postal_code]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-city">' . esc_html__('Miasto', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-city" name="eoc_client[mailing_city]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-mailing-country">' . esc_html__('Kraj', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-mailing-country" name="eoc_client[mailing_country]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<h3>' . esc_html__('Czy chcesz dodać kolejnego klienta?', 'estate-office-crm') . '</h3>';
+        echo '<p class="eoc-inline-options">';
+        echo '<label><input type="radio" name="eoc_client[next_step]" value="add_another" checked /> ' . esc_html__('TAK', 'estate-office-crm') . '</label>';
+        echo '<label><input type="radio" name="eoc_client[next_step]" value="next" /> ' . esc_html__('NIE', 'estate-office-crm') . '</label>';
+        echo '</p>';
+
+        submit_button(__('Dalej', 'estate-office-crm'));
+        echo '</div>';
+        echo '</form>';
+        echo '</div>';
+    }
+
+    public function render_property_add(): void {
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Dodaj nieruchomość', 'estate-office-crm') . '</h1>';
+        echo '<p>' . esc_html__('Formularz dodawania nieruchomości zostanie wdrożony w kolejnym etapie.', 'estate-office-crm') . '</p>';
+        echo '</div>';
+    }
+
+    public function render_search_add(): void {
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Dodaj poszukiwanie', 'estate-office-crm') . '</h1>';
+        echo '<p>' . esc_html__('Formularz dodawania poszukiwania zostanie wdrożony w kolejnym etapie.', 'estate-office-crm') . '</p>';
+        echo '</div>';
+    }
+
     private function render_list_page(string $title, array $columns): void {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html($title) . '</h1>';
@@ -262,5 +542,56 @@ class EOC_CRM_Pages {
         echo '</tbody>';
         echo '</table>';
         echo '</div>';
+    }
+
+    private function get_client_search_results(string $search_term): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_clients';
+
+        if ($search_term === '') {
+            return array();
+        }
+
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, client_type, first_name, last_name, company_name, phone, email\n"
+                . "FROM {$table}\n"
+                . "WHERE first_name LIKE %s\n"
+                . "   OR last_name LIKE %s\n"
+                . "   OR company_name LIKE %s\n"
+                . "   OR phone LIKE %s\n"
+                . "   OR email LIKE %s\n"
+                . "ORDER BY id DESC\n"
+                . "LIMIT 10",
+                $like,
+                $like,
+                $like,
+                $like,
+                $like
+            ),
+            ARRAY_A
+        );
+
+        $clients = array();
+        foreach ($results as $client) {
+            if ($client['client_type'] === 'COMPANY') {
+                $display_name = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+            } else {
+                $display_name = trim($client['first_name'] . ' ' . $client['last_name']);
+                if ($display_name === '') {
+                    $display_name = __('Klient', 'estate-office-crm');
+                }
+            }
+
+            $clients[] = array(
+                'id' => (int) $client['id'],
+                'display_name' => $display_name,
+                'phone' => $client['phone'],
+                'email' => $client['email'],
+            );
+        }
+
+        return $clients;
     }
 }

@@ -18,6 +18,9 @@ class EOC_Plugin {
         $contracts = new EOC_Contracts();
         $contracts->register();
 
+        $clients = new EOC_Clients();
+        $clients->register();
+
         EOC_Settings::register();
     }
 }
