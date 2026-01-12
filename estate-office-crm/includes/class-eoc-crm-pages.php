@@ -664,6 +664,8 @@ class EOC_CRM_Pages {
 
         if ($error === 'missing_contract') {
             echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono powiązanej umowy.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane pola poszukiwania.', 'estate-office-crm') . '</p></div>';
         } elseif ($error === 'db') {
             echo '<div class="notice notice-error"><p>' . esc_html__('Wystąpił błąd zapisu poszukiwania. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
         } elseif ($success === '1') {
