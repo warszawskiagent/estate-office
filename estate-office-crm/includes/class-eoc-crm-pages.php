@@ -138,6 +138,15 @@ class EOC_CRM_Pages {
         );
 
         add_submenu_page(
+            null,
+            __('Podgląd poszukiwania', 'estate-office-crm'),
+            __('Podgląd poszukiwania', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-searches-view',
+            array($this, 'render_search_view')
+        );
+
+        add_submenu_page(
             'estate-office-crm',
             __('Dodaj klienta', 'estate-office-crm'),
             __('Dodaj klienta', 'estate-office-crm'),
@@ -240,15 +249,51 @@ class EOC_CRM_Pages {
     }
 
     public function render_searches(): void {
-        $columns = array(
-            __('Numer poszukiwania', 'estate-office-crm'),
-            __('Rodzaj nieruchomości', 'estate-office-crm'),
-            __('Budżet', 'estate-office-crm'),
-            __('Lokalizacja', 'estate-office-crm'),
-            __('Typ transakcji', 'estate-office-crm'),
-        );
+        $search_term = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $searches = $this->get_searches($search_term);
 
-        $this->render_list_page(__('CRM: Poszukiwania', 'estate-office-crm'), $columns);
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('CRM: Poszukiwania', 'estate-office-crm') . '</h1>';
+        echo '<div class="eoc-list-actions">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=estate-office-crm-contracts-add')) . '" class="button button-primary">' . esc_html__('Dodaj nową Umowę', 'estate-office-crm') . '</a>';
+        echo '<form method="get" class="eoc-search-form">';
+        echo '<input type="hidden" name="page" value="estate-office-crm-searches" />';
+        echo '<input type="search" name="s" value="' . esc_attr($search_term) . '" placeholder="' . esc_attr__('Wyszukaj...', 'estate-office-crm') . '" />';
+        echo '<button type="submit" class="button">' . esc_html__('Szukaj', 'estate-office-crm') . '</button>';
+        echo '</form>';
+        echo '</div>';
+
+        echo '<table class="widefat striped eoc-list-table">';
+        echo '<thead><tr>';
+        echo '<th>' . esc_html__('Numer poszukiwania', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Rodzaj nieruchomości', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Budżet', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Lokalizacja', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Typ transakcji', 'estate-office-crm') . '</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
+
+        if (empty($searches)) {
+            echo '<tr><td colspan="5">' . esc_html__('Brak danych do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
+        } else {
+            foreach ($searches as $search) {
+                $view_link = add_query_arg(
+                    array('page' => 'estate-office-crm-searches-view', 'search_id' => $search['id']),
+                    admin_url('admin.php')
+                );
+                echo '<tr>';
+                echo '<td><a href="' . esc_url($view_link) . '">' . esc_html($search['search_number']) . '</a></td>';
+                echo '<td>' . esc_html($search['property_type']) . '</td>';
+                echo '<td>' . esc_html($search['budget']) . '</td>';
+                echo '<td>' . esc_html($search['location']) . '</td>';
+                echo '<td>' . esc_html($search['transaction_type']) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
     }
 
     public function render_contracts(): void {
@@ -546,6 +591,39 @@ class EOC_CRM_Pages {
         } else {
             echo '<p>' . esc_html__('Brak powiązanej umowy.', 'estate-office-crm') . '</p>';
         }
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    public function render_search_view(): void {
+        $search_id = isset($_GET['search_id']) ? absint($_GET['search_id']) : 0;
+        $search = $search_id ? $this->get_search_view($search_id) : null;
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Profil poszukiwania', 'estate-office-crm') . '</h1>';
+
+        if (!$search) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono poszukiwania.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dane poszukiwania', 'estate-office-crm') . '</h2>';
+        echo '<ul>';
+        echo '<li><strong>' . esc_html__('Typ transakcji:', 'estate-office-crm') . '</strong> ' . esc_html($search['transaction_type']) . '</li>';
+        echo '<li><strong>' . esc_html__('Rodzaj nieruchomości:', 'estate-office-crm') . '</strong> ' . esc_html($search['property_type']) . '</li>';
+        echo '<li><strong>' . esc_html__('Budżet:', 'estate-office-crm') . '</strong> ' . esc_html($search['budget']) . '</li>';
+        echo '<li><strong>' . esc_html__('Metraż:', 'estate-office-crm') . '</strong> ' . esc_html($search['area']) . '</li>';
+        echo '<li><strong>' . esc_html__('Liczba pokoi:', 'estate-office-crm') . '</strong> ' . esc_html($search['rooms']) . '</li>';
+        echo '<li><strong>' . esc_html__('Lokalizacja:', 'estate-office-crm') . '</strong> ' . esc_html($search['location']) . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Opis poszukiwania', 'estate-office-crm') . '</h2>';
+        echo wp_kses_post($search['description']);
         echo '</div>';
 
         echo '</div>';
@@ -1462,5 +1540,105 @@ class EOC_CRM_Pages {
             'address' => trim($client['city'] . ' ' . $client['street'] . ' ' . $client['building_number']),
             'contracts' => $contract_numbers,
         );
+    }
+
+    private function get_searches(string $search_term): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_searches';
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        if ($search_term === '') {
+            $results = $wpdb->get_results(
+                "SELECT id, transaction_type, property_type, budget_min, budget_max, area_min, area_max, rooms_min, rooms_max, city, district\n"
+                . "FROM {$table}\n"
+                . "ORDER BY id DESC\n"
+                . "LIMIT 50",
+                ARRAY_A
+            );
+        } else {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, transaction_type, property_type, budget_min, budget_max, area_min, area_max, rooms_min, rooms_max, city, district\n"
+                    . "FROM {$table}\n"
+                    . "WHERE transaction_type LIKE %s\n"
+                    . "   OR property_type LIKE %s\n"
+                    . "   OR city LIKE %s\n"
+                    . "   OR district LIKE %s\n"
+                    . "ORDER BY id DESC\n"
+                    . "LIMIT 50",
+                    $like,
+                    $like,
+                    $like,
+                    $like
+                ),
+                ARRAY_A
+            );
+        }
+
+        $searches = array();
+        foreach ($results as $search) {
+            $budget = $this->format_range($search['budget_min'], $search['budget_max']);
+            $area = $this->format_range($search['area_min'], $search['area_max'], 'm²');
+            $rooms = $this->format_range($search['rooms_min'], $search['rooms_max']);
+
+            $searches[] = array(
+                'id' => (int) $search['id'],
+                'search_number' => 'POSZ-' . $search['id'],
+                'transaction_type' => $search['transaction_type'],
+                'property_type' => $search['property_type'],
+                'budget' => $budget,
+                'location' => trim($search['city'] . ' ' . $search['district']),
+                'area' => $area,
+                'rooms' => $rooms,
+            );
+        }
+
+        return $searches;
+    }
+
+    private function get_search_view(int $search_id): ?array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_searches';
+
+        $search = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, transaction_type, property_type, budget_min, budget_max, area_min, area_max, rooms_min, rooms_max, city, district, description\n"
+                . "FROM {$table}\n"
+                . "WHERE id = %d",
+                $search_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$search) {
+            return null;
+        }
+
+        return array(
+            'id' => (int) $search['id'],
+            'transaction_type' => $search['transaction_type'],
+            'property_type' => $search['property_type'],
+            'budget' => $this->format_range($search['budget_min'], $search['budget_max']),
+            'area' => $this->format_range($search['area_min'], $search['area_max'], 'm²'),
+            'rooms' => $this->format_range($search['rooms_min'], $search['rooms_max']),
+            'location' => trim($search['city'] . ' ' . $search['district']),
+            'description' => $search['description'] ?: '',
+        );
+    }
+
+    private function format_range($min, $max, string $unit = ''): string {
+        $min = $min !== null && $min !== '' ? (string) $min : '';
+        $max = $max !== null && $max !== '' ? (string) $max : '';
+
+        if ($min === '' && $max === '') {
+            return '';
+        }
+
+        $range = $min !== '' && $max !== '' ? $min . ' - ' . $max : ($min !== '' ? $min : $max);
+        if ($unit !== '') {
+            $range .= ' ' . $unit;
+        }
+
+        return $range;
     }
 }
