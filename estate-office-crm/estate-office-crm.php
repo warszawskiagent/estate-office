@@ -24,6 +24,7 @@ require_once EOC_PLUGIN_DIR . 'includes/class-eoc-clients.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-contracts.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-crm-pages.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-properties.php';
+require_once EOC_PLUGIN_DIR . 'includes/class-eoc-searches.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-settings.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-plugin.php';
 

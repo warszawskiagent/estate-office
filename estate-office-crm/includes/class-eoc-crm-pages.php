@@ -643,9 +643,78 @@ class EOC_CRM_Pages {
     }
 
     public function render_search_add(): void {
+        $error = isset($_GET['eoc_error']) ? sanitize_text_field(wp_unslash($_GET['eoc_error'])) : '';
+        $success = isset($_GET['eoc_success']) ? sanitize_text_field(wp_unslash($_GET['eoc_success'])) : '';
+        $contract_id = isset($_GET['contract_id']) ? absint($_GET['contract_id']) : 0;
+
+        $transaction_type = '';
+        if ($contract_id) {
+            $contract = $this->get_contract_summary($contract_id);
+            $transaction_type = $contract['transaction_type'] ?? '';
+        }
+
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Dodaj poszukiwanie', 'estate-office-crm') . '</h1>';
-        echo '<p>' . esc_html__('Formularz dodawania poszukiwania zostanie wdrożony w kolejnym etapie.', 'estate-office-crm') . '</p>';
+
+        if (!$contract_id) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Brak powiązanej umowy. Wróć do dodawania klienta.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        if ($error === 'missing_contract') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono powiązanej umowy.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wystąpił błąd zapisu poszukiwania. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
+        } elseif ($success === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Poszukiwanie zostało zapisane.', 'estate-office-crm') . '</p></div>';
+        }
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('eoc_save_search', 'eoc_search_nonce');
+        echo '<input type="hidden" name="action" value="eoc_save_search" />';
+        echo '<input type="hidden" name="eoc_search[contract_id]" value="' . esc_attr((string) $contract_id) . '" />';
+
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row">' . esc_html__('Typ transakcji', 'estate-office-crm') . '</th>';
+        echo '<td><input type="text" class="regular-text" value="' . esc_attr($transaction_type) . '" disabled /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-price-min">' . esc_html__('Cena od', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-price-min" name="eoc_search[price_min]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-price-max">' . esc_html__('Cena do', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-price-max" name="eoc_search[price_max]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-area-min">' . esc_html__('Metraż od', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-area-min" name="eoc_search[area_min]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-area-max">' . esc_html__('Metraż do', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-area-max" name="eoc_search[area_max]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-rooms-min">' . esc_html__('Liczba pokoi od', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="number" id="eoc-rooms-min" name="eoc_search[rooms_min]" class="small-text" min="0" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-rooms-max">' . esc_html__('Liczba pokoi do', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="number" id="eoc-rooms-max" name="eoc_search[rooms_max]" class="small-text" min="0" /></td>';
+        echo '</tr>';
+        echo '</table>';
+
+        echo '<h2>' . esc_html__('Opis poszukiwania', 'estate-office-crm') . '</h2>';
+        wp_editor('', 'eoc-search-description', array(
+            'textarea_name' => 'eoc_search[description]',
+            'media_buttons' => false,
+            'textarea_rows' => 6,
+        ));
+
+        submit_button(__('Dodaj poszukiwanie', 'estate-office-crm'));
+        echo '</form>';
         echo '</div>';
     }
 

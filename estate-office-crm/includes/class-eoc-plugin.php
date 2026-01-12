@@ -24,6 +24,9 @@ class EOC_Plugin {
         $properties = new EOC_Properties();
         $properties->register();
 
+        $searches = new EOC_Searches();
+        $searches->register();
+
         EOC_Settings::register();
     }
 }
