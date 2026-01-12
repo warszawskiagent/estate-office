@@ -41,6 +41,13 @@ class EOC_Searches {
         $district = isset($data['district']) ? sanitize_text_field($data['district']) : '';
         $description = isset($data['description']) ? wp_kses_post($data['description']) : '';
 
+        if ($property_type !== '') {
+            $allowed_types = array('MIESZKANIE', 'DOM', 'DZIALKA', 'LOKAL');
+            if (!in_array($property_type, $allowed_types, true)) {
+                $this->redirect_with_error('invalid');
+            }
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'eoc_searches';
         $now = current_time('mysql');
