@@ -120,6 +120,24 @@ class EOC_CRM_Pages {
         );
 
         add_submenu_page(
+            null,
+            __('Podgląd klienta', 'estate-office-crm'),
+            __('Podgląd klienta', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-clients-view',
+            array($this, 'render_client_view')
+        );
+
+        add_submenu_page(
+            null,
+            __('Podgląd nieruchomości', 'estate-office-crm'),
+            __('Podgląd nieruchomości', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-properties-view',
+            array($this, 'render_property_view')
+        );
+
+        add_submenu_page(
             'estate-office-crm',
             __('Dodaj klienta', 'estate-office-crm'),
             __('Dodaj klienta', 'estate-office-crm'),
@@ -170,17 +188,55 @@ class EOC_CRM_Pages {
     }
 
     public function render_properties(): void {
-        $columns = array(
-            __('Numer oferty', 'estate-office-crm'),
-            __('Adres', 'estate-office-crm'),
-            __('Cena', 'estate-office-crm'),
-            __('Cena za m²', 'estate-office-crm'),
-            __('Metraż', 'estate-office-crm'),
-            __('Liczba pokoi', 'estate-office-crm'),
-            __('Opiekun', 'estate-office-crm'),
-        );
+        $search_term = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $properties = $this->get_properties($search_term);
 
-        $this->render_list_page(__('CRM: Nieruchomości', 'estate-office-crm'), $columns);
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('CRM: Nieruchomości', 'estate-office-crm') . '</h1>';
+        echo '<div class="eoc-list-actions">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=estate-office-crm-contracts-add')) . '" class="button button-primary">' . esc_html__('Dodaj nową Umowę', 'estate-office-crm') . '</a>';
+        echo '<form method="get" class="eoc-search-form">';
+        echo '<input type="hidden" name="page" value="estate-office-crm-properties" />';
+        echo '<input type="search" name="s" value="' . esc_attr($search_term) . '" placeholder="' . esc_attr__('Wyszukaj...', 'estate-office-crm') . '" />';
+        echo '<button type="submit" class="button">' . esc_html__('Szukaj', 'estate-office-crm') . '</button>';
+        echo '</form>';
+        echo '</div>';
+
+        echo '<table class="widefat striped eoc-list-table">';
+        echo '<thead><tr>';
+        echo '<th>' . esc_html__('Numer oferty', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Adres', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Cena', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Cena za m²', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Metraż', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Liczba pokoi', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Opiekun', 'estate-office-crm') . '</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
+
+        if (empty($properties)) {
+            echo '<tr><td colspan="7">' . esc_html__('Brak danych do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
+        } else {
+            foreach ($properties as $property) {
+                $view_link = add_query_arg(
+                    array('page' => 'estate-office-crm-properties-view', 'property_id' => $property['id']),
+                    admin_url('admin.php')
+                );
+                echo '<tr>';
+                echo '<td><a href="' . esc_url($view_link) . '">' . esc_html($property['offer_number']) . '</a></td>';
+                echo '<td>' . esc_html($property['address']) . '</td>';
+                echo '<td>' . esc_html($property['price']) . '</td>';
+                echo '<td>' . esc_html($property['price_per_sqm']) . '</td>';
+                echo '<td>' . esc_html($property['area']) . '</td>';
+                echo '<td>' . esc_html($property['rooms']) . '</td>';
+                echo '<td>' . esc_html($property['agent_name']) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
     }
 
     public function render_searches(): void {
@@ -246,15 +302,51 @@ class EOC_CRM_Pages {
     }
 
     public function render_clients(): void {
-        $columns = array(
-            __('Imię i nazwisko / Nazwa', 'estate-office-crm'),
-            __('Adres', 'estate-office-crm'),
-            __('Telefon', 'estate-office-crm'),
-            __('E-mail', 'estate-office-crm'),
-            __('Opiekun', 'estate-office-crm'),
-        );
+        $search_term = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $clients = $this->get_clients($search_term);
 
-        $this->render_list_page(__('CRM: Klienci', 'estate-office-crm'), $columns);
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('CRM: Klienci', 'estate-office-crm') . '</h1>';
+        echo '<div class="eoc-list-actions">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=estate-office-crm-contracts-add')) . '" class="button button-primary">' . esc_html__('Dodaj nową Umowę', 'estate-office-crm') . '</a>';
+        echo '<form method="get" class="eoc-search-form">';
+        echo '<input type="hidden" name="page" value="estate-office-crm-clients" />';
+        echo '<input type="search" name="s" value="' . esc_attr($search_term) . '" placeholder="' . esc_attr__('Wyszukaj...', 'estate-office-crm') . '" />';
+        echo '<button type="submit" class="button">' . esc_html__('Szukaj', 'estate-office-crm') . '</button>';
+        echo '</form>';
+        echo '</div>';
+
+        echo '<table class="widefat striped eoc-list-table">';
+        echo '<thead><tr>';
+        echo '<th>' . esc_html__('Imię i nazwisko / Nazwa', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Adres', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Telefon', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('E-mail', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Opiekun', 'estate-office-crm') . '</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
+
+        if (empty($clients)) {
+            echo '<tr><td colspan="5">' . esc_html__('Brak danych do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
+        } else {
+            foreach ($clients as $client) {
+                $view_link = add_query_arg(
+                    array('page' => 'estate-office-crm-clients-view', 'client_id' => $client['id']),
+                    admin_url('admin.php')
+                );
+                echo '<tr>';
+                echo '<td><a href="' . esc_url($view_link) . '">' . esc_html($client['display_name']) . '</a></td>';
+                echo '<td>' . esc_html($client['address']) . '</td>';
+                echo '<td>' . esc_html($client['phone']) . '</td>';
+                echo '<td>' . esc_html($client['email']) . '</td>';
+                echo '<td>' . esc_html($client['agent_name']) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
     }
 
     public function render_contract_add(): void {
@@ -378,6 +470,81 @@ class EOC_CRM_Pages {
                 echo '<li>' . esc_html($offer) . '</li>';
             }
             echo '</ul>';
+        }
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    public function render_client_view(): void {
+        $client_id = isset($_GET['client_id']) ? absint($_GET['client_id']) : 0;
+        $client = $client_id ? $this->get_client_view($client_id) : null;
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Profil klienta', 'estate-office-crm') . '</h1>';
+
+        if (!$client) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono klienta.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dane klienta', 'estate-office-crm') . '</h2>';
+        echo '<ul>';
+        echo '<li><strong>' . esc_html__('Nazwa:', 'estate-office-crm') . '</strong> ' . esc_html($client['display_name']) . '</li>';
+        echo '<li><strong>' . esc_html__('Telefon:', 'estate-office-crm') . '</strong> ' . esc_html($client['phone']) . '</li>';
+        echo '<li><strong>' . esc_html__('E-mail:', 'estate-office-crm') . '</strong> ' . esc_html($client['email']) . '</li>';
+        echo '<li><strong>' . esc_html__('Adres:', 'estate-office-crm') . '</strong> ' . esc_html($client['address']) . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązane umowy', 'estate-office-crm') . '</h2>';
+        if (empty($client['contracts'])) {
+            echo '<p>' . esc_html__('Brak powiązanych umów.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($client['contracts'] as $contract) {
+                echo '<li>' . esc_html($contract) . '</li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    public function render_property_view(): void {
+        $property_id = isset($_GET['property_id']) ? absint($_GET['property_id']) : 0;
+        $property = $property_id ? $this->get_property_view($property_id) : null;
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Profil nieruchomości', 'estate-office-crm') . '</h1>';
+
+        if (!$property) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono nieruchomości.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dane nieruchomości', 'estate-office-crm') . '</h2>';
+        echo '<ul>';
+        echo '<li><strong>' . esc_html__('Typ:', 'estate-office-crm') . '</strong> ' . esc_html($property['property_type']) . '</li>';
+        echo '<li><strong>' . esc_html__('Adres:', 'estate-office-crm') . '</strong> ' . esc_html($property['address']) . '</li>';
+        echo '<li><strong>' . esc_html__('Cena:', 'estate-office-crm') . '</strong> ' . esc_html($property['price']) . '</li>';
+        echo '<li><strong>' . esc_html__('Metraż:', 'estate-office-crm') . '</strong> ' . esc_html($property['area']) . '</li>';
+        echo '<li><strong>' . esc_html__('Liczba pokoi:', 'estate-office-crm') . '</strong> ' . esc_html($property['rooms']) . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązana umowa', 'estate-office-crm') . '</h2>';
+        if ($property['contract_number']) {
+            echo '<p>' . esc_html($property['contract_number']) . '</p>';
+        } else {
+            echo '<p>' . esc_html__('Brak powiązanej umowy.', 'estate-office-crm') . '</p>';
         }
         echo '</div>';
 
@@ -1074,6 +1241,226 @@ class EOC_CRM_Pages {
             'commission' => $commission,
             'clients' => $client_names,
             'offers' => $offers,
+        );
+    }
+
+    private function get_properties(string $search_term): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_properties';
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        if ($search_term === '') {
+            $results = $wpdb->get_results(
+                "SELECT id, property_type, city, street, building_number, price, area, rooms, manager_user_id\n"
+                . "FROM {$table}\n"
+                . "ORDER BY id DESC\n"
+                . "LIMIT 50",
+                ARRAY_A
+            );
+        } else {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, property_type, city, street, building_number, price, area, rooms, manager_user_id\n"
+                    . "FROM {$table}\n"
+                    . "WHERE property_type LIKE %s\n"
+                    . "   OR city LIKE %s\n"
+                    . "   OR street LIKE %s\n"
+                    . "   OR building_number LIKE %s\n"
+                    . "ORDER BY id DESC\n"
+                    . "LIMIT 50",
+                    $like,
+                    $like,
+                    $like,
+                    $like
+                ),
+                ARRAY_A
+            );
+        }
+
+        $properties = array();
+        foreach ($results as $property) {
+            $agent_name = '';
+            if (!empty($property['manager_user_id'])) {
+                $user = get_user_by('id', (int) $property['manager_user_id']);
+                if ($user) {
+                    $agent_name = $user->display_name;
+                }
+            }
+
+            $address = trim($property['city'] . ' ' . $property['street'] . ' ' . $property['building_number']);
+            $price_per_sqm = '';
+            if (!empty($property['price']) && !empty($property['area'])) {
+                $price_per_sqm = round((float) $property['price'] / (float) $property['area'], 2);
+            }
+
+            $properties[] = array(
+                'id' => (int) $property['id'],
+                'offer_number' => 'OF-' . $property['id'],
+                'address' => $address,
+                'price' => $property['price'],
+                'price_per_sqm' => $price_per_sqm,
+                'area' => $property['area'],
+                'rooms' => $property['rooms'],
+                'agent_name' => $agent_name,
+            );
+        }
+
+        return $properties;
+    }
+
+    private function get_property_view(int $property_id): ?array {
+        global $wpdb;
+        $properties_table = $wpdb->prefix . 'eoc_properties';
+        $contracts_table = $wpdb->prefix . 'eoc_contracts';
+
+        $property = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, contract_id, property_type, city, street, building_number, price, area, rooms\n"
+                . "FROM {$properties_table}\n"
+                . "WHERE id = %d",
+                $property_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$property) {
+            return null;
+        }
+
+        $contract_number = '';
+        if (!empty($property['contract_id'])) {
+            $contract_number = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT contract_number FROM {$contracts_table} WHERE id = %d",
+                    $property['contract_id']
+                )
+            );
+        }
+
+        return array(
+            'id' => (int) $property['id'],
+            'property_type' => $property['property_type'],
+            'address' => trim($property['city'] . ' ' . $property['street'] . ' ' . $property['building_number']),
+            'price' => $property['price'],
+            'area' => $property['area'],
+            'rooms' => $property['rooms'],
+            'contract_number' => $contract_number,
+        );
+    }
+
+    private function get_clients(string $search_term): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_clients';
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        if ($search_term === '') {
+            $results = $wpdb->get_results(
+                "SELECT id, client_type, first_name, last_name, company_name, phone, email, city, street, building_number\n"
+                . "FROM {$table}\n"
+                . "ORDER BY id DESC\n"
+                . "LIMIT 50",
+                ARRAY_A
+            );
+        } else {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, client_type, first_name, last_name, company_name, phone, email, city, street, building_number\n"
+                    . "FROM {$table}\n"
+                    . "WHERE first_name LIKE %s\n"
+                    . "   OR last_name LIKE %s\n"
+                    . "   OR company_name LIKE %s\n"
+                    . "   OR phone LIKE %s\n"
+                    . "   OR email LIKE %s\n"
+                    . "   OR city LIKE %s\n"
+                    . "   OR street LIKE %s\n"
+                    . "ORDER BY id DESC\n"
+                    . "LIMIT 50",
+                    $like,
+                    $like,
+                    $like,
+                    $like,
+                    $like,
+                    $like,
+                    $like
+                ),
+                ARRAY_A
+            );
+        }
+
+        $clients = array();
+        foreach ($results as $client) {
+            if ($client['client_type'] === 'COMPANY') {
+                $display_name = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+            } else {
+                $display_name = trim($client['first_name'] . ' ' . $client['last_name']);
+                if ($display_name === '') {
+                    $display_name = __('Klient', 'estate-office-crm');
+                }
+            }
+
+            $clients[] = array(
+                'id' => (int) $client['id'],
+                'display_name' => $display_name,
+                'phone' => $client['phone'],
+                'email' => $client['email'],
+                'address' => trim($client['city'] . ' ' . $client['street'] . ' ' . $client['building_number']),
+                'agent_name' => '',
+            );
+        }
+
+        return $clients;
+    }
+
+    private function get_client_view(int $client_id): ?array {
+        global $wpdb;
+        $clients_table = $wpdb->prefix . 'eoc_clients';
+        $contracts_table = $wpdb->prefix . 'eoc_contracts';
+        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+
+        $client = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, client_type, first_name, last_name, company_name, phone, email, city, street, building_number\n"
+                . "FROM {$clients_table}\n"
+                . "WHERE id = %d",
+                $client_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$client) {
+            return null;
+        }
+
+        if ($client['client_type'] === 'COMPANY') {
+            $display_name = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+        } else {
+            $display_name = trim($client['first_name'] . ' ' . $client['last_name']);
+            $display_name = $display_name !== '' ? $display_name : __('Klient', 'estate-office-crm');
+        }
+
+        $contracts = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT c.contract_number\n"
+                . "FROM {$contract_clients_table} cc\n"
+                . "JOIN {$contracts_table} c ON c.id = cc.contract_id\n"
+                . "WHERE cc.client_id = %d",
+                $client_id
+            ),
+            ARRAY_A
+        );
+
+        $contract_numbers = array();
+        foreach ($contracts as $contract) {
+            $contract_numbers[] = $contract['contract_number'];
+        }
+
+        return array(
+            'id' => (int) $client['id'],
+            'display_name' => $display_name,
+            'phone' => $client['phone'],
+            'email' => $client['email'],
+            'address' => trim($client['city'] . ' ' . $client['street'] . ' ' . $client['building_number']),
+            'contracts' => $contract_numbers,
         );
     }
 }
