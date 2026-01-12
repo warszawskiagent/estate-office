@@ -563,6 +563,7 @@ class EOC_CRM_Pages {
     public function render_property_view(): void {
         $property_id = isset($_GET['property_id']) ? absint($_GET['property_id']) : 0;
         $property = $property_id ? $this->get_property_view($property_id) : null;
+        $clients = $property_id ? $this->get_property_clients($property_id) : array();
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Profil nieruchomości', 'estate-office-crm') . '</h1>';
@@ -593,8 +594,22 @@ class EOC_CRM_Pages {
         }
         echo '</div>';
 
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązani klienci', 'estate-office-crm') . '</h2>';
+        if (empty($clients)) {
+            echo '<p>' . esc_html__('Brak powiązanych klientów.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($clients as $client) {
+                echo '<li>' . esc_html($client) . '</li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
         echo '</div>';
     }
+
 
     public function render_search_view(): void {
         $search_id = isset($_GET['search_id']) ? absint($_GET['search_id']) : 0;
@@ -1424,6 +1439,47 @@ class EOC_CRM_Pages {
             'rooms' => $property['rooms'],
             'contract_number' => $contract_number,
         );
+    }
+
+    private function get_property_clients(int $property_id): array {
+        global $wpdb;
+        $properties_table = $wpdb->prefix . 'eoc_properties';
+        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+        $clients_table = $wpdb->prefix . 'eoc_clients';
+
+        $contract_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT contract_id FROM {$properties_table} WHERE id = %d",
+                $property_id
+            )
+        );
+
+        if (!$contract_id) {
+            return array();
+        }
+
+        $clients = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT c.client_type, c.first_name, c.last_name, c.company_name\n"
+                . "FROM {$contract_clients_table} cc\n"
+                . "JOIN {$clients_table} c ON c.id = cc.client_id\n"
+                . "WHERE cc.contract_id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+
+        $names = array();
+        foreach ($clients as $client) {
+            if ($client['client_type'] === 'COMPANY') {
+                $names[] = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+            } else {
+                $name = trim($client['first_name'] . ' ' . $client['last_name']);
+                $names[] = $name !== '' ? $name : __('Klient', 'estate-office-crm');
+            }
+        }
+
+        return $names;
     }
 
     private function get_clients(string $search_term): array {
