@@ -36,6 +36,9 @@ class EOC_Searches {
         $area_max = isset($data['area_max']) ? $this->sanitize_decimal($data['area_max']) : null;
         $rooms_min = isset($data['rooms_min']) ? absint($data['rooms_min']) : null;
         $rooms_max = isset($data['rooms_max']) ? absint($data['rooms_max']) : null;
+        $property_type = isset($data['property_type']) ? sanitize_text_field($data['property_type']) : '';
+        $city = isset($data['city']) ? sanitize_text_field($data['city']) : '';
+        $district = isset($data['district']) ? sanitize_text_field($data['district']) : '';
         $description = isset($data['description']) ? wp_kses_post($data['description']) : '';
 
         global $wpdb;
@@ -47,17 +50,20 @@ class EOC_Searches {
             array(
                 'contract_id' => $contract_id,
                 'transaction_type' => $contract['transaction_type'],
+                'property_type' => $property_type ?: null,
                 'budget_min' => $price_min !== null ? $price_min : null,
                 'budget_max' => $price_max !== null ? $price_max : null,
                 'area_min' => $area_min !== null ? $area_min : null,
                 'area_max' => $area_max !== null ? $area_max : null,
                 'rooms_min' => $rooms_min ?: null,
                 'rooms_max' => $rooms_max ?: null,
+                'city' => $city ?: null,
+                'district' => $district ?: null,
                 'description' => $description ?: null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ),
-            array('%d', '%s', '%f', '%f', '%f', '%f', '%d', '%d', '%s', '%s', '%s')
+            array('%d', '%s', '%s', '%f', '%f', '%f', '%f', '%d', '%d', '%s', '%s', '%s', '%s', '%s')
         );
 
         if ($result === false) {

@@ -681,6 +681,16 @@ class EOC_CRM_Pages {
         echo '<td><input type="text" class="regular-text" value="' . esc_attr($transaction_type) . '" disabled /></td>';
         echo '</tr>';
         echo '<tr>';
+        echo '<th scope="row"><label for="eoc-search-property-type">' . esc_html__('Rodzaj nieruchomości', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-search-property-type" name="eoc_search[property_type]">';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office-crm') . '</option>';
+        echo '<option value="MIESZKANIE">' . esc_html__('MIESZKANIE', 'estate-office-crm') . '</option>';
+        echo '<option value="DOM">' . esc_html__('DOM', 'estate-office-crm') . '</option>';
+        echo '<option value="DZIALKA">' . esc_html__('DZIAŁKA', 'estate-office-crm') . '</option>';
+        echo '<option value="LOKAL">' . esc_html__('LOKAL H/U', 'estate-office-crm') . '</option>';
+        echo '</select></td>';
+        echo '</tr>';
+        echo '<tr>';
         echo '<th scope="row"><label for="eoc-price-min">' . esc_html__('Cena od', 'estate-office-crm') . '</label></th>';
         echo '<td><input type="text" id="eoc-price-min" name="eoc_search[price_min]" class="regular-text" /></td>';
         echo '</tr>';
@@ -703,6 +713,14 @@ class EOC_CRM_Pages {
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-rooms-max">' . esc_html__('Liczba pokoi do', 'estate-office-crm') . '</label></th>';
         echo '<td><input type="number" id="eoc-rooms-max" name="eoc_search[rooms_max]" class="small-text" min="0" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-search-city">' . esc_html__('Miasto', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-search-city" name="eoc_search[city]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-search-district">' . esc_html__('Dzielnica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-search-district" name="eoc_search[district]" class="regular-text" /></td>';
         echo '</tr>';
         echo '</table>';
 
