@@ -111,6 +111,15 @@ class EOC_CRM_Pages {
         );
 
         add_submenu_page(
+            null,
+            __('Podgląd umowy', 'estate-office-crm'),
+            __('Podgląd umowy', 'estate-office-crm'),
+            $capability,
+            'estate-office-crm-contracts-view',
+            array($this, 'render_contract_view')
+        );
+
+        add_submenu_page(
             'estate-office-crm',
             __('Dodaj klienta', 'estate-office-crm'),
             __('Dodaj klienta', 'estate-office-crm'),
@@ -187,18 +196,53 @@ class EOC_CRM_Pages {
     }
 
     public function render_contracts(): void {
-        $columns = array(
-            __('Numer umowy', 'estate-office-crm'),
-            __('Typ transakcji', 'estate-office-crm'),
-            __('Rodzaj nieruchomości', 'estate-office-crm'),
-            __('Adres', 'estate-office-crm'),
-            __('Data zawarcia', 'estate-office-crm'),
-            __('Data zakończenia', 'estate-office-crm'),
-            __('Aktualny etap', 'estate-office-crm'),
-            __('Opiekun', 'estate-office-crm'),
-        );
+        $search_term = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $contracts = $this->get_contracts($search_term);
 
-        $this->render_list_page(__('CRM: Umowy', 'estate-office-crm'), $columns);
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('CRM: Umowy', 'estate-office-crm') . '</h1>';
+        echo '<div class="eoc-list-actions">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=estate-office-crm-contracts-add')) . '" class="button button-primary">' . esc_html__('Dodaj nową Umowę', 'estate-office-crm') . '</a>';
+        echo '<form method="get" class="eoc-search-form">';
+        echo '<input type="hidden" name="page" value="estate-office-crm-contracts" />';
+        echo '<input type="search" name="s" value="' . esc_attr($search_term) . '" placeholder="' . esc_attr__('Wyszukaj...', 'estate-office-crm') . '" />';
+        echo '<button type="submit" class="button">' . esc_html__('Szukaj', 'estate-office-crm') . '</button>';
+        echo '</form>';
+        echo '</div>';
+
+        echo '<table class="widefat striped eoc-list-table">';
+        echo '<thead><tr>';
+        echo '<th>' . esc_html__('Numer umowy', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Typ transakcji', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Data zawarcia', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Data zakończenia', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Aktualny etap', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Opiekun', 'estate-office-crm') . '</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
+
+        if (empty($contracts)) {
+            echo '<tr><td colspan="6">' . esc_html__('Brak danych do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
+        } else {
+            foreach ($contracts as $contract) {
+                $view_link = add_query_arg(
+                    array('page' => 'estate-office-crm-contracts-view', 'contract_id' => $contract['id']),
+                    admin_url('admin.php')
+                );
+                echo '<tr>';
+                echo '<td><a href="' . esc_url($view_link) . '">' . esc_html($contract['contract_number']) . '</a></td>';
+                echo '<td>' . esc_html($contract['transaction_type']) . '</td>';
+                echo '<td>' . esc_html($contract['start_date']) . '</td>';
+                echo '<td>' . esc_html($contract['end_date']) . '</td>';
+                echo '<td>' . esc_html($contract['status_stage']) . '</td>';
+                echo '<td>' . esc_html($contract['agent_name']) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
     }
 
     public function render_clients(): void {
@@ -283,6 +327,60 @@ class EOC_CRM_Pages {
 
         submit_button(__('Dalej', 'estate-office-crm'));
         echo '</form>';
+        echo '</div>';
+    }
+
+    public function render_contract_view(): void {
+        $contract_id = isset($_GET['contract_id']) ? absint($_GET['contract_id']) : 0;
+        $contract = $contract_id ? $this->get_contract_view($contract_id) : null;
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('Profil umowy', 'estate-office-crm') . '</h1>';
+
+        if (!$contract) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono umowy.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dane umowy', 'estate-office-crm') . '</h2>';
+        echo '<ul>';
+        echo '<li><strong>' . esc_html__('Numer umowy:', 'estate-office-crm') . '</strong> ' . esc_html($contract['contract_number']) . '</li>';
+        echo '<li><strong>' . esc_html__('Typ transakcji:', 'estate-office-crm') . '</strong> ' . esc_html($contract['transaction_type']) . '</li>';
+        echo '<li><strong>' . esc_html__('Data zawarcia:', 'estate-office-crm') . '</strong> ' . esc_html($contract['start_date']) . '</li>';
+        echo '<li><strong>' . esc_html__('Data zakończenia:', 'estate-office-crm') . '</strong> ' . esc_html($contract['end_date']) . '</li>';
+        echo '<li><strong>' . esc_html__('Prowizja:', 'estate-office-crm') . '</strong> ' . esc_html($contract['commission']) . '</li>';
+        echo '<li><strong>' . esc_html__('Aktualny etap:', 'estate-office-crm') . '</strong> ' . esc_html($contract['status_stage']) . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Klienci powiązani', 'estate-office-crm') . '</h2>';
+        if (empty($contract['clients'])) {
+            echo '<p>' . esc_html__('Brak przypisanych klientów.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($contract['clients'] as $client_name) {
+                echo '<li>' . esc_html($client_name) . '</li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązane oferty', 'estate-office-crm') . '</h2>';
+        if (empty($contract['offers'])) {
+            echo '<p>' . esc_html__('Brak powiązanych nieruchomości lub poszukiwań.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($contract['offers'] as $offer) {
+                echo '<li>' . esc_html($offer) . '</li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
         echo '</div>';
     }
 
@@ -824,5 +922,158 @@ class EOC_CRM_Pages {
         );
 
         return $contract ?: null;
+    }
+
+    private function get_contracts(string $search_term): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_contracts';
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        if ($search_term === '') {
+            $results = $wpdb->get_results(
+                "SELECT id, contract_number, transaction_type, start_date, end_date, status_stage, agent_user_id\n"
+                . "FROM {$table}\n"
+                . "ORDER BY id DESC\n"
+                . "LIMIT 50",
+                ARRAY_A
+            );
+        } else {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, contract_number, transaction_type, start_date, end_date, status_stage, agent_user_id\n"
+                    . "FROM {$table}\n"
+                    . "WHERE contract_number LIKE %s\n"
+                    . "   OR transaction_type LIKE %s\n"
+                    . "   OR status_stage LIKE %s\n"
+                    . "ORDER BY id DESC\n"
+                    . "LIMIT 50",
+                    $like,
+                    $like,
+                    $like
+                ),
+                ARRAY_A
+            );
+        }
+
+        $contracts = array();
+        foreach ($results as $contract) {
+            $agent_name = '';
+            if (!empty($contract['agent_user_id'])) {
+                $user = get_user_by('id', (int) $contract['agent_user_id']);
+                if ($user) {
+                    $agent_name = $user->display_name;
+                }
+            }
+
+            $contracts[] = array(
+                'id' => (int) $contract['id'],
+                'contract_number' => $contract['contract_number'],
+                'transaction_type' => $contract['transaction_type'],
+                'start_date' => $contract['start_date'],
+                'end_date' => $contract['end_date'],
+                'status_stage' => $contract['status_stage'],
+                'agent_name' => $agent_name,
+            );
+        }
+
+        return $contracts;
+    }
+
+    private function get_contract_view(int $contract_id): ?array {
+        global $wpdb;
+        $contracts_table = $wpdb->prefix . 'eoc_contracts';
+        $clients_table = $wpdb->prefix . 'eoc_clients';
+        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+        $properties_table = $wpdb->prefix . 'eoc_properties';
+        $searches_table = $wpdb->prefix . 'eoc_searches';
+
+        $contract = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, contract_number, transaction_type, start_date, end_date, commission_amount, commission_unit, status_stage\n"
+                . "FROM {$contracts_table}\n"
+                . "WHERE id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$contract) {
+            return null;
+        }
+
+        $clients = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT c.client_type, c.first_name, c.last_name, c.company_name\n"
+                . "FROM {$contract_clients_table} cc\n"
+                . "JOIN {$clients_table} c ON c.id = cc.client_id\n"
+                . "WHERE cc.contract_id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+
+        $client_names = array();
+        foreach ($clients as $client) {
+            if ($client['client_type'] === 'COMPANY') {
+                $client_names[] = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+            } else {
+                $name = trim($client['first_name'] . ' ' . $client['last_name']);
+                $client_names[] = $name !== '' ? $name : __('Klient', 'estate-office-crm');
+            }
+        }
+
+        $offers = array();
+        $properties = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, property_type, city, street, building_number\n"
+                . "FROM {$properties_table}\n"
+                . "WHERE contract_id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+        foreach ($properties as $property) {
+            $offers[] = sprintf(
+                '%s - %s %s',
+                $property['property_type'],
+                $property['city'],
+                trim($property['street'] . ' ' . $property['building_number'])
+            );
+        }
+
+        $searches = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, budget_min, budget_max, city, district\n"
+                . "FROM {$searches_table}\n"
+                . "WHERE contract_id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+        foreach ($searches as $search) {
+            $offers[] = sprintf(
+                '%s - %s %s',
+                __('Poszukiwanie', 'estate-office-crm'),
+                $search['city'],
+                $search['district']
+            );
+        }
+
+        $commission = '';
+        if (!empty($contract['commission_amount'])) {
+            $commission = $contract['commission_amount'] . ' ' . $contract['commission_unit'];
+        }
+
+        return array(
+            'id' => (int) $contract['id'],
+            'contract_number' => $contract['contract_number'],
+            'transaction_type' => $contract['transaction_type'],
+            'start_date' => $contract['start_date'],
+            'end_date' => $contract['end_date'],
+            'status_stage' => $contract['status_stage'],
+            'commission' => $commission,
+            'clients' => $client_names,
+            'offers' => $offers,
+        );
     }
 }
