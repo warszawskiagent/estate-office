@@ -21,6 +21,9 @@ class EOC_Plugin {
         $clients = new EOC_Clients();
         $clients->register();
 
+        $properties = new EOC_Properties();
+        $properties->register();
+
         EOC_Settings::register();
     }
 }

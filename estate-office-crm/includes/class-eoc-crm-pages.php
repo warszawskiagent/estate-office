@@ -41,6 +41,16 @@ class EOC_CRM_Pages {
                 true
             );
         }
+
+        if ($hook === 'estate-office-crm_page_estate-office-crm-properties-add') {
+            wp_enqueue_script(
+                'eoc-properties',
+                EOC_PLUGIN_URL . 'assets/admin/properties.js',
+                array('jquery'),
+                EOC_PLUGIN_VERSION,
+                true
+            );
+        }
     }
 
     public function register_pages(): void {
@@ -506,9 +516,129 @@ class EOC_CRM_Pages {
     }
 
     public function render_property_add(): void {
+        $error = isset($_GET['eoc_error']) ? sanitize_text_field(wp_unslash($_GET['eoc_error'])) : '';
+        $success = isset($_GET['eoc_success']) ? sanitize_text_field(wp_unslash($_GET['eoc_success'])) : '';
+        $contract_id = isset($_GET['contract_id']) ? absint($_GET['contract_id']) : 0;
+
+        $transaction_type = '';
+        if ($contract_id) {
+            $contract = $this->get_contract_summary($contract_id);
+            $transaction_type = $contract['transaction_type'] ?? '';
+        }
+
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Dodaj nieruchomość', 'estate-office-crm') . '</h1>';
-        echo '<p>' . esc_html__('Formularz dodawania nieruchomości zostanie wdrożony w kolejnym etapie.', 'estate-office-crm') . '</p>';
+
+        if (!$contract_id) {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Brak powiązanej umowy. Wróć do dodawania klienta.', 'estate-office-crm') . '</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        if ($error === 'missing_contract') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono powiązanej umowy.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane pola nieruchomości.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wystąpił błąd zapisu nieruchomości. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
+        } elseif ($success === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Nieruchomość została zapisana.', 'estate-office-crm') . '</p></div>';
+        }
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('eoc_save_property', 'eoc_property_nonce');
+        echo '<input type="hidden" name="action" value="eoc_save_property" />';
+        echo '<input type="hidden" name="eoc_property[contract_id]" value="' . esc_attr((string) $contract_id) . '" />';
+
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row">' . esc_html__('Typ transakcji', 'estate-office-crm') . '</th>';
+        echo '<td><input type="text" class="regular-text" value="' . esc_attr($transaction_type) . '" disabled /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-property-type">' . esc_html__('Rodzaj nieruchomości', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-property-type" name="eoc_property[property_type]" required>';
+        echo '<option value="">' . esc_html__('Wybierz', 'estate-office-crm') . '</option>';
+        echo '<option value="MIESZKANIE">' . esc_html__('MIESZKANIE', 'estate-office-crm') . '</option>';
+        echo '<option value="DOM">' . esc_html__('DOM', 'estate-office-crm') . '</option>';
+        echo '<option value="DZIALKA">' . esc_html__('DZIAŁKA', 'estate-office-crm') . '</option>';
+        echo '<option value="LOKAL">' . esc_html__('LOKAL H/U', 'estate-office-crm') . '</option>';
+        echo '</select></td>';
+        echo '</tr>';
+        echo '</table>';
+
+        echo '<div class="eoc-section eoc-property-section eoc-property-section--apartment">';
+        echo '<h2>' . esc_html__('Dane adresowe (mieszkanie / lokal)', 'estate-office-crm') . '</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-street">' . esc_html__('Ulica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-street" name="eoc_property[street]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-building-number">' . esc_html__('Numer', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-building-number" name="eoc_property[building_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-unit-number">' . esc_html__('Lokal', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-unit-number" name="eoc_property[unit_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-postal-code">' . esc_html__('Kod pocztowy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-postal-code" name="eoc_property[postal_code]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-district">' . esc_html__('Dzielnica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-district" name="eoc_property[district]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-city">' . esc_html__('Miasto', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-city" name="eoc_property[city]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<div class="eoc-section eoc-property-section eoc-property-section--house">';
+        echo '<h2>' . esc_html__('Dane adresowe (dom / działka)', 'estate-office-crm') . '</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-street-house">' . esc_html__('Ulica', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-street-house" name="eoc_property[street]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-building-number-house">' . esc_html__('Numer', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-building-number-house" name="eoc_property[building_number]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-postal-code-house">' . esc_html__('Kod pocztowy', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-postal-code-house" name="eoc_property[postal_code]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-city-house">' . esc_html__('Miasto', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-city-house" name="eoc_property[city]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Dane nieruchomości', 'estate-office-crm') . '</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-price">' . esc_html__('Cena', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-price" name="eoc_property[price]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-area">' . esc_html__('Powierzchnia (m²)', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="text" id="eoc-area" name="eoc_property[area]" class="regular-text" /></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-rooms">' . esc_html__('Liczba pokoi', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="number" id="eoc-rooms" name="eoc_property[rooms]" class="small-text" min="0" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        echo '</div>';
+
+        submit_button(__('Dodaj nieruchomość', 'estate-office-crm'));
+        echo '</form>';
         echo '</div>';
     }
 
@@ -593,5 +723,17 @@ class EOC_CRM_Pages {
         }
 
         return $clients;
+    }
+
+    private function get_contract_summary(int $contract_id): ?array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eoc_contracts';
+
+        $contract = $wpdb->get_row(
+            $wpdb->prepare("SELECT id, transaction_type FROM {$table} WHERE id = %d", $contract_id),
+            ARRAY_A
+        );
+
+        return $contract ?: null;
     }
 }
