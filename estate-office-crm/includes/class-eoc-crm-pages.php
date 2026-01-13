@@ -697,6 +697,7 @@ class EOC_CRM_Pages {
     public function render_search_view(): void {
         $search_id = isset($_GET['search_id']) ? absint($_GET['search_id']) : 0;
         $search = $search_id ? $this->get_search_view($search_id) : null;
+        $clients = $search && $search['contract_id'] ? $this->get_contract_clients($search['contract_id']) : array();
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Profil poszukiwania', 'estate-office-crm') . '</h1>';
@@ -717,6 +718,32 @@ class EOC_CRM_Pages {
         echo '<li><strong>' . esc_html__('Liczba pokoi:', 'estate-office-crm') . '</strong> ' . esc_html($search['rooms']) . '</li>';
         echo '<li><strong>' . esc_html__('Lokalizacja:', 'estate-office-crm') . '</strong> ' . esc_html($search['location']) . '</li>';
         echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązana umowa', 'estate-office-crm') . '</h2>';
+        if (!empty($search['contract_number'])) {
+            $link = add_query_arg(
+                array('page' => 'estate-office-crm-contracts-view', 'contract_id' => $search['contract_id']),
+                admin_url('admin.php')
+            );
+            echo '<p><a href="' . esc_url($link) . '">' . esc_html($search['contract_number']) . '</a></p>';
+        } else {
+            echo '<p>' . esc_html__('Brak powiązanej umowy.', 'estate-office-crm') . '</p>';
+        }
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązani klienci', 'estate-office-crm') . '</h2>';
+        if (empty($clients)) {
+            echo '<p>' . esc_html__('Brak powiązanych klientów.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($clients as $client) {
+                echo '<li>' . esc_html($client) . '</li>';
+            }
+            echo '</ul>';
+        }
         echo '</div>';
 
         echo '<div class="eoc-section">';
@@ -1547,8 +1574,6 @@ class EOC_CRM_Pages {
     private function get_property_clients(int $property_id): array {
         global $wpdb;
         $properties_table = $wpdb->prefix . 'eoc_properties';
-        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
-        $clients_table = $wpdb->prefix . 'eoc_clients';
 
         $contract_id = $wpdb->get_var(
             $wpdb->prepare(
@@ -1561,28 +1586,7 @@ class EOC_CRM_Pages {
             return array();
         }
 
-        $clients = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT c.client_type, c.first_name, c.last_name, c.company_name\n"
-                . "FROM {$contract_clients_table} cc\n"
-                . "JOIN {$clients_table} c ON c.id = cc.client_id\n"
-                . "WHERE cc.contract_id = %d",
-                $contract_id
-            ),
-            ARRAY_A
-        );
-
-        $names = array();
-        foreach ($clients as $client) {
-            if ($client['client_type'] === 'COMPANY') {
-                $names[] = $client['company_name'] ?: __('Firma', 'estate-office-crm');
-            } else {
-                $name = trim($client['first_name'] . ' ' . $client['last_name']);
-                $names[] = $name !== '' ? $name : __('Klient', 'estate-office-crm');
-            }
-        }
-
-        return $names;
+        return $this->get_contract_clients((int) $contract_id);
     }
 
     private function get_clients(string $search_term): array {
@@ -1831,6 +1835,7 @@ class EOC_CRM_Pages {
     private function get_search_view(int $search_id): ?array {
         global $wpdb;
         $table = $wpdb->prefix . 'eoc_searches';
+        $contracts_table = $wpdb->prefix . 'eoc_contracts';
 
         $search = $wpdb->get_row(
             $wpdb->prepare(
@@ -1846,6 +1851,19 @@ class EOC_CRM_Pages {
             return null;
         }
 
+        $contract_id = $wpdb->get_var(
+            $wpdb->prepare("SELECT contract_id FROM {$table} WHERE id = %d", $search_id)
+        );
+        $contract_number = '';
+        if ($contract_id) {
+            $contract_number = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT contract_number FROM {$contracts_table} WHERE id = %d",
+                    $contract_id
+                )
+            );
+        }
+
         return array(
             'id' => (int) $search['id'],
             'transaction_type' => $search['transaction_type'],
@@ -1855,6 +1873,8 @@ class EOC_CRM_Pages {
             'rooms' => $this->format_range($search['rooms_min'], $search['rooms_max']),
             'location' => trim($search['city'] . ' ' . $search['district']),
             'description' => $search['description'] ?: '',
+            'contract_id' => $contract_id ? (int) $contract_id : null,
+            'contract_number' => $contract_number,
         );
     }
 
@@ -1872,6 +1892,35 @@ class EOC_CRM_Pages {
         }
 
         return $range;
+    }
+
+    private function get_contract_clients(int $contract_id): array {
+        global $wpdb;
+        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+        $clients_table = $wpdb->prefix . 'eoc_clients';
+
+        $clients = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT c.client_type, c.first_name, c.last_name, c.company_name\n"
+                . "FROM {$contract_clients_table} cc\n"
+                . "JOIN {$clients_table} c ON c.id = cc.client_id\n"
+                . "WHERE cc.contract_id = %d",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+
+        $names = array();
+        foreach ($clients as $client) {
+            if ($client['client_type'] === 'COMPANY') {
+                $names[] = $client['company_name'] ?: __('Firma', 'estate-office-crm');
+            } else {
+                $name = trim($client['first_name'] . ' ' . $client['last_name']);
+                $names[] = $name !== '' ? $name : __('Klient', 'estate-office-crm');
+            }
+        }
+
+        return $names;
     }
 
     private function get_contract_stage_options(): array {
