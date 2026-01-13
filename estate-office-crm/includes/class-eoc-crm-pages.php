@@ -1839,7 +1839,7 @@ class EOC_CRM_Pages {
 
         $search = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT id, transaction_type, property_type, budget_min, budget_max, area_min, area_max, rooms_min, rooms_max, city, district, description\n"
+                "SELECT id, contract_id, transaction_type, property_type, budget_min, budget_max, area_min, area_max, rooms_min, rooms_max, city, district, description\n"
                 . "FROM {$table}\n"
                 . "WHERE id = %d",
                 $search_id
@@ -1851,9 +1851,7 @@ class EOC_CRM_Pages {
             return null;
         }
 
-        $contract_id = $wpdb->get_var(
-            $wpdb->prepare("SELECT contract_id FROM {$table} WHERE id = %d", $search_id)
-        );
+        $contract_id = $search['contract_id'] ?? null;
         $contract_number = '';
         if ($contract_id) {
             $contract_number = $wpdb->get_var(
