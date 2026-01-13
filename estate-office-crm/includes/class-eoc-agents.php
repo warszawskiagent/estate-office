@@ -27,6 +27,8 @@ class EOC_Agents {
 
         if ($error === 'invalid') {
             echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane dane agenta.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'not_agent') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wybrany użytkownik nie jest agentem.', 'estate-office-crm') . '</p></div>';
         } elseif ($error === 'exists') {
             echo '<div class="notice notice-error"><p>' . esc_html__('Użytkownik o podanym e-mailu lub loginie już istnieje.', 'estate-office-crm') . '</p></div>';
         } elseif ($error === 'db') {
@@ -71,6 +73,10 @@ class EOC_Agents {
         $selected_agent = null;
         if ($selected_agent_id) {
             $selected_agent = get_user_by('id', $selected_agent_id);
+            if (!$selected_agent || !in_array('estate_agent', (array) $selected_agent->roles, true)) {
+                $selected_agent = null;
+                $selected_agent_id = 0;
+            }
         }
         $selected_phone = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_phone', true) : '';
         $selected_address = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_address', true) : '';
@@ -94,10 +100,12 @@ class EOC_Agents {
         echo '</select></td>';
         echo '</tr>';
 
-        echo '<tr>';
-        echo '<th scope="row"><label for="eoc-agent-login">' . esc_html__('Login (dla nowego)', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="text" id="eoc-agent-login" name="eoc_agent[user_login]" class="regular-text" value="' . esc_attr($selected_agent ? $selected_agent->user_login : '') . '" /></td>';
-        echo '</tr>';
+        if (!$selected_agent) {
+            echo '<tr>';
+            echo '<th scope="row"><label for="eoc-agent-login">' . esc_html__('Login (dla nowego)', 'estate-office-crm') . '</label></th>';
+            echo '<td><input type="text" id="eoc-agent-login" name="eoc_agent[user_login]" class="regular-text" /></td>';
+            echo '</tr>';
+        }
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-email">' . esc_html__('E-mail', 'estate-office-crm') . '</label></th>';
@@ -109,10 +117,12 @@ class EOC_Agents {
         echo '<td><input type="text" id="eoc-agent-name" name="eoc_agent[display_name]" class="regular-text" value="' . esc_attr($selected_agent ? $selected_agent->display_name : '') . '" /></td>';
         echo '</tr>';
 
-        echo '<tr>';
-        echo '<th scope="row"><label for="eoc-agent-password">' . esc_html__('Hasło (dla nowego)', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="password" id="eoc-agent-password" name="eoc_agent[user_password]" class="regular-text" /></td>';
-        echo '</tr>';
+        if (!$selected_agent) {
+            echo '<tr>';
+            echo '<th scope="row"><label for="eoc-agent-password">' . esc_html__('Hasło (dla nowego)', 'estate-office-crm') . '</label></th>';
+            echo '<td><input type="password" id="eoc-agent-password" name="eoc_agent[user_password]" class="regular-text" /></td>';
+            echo '</tr>';
+        }
 
         echo '<tr>';
         echo '<th scope="row">' . esc_html__('Zdjęcie', 'estate-office-crm') . '</th>';
@@ -163,6 +173,11 @@ class EOC_Agents {
         if ($user_id) {
             if (!$user_email || !$display_name) {
                 $this->redirect_with_error('invalid');
+            }
+
+            $user = get_user_by('id', $user_id);
+            if (!$user || !in_array('estate_agent', (array) $user->roles, true)) {
+                $this->redirect_with_error('not_agent');
             }
 
             $updated = wp_update_user(array(
