@@ -76,6 +76,9 @@ class EOC_Agents {
             if (!$selected_agent || !in_array('estate_agent', (array) $selected_agent->roles, true)) {
                 $selected_agent = null;
                 $selected_agent_id = 0;
+                if ($error === '') {
+                    $error = 'not_agent';
+                }
             }
         }
         $selected_phone = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_phone', true) : '';
