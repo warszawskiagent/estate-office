@@ -25,6 +25,31 @@ class EOC_Agents {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Agenci', 'estate-office-crm') . '</h1>';
 
+        $selected_agent_id = isset($_GET['agent_id']) ? absint($_GET['agent_id']) : 0;
+        $selected_agent = null;
+        if ($selected_agent_id) {
+            $selected_agent = get_user_by('id', $selected_agent_id);
+            if (!$selected_agent || !in_array('estate_agent', (array) $selected_agent->roles, true)) {
+                $selected_agent = null;
+                $selected_agent_id = 0;
+                if ($error === '') {
+                    $error = 'not_agent';
+                }
+            }
+        }
+
+        if ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane dane agenta.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'not_agent') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Wybrany użytkownik nie jest agentem.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'exists') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Użytkownik o podanym e-mailu lub loginie już istnieje.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie udało się zapisać danych agenta.', 'estate-office-crm') . '</p></div>';
+        } elseif ($success === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Dane agenta zostały zapisane.', 'estate-office-crm') . '</p></div>';
+        }
+
         echo '<h2>' . esc_html__('Lista agentów', 'estate-office-crm') . '</h2>';
         echo '<table class="widefat striped eoc-list-table">';
         echo '<thead><tr>';
@@ -56,31 +81,6 @@ class EOC_Agents {
         }
         echo '</tbody>';
         echo '</table>';
-
-        $selected_agent_id = isset($_GET['agent_id']) ? absint($_GET['agent_id']) : 0;
-        $selected_agent = null;
-        if ($selected_agent_id) {
-            $selected_agent = get_user_by('id', $selected_agent_id);
-            if (!$selected_agent || !in_array('estate_agent', (array) $selected_agent->roles, true)) {
-                $selected_agent = null;
-                $selected_agent_id = 0;
-                if ($error === '') {
-                    $error = 'not_agent';
-                }
-            }
-        }
-
-        if ($error === 'invalid') {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie wymagane dane agenta.', 'estate-office-crm') . '</p></div>';
-        } elseif ($error === 'not_agent') {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Wybrany użytkownik nie jest agentem.', 'estate-office-crm') . '</p></div>';
-        } elseif ($error === 'exists') {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Użytkownik o podanym e-mailu lub loginie już istnieje.', 'estate-office-crm') . '</p></div>';
-        } elseif ($error === 'db') {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Nie udało się zapisać danych agenta.', 'estate-office-crm') . '</p></div>';
-        } elseif ($success === '1') {
-            echo '<div class="notice notice-success"><p>' . esc_html__('Dane agenta zostały zapisane.', 'estate-office-crm') . '</p></div>';
-        }
         $selected_phone = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_phone', true) : '';
         $selected_address = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_address', true) : '';
         $selected_bio = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_bio', true) : '';
