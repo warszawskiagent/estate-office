@@ -19,6 +19,7 @@ define('EOC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EOC_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-activator.php';
+require_once EOC_PLUGIN_DIR . 'includes/class-eoc-agents.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-admin-menu.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-clients.php';
 require_once EOC_PLUGIN_DIR . 'includes/class-eoc-contracts.php';

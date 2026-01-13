@@ -74,10 +74,7 @@ class EOC_Admin_Menu {
     }
 
     public function render_agents(): void {
-        echo '<div class="wrap">';
-        echo '<h1>' . esc_html__('Agenci', 'estate-office-crm') . '</h1>';
-        echo '<p>' . esc_html__('Zarządzanie agentami pojawi się w kolejnych wersjach.', 'estate-office-crm') . '</p>';
-        echo '</div>';
+        EOC_Agents::render_page();
     }
 
     public function render_settings(): void {
