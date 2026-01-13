@@ -41,22 +41,41 @@ class EOC_Agents {
         echo '<th>' . esc_html__('Imię i nazwisko', 'estate-office-crm') . '</th>';
         echo '<th>' . esc_html__('E-mail', 'estate-office-crm') . '</th>';
         echo '<th>' . esc_html__('Telefon', 'estate-office-crm') . '</th>';
+        echo '<th>' . esc_html__('Akcje', 'estate-office-crm') . '</th>';
         echo '</tr></thead>';
         echo '<tbody>';
         if (empty($agents)) {
-            echo '<tr><td colspan="3">' . esc_html__('Brak agentów do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
+            echo '<tr><td colspan="4">' . esc_html__('Brak agentów do wyświetlenia.', 'estate-office-crm') . '</td></tr>';
         } else {
             foreach ($agents as $agent) {
                 $phone = get_user_meta($agent->ID, 'eoc_agent_phone', true);
+                $edit_link = add_query_arg(
+                    array(
+                        'page' => 'estate-office-crm-agents',
+                        'agent_id' => $agent->ID,
+                    ),
+                    admin_url('admin.php')
+                );
                 echo '<tr>';
                 echo '<td>' . esc_html($agent->display_name) . '</td>';
                 echo '<td>' . esc_html($agent->user_email) . '</td>';
                 echo '<td>' . esc_html($phone) . '</td>';
+                echo '<td><a class="button button-small" href="' . esc_url($edit_link) . '">' . esc_html__('Edytuj', 'estate-office-crm') . '</a></td>';
                 echo '</tr>';
             }
         }
         echo '</tbody>';
         echo '</table>';
+
+        $selected_agent_id = isset($_GET['agent_id']) ? absint($_GET['agent_id']) : 0;
+        $selected_agent = null;
+        if ($selected_agent_id) {
+            $selected_agent = get_user_by('id', $selected_agent_id);
+        }
+        $selected_phone = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_phone', true) : '';
+        $selected_address = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_address', true) : '';
+        $selected_bio = $selected_agent_id ? get_user_meta($selected_agent_id, 'eoc_agent_bio', true) : '';
+        $selected_photo_id = $selected_agent_id ? absint(get_user_meta($selected_agent_id, 'eoc_agent_photo_id', true)) : 0;
 
         echo '<h2>' . esc_html__('Dodaj / edytuj agenta', 'estate-office-crm') . '</h2>';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
@@ -69,24 +88,25 @@ class EOC_Agents {
         echo '<td><select id="eoc-agent-user" name="eoc_agent[user_id]">';
         echo '<option value="">' . esc_html__('Nowy agent', 'estate-office-crm') . '</option>';
         foreach ($agents as $agent) {
-            echo '<option value="' . esc_attr((string) $agent->ID) . '">' . esc_html($agent->display_name) . ' (' . esc_html($agent->user_email) . ')</option>';
+            $selected = $agent->ID === $selected_agent_id ? ' selected' : '';
+            echo '<option value="' . esc_attr((string) $agent->ID) . '"' . $selected . '>' . esc_html($agent->display_name) . ' (' . esc_html($agent->user_email) . ')</option>';
         }
         echo '</select></td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-login">' . esc_html__('Login (dla nowego)', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="text" id="eoc-agent-login" name="eoc_agent[user_login]" class="regular-text" /></td>';
+        echo '<td><input type="text" id="eoc-agent-login" name="eoc_agent[user_login]" class="regular-text" value="' . esc_attr($selected_agent ? $selected_agent->user_login : '') . '" /></td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-email">' . esc_html__('E-mail', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="email" id="eoc-agent-email" name="eoc_agent[user_email]" class="regular-text" /></td>';
+        echo '<td><input type="email" id="eoc-agent-email" name="eoc_agent[user_email]" class="regular-text" value="' . esc_attr($selected_agent ? $selected_agent->user_email : '') . '" /></td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-name">' . esc_html__('Imię i nazwisko', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="text" id="eoc-agent-name" name="eoc_agent[display_name]" class="regular-text" /></td>';
+        echo '<td><input type="text" id="eoc-agent-name" name="eoc_agent[display_name]" class="regular-text" value="' . esc_attr($selected_agent ? $selected_agent->display_name : '') . '" /></td>';
         echo '</tr>';
 
         echo '<tr>';
@@ -97,23 +117,23 @@ class EOC_Agents {
         echo '<tr>';
         echo '<th scope="row">' . esc_html__('Zdjęcie', 'estate-office-crm') . '</th>';
         echo '<td>';
-        self::render_media_field('photo_id');
+        self::render_media_field('photo_id', $selected_photo_id);
         echo '</td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-phone">' . esc_html__('Telefon', 'estate-office-crm') . '</label></th>';
-        echo '<td><input type="text" id="eoc-agent-phone" name="eoc_agent[phone]" class="regular-text" /></td>';
+        echo '<td><input type="text" id="eoc-agent-phone" name="eoc_agent[phone]" class="regular-text" value="' . esc_attr($selected_phone) . '" /></td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-address">' . esc_html__('Dane teleadresowe', 'estate-office-crm') . '</label></th>';
-        echo '<td><textarea id="eoc-agent-address" name="eoc_agent[address]" class="large-text" rows="3"></textarea></td>';
+        echo '<td><textarea id="eoc-agent-address" name="eoc_agent[address]" class="large-text" rows="3">' . esc_textarea($selected_address) . '</textarea></td>';
         echo '</tr>';
 
         echo '<tr>';
         echo '<th scope="row"><label for="eoc-agent-bio">' . esc_html__('Opis / Biografia', 'estate-office-crm') . '</label></th>';
-        echo '<td><textarea id="eoc-agent-bio" name="eoc_agent[bio]" class="large-text" rows="4"></textarea></td>';
+        echo '<td><textarea id="eoc-agent-bio" name="eoc_agent[bio]" class="large-text" rows="4">' . esc_textarea($selected_bio) . '</textarea></td>';
         echo '</tr>';
         echo '</table>';
 
@@ -183,11 +203,19 @@ class EOC_Agents {
         $this->redirect_with_success();
     }
 
-    private static function render_media_field(string $field_key): void {
+    private static function render_media_field(string $field_key, int $attachment_id = 0): void {
         $input_name = 'eoc_agent[' . $field_key . ']';
+        $preview = '';
+        if ($attachment_id) {
+            $image_url = wp_get_attachment_image_url($attachment_id, 'thumbnail');
+            if ($image_url) {
+                $preview = '<img src="' . esc_url($image_url) . '" alt="" class="eoc-media-preview" />';
+            }
+        }
+
         echo '<div class="eoc-media-field" data-target="' . esc_attr($field_key) . '">';
-        echo '<input type="hidden" name="' . esc_attr($input_name) . '" value="" />';
-        echo '<div class="eoc-media-preview-wrapper"></div>';
+        echo '<input type="hidden" name="' . esc_attr($input_name) . '" value="' . esc_attr((string) $attachment_id) . '" />';
+        echo '<div class="eoc-media-preview-wrapper">' . $preview . '</div>';
         echo '<button type="button" class="button eoc-media-select">' . esc_html__('Wybierz zdjęcie', 'estate-office-crm') . '</button>';
         echo '<button type="button" class="button eoc-media-remove">' . esc_html__('Usuń', 'estate-office-crm') . '</button>';
         echo '</div>';
