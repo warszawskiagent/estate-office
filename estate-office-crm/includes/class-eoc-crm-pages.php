@@ -470,6 +470,8 @@ class EOC_CRM_Pages {
     public function render_contract_view(): void {
         $contract_id = isset($_GET['contract_id']) ? absint($_GET['contract_id']) : 0;
         $contract = $contract_id ? $this->get_contract_view($contract_id) : null;
+        $error = isset($_GET['eoc_error']) ? sanitize_text_field(wp_unslash($_GET['eoc_error'])) : '';
+        $stage_updated = isset($_GET['eoc_stage_updated']) ? sanitize_text_field(wp_unslash($_GET['eoc_stage_updated'])) : '';
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Profil umowy', 'estate-office-crm') . '</h1>';
@@ -478,6 +480,14 @@ class EOC_CRM_Pages {
             echo '<div class="notice notice-error"><p>' . esc_html__('Nie znaleziono umowy.', 'estate-office-crm') . '</p></div>';
             echo '</div>';
             return;
+        }
+
+        if ($error === 'invalid') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Uzupełnij poprawnie dane etapu.', 'estate-office-crm') . '</p></div>';
+        } elseif ($error === 'db') {
+            echo '<div class="notice notice-error"><p>' . esc_html__('Nie udało się zapisać etapu. Spróbuj ponownie.', 'estate-office-crm') . '</p></div>';
+        } elseif ($stage_updated === '1') {
+            echo '<div class="notice notice-success"><p>' . esc_html__('Etap umowy został zaktualizowany.', 'estate-office-crm') . '</p></div>';
         }
 
         echo '<div class="eoc-section">';
@@ -490,6 +500,53 @@ class EOC_CRM_Pages {
         echo '<li><strong>' . esc_html__('Prowizja:', 'estate-office-crm') . '</strong> ' . esc_html($contract['commission']) . '</li>';
         echo '<li><strong>' . esc_html__('Aktualny etap:', 'estate-office-crm') . '</strong> ' . esc_html($contract['status_stage']) . '</li>';
         echo '</ul>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Aktualny etap', 'estate-office-crm') . '</h2>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        wp_nonce_field('eoc_update_contract_stage', 'eoc_contract_stage_nonce');
+        echo '<input type="hidden" name="action" value="eoc_update_contract_stage" />';
+        echo '<input type="hidden" name="eoc_stage[contract_id]" value="' . esc_attr((string) $contract['id']) . '" />';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-stage-name">' . esc_html__('Etap', 'estate-office-crm') . '</label></th>';
+        echo '<td><select id="eoc-stage-name" name="eoc_stage[stage_name]" required>';
+        foreach ($this->get_contract_stage_options() as $stage) {
+            $selected = $stage === $contract['status_stage'] ? ' selected' : '';
+            echo '<option value="' . esc_attr($stage) . '"' . $selected . '>' . esc_html($stage) . '</option>';
+        }
+        echo '</select></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="eoc-stage-date">' . esc_html__('Data', 'estate-office-crm') . '</label></th>';
+        echo '<td><input type="date" id="eoc-stage-date" name="eoc_stage[stage_date]" /></td>';
+        echo '</tr>';
+        echo '</table>';
+        submit_button(__('Aktualizuj etap', 'estate-office-crm'));
+        echo '</form>';
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Historia etapów', 'estate-office-crm') . '</h2>';
+        if (empty($contract['stages'])) {
+            echo '<p>' . esc_html__('Brak historii etapów.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<table class="widefat striped eoc-list-table">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Data', 'estate-office-crm') . '</th>';
+            echo '<th>' . esc_html__('Etap', 'estate-office-crm') . '</th>';
+            echo '</tr></thead>';
+            echo '<tbody>';
+            foreach ($contract['stages'] as $stage) {
+                echo '<tr>';
+                echo '<td>' . esc_html($stage['date']) . '</td>';
+                echo '<td>' . esc_html($stage['name']) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody>';
+            echo '</table>';
+        }
         echo '</div>';
 
         echo '<div class="eoc-section">';
@@ -1272,6 +1329,7 @@ class EOC_CRM_Pages {
         $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
         $properties_table = $wpdb->prefix . 'eoc_properties';
         $searches_table = $wpdb->prefix . 'eoc_searches';
+        $stages_table = $wpdb->prefix . 'eoc_contract_stages';
 
         $contract = $wpdb->get_row(
             $wpdb->prepare(
@@ -1350,6 +1408,24 @@ class EOC_CRM_Pages {
             $commission = $contract['commission_amount'] . ' ' . $contract['commission_unit'];
         }
 
+        $stages = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT stage_name, stage_date\n"
+                . "FROM {$stages_table}\n"
+                . "WHERE contract_id = %d\n"
+                . "ORDER BY created_at DESC",
+                $contract_id
+            ),
+            ARRAY_A
+        );
+        $stage_rows = array();
+        foreach ($stages as $stage) {
+            $stage_rows[] = array(
+                'name' => $stage['stage_name'],
+                'date' => $stage['stage_date'],
+            );
+        }
+
         return array(
             'id' => (int) $contract['id'],
             'contract_number' => $contract['contract_number'],
@@ -1360,6 +1436,7 @@ class EOC_CRM_Pages {
             'commission' => $commission,
             'clients' => $client_names,
             'offers' => $offers,
+            'stages' => $stage_rows,
         );
     }
 
@@ -1795,5 +1872,21 @@ class EOC_CRM_Pages {
         }
 
         return $range;
+    }
+
+    private function get_contract_stage_options(): array {
+        return array(
+            __('Umowa Pośrednictwa', 'estate-office-crm'),
+            __('Publikacja w MLS', 'estate-office-crm'),
+            __('Przygotowanie oferty', 'estate-office-crm'),
+            __('Publikacja oferty', 'estate-office-crm'),
+            __('Marketing i prezentacje', 'estate-office-crm'),
+            __('Oferta kupna', 'estate-office-crm'),
+            __('Negocjacje', 'estate-office-crm'),
+            __('Umowa przedwstępna', 'estate-office-crm'),
+            __('Umowa przyrzeczona', 'estate-office-crm'),
+            __('Przekazanie lokalu', 'estate-office-crm'),
+            __('Umowa zakończona', 'estate-office-crm'),
+        );
     }
 }

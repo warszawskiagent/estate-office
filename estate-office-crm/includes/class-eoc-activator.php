@@ -26,6 +26,7 @@ class EOC_Activator {
         $properties_table = $wpdb->prefix . 'eoc_properties';
         $searches_table = $wpdb->prefix . 'eoc_searches';
         $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+        $contract_stages_table = $wpdb->prefix . 'eoc_contract_stages';
 
         $clients_sql = "CREATE TABLE {$clients_table} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -136,11 +137,22 @@ class EOC_Activator {
             UNIQUE KEY contract_client (contract_id, client_id)
         ) {$charset_collate};";
 
+        $contract_stages_sql = "CREATE TABLE {$contract_stages_table} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            contract_id BIGINT UNSIGNED NOT NULL,
+            stage_name VARCHAR(190) NOT NULL,
+            stage_date DATE NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY contract_id (contract_id)
+        ) {$charset_collate};";
+
         dbDelta($clients_sql);
         dbDelta($contracts_sql);
         dbDelta($properties_sql);
         dbDelta($searches_sql);
         dbDelta($contract_clients_sql);
+        dbDelta($contract_stages_sql);
     }
 
     private static function register_roles(): void {
