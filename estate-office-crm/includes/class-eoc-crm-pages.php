@@ -524,6 +524,7 @@ class EOC_CRM_Pages {
     public function render_client_view(): void {
         $client_id = isset($_GET['client_id']) ? absint($_GET['client_id']) : 0;
         $client = $client_id ? $this->get_client_view($client_id) : null;
+        $offers = $client_id ? $this->get_client_offers($client_id) : array();
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Profil klienta', 'estate-office-crm') . '</h1>';
@@ -551,7 +552,32 @@ class EOC_CRM_Pages {
         } else {
             echo '<ul>';
             foreach ($client['contracts'] as $contract) {
-                echo '<li>' . esc_html($contract) . '</li>';
+                $link = add_query_arg(
+                    array('page' => 'estate-office-crm-contracts-view', 'contract_id' => $contract['id']),
+                    admin_url('admin.php')
+                );
+                echo '<li><a href="' . esc_url($link) . '">' . esc_html($contract['number']) . '</a></li>';
+            }
+            echo '</ul>';
+        }
+        echo '</div>';
+
+        echo '<div class="eoc-section">';
+        echo '<h2>' . esc_html__('Powiązane oferty', 'estate-office-crm') . '</h2>';
+        if (empty($offers)) {
+            echo '<p>' . esc_html__('Brak powiązanych nieruchomości lub poszukiwań.', 'estate-office-crm') . '</p>';
+        } else {
+            echo '<ul>';
+            foreach ($offers as $offer) {
+                $args = array('page' => $offer['page']);
+                if ($offer['property_id']) {
+                    $args['property_id'] = $offer['property_id'];
+                }
+                if ($offer['search_id']) {
+                    $args['search_id'] = $offer['search_id'];
+                }
+                $link = add_query_arg($args, admin_url('admin.php'));
+                echo '<li><a href="' . esc_url($link) . '">' . esc_html($offer['label']) . '</a></li>';
             }
             echo '</ul>';
         }
@@ -1574,7 +1600,7 @@ class EOC_CRM_Pages {
 
         $contracts = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT c.contract_number\n"
+                "SELECT c.id, c.contract_number\n"
                 . "FROM {$contract_clients_table} cc\n"
                 . "JOIN {$contracts_table} c ON c.id = cc.contract_id\n"
                 . "WHERE cc.client_id = %d",
@@ -1585,7 +1611,10 @@ class EOC_CRM_Pages {
 
         $contract_numbers = array();
         foreach ($contracts as $contract) {
-            $contract_numbers[] = $contract['contract_number'];
+            $contract_numbers[] = array(
+                'id' => (int) $contract['id'],
+                'number' => $contract['contract_number'],
+            );
         }
 
         return array(
@@ -1596,6 +1625,76 @@ class EOC_CRM_Pages {
             'address' => trim($client['city'] . ' ' . $client['street'] . ' ' . $client['building_number']),
             'contracts' => $contract_numbers,
         );
+    }
+
+    private function get_client_offers(int $client_id): array {
+        global $wpdb;
+        $contract_clients_table = $wpdb->prefix . 'eoc_contract_clients';
+        $properties_table = $wpdb->prefix . 'eoc_properties';
+        $searches_table = $wpdb->prefix . 'eoc_searches';
+
+        $contract_ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT contract_id FROM {$contract_clients_table} WHERE client_id = %d",
+                $client_id
+            )
+        );
+
+        if (empty($contract_ids)) {
+            return array();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($contract_ids), '%d'));
+
+        $offers = array();
+
+        $properties = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, property_type, city, street, building_number\n"
+                . "FROM {$properties_table}\n"
+                . "WHERE contract_id IN ({$placeholders})",
+                $contract_ids
+            ),
+            ARRAY_A
+        );
+        foreach ($properties as $property) {
+            $offers[] = array(
+                'page' => 'estate-office-crm-properties-view',
+                'property_id' => (int) $property['id'],
+                'search_id' => null,
+                'label' => sprintf(
+                    '%s - %s %s',
+                    $property['property_type'],
+                    $property['city'],
+                    trim($property['street'] . ' ' . $property['building_number'])
+                ),
+            );
+        }
+
+        $searches = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, city, district\n"
+                . "FROM {$searches_table}\n"
+                . "WHERE contract_id IN ({$placeholders})",
+                $contract_ids
+            ),
+            ARRAY_A
+        );
+        foreach ($searches as $search) {
+            $offers[] = array(
+                'page' => 'estate-office-crm-searches-view',
+                'property_id' => null,
+                'search_id' => (int) $search['id'],
+                'label' => sprintf(
+                    '%s - %s %s',
+                    __('Poszukiwanie', 'estate-office-crm'),
+                    $search['city'],
+                    $search['district']
+                ),
+            );
+        }
+
+        return $offers;
     }
 
     private function get_searches(string $search_term): array {
