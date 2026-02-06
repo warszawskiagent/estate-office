@@ -96,3 +96,21 @@
     align-items: center;
     gap: 8px;
 }
+
+.estateoffice-alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.estateoffice-alert--success {
+    background: #e7f7ee;
+    border: 1px solid #bfe7cd;
+    color: #1f5c36;
+}
+
+.estateoffice-alert--error {
+    background: #fdecec;
+    border: 1px solid #f3c1c1;
+    color: #8b1c1c;
+}

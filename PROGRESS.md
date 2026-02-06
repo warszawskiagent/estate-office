@@ -25,3 +25,9 @@ Gotowe do testów wersji 0.0.3.
 - Zaktualizowano wersję wtyczki i opis w panelu About.
 
 Gotowe do testów wersji 0.0.4.
+
+## 0.0.5
+- Dodano zapis umowy z formularza CRM z walidacją i zabezpieczeniami.
+- Dodano komunikaty sukcesu/błędu w CRM po zapisaniu umowy.
+
+Gotowe do testów wersji 0.0.5.

@@ -19,9 +19,17 @@ class EstateOffice_Frontend
         wp_enqueue_style('estateoffice-frontend');
         wp_enqueue_script('estateoffice-frontend');
 
+        $status = isset($_GET['estateoffice_status']) ? sanitize_text_field(wp_unslash($_GET['estateoffice_status'])) : '';
+        $message = isset($_GET['estateoffice_message']) ? sanitize_text_field(wp_unslash($_GET['estateoffice_message'])) : '';
+
         ob_start();
         ?>
         <div class="estateoffice-crm">
+            <?php if ($status === 'contract_created') : ?>
+                <div class="estateoffice-alert estateoffice-alert--success">Umowa została zapisana. Przejdź do etapu dodawania klienta.</div>
+            <?php elseif ($status === 'error') : ?>
+                <div class="estateoffice-alert estateoffice-alert--error">Nie udało się zapisać umowy. <?php echo esc_html($message); ?></div>
+            <?php endif; ?>
             <div class="estateoffice-crm__header">
                 <h2>EstateOffice CRM</h2>
                 <button class="estateoffice-button" type="button" data-estateoffice-target="contract-form">Dodaj nową Umowę</button>
@@ -136,7 +144,9 @@ class EstateOffice_Frontend
 
             <section class="estateoffice-crm__panel" id="estateoffice-tab-contract-form" hidden>
                 <h3>Dodaj nową umowę</h3>
-                <form class="estateoffice-form">
+                <form class="estateoffice-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                    <input type="hidden" name="action" value="estateoffice_create_contract" />
+                    <?php wp_nonce_field('estateoffice_create_contract'); ?>
                     <label>
                         Numer umowy
                         <input type="text" name="contract_number" required />
@@ -178,7 +188,7 @@ class EstateOffice_Frontend
                             </select>
                         </label>
                     </fieldset>
-                    <button type="button" class="estateoffice-button">DALEJ</button>
+                    <button type="submit" class="estateoffice-button">DALEJ</button>
                 </form>
             </section>
         </div>
