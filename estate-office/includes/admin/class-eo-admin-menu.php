@@ -78,6 +78,6 @@ class EstateOffice_Admin_Menu
 
     public function render_about()
     {
-        echo '<div class="wrap"><h1>EstateOffice CRM</h1><p>Wersja 0.0.3 - rozwój ustawień i usprawnień CRM.</p></div>';
+        echo '<div class="wrap"><h1>EstateOffice CRM</h1><p>Wersja 0.0.4 - ulepszone ustawienia multimediów.</p></div>';
     }
 }

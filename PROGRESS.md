@@ -19,3 +19,9 @@ Gotowe do testów wersji 0.0.2.
 - Uporządkowano wersjonowanie oraz opis w panelu administracyjnym.
 
 Gotowe do testów wersji 0.0.3.
+
+## 0.0.4
+- Dodano podgląd oraz możliwość usuwania wybranych plików w ustawieniach.
+- Zaktualizowano wersję wtyczki i opis w panelu About.
+
+Gotowe do testów wersji 0.0.4.

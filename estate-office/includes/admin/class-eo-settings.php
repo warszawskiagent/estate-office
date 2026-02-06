@@ -93,16 +93,21 @@ class EstateOffice_Settings
         $label = $args['label'] ?? '';
         $value = isset($options[$key]) ? $options[$key] : '';
 
+        $preview = $value ? sprintf('<img src="%s" alt="%s" style="max-width: 180px; display: block; margin-top: 8px;" />', esc_url($value), esc_attr($label)) : '';
+
         printf(
             '<div class="estateoffice-media-field" data-field="%1$s">' .
             '<input type="text" class="regular-text" name="%2$s[%1$s]" value="%3$s" /> ' .
-            '<button type="button" class="button estateoffice-media-upload" data-title="%4$s">Wybierz plik</button>' .
+            '<button type="button" class="button estateoffice-media-upload" data-title="%4$s">Wybierz plik</button> ' .
+            '<button type="button" class="button estateoffice-media-remove">Usuń</button>' .
             '<p class="description">Wgraj plik lub wklej bezpośredni URL.</p>' .
+            '<div class="estateoffice-media-preview">%5$s</div>' .
             '</div>',
             esc_attr($key),
             esc_attr(self::OPTION_NAME),
             esc_attr($value),
-            esc_attr($label)
+            esc_attr($label),
+            $preview
         );
     }
 }
