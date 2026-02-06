@@ -28,19 +28,31 @@ class EstateOffice_Settings
         );
 
         $fields = array(
-            'google_maps_api_key' => 'API Map Google',
-            'watermark_url' => 'Znak wodny (URL pliku)',
-            'office_logo_url' => 'Logo biura (URL pliku)',
+            'google_maps_api_key' => array(
+                'label' => 'API Map Google',
+                'type' => 'text',
+            ),
+            'watermark_url' => array(
+                'label' => 'Znak wodny',
+                'type' => 'media',
+            ),
+            'office_logo_url' => array(
+                'label' => 'Logo biura',
+                'type' => 'media',
+            ),
         );
 
-        foreach ($fields as $key => $label) {
+        foreach ($fields as $key => $field) {
             add_settings_field(
                 $key,
-                $label,
-                array($this, 'render_text_field'),
+                $field['label'],
+                $field['type'] === 'media' ? array($this, 'render_media_field') : array($this, 'render_text_field'),
                 'estateoffice-settings',
                 'estateoffice_settings_main',
-                array('key' => $key)
+                array(
+                    'key' => $key,
+                    'label' => $field['label'],
+                )
             );
         }
     }
@@ -71,6 +83,26 @@ class EstateOffice_Settings
             esc_attr(self::OPTION_NAME),
             esc_attr($key),
             esc_attr($value)
+        );
+    }
+
+    public function render_media_field($args)
+    {
+        $options = get_option(self::OPTION_NAME, array());
+        $key = $args['key'] ?? '';
+        $label = $args['label'] ?? '';
+        $value = isset($options[$key]) ? $options[$key] : '';
+
+        printf(
+            '<div class="estateoffice-media-field" data-field="%1$s">' .
+            '<input type="text" class="regular-text" name="%2$s[%1$s]" value="%3$s" /> ' .
+            '<button type="button" class="button estateoffice-media-upload" data-title="%4$s">Wybierz plik</button>' .
+            '<p class="description">Wgraj plik lub wklej bezpośredni URL.</p>' .
+            '</div>',
+            esc_attr($key),
+            esc_attr(self::OPTION_NAME),
+            esc_attr($value),
+            esc_attr($label)
         );
     }
 }

@@ -13,3 +13,9 @@ Gotowe do testów wersji 0.0.1.
 - Dodano szybką nawigację do formularza nowej umowy w CRM.
 
 Gotowe do testów wersji 0.0.2.
+
+## 0.0.3
+- Dodano obsługę wyboru plików (logo, znak wodny) z biblioteki mediów w panelu ustawień.
+- Uporządkowano wersjonowanie oraz opis w panelu administracyjnym.
+
+Gotowe do testów wersji 0.0.3.
