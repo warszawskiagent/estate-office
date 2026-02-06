@@ -1,6 +1,7 @@
 jQuery(function ($) {
     const $tabs = $('.estateoffice-tab');
     const $panels = $('.estateoffice-crm__panel');
+    const $quickLinks = $('[data-estateoffice-target]');
 
     function activateTab(target) {
         $tabs.removeClass('is-active');
@@ -16,6 +17,13 @@ jQuery(function ($) {
     $tabs.on('click', function () {
         const target = $(this).data('tab');
         activateTab(target);
+    });
+
+    $quickLinks.on('click', function () {
+        const target = $(this).data('estateoffice-target');
+        if (target) {
+            activateTab(target);
+        }
     });
 
     const $openEnded = $('[data-estateoffice-open-ended]');

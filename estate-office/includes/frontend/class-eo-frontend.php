@@ -24,7 +24,7 @@ class EstateOffice_Frontend
         <div class="estateoffice-crm">
             <div class="estateoffice-crm__header">
                 <h2>EstateOffice CRM</h2>
-                <a class="estateoffice-button" href="#">Dodaj nową Umowę</a>
+                <button class="estateoffice-button" type="button" data-estateoffice-target="contract-form">Dodaj nową Umowę</button>
             </div>
             <nav class="estateoffice-crm__nav">
                 <button class="estateoffice-tab" data-tab="dashboard">Pulpit</button>
@@ -32,6 +32,7 @@ class EstateOffice_Frontend
                 <button class="estateoffice-tab" data-tab="searches">Poszukiwania</button>
                 <button class="estateoffice-tab" data-tab="contracts">Umowy</button>
                 <button class="estateoffice-tab" data-tab="clients">Klienci</button>
+                <button class="estateoffice-tab" data-tab="contract-form">Nowa umowa</button>
             </nav>
 
             <section class="estateoffice-crm__panel" id="estateoffice-tab-dashboard">

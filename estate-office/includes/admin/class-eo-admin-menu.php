@@ -66,7 +66,14 @@ class EstateOffice_Admin_Menu
 
     public function render_settings()
     {
-        echo '<div class="wrap"><h1>Ustawienia</h1><p>Panel ustawień pojawi się w kolejnych wersjach.</p></div>';
+        echo '<div class="wrap">';
+        echo '<h1>Ustawienia</h1>';
+        echo '<form method="post" action="options.php">';
+        settings_fields(EstateOffice_Settings::OPTION_GROUP);
+        do_settings_sections('estateoffice-settings');
+        submit_button('Zapisz ustawienia');
+        echo '</form>';
+        echo '</div>';
     }
 
     public function render_about()

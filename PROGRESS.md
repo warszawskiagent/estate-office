@@ -7,3 +7,9 @@
 - Dodano podstawowe style i skrypty dla dynamicznych formularzy.
 
 Gotowe do testów wersji 0.0.1.
+
+## 0.0.2
+- Dodano panel ustawień z obsługą klucza Google Maps, znaku wodnego i logo biura.
+- Dodano szybką nawigację do formularza nowej umowy w CRM.
+
+Gotowe do testów wersji 0.0.2.

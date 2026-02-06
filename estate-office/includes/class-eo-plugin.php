@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once ESTATEOFFICE_PLUGIN_DIR . 'includes/admin/class-eo-admin-menu.php';
+require_once ESTATEOFFICE_PLUGIN_DIR . 'includes/admin/class-eo-settings.php';
 require_once ESTATEOFFICE_PLUGIN_DIR . 'includes/frontend/class-eo-frontend.php';
 
 class EstateOffice_Plugin
@@ -14,6 +15,7 @@ class EstateOffice_Plugin
         add_action('init', array($this, 'register_assets'));
         add_action('init', array($this, 'register_shortcodes'));
         add_action('admin_menu', array($this, 'register_admin_menu'));
+        add_action('admin_init', array($this, 'register_admin_settings'));
     }
 
     public function register_assets()
@@ -44,5 +46,11 @@ class EstateOffice_Plugin
     {
         $admin_menu = new EstateOffice_Admin_Menu();
         $admin_menu->register();
+    }
+
+    public function register_admin_settings()
+    {
+        $settings = new EstateOffice_Settings();
+        $settings->register();
     }
 }
