@@ -1,0 +1,98 @@
+.estateoffice-crm {
+    font-family: "Segoe UI", sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.estateoffice-crm__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.estateoffice-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0b4bb8;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.estateoffice-crm__nav {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.estateoffice-tab {
+    background: #f0f4f9;
+    border: 1px solid #d6e0f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.estateoffice-tab.is-active {
+    background: #0b4bb8;
+    color: #fff;
+}
+
+.estateoffice-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.estateoffice-card {
+    background: #f8f9fb;
+    border: 1px solid #e3e7ee;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.estateoffice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.estateoffice-table th,
+.estateoffice-table td {
+    border: 1px solid #e3e7ee;
+    padding: 10px;
+    text-align: left;
+}
+
+.estateoffice-search {
+    width: 100%;
+    max-width: 420px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d6e0f0;
+}
+
+.estateoffice-form {
+    display: grid;
+    gap: 16px;
+    max-width: 520px;
+}
+
+.estateoffice-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.estateoffice-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
