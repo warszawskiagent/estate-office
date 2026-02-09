@@ -13,3 +13,10 @@ Status: zakończono etap 0.1 (gotowe do testów instalacji).
 - Dodano placeholdery widoków administracyjnych zgodne z roadmapą.
 
 Status: zakończono etap 0.2 (gotowe do testów menu administratora).
+
+## Wersja 0.3.0
+- Dodano w pełni funkcjonalne dodawanie klientów w CRM (formularz + zapis do bazy danych).
+- Dodano dynamiczne przełączanie pól formularza klienta (osoba fizyczna / firma, adres korespondencyjny).
+- Dodano listę ostatnich klientów w widoku CRM.
+
+Status: zakończono etap 0.3 (gotowe do testów dodawania klientów).

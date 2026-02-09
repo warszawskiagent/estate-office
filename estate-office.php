@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.2.0';
+    const VERSION = '0.3.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
@@ -269,6 +269,8 @@ final class EstateOffice_CRM_Plugin {
             return '<p>Aby korzystać z CRM musisz być zalogowany.</p>';
         }
 
+        $this->handle_client_submission();
+
         $atts = shortcode_atts(
             array(
                 'view' => 'dashboard',
@@ -300,7 +302,15 @@ final class EstateOffice_CRM_Plugin {
             </nav>
             <section class="estateoffice-crm__content">
                 <h2><?php echo esc_html( $this->get_view_label( $atts['view'] ) ); ?></h2>
-                <p>Widok przygotowany pod rozwój funkcjonalności zgodnie z harmonogramem wersji 0.1 → 1.0.</p>
+                <?php
+                if ( 'clients' === $atts['view'] ) {
+                    $this->render_clients_view();
+                } else {
+                    ?>
+                    <p>Widok przygotowany pod rozwój funkcjonalności zgodnie z harmonogramem wersji 0.1 → 1.0.</p>
+                    <?php
+                }
+                ?>
             </section>
         </div>
         <?php
@@ -317,6 +327,251 @@ final class EstateOffice_CRM_Plugin {
         );
 
         return $labels[ $view ] ?? 'CRM';
+    }
+
+    private function handle_client_submission() {
+        if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+            return;
+        }
+
+        if ( empty( $_POST['estateoffice_action'] ) || 'create_client' !== $_POST['estateoffice_action'] ) {
+            return;
+        }
+
+        $nonce = isset( $_POST['estateoffice_client_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['estateoffice_client_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'estateoffice_create_client' ) ) {
+            return;
+        }
+
+        $client_type = isset( $_POST['client_type'] ) ? sanitize_text_field( wp_unslash( $_POST['client_type'] ) ) : '';
+        if ( ! in_array( $client_type, array( 'individual', 'company' ), true ) ) {
+            $client_type = 'individual';
+        }
+
+        $data = array(
+            'type'                 => $client_type,
+            'first_name'           => isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : null,
+            'last_name'            => isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : null,
+            'company_name'         => isset( $_POST['company_name'] ) ? sanitize_text_field( wp_unslash( $_POST['company_name'] ) ) : null,
+            'representative_name'  => isset( $_POST['representative_name'] ) ? sanitize_text_field( wp_unslash( $_POST['representative_name'] ) ) : null,
+            'phone'                => isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : null,
+            'email'                => isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : null,
+            'website'              => isset( $_POST['website'] ) ? esc_url_raw( wp_unslash( $_POST['website'] ) ) : null,
+            'pesel'                => isset( $_POST['pesel'] ) ? sanitize_text_field( wp_unslash( $_POST['pesel'] ) ) : null,
+            'document_type'        => isset( $_POST['document_type'] ) ? sanitize_text_field( wp_unslash( $_POST['document_type'] ) ) : null,
+            'document_number'      => isset( $_POST['document_number'] ) ? sanitize_text_field( wp_unslash( $_POST['document_number'] ) ) : null,
+            'nip'                  => isset( $_POST['nip'] ) ? sanitize_text_field( wp_unslash( $_POST['nip'] ) ) : null,
+            'krs'                  => isset( $_POST['krs'] ) ? sanitize_text_field( wp_unslash( $_POST['krs'] ) ) : null,
+            'regon'                => isset( $_POST['regon'] ) ? sanitize_text_field( wp_unslash( $_POST['regon'] ) ) : null,
+            'address_street'       => isset( $_POST['address_street'] ) ? sanitize_text_field( wp_unslash( $_POST['address_street'] ) ) : null,
+            'address_number'       => isset( $_POST['address_number'] ) ? sanitize_text_field( wp_unslash( $_POST['address_number'] ) ) : null,
+            'address_unit'         => isset( $_POST['address_unit'] ) ? sanitize_text_field( wp_unslash( $_POST['address_unit'] ) ) : null,
+            'address_postcode'     => isset( $_POST['address_postcode'] ) ? sanitize_text_field( wp_unslash( $_POST['address_postcode'] ) ) : null,
+            'address_city'         => isset( $_POST['address_city'] ) ? sanitize_text_field( wp_unslash( $_POST['address_city'] ) ) : null,
+            'address_country'      => isset( $_POST['address_country'] ) ? sanitize_text_field( wp_unslash( $_POST['address_country'] ) ) : null,
+            'corr_same'            => isset( $_POST['corr_same'] ) ? 1 : 0,
+            'corr_street'          => isset( $_POST['corr_street'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_street'] ) ) : null,
+            'corr_number'          => isset( $_POST['corr_number'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_number'] ) ) : null,
+            'corr_unit'            => isset( $_POST['corr_unit'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_unit'] ) ) : null,
+            'corr_postcode'        => isset( $_POST['corr_postcode'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_postcode'] ) ) : null,
+            'corr_city'            => isset( $_POST['corr_city'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_city'] ) ) : null,
+            'corr_country'         => isset( $_POST['corr_country'] ) ? sanitize_text_field( wp_unslash( $_POST['corr_country'] ) ) : null,
+        );
+
+        if ( 1 === $data['corr_same'] ) {
+            $data['corr_street'] = null;
+            $data['corr_number'] = null;
+            $data['corr_unit'] = null;
+            $data['corr_postcode'] = null;
+            $data['corr_city'] = null;
+            $data['corr_country'] = null;
+        }
+
+        global $wpdb;
+        $wpdb->insert( "{$wpdb->prefix}eo_clients", $data );
+    }
+
+    private function render_clients_view() {
+        global $wpdb;
+
+        $clients = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}eo_clients ORDER BY created_at DESC LIMIT 50" );
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Dodaj klienta</h3>
+            <form method="post">
+                <?php wp_nonce_field( 'estateoffice_create_client', 'estateoffice_client_nonce' ); ?>
+                <input type="hidden" name="estateoffice_action" value="create_client">
+                <div>
+                    <label for="client_type">Typ klienta</label>
+                    <select id="client_type" name="client_type">
+                        <option value="individual">Osoba fizyczna</option>
+                        <option value="company">Firma</option>
+                    </select>
+                </div>
+
+                <div class="estateoffice-client__individual">
+                    <label for="first_name">Imię</label>
+                    <input id="first_name" name="first_name" type="text">
+                    <label for="last_name">Nazwisko</label>
+                    <input id="last_name" name="last_name" type="text">
+                </div>
+
+                <div class="estateoffice-client__company" style="display: none;">
+                    <label for="company_name">Nazwa firmy</label>
+                    <input id="company_name" name="company_name" type="text">
+                    <label for="representative_name">Imię i nazwisko reprezentanta</label>
+                    <input id="representative_name" name="representative_name" type="text">
+                </div>
+
+                <fieldset>
+                    <legend>Dane kontaktowe</legend>
+                    <label for="phone">Telefon</label>
+                    <input id="phone" name="phone" type="text">
+                    <label for="email">E-mail</label>
+                    <input id="email" name="email" type="email">
+                    <label for="website">Strona WWW (firma)</label>
+                    <input id="website" name="website" type="url">
+                </fieldset>
+
+                <fieldset class="estateoffice-client__individual">
+                    <legend>Dane identyfikacyjne (osoba fizyczna)</legend>
+                    <label for="pesel">PESEL</label>
+                    <input id="pesel" name="pesel" type="text">
+                    <label for="document_type">Rodzaj dokumentu</label>
+                    <select id="document_type" name="document_type">
+                        <option value="">Wybierz</option>
+                        <option value="dowod">Dowód osobisty</option>
+                        <option value="paszport">Paszport</option>
+                        <option value="karta_pobytu">Karta pobytu</option>
+                    </select>
+                    <label for="document_number">Numer dokumentu</label>
+                    <input id="document_number" name="document_number" type="text">
+                </fieldset>
+
+                <fieldset class="estateoffice-client__company" style="display: none;">
+                    <legend>Dane identyfikacyjne (firma)</legend>
+                    <label for="nip">NIP</label>
+                    <input id="nip" name="nip" type="text">
+                    <label for="krs">KRS</label>
+                    <input id="krs" name="krs" type="text">
+                    <label for="regon">REGON</label>
+                    <input id="regon" name="regon" type="text">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Adres zamieszkania / rejestrowy</legend>
+                    <label for="address_street">Ulica</label>
+                    <input id="address_street" name="address_street" type="text">
+                    <label for="address_number">Numer</label>
+                    <input id="address_number" name="address_number" type="text">
+                    <label for="address_unit">Lokal</label>
+                    <input id="address_unit" name="address_unit" type="text">
+                    <label for="address_postcode">Kod pocztowy</label>
+                    <input id="address_postcode" name="address_postcode" type="text">
+                    <label for="address_city">Miasto</label>
+                    <input id="address_city" name="address_city" type="text">
+                    <label for="address_country">Kraj</label>
+                    <input id="address_country" name="address_country" type="text">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Adres korespondencyjny</legend>
+                    <label>
+                        <input id="corr_same" name="corr_same" type="checkbox" checked>
+                        Adres korespondencyjny taki sam
+                    </label>
+                    <div class="estateoffice-client__corr" style="display: none;">
+                        <label for="corr_street">Ulica</label>
+                        <input id="corr_street" name="corr_street" type="text">
+                        <label for="corr_number">Numer</label>
+                        <input id="corr_number" name="corr_number" type="text">
+                        <label for="corr_unit">Lokal</label>
+                        <input id="corr_unit" name="corr_unit" type="text">
+                        <label for="corr_postcode">Kod pocztowy</label>
+                        <input id="corr_postcode" name="corr_postcode" type="text">
+                        <label for="corr_city">Miasto</label>
+                        <input id="corr_city" name="corr_city" type="text">
+                        <label for="corr_country">Kraj</label>
+                        <input id="corr_country" name="corr_country" type="text">
+                    </div>
+                </fieldset>
+
+                <button type="submit">Dodaj klienta</button>
+            </form>
+        </div>
+
+        <div class="estateoffice-crm__section">
+            <h3>Lista klientów</h3>
+            <?php if ( empty( $clients ) ) : ?>
+                <p>Brak klientów.</p>
+            <?php else : ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Imię i nazwisko / Nazwa</th>
+                            <th>Telefon</th>
+                            <th>E-mail</th>
+                            <th>Miasto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $clients as $client ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( $this->get_client_display_name( $client ) ); ?></td>
+                                <td><?php echo esc_html( $client->phone ); ?></td>
+                                <td><?php echo esc_html( $client->email ); ?></td>
+                                <td><?php echo esc_html( $client->address_city ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <script>
+            (function() {
+                const clientType = document.getElementById('client_type');
+                const corrSame = document.getElementById('corr_same');
+                const individualBlocks = document.querySelectorAll('.estateoffice-client__individual');
+                const companyBlocks = document.querySelectorAll('.estateoffice-client__company');
+                const corrBlock = document.querySelector('.estateoffice-client__corr');
+
+                function toggleClientType() {
+                    const isCompany = clientType.value === 'company';
+                    individualBlocks.forEach((block) => {
+                        block.style.display = isCompany ? 'none' : 'block';
+                    });
+                    companyBlocks.forEach((block) => {
+                        block.style.display = isCompany ? 'block' : 'none';
+                    });
+                }
+
+                function toggleCorr() {
+                    if (!corrBlock) {
+                        return;
+                    }
+                    corrBlock.style.display = corrSame.checked ? 'none' : 'block';
+                }
+
+                if (clientType) {
+                    clientType.addEventListener('change', toggleClientType);
+                    toggleClientType();
+                }
+                if (corrSame) {
+                    corrSame.addEventListener('change', toggleCorr);
+                    toggleCorr();
+                }
+            })();
+        </script>
+        <?php
+    }
+
+    private function get_client_display_name( $client ) {
+        if ( 'company' === $client->type && ! empty( $client->company_name ) ) {
+            return $client->company_name;
+        }
+
+        $name = trim( sprintf( '%s %s', $client->first_name ?? '', $client->last_name ?? '' ) );
+        return '' !== $name ? $name : 'Klient';
     }
 
     private function render_admin_section( $title, $description ) {
