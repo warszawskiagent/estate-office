@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,12 +13,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.1.0';
+    const VERSION = '0.2.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
         register_activation_hook( __FILE__, array( $this, 'activate' ) );
         add_action( 'init', array( $this, 'register_shortcodes' ) );
+        add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
     }
 
     public function activate() {
@@ -213,6 +214,56 @@ final class EstateOffice_CRM_Plugin {
         add_shortcode( 'estateoffice_crm', array( $this, 'render_crm_shortcode' ) );
     }
 
+    public function register_admin_menu() {
+        $capability = 'manage_options';
+
+        add_menu_page(
+            'EstateOffice CRM',
+            'EstateOffice CRM',
+            $capability,
+            'estateoffice-crm',
+            array( $this, 'render_admin_dashboard' ),
+            'dashicons-building',
+            30
+        );
+
+        add_submenu_page(
+            'estateoffice-crm',
+            'Licencja',
+            'Licencja',
+            $capability,
+            'estateoffice-crm-license',
+            array( $this, 'render_admin_license' )
+        );
+
+        add_submenu_page(
+            'estateoffice-crm',
+            'Agenci',
+            'Agenci',
+            $capability,
+            'estateoffice-crm-agents',
+            array( $this, 'render_admin_agents' )
+        );
+
+        add_submenu_page(
+            'estateoffice-crm',
+            'Ustawienia',
+            'Ustawienia',
+            $capability,
+            'estateoffice-crm-settings',
+            array( $this, 'render_admin_settings' )
+        );
+
+        add_submenu_page(
+            'estateoffice-crm',
+            'About',
+            'About',
+            $capability,
+            'estateoffice-crm-about',
+            array( $this, 'render_admin_about' )
+        );
+    }
+
     public function render_crm_shortcode( $atts ) {
         if ( ! is_user_logged_in() ) {
             return '<p>Aby korzystać z CRM musisz być zalogowany.</p>';
@@ -266,6 +317,50 @@ final class EstateOffice_CRM_Plugin {
         );
 
         return $labels[ $view ] ?? 'CRM';
+    }
+
+    private function render_admin_section( $title, $description ) {
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html( $title ); ?></h1>
+            <p><?php echo esc_html( $description ); ?></p>
+        </div>
+        <?php
+    }
+
+    public function render_admin_dashboard() {
+        $this->render_admin_section(
+            'EstateOffice CRM',
+            'Panel administracyjny wtyczki. Sekcje będą rozwijane zgodnie z harmonogramem wersji 0.2 → 1.0.'
+        );
+    }
+
+    public function render_admin_license() {
+        $this->render_admin_section(
+            'Licencja',
+            'Moduł licencji zostanie dodany na końcowym etapie prac.'
+        );
+    }
+
+    public function render_admin_agents() {
+        $this->render_admin_section(
+            'Agenci',
+            'Zarządzanie agentami będzie dostępne w kolejnych wersjach.'
+        );
+    }
+
+    public function render_admin_settings() {
+        $this->render_admin_section(
+            'Ustawienia',
+            'Konfiguracja API Map Google, znaków wodnych i pól CRM pojawi się w następnych etapach.'
+        );
+    }
+
+    public function render_admin_about() {
+        $this->render_admin_section(
+            'About',
+            'Opis wtyczki i roadmapa będą uzupełniane w dalszych wersjach.'
+        );
     }
 }
 

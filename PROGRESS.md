@@ -7,3 +7,9 @@
 - Dodano automatyczne tworzenie stron CRM (CRM + podstrony) i shortcode do nawigacji.
 
 Status: zakończono etap 0.1 (gotowe do testów instalacji).
+
+## Wersja 0.2.0
+- Dodano strukturę menu administratora EstateOffice CRM (Licencja, Agenci, Ustawienia, About).
+- Dodano placeholdery widoków administracyjnych zgodne z roadmapą.
+
+Status: zakończono etap 0.2 (gotowe do testów menu administratora).
