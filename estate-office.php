@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.5.0
+ * Version: 0.6.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.5.0';
+    const VERSION = '0.6.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
@@ -272,6 +272,7 @@ final class EstateOffice_CRM_Plugin {
         $this->handle_client_submission();
         $this->handle_contract_submission();
         $this->handle_property_submission();
+        $this->handle_search_submission();
 
         $atts = shortcode_atts(
             array(
@@ -309,6 +310,8 @@ final class EstateOffice_CRM_Plugin {
                     $this->render_clients_view();
                 } elseif ( 'properties' === $atts['view'] ) {
                     $this->render_properties_view();
+                } elseif ( 'searches' === $atts['view'] ) {
+                    $this->render_searches_view();
                 } elseif ( 'contracts' === $atts['view'] ) {
                     $this->render_contracts_view();
                 } else {
@@ -527,6 +530,43 @@ final class EstateOffice_CRM_Plugin {
 
         global $wpdb;
         $wpdb->insert( "{$wpdb->prefix}eo_properties", $data );
+    }
+
+    private function handle_search_submission() {
+        if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+            return;
+        }
+
+        if ( empty( $_POST['estateoffice_action'] ) || 'create_search' !== $_POST['estateoffice_action'] ) {
+            return;
+        }
+
+        $nonce = isset( $_POST['estateoffice_search_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['estateoffice_search_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'estateoffice_create_search' ) ) {
+            return;
+        }
+
+        $transaction_type = isset( $_POST['transaction_type'] ) ? sanitize_text_field( wp_unslash( $_POST['transaction_type'] ) ) : '';
+        $property_type = isset( $_POST['property_type'] ) ? sanitize_text_field( wp_unslash( $_POST['property_type'] ) ) : '';
+        $budget_min = isset( $_POST['budget_min'] ) ? floatval( wp_unslash( $_POST['budget_min'] ) ) : null;
+        $budget_max = isset( $_POST['budget_max'] ) ? floatval( wp_unslash( $_POST['budget_max'] ) ) : null;
+        $location = isset( $_POST['location'] ) ? sanitize_text_field( wp_unslash( $_POST['location'] ) ) : '';
+
+        $valid_transaction_types = array( 'sprzedaz', 'kupno', 'wynajem', 'najem' );
+        if ( '' === $transaction_type || ! in_array( $transaction_type, $valid_transaction_types, true ) ) {
+            return;
+        }
+
+        $data = array(
+            'transaction_type' => $transaction_type,
+            'property_type'    => $property_type,
+            'budget_min'       => $budget_min,
+            'budget_max'       => $budget_max,
+            'location'         => $location,
+        );
+
+        global $wpdb;
+        $wpdb->insert( "{$wpdb->prefix}eo_searches", $data );
     }
 
     private function render_clients_view() {
@@ -934,6 +974,80 @@ final class EstateOffice_CRM_Plugin {
                 }
             })();
         </script>
+        <?php
+    }
+
+    private function render_searches_view() {
+        global $wpdb;
+
+        $searches = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}eo_searches ORDER BY created_at DESC LIMIT 50" );
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Dodaj poszukiwanie</h3>
+            <form method="post">
+                <?php wp_nonce_field( 'estateoffice_create_search', 'estateoffice_search_nonce' ); ?>
+                <input type="hidden" name="estateoffice_action" value="create_search">
+
+                <label for="transaction_type">Typ transakcji</label>
+                <select id="transaction_type" name="transaction_type" required>
+                    <option value="">Wybierz</option>
+                    <option value="sprzedaz">SPRZEDAŻ</option>
+                    <option value="kupno">KUPNO</option>
+                    <option value="wynajem">WYNAJEM</option>
+                    <option value="najem">NAJEM</option>
+                </select>
+
+                <label for="property_type">Rodzaj nieruchomości</label>
+                <select id="property_type" name="property_type">
+                    <option value="">Wybierz</option>
+                    <option value="mieszkanie">MIESZKANIE</option>
+                    <option value="dom">DOM</option>
+                    <option value="dzialka">DZIAŁKA</option>
+                    <option value="lokal_hu">LOKAL H/U</option>
+                </select>
+
+                <fieldset>
+                    <legend>Budżet</legend>
+                    <label for="budget_min">Od</label>
+                    <input id="budget_min" name="budget_min" type="number" step="0.01">
+                    <label for="budget_max">Do</label>
+                    <input id="budget_max" name="budget_max" type="number" step="0.01">
+                </fieldset>
+
+                <label for="location">Lokalizacja</label>
+                <input id="location" name="location" type="text">
+
+                <button type="submit">Dodaj poszukiwanie</button>
+            </form>
+        </div>
+
+        <div class="estateoffice-crm__section">
+            <h3>Lista poszukiwań</h3>
+            <?php if ( empty( $searches ) ) : ?>
+                <p>Brak poszukiwań.</p>
+            <?php else : ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rodzaj nieruchomości</th>
+                            <th>Budżet</th>
+                            <th>Lokalizacja</th>
+                            <th>Typ transakcji</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $searches as $search ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( strtoupper( $search->property_type ) ); ?></td>
+                                <td><?php echo esc_html( trim( sprintf( '%s - %s', $search->budget_min, $search->budget_max ) ) ); ?></td>
+                                <td><?php echo esc_html( $search->location ); ?></td>
+                                <td><?php echo esc_html( strtoupper( $search->transaction_type ) ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
         <?php
     }
 

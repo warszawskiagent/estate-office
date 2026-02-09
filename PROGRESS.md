@@ -34,3 +34,9 @@ Status: zakończono etap 0.4 (gotowe do testów dodawania umów).
 - Dodano listę ostatnich nieruchomości w widoku CRM.
 
 Status: zakończono etap 0.5 (gotowe do testów dodawania nieruchomości).
+
+## Wersja 0.6.0
+- Dodano w pełni funkcjonalne dodawanie poszukiwań w CRM (formularz + zapis do bazy danych).
+- Dodano listę ostatnich poszukiwań w widoku CRM.
+
+Status: zakończono etap 0.6 (gotowe do testów dodawania poszukiwań).
