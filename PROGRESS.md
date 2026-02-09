@@ -20,3 +20,10 @@ Status: zakończono etap 0.2 (gotowe do testów menu administratora).
 - Dodano listę ostatnich klientów w widoku CRM.
 
 Status: zakończono etap 0.3 (gotowe do testów dodawania klientów).
+
+## Wersja 0.4.0
+- Dodano w pełni funkcjonalne dodawanie umów w CRM (formularz + zapis do bazy danych).
+- Dodano walidację unikalnego numeru umowy oraz obsługę umowy bezterminowej.
+- Dodano listę ostatnich umów w widoku CRM.
+
+Status: zakończono etap 0.4 (gotowe do testów dodawania umów).

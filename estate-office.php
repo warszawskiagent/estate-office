@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.3.0';
+    const VERSION = '0.4.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
@@ -270,6 +270,7 @@ final class EstateOffice_CRM_Plugin {
         }
 
         $this->handle_client_submission();
+        $this->handle_contract_submission();
 
         $atts = shortcode_atts(
             array(
@@ -305,6 +306,8 @@ final class EstateOffice_CRM_Plugin {
                 <?php
                 if ( 'clients' === $atts['view'] ) {
                     $this->render_clients_view();
+                } elseif ( 'contracts' === $atts['view'] ) {
+                    $this->render_contracts_view();
                 } else {
                     ?>
                     <p>Widok przygotowany pod rozwój funkcjonalności zgodnie z harmonogramem wersji 0.1 → 1.0.</p>
@@ -389,6 +392,67 @@ final class EstateOffice_CRM_Plugin {
 
         global $wpdb;
         $wpdb->insert( "{$wpdb->prefix}eo_clients", $data );
+    }
+
+    private function handle_contract_submission() {
+        if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+            return;
+        }
+
+        if ( empty( $_POST['estateoffice_action'] ) || 'create_contract' !== $_POST['estateoffice_action'] ) {
+            return;
+        }
+
+        $nonce = isset( $_POST['estateoffice_contract_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['estateoffice_contract_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'estateoffice_create_contract' ) ) {
+            return;
+        }
+
+        $number = isset( $_POST['contract_number'] ) ? sanitize_text_field( wp_unslash( $_POST['contract_number'] ) ) : '';
+        $transaction_type = isset( $_POST['transaction_type'] ) ? sanitize_text_field( wp_unslash( $_POST['transaction_type'] ) ) : '';
+        $start_date = isset( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : '';
+        $end_date = isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '';
+        $indefinite = isset( $_POST['indefinite'] ) ? 1 : 0;
+        $commission_amount = isset( $_POST['commission_amount'] ) ? floatval( wp_unslash( $_POST['commission_amount'] ) ) : null;
+        $commission_currency = isset( $_POST['commission_currency'] ) ? sanitize_text_field( wp_unslash( $_POST['commission_currency'] ) ) : null;
+
+        if ( '' === $number || '' === $transaction_type || '' === $start_date ) {
+            return;
+        }
+
+        $valid_transaction_types = array( 'sprzedaz', 'kupno', 'wynajem', 'najem' );
+        if ( ! in_array( $transaction_type, $valid_transaction_types, true ) ) {
+            return;
+        }
+
+        if ( 1 === $indefinite ) {
+            $end_date = null;
+        }
+
+        global $wpdb;
+        $exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}eo_contracts WHERE number = %s",
+                $number
+            )
+        );
+
+        if ( $exists ) {
+            return;
+        }
+
+        $data = array(
+            'number'             => $number,
+            'transaction_type'   => $transaction_type,
+            'start_date'         => $start_date,
+            'end_date'           => $end_date,
+            'indefinite'         => $indefinite,
+            'commission_amount'  => null !== $commission_amount ? $commission_amount : null,
+            'commission_currency'=> $commission_currency,
+            'created_by'         => get_current_user_id(),
+        );
+
+        $wpdb->insert( "{$wpdb->prefix}eo_contracts", $data );
     }
 
     private function render_clients_view() {
@@ -572,6 +636,105 @@ final class EstateOffice_CRM_Plugin {
 
         $name = trim( sprintf( '%s %s', $client->first_name ?? '', $client->last_name ?? '' ) );
         return '' !== $name ? $name : 'Klient';
+    }
+
+    private function render_contracts_view() {
+        global $wpdb;
+
+        $contracts = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}eo_contracts ORDER BY created_at DESC LIMIT 50" );
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Dodaj umowę</h3>
+            <form method="post">
+                <?php wp_nonce_field( 'estateoffice_create_contract', 'estateoffice_contract_nonce' ); ?>
+                <input type="hidden" name="estateoffice_action" value="create_contract">
+                <label for="contract_number">Numer umowy</label>
+                <input id="contract_number" name="contract_number" type="text" required>
+
+                <label for="transaction_type">Typ transakcji</label>
+                <select id="transaction_type" name="transaction_type" required>
+                    <option value="">Wybierz</option>
+                    <option value="sprzedaz">SPRZEDAŻ</option>
+                    <option value="kupno">KUPNO</option>
+                    <option value="wynajem">WYNAJEM</option>
+                    <option value="najem">NAJEM</option>
+                </select>
+
+                <label for="start_date">Data zawarcia</label>
+                <input id="start_date" name="start_date" type="date" required>
+
+                <label for="end_date">Data zakończenia</label>
+                <input id="end_date" name="end_date" type="date">
+
+                <label>
+                    <input id="indefinite" name="indefinite" type="checkbox">
+                    Umowa bezterminowa
+                </label>
+
+                <fieldset>
+                    <legend>Wysokość prowizji</legend>
+                    <label for="commission_amount">Kwota</label>
+                    <input id="commission_amount" name="commission_amount" type="number" step="0.01">
+                    <label for="commission_currency">Jednostka</label>
+                    <select id="commission_currency" name="commission_currency">
+                        <option value="">Wybierz</option>
+                        <option value="%">%</option>
+                        <option value="PLN">PLN</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </fieldset>
+
+                <button type="submit">Dodaj umowę</button>
+            </form>
+        </div>
+
+        <div class="estateoffice-crm__section">
+            <h3>Lista umów</h3>
+            <?php if ( empty( $contracts ) ) : ?>
+                <p>Brak umów.</p>
+            <?php else : ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Numer umowy</th>
+                            <th>Typ transakcji</th>
+                            <th>Data zawarcia</th>
+                            <th>Data zakończenia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $contracts as $contract ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( $contract->number ); ?></td>
+                                <td><?php echo esc_html( strtoupper( $contract->transaction_type ) ); ?></td>
+                                <td><?php echo esc_html( $contract->start_date ); ?></td>
+                                <td><?php echo esc_html( $contract->indefinite ? 'Bezterminowa' : $contract->end_date ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <script>
+            (function() {
+                const indefinite = document.getElementById('indefinite');
+                const endDate = document.getElementById('end_date');
+                if (!indefinite || !endDate) {
+                    return;
+                }
+                function toggleEndDate() {
+                    endDate.disabled = indefinite.checked;
+                    if (indefinite.checked) {
+                        endDate.value = '';
+                    }
+                }
+                indefinite.addEventListener('change', toggleEndDate);
+                toggleEndDate();
+            })();
+        </script>
+        <?php
     }
 
     private function render_admin_section( $title, $description ) {
