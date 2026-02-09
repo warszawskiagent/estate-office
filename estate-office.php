@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.4.0';
+    const VERSION = '0.5.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
@@ -271,6 +271,7 @@ final class EstateOffice_CRM_Plugin {
 
         $this->handle_client_submission();
         $this->handle_contract_submission();
+        $this->handle_property_submission();
 
         $atts = shortcode_atts(
             array(
@@ -306,6 +307,8 @@ final class EstateOffice_CRM_Plugin {
                 <?php
                 if ( 'clients' === $atts['view'] ) {
                     $this->render_clients_view();
+                } elseif ( 'properties' === $atts['view'] ) {
+                    $this->render_properties_view();
                 } elseif ( 'contracts' === $atts['view'] ) {
                     $this->render_contracts_view();
                 } else {
@@ -453,6 +456,77 @@ final class EstateOffice_CRM_Plugin {
         );
 
         $wpdb->insert( "{$wpdb->prefix}eo_contracts", $data );
+    }
+
+    private function handle_property_submission() {
+        if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+            return;
+        }
+
+        if ( empty( $_POST['estateoffice_action'] ) || 'create_property' !== $_POST['estateoffice_action'] ) {
+            return;
+        }
+
+        $nonce = isset( $_POST['estateoffice_property_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['estateoffice_property_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'estateoffice_create_property' ) ) {
+            return;
+        }
+
+        $transaction_type = isset( $_POST['transaction_type'] ) ? sanitize_text_field( wp_unslash( $_POST['transaction_type'] ) ) : '';
+        $property_type = isset( $_POST['property_type'] ) ? sanitize_text_field( wp_unslash( $_POST['property_type'] ) ) : '';
+        $address_street = isset( $_POST['address_street'] ) ? sanitize_text_field( wp_unslash( $_POST['address_street'] ) ) : '';
+        $address_number = isset( $_POST['address_number'] ) ? sanitize_text_field( wp_unslash( $_POST['address_number'] ) ) : '';
+        $address_postcode = isset( $_POST['address_postcode'] ) ? sanitize_text_field( wp_unslash( $_POST['address_postcode'] ) ) : '';
+        $address_city = isset( $_POST['address_city'] ) ? sanitize_text_field( wp_unslash( $_POST['address_city'] ) ) : '';
+        $address_district = isset( $_POST['address_district'] ) ? sanitize_text_field( wp_unslash( $_POST['address_district'] ) ) : '';
+        $price = isset( $_POST['price'] ) ? floatval( wp_unslash( $_POST['price'] ) ) : null;
+        $area = isset( $_POST['area'] ) ? floatval( wp_unslash( $_POST['area'] ) ) : null;
+        $rooms = isset( $_POST['rooms'] ) ? intval( wp_unslash( $_POST['rooms'] ) ) : null;
+        $export_www = isset( $_POST['export_www'] ) ? 1 : 0;
+
+        $valid_transaction_types = array( 'sprzedaz', 'kupno', 'wynajem', 'najem' );
+        $valid_property_types = array( 'mieszkanie', 'dom', 'dzialka', 'lokal_hu' );
+
+        if ( '' === $transaction_type || '' === $property_type ) {
+            return;
+        }
+
+        if ( ! in_array( $transaction_type, $valid_transaction_types, true ) ) {
+            return;
+        }
+
+        if ( ! in_array( $property_type, $valid_property_types, true ) ) {
+            return;
+        }
+
+        if ( '' === $address_street || '' === $address_number || '' === $address_postcode || '' === $address_city ) {
+            return;
+        }
+
+        $price_per_m2 = null;
+        if ( null !== $price && null !== $area && $area > 0 ) {
+            $price_per_m2 = round( $price / $area, 2 );
+        }
+
+        $data = array(
+            'transaction_type' => $transaction_type,
+            'property_type'    => $property_type,
+            'address_street'   => $address_street,
+            'address_number'   => $address_number,
+            'address_unit'     => isset( $_POST['address_unit'] ) ? sanitize_text_field( wp_unslash( $_POST['address_unit'] ) ) : null,
+            'address_postcode' => $address_postcode,
+            'address_city'     => $address_city,
+            'address_district' => $address_district,
+            'price'            => $price,
+            'area'             => $area,
+            'price_per_m2'     => $price_per_m2,
+            'rooms'            => $rooms,
+            'agent_id'         => get_current_user_id(),
+            'export_www'       => $export_www,
+        );
+
+        global $wpdb;
+        $wpdb->insert( "{$wpdb->prefix}eo_properties", $data );
     }
 
     private function render_clients_view() {
@@ -732,6 +806,132 @@ final class EstateOffice_CRM_Plugin {
                 }
                 indefinite.addEventListener('change', toggleEndDate);
                 toggleEndDate();
+            })();
+        </script>
+        <?php
+    }
+
+    private function render_properties_view() {
+        global $wpdb;
+
+        $properties = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}eo_properties ORDER BY created_at DESC LIMIT 50" );
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Dodaj nieruchomość</h3>
+            <form method="post">
+                <?php wp_nonce_field( 'estateoffice_create_property', 'estateoffice_property_nonce' ); ?>
+                <input type="hidden" name="estateoffice_action" value="create_property">
+
+                <label for="transaction_type">Typ transakcji</label>
+                <select id="transaction_type" name="transaction_type" required>
+                    <option value="">Wybierz</option>
+                    <option value="sprzedaz">SPRZEDAŻ</option>
+                    <option value="kupno">KUPNO</option>
+                    <option value="wynajem">WYNAJEM</option>
+                    <option value="najem">NAJEM</option>
+                </select>
+
+                <label for="property_type">Rodzaj nieruchomości</label>
+                <select id="property_type" name="property_type" required>
+                    <option value="">Wybierz</option>
+                    <option value="mieszkanie">MIESZKANIE</option>
+                    <option value="dom">DOM</option>
+                    <option value="dzialka">DZIAŁKA</option>
+                    <option value="lokal_hu">LOKAL H/U</option>
+                </select>
+
+                <fieldset>
+                    <legend>Dane adresowe</legend>
+                    <label for="address_street">Ulica</label>
+                    <input id="address_street" name="address_street" type="text" required>
+                    <label for="address_number">Numer</label>
+                    <input id="address_number" name="address_number" type="text" required>
+                    <label for="address_unit">Lokal</label>
+                    <input id="address_unit" name="address_unit" type="text">
+                    <label for="address_postcode">Kod pocztowy</label>
+                    <input id="address_postcode" name="address_postcode" type="text" required>
+                    <label for="address_city">Miasto</label>
+                    <input id="address_city" name="address_city" type="text" required>
+                    <label for="address_district">Dzielnica</label>
+                    <input id="address_district" name="address_district" type="text">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Dane nieruchomości</legend>
+                    <label for="price">Cena</label>
+                    <input id="price" name="price" type="number" step="0.01">
+                    <label for="area">Powierzchnia (m²)</label>
+                    <input id="area" name="area" type="number" step="0.01">
+                    <label for="price_per_m2">Cena za m²</label>
+                    <input id="price_per_m2" name="price_per_m2" type="number" step="0.01" readonly>
+                    <label for="rooms">Liczba pokoi</label>
+                    <input id="rooms" name="rooms" type="number" min="0">
+                </fieldset>
+
+                <label>
+                    <input id="export_www" name="export_www" type="checkbox">
+                    Eksport na WWW
+                </label>
+
+                <button type="submit">Dodaj nieruchomość</button>
+            </form>
+        </div>
+
+        <div class="estateoffice-crm__section">
+            <h3>Lista nieruchomości</h3>
+            <?php if ( empty( $properties ) ) : ?>
+                <p>Brak nieruchomości.</p>
+            <?php else : ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Adres</th>
+                            <th>Cena</th>
+                            <th>Cena za m²</th>
+                            <th>Metraż</th>
+                            <th>Liczba pokoi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $properties as $property ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( trim( sprintf( '%s %s', $property->address_street, $property->address_number ) ) ); ?></td>
+                                <td><?php echo esc_html( $property->price ); ?></td>
+                                <td><?php echo esc_html( $property->price_per_m2 ); ?></td>
+                                <td><?php echo esc_html( $property->area ); ?></td>
+                                <td><?php echo esc_html( $property->rooms ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <script>
+            (function() {
+                const price = document.getElementById('price');
+                const area = document.getElementById('area');
+                const pricePerM2 = document.getElementById('price_per_m2');
+
+                function updatePricePerM2() {
+                    if (!pricePerM2) {
+                        return;
+                    }
+                    const priceValue = parseFloat(price.value);
+                    const areaValue = parseFloat(area.value);
+                    if (!isNaN(priceValue) && !isNaN(areaValue) && areaValue > 0) {
+                        pricePerM2.value = (priceValue / areaValue).toFixed(2);
+                    } else {
+                        pricePerM2.value = '';
+                    }
+                }
+
+                if (price) {
+                    price.addEventListener('input', updatePricePerM2);
+                }
+                if (area) {
+                    area.addEventListener('input', updatePricePerM2);
+                }
             })();
         </script>
         <?php

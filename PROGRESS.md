@@ -27,3 +27,10 @@ Status: zakończono etap 0.3 (gotowe do testów dodawania klientów).
 - Dodano listę ostatnich umów w widoku CRM.
 
 Status: zakończono etap 0.4 (gotowe do testów dodawania umów).
+
+## Wersja 0.5.0
+- Dodano w pełni funkcjonalne dodawanie nieruchomości w CRM (formularz + zapis do bazy danych).
+- Dodano automatyczne wyliczanie ceny za m² na podstawie ceny i metrażu.
+- Dodano listę ostatnich nieruchomości w widoku CRM.
+
+Status: zakończono etap 0.5 (gotowe do testów dodawania nieruchomości).
