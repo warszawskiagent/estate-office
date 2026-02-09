@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.6.0
+ * Version: 0.6.5
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,13 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.6.0';
+    const VERSION = '0.6.5';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
         register_activation_hook( __FILE__, array( $this, 'activate' ) );
         add_action( 'init', array( $this, 'register_shortcodes' ) );
         add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
     }
 
     public function activate() {
@@ -212,6 +213,97 @@ final class EstateOffice_CRM_Plugin {
 
     public function register_shortcodes() {
         add_shortcode( 'estateoffice_crm', array( $this, 'render_crm_shortcode' ) );
+    }
+
+    public function enqueue_frontend_assets() {
+        $handle = 'estateoffice-crm-styles';
+        wp_register_style( $handle, false, array(), self::VERSION );
+        wp_enqueue_style( $handle );
+        wp_add_inline_style( $handle, $this->get_crm_styles() );
+    }
+
+    private function get_crm_styles() {
+        return '
+        .estateoffice-crm {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            display: grid;
+            gap: 24px;
+        }
+        .estateoffice-crm__nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .estateoffice-crm__nav a {
+            text-decoration: none;
+            background: #1e293b;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .estateoffice-crm__content {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .estateoffice-crm__section {
+            margin-bottom: 24px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .estateoffice-crm__section h3 {
+            margin-top: 0;
+        }
+        .estateoffice-crm__section form {
+            display: grid;
+            gap: 12px;
+        }
+        .estateoffice-crm__section label {
+            font-weight: 600;
+            display: block;
+        }
+        .estateoffice-crm__section input,
+        .estateoffice-crm__section select,
+        .estateoffice-crm__section textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5f5;
+            font-size: 14px;
+        }
+        .estateoffice-crm__section fieldset {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+        }
+        .estateoffice-crm__section button {
+            justify-self: start;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .estateoffice-crm__section table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .estateoffice-crm__section th,
+        .estateoffice-crm__section td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        ';
     }
 
     public function register_admin_menu() {

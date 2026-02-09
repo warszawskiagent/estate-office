@@ -40,3 +40,8 @@ Status: zakończono etap 0.5 (gotowe do testów dodawania nieruchomości).
 - Dodano listę ostatnich poszukiwań w widoku CRM.
 
 Status: zakończono etap 0.6 (gotowe do testów dodawania poszukiwań).
+
+## Wersja 0.6.5
+- Dodano podstawowy CSS dla panelu CRM i formularzy.
+
+Status: zakończono etap 0.65 (gotowe do testów wyglądu CRM).
