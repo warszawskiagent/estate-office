@@ -1,39 +1,22 @@
+
 Piszemy wspólnie wtyczkę pod Wordpress, CRM dla biura nieruchomości. Wciel się w speca od wtyczek pod Wordpress, jesteś mistrzem PHP oraz JavaScript. 
 EstateOffice to zaawansowana wtyczka dla WordPress, zaprojektowana specjalnie dla biur nieruchomości. Umożliwia kompleksowe zarządzanie nieruchomościami, umowami, klientami i agentami, a także integrację z mapami Google i eksport ofert na stronę WWW oraz portale. 
 
 Piszemy wersję od 0.0.1 do 1.0 
 Bądź wyjątkowo skrupulatny, trzymaj się ściśle opisu wtyczki. Ważne jest bezpieczeństwo, przejrzystość i estetyka. 
-
-Formularze niech będą dynamiczne, niech się zmieniają w zależności co się zaznaczy i wybierze jak w opisie wtyczki. 
-
-Będę testować co wersja 
-
-________________________________________
-Menu Backend administratora
-W menu administratora wtyczka będzie miała jeden główny katalog
-1.	Estate Office CRM
-o	Licencja (Funkcjonalność zostanie dodana na końcu procesu tworzenia wtyczki)
-o	Agenci
-•	Zarządzanie agentami: Dodawanie i edycja profili agentów.
-•	Nowy typ użytkownika: Agent, który ma dostęp tylko do funkcjonalności wtyczki (bez możliwości usuwania klientów, umów i nieruchomości).
-•	Profil agenta:
-	Zdjęcie
-	Dane teleadresowe
-	Opis/Biografia
-
-o	Ustawienia
-•	API Map Google: Pole do wprowadzenia klucza API dla integracji z mapami Google.
-•	Znak wodny: Opcja wgrania znaku wodnego, który będzie automatycznie nanoszony na zdjęcia nieruchomości.
-•	Logo biura: Opcja wgrania logo biura
-•	Pola nieruchomości: Dodaj lub usuń pola oferty nieruchomości
-•	Pola Umów: Dodaj lub usuń pola oferty nieruchomości
-•	Pola Klientów: Dodaj lub usuń pola profilu klienta
-
-o	About
-•	Opis wtyczki: Krótki opis funkcjonalności wtyczki.
-•	Roadmapa wersji
-
-Menu strony www FRONTEND po zalogowaniu i w menu administratora TYLKO dla administratora
+Formularze niech będą dynamiczne, niech się zmieniają w zależności co się zaznaczy i wybierze jak w opisie wtyczki. Wtyczka musi mieć własne bazy danych, oraz własne formularze. 
+Będę testować co dziesiętna wersja
+0.1	– podstawowa struktura wtyczki, tworzenie przy instalacji pełnej bazy danych, tworzenie przy instalacji użytkownika Agent, tworzenie przy instalacji szablonów strony CRM
+0.2	– część menu administratora
+0.3	– w pełni funkcjonalne dodawanie klientów
+0.4	– w pełni funkcjonalne dodawanie umów
+0.5	– w pełni funkcjonalne dodawanie nieruchomości
+0.6	do 0.9 – pozostałe funkcjonalności do poprawnego działania wtyczki
+0.95 do 1.0 – beta testy i poprawki
+SZCZEGÓŁOWY OPIS WTYCZKI:
+Wtyczka przy uruchomieniu tworzy bazy danych, nowy rodzaj użytkownika Agent Nieruchomości, wszystkie potrzebne strony, pozycja w menu we frontend CRM z podmenu, oraz pozycja w menu administratora EstateOffice CRM. 
+FRONT END:
+Menu oczywiście powinno być widoczne tylko dla zalogowanych użytkowników. 
 Widoczne z głównej strony WWW.
 1.	CRM
 o	Pulpit (liczba nieruchomości, aktywnych umów, poszukiwań, najlepsi agenci, inne przydatne informacje)
@@ -370,34 +353,28 @@ o	Powrót do listy
 o	Edytuj (nie można edytować typu transakcji ani rodzaju nieruchomości)
 o	Usuń
 	Usuwać mogą tylko administratorzy
-________________________________________
-Dodatkowe Zakładki w Menu Administracyjnym
-Oferty
-•	Automatyczne tworzenie stron ofert:
-o	Nieruchomości ze znacznikiem "Eksport na WWW" są publikowane jako strony
-•	Kategoryzacja ofert:
-o	Typ transakcji
-o	Rodzaj nieruchomości
-o	Miasto
-o	Dzielnica
-•	Unikanie duplikacji kategorii:
-o	Raz utworzona kategoria lub podkategoria nie będzie się powtarzać
-•	Szablon strony oferty:
-o	Do ustalenia w przyszłości
-Agenci
-•	Nowy typ użytkownika: Agent
-o	Dostęp tylko do funkcjonalności wtyczki
-o	Brak możliwości usuwania klientów, umów i nieruchomości
-•	Profil Agenta:
-o	Zdjęcie
-o	Dane teleadresowe
-o	Opis/Biografia
-•	Strona agenta:
-o	Każdy agent ma własną publiczną stronę na witrynie
-________________________________________
-Przyszłe Funkcjonalności
-•	Kalkulator Notarialny:
-o	Osobna strona w witrynie
-o	Będzie dołączany do eksportowanych ofert na WWW
-•	Kalkulator Kredytowy:
-o	Analogicznie do kalkulatora notarialnego
+BACK END
+W menu administratora wtyczka będzie miała jeden główny katalog
+1.	Estate Office CRM
+o	Licencja (Funkcjonalność zostanie dodana na końcu procesu tworzenia wtyczki)
+o	Agenci
+•	Zarządzanie agentami: Dodawanie i edycja profili agentów.
+•	Nowy typ użytkownika: Agent, który ma dostęp tylko do funkcjonalności wtyczki (bez możliwości usuwania klientów, umów i nieruchomości).
+•	Profil agenta:
+	Zdjęcie
+	Dane teleadresowe
+	Opis/Biografia
+
+o	Ustawienia
+•	API Map Google: Pole do wprowadzenia klucza API dla integracji z mapami Google.
+•	Znak wodny: Opcja wgrania znaku wodnego, który będzie automatycznie nanoszony na zdjęcia nieruchomości.
+•	Logo biura: Opcja wgrania logo biura
+•	Pola nieruchomości: Dodaj lub usuń pola oferty nieruchomości
+•	Pola Umów: Dodaj lub usuń pola oferty nieruchomości
+•	Pola Klientów: Dodaj lub usuń pola profilu klienta
+
+o	About
+•	Opis wtyczki: Krótki opis funkcjonalności wtyczki.
+•	Roadmapa wersji
+Przypominam: bądź dokładny i skrupulatny, dbaj o bezpieczeństwo danych oraz porządek w plikach. Trzymaj się ściśle założeń wtyczki. Informuj mnie o zakończeniu danej wersji oraz możliwości  testowania. Po KAZDEJ zmianie twórz i aktualizuj plik progresu.
+
