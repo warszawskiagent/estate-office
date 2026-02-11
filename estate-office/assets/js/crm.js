@@ -7,7 +7,7 @@
       }
 
       event.preventDefault();
-      window.alert('Formularz dodawania umowy będzie dostępny od wersji 0.4.');
+      window.location.href = `${window.location.pathname}?eo_step=1`;
     });
   };
 
@@ -49,6 +49,46 @@
     switchCorrespondence();
   };
 
+  const bindAgreementStep1Dynamics = () => {
+    const openEnded = document.querySelector('#eo-agreement-open-ended');
+    const endDate = document.querySelector('#eo-agreement-end-date');
+
+    if (!openEnded || !endDate) {
+      return;
+    }
+
+    const sync = () => {
+      endDate.disabled = openEnded.checked;
+      if (openEnded.checked) {
+        endDate.value = '';
+      }
+    };
+
+    openEnded.addEventListener('change', sync);
+    sync();
+  };
+
+  const bindAgreementClientTypeDynamics = () => {
+    const select = document.querySelector('#eo-agreement-client-type');
+    if (!select) {
+      return;
+    }
+
+    const person = document.querySelector('.eo-agreement-person-fields');
+    const company = document.querySelector('.eo-agreement-company-fields');
+
+    const sync = () => {
+      const isCompany = select.value === 'company';
+      if (person) person.style.display = isCompany ? 'none' : '';
+      if (company) company.style.display = isCompany ? '' : 'none';
+    };
+
+    select.addEventListener('change', sync);
+    sync();
+  };
+
   bindAddAgreementInfo();
   bindClientFormDynamics();
+  bindAgreementStep1Dynamics();
+  bindAgreementClientTypeDynamics();
 })();

@@ -1,5 +1,22 @@
 # Progres prac — EstateOffice CRM
 
+## 0.4.1 (zakończone)
+- Dodano moduł umów (`EstateOffice_Agreements`) z bezpiecznymi handlerami `admin-post`.
+- Wdrożono **Etap 1: Nowa Umowa**:
+  - numer umowy z kontrolą duplikatu,
+  - typ transakcji,
+  - data zawarcia / data zakończenia,
+  - umowa bezterminowa (dynamicznie blokuje datę zakończenia),
+  - prowizja (kwota + jednostka),
+  - automatyczny zapis pierwszego etapu historii: „Umowa Pośrednictwa”.
+- Wdrożono **Etap 2: Dodawanie Klienta**:
+  - przypisanie istniejącego klienta do umowy,
+  - dodanie nowego klienta bezpośrednio z poziomu umowy i przypisanie,
+  - obsługa „Czy chcesz dodać kolejnego klienta? TAK/NIE”.
+- Dodano listę klientów przypisanych do danej umowy w kroku 2.
+- Dodano komunikat przejścia do kolejnych etapów 3a/3b zależnie od typu transakcji (implementacja 3a i 3b planowana na kolejne wersje).
+- Rozszerzono JS/CSS pod dynamiczne elementy formularza umowy.
+
 ## 0.3.0 (zakończone)
 - Dodano moduł klientów (CRM frontend) z pełnym formularzem dodawania do własnej tabeli `eo_clients`.
 - Wdrożono dynamiczny formularz klienta:
@@ -45,5 +62,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.4.0
-- W pełni funkcjonalne dodawanie umów.
+## Następny cel: 0.4.2
+- Rozszerzenie umów o pełne profile umów i przygotowanie pod etap 3a/3b.
