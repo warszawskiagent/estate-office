@@ -1,5 +1,19 @@
 # Progres prac — EstateOffice CRM
 
+## 0.2.0 (zakończone)
+- Rozszerzono panel administratora EstateOffice CRM.
+- Dodano bezpieczne akcje `admin-post` z kontrolą uprawnień i nonce:
+  - zapis ustawień,
+  - tworzenie agenta.
+- Dodano warstwę ustawień (`EstateOffice_Settings`) zapisującą dane do własnej tabeli `eo_settings`.
+- Dodano funkcjonalny formularz ustawień:
+  - Google Maps API key,
+  - URL znaku wodnego,
+  - URL logo biura,
+  - pola dynamiczne (JSON) dla nieruchomości, umów i klientów.
+- Dodano funkcjonalny formularz tworzenia agenta (imię, nazwisko, e-mail, telefon, bio) + lista agentów.
+- Poprawiono frontendową nawigację CRM — zakładki prowadzą do właściwych stron utworzonych przy aktywacji.
+
 ## 0.1.0 (zakończone)
 - Utworzono strukturę wtyczki (`estate-office/`) z bootstrapem i klasami inicjalizującymi.
 - Dodano instalator aktywacyjny tworzący komplet bazowych tabel CRM:
@@ -17,5 +31,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.2.0
-- Rozbudowa części menu administratora zgodnie z roadmapą.
+## Następny cel: 0.3.0
+- W pełni funkcjonalne dodawanie klientów.

@@ -13,9 +13,11 @@ $tabs = [
 ?>
 <div class="estateoffice-crm">
     <nav class="estateoffice-crm__menu">
-        <?php foreach ($tabs as $tabKey => $tabLabel) : ?>
+        <?php foreach ($tabs as $tabKey => $tabLabel) :
+            $targetUrl = isset($links[$tabKey]) ? $links[$tabKey] : '#';
+            ?>
             <a class="estateoffice-crm__menu-link <?php echo $tabKey === $view ? 'is-active' : ''; ?>"
-               href="<?php echo esc_url(add_query_arg(['eo_view' => $tabKey])); ?>">
+               href="<?php echo esc_url($targetUrl); ?>">
                 <?php echo esc_html($tabLabel); ?>
             </a>
         <?php endforeach; ?>

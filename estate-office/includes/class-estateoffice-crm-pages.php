@@ -31,6 +31,27 @@ class EstateOffice_CRM_Pages
         );
     }
 
+    public static function get_crm_menu_links(): array
+    {
+        $pages = get_option('estateoffice_crm_pages', []);
+
+        $mapping = [
+            'dashboard' => 'estateoffice-crm-dashboard',
+            'properties' => 'estateoffice-crm-nieruchomosci',
+            'searches' => 'estateoffice-crm-poszukiwania',
+            'agreements' => 'estateoffice-crm-umowy',
+            'clients' => 'estateoffice-crm-klienci',
+        ];
+
+        $links = [];
+        foreach ($mapping as $view => $slug) {
+            $pageId = isset($pages[$slug]) ? (int) $pages[$slug] : 0;
+            $links[$view] = $pageId > 0 ? get_permalink($pageId) : home_url('/' . $slug . '/');
+        }
+
+        return $links;
+    }
+
     public static function render_crm_shortcode(array $atts): string
     {
         if (! is_user_logged_in()) {
@@ -46,6 +67,7 @@ class EstateOffice_CRM_Pages
 
         $view = sanitize_key($atts['view']);
         $template = ESTATEOFFICE_PATH . 'templates/crm/' . $view . '.php';
+        $links = self::get_crm_menu_links();
 
         if (! file_exists($template)) {
             return '<p>Nie znaleziono widoku CRM.</p>';
