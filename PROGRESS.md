@@ -60,3 +60,10 @@ Status: zakończono etap 0.7 (gotowe do testów formularza nieruchomości).
 - Dodano wyszukiwanie po kolumnach tabel dla zakładek: Nieruchomości, Poszukiwania, Umowy, Klienci.
 
 Status: zakończono etap 0.8 (gotowe do testów pulpitu i wyszukiwania CRM).
+
+## Wersja 0.9.0
+- Dodano profile i widoki szczegółowe dla klienta, umowy, nieruchomości oraz poszukiwania (otwierane z klikalnych rekordów list CRM).
+- Dodano aktualizację etapu umowy oraz historię etapów zgodnie z procesem CRM.
+- Rozszerzono nawigację rekordów na listach o linki do profili.
+
+Status: zakończono etap 0.9 (gotowe do testów profili i etapów umów).

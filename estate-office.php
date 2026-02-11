@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EstateOffice CRM
  * Description: CRM dla biur nieruchomości z własnymi bazami danych i formularzami.
- * Version: 0.8.0
+ * Version: 0.9.0
  * Author: EstateOffice
  * Text Domain: estateoffice
  * Domain Path: /languages
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class EstateOffice_CRM_Plugin {
-    const VERSION = '0.8.0';
+    const VERSION = '0.9.0';
     const OPTION_PAGES = 'estateoffice_crm_pages';
 
     public function __construct() {
@@ -418,6 +418,7 @@ final class EstateOffice_CRM_Plugin {
 
         $this->handle_client_submission();
         $this->handle_contract_submission();
+        $this->handle_contract_stage_submission();
         $this->handle_property_submission();
         $this->handle_search_submission();
 
@@ -461,7 +462,9 @@ final class EstateOffice_CRM_Plugin {
                 </div>
                 <h2><?php echo esc_html( $this->get_view_label( $atts['view'] ) ); ?></h2>
                 <?php
-                if ( 'clients' === $atts['view'] ) {
+                if ( $this->render_profile_view_if_requested() ) {
+                    // Profile rendered.
+                } elseif ( 'clients' === $atts['view'] ) {
                     $this->render_clients_view();
                 } elseif ( 'properties' === $atts['view'] ) {
                     $this->render_properties_view();
@@ -564,6 +567,54 @@ final class EstateOffice_CRM_Plugin {
             <?php endif; ?>
         </div>
         <?php
+    }
+
+    private function get_profile_request() {
+        $type = isset( $_GET['eo_profile'] ) ? sanitize_key( wp_unslash( $_GET['eo_profile'] ) ) : '';
+        $id = isset( $_GET['eo_id'] ) ? absint( $_GET['eo_id'] ) : 0;
+
+        if ( ! in_array( $type, array( 'client', 'contract', 'property', 'search' ), true ) || $id <= 0 ) {
+            return null;
+        }
+
+        return array(
+            'type' => $type,
+            'id'   => $id,
+        );
+    }
+
+    private function render_profile_view_if_requested() {
+        $profile = $this->get_profile_request();
+        if ( ! $profile ) {
+            return false;
+        }
+
+        switch ( $profile['type'] ) {
+            case 'client':
+                $this->render_client_profile( $profile['id'] );
+                break;
+            case 'contract':
+                $this->render_contract_profile( $profile['id'] );
+                break;
+            case 'property':
+                $this->render_property_profile( $profile['id'] );
+                break;
+            case 'search':
+                $this->render_search_profile( $profile['id'] );
+                break;
+        }
+
+        return true;
+    }
+
+    private function get_profile_url( $type, $id ) {
+        return add_query_arg(
+            array(
+                'eo_profile' => sanitize_key( $type ),
+                'eo_id'      => absint( $id ),
+            ),
+            remove_query_arg( array( 'eo_q' ) )
+        );
     }
 
     private function handle_client_submission() {
@@ -687,6 +738,57 @@ final class EstateOffice_CRM_Plugin {
         );
 
         $wpdb->insert( "{$wpdb->prefix}eo_contracts", $data );
+    }
+
+    private function handle_contract_stage_submission() {
+        if ( 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+            return;
+        }
+
+        if ( empty( $_POST['estateoffice_action'] ) || 'update_contract_stage' !== $_POST['estateoffice_action'] ) {
+            return;
+        }
+
+        $nonce = isset( $_POST['estateoffice_stage_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['estateoffice_stage_nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'estateoffice_update_contract_stage' ) ) {
+            return;
+        }
+
+        $contract_id = isset( $_POST['contract_id'] ) ? absint( $_POST['contract_id'] ) : 0;
+        $stage = isset( $_POST['stage'] ) ? sanitize_text_field( wp_unslash( $_POST['stage'] ) ) : '';
+        $stage_date = isset( $_POST['stage_date'] ) ? sanitize_text_field( wp_unslash( $_POST['stage_date'] ) ) : '';
+
+        if ( $contract_id <= 0 || '' === $stage || '' === $stage_date ) {
+            return;
+        }
+
+        $allowed_stages = array(
+            'Umowa Pośrednictwa',
+            'Publikacja w MLS',
+            'Przygotowanie oferty',
+            'Publikacja oferty',
+            'Marketing i prezentacje',
+            'Oferta kupna',
+            'Negocjacje',
+            'Umowa przedwstępna',
+            'Umowa przyrzeczona',
+            'Przekazanie lokalu',
+            'Umowa zakończona',
+        );
+
+        if ( ! in_array( $stage, $allowed_stages, true ) ) {
+            return;
+        }
+
+        global $wpdb;
+        $wpdb->insert(
+            "{$wpdb->prefix}eo_contract_stages",
+            array(
+                'contract_id' => $contract_id,
+                'stage'       => $stage,
+                'stage_date'  => $stage_date,
+            )
+        );
     }
 
     private function handle_property_submission() {
@@ -990,7 +1092,7 @@ final class EstateOffice_CRM_Plugin {
                     <tbody>
                         <?php foreach ( $clients as $client ) : ?>
                             <tr>
-                                <td><?php echo esc_html( $this->get_client_display_name( $client ) ); ?></td>
+                                <td><a href="<?php echo esc_url( $this->get_profile_url( 'client', $client->id ) ); ?>"><?php echo esc_html( $this->get_client_display_name( $client ) ); ?></a></td>
                                 <td><?php echo esc_html( $client->phone ); ?></td>
                                 <td><?php echo esc_html( $client->email ); ?></td>
                                 <td><?php echo esc_html( $client->address_city ); ?></td>
@@ -1135,7 +1237,7 @@ final class EstateOffice_CRM_Plugin {
                     <tbody>
                         <?php foreach ( $contracts as $contract ) : ?>
                             <tr>
-                                <td><?php echo esc_html( $contract->number ); ?></td>
+                                <td><a href="<?php echo esc_url( $this->get_profile_url( 'contract', $contract->id ) ); ?>"><?php echo esc_html( $contract->number ); ?></a></td>
                                 <td><?php echo esc_html( strtoupper( $contract->transaction_type ) ); ?></td>
                                 <td><?php echo esc_html( $contract->start_date ); ?></td>
                                 <td><?php echo esc_html( $contract->indefinite ? 'Bezterminowa' : $contract->end_date ); ?></td>
@@ -1393,7 +1495,7 @@ final class EstateOffice_CRM_Plugin {
                     <tbody>
                         <?php foreach ( $properties as $property ) : ?>
                             <tr>
-                                <td><a href="#oferta-<?php echo esc_attr( $property->id ); ?>"><?php echo esc_html( $property->id ); ?></a></td>
+                                <td><a href="<?php echo esc_url( $this->get_profile_url( 'property', $property->id ) ); ?>"><?php echo esc_html( $property->id ); ?></a></td>
                                 <td><?php echo esc_html( trim( sprintf( '%s %s, %s', $property->address_street, $property->address_number, $property->address_city ) ) ); ?></td>
                                 <td><?php echo esc_html( $property->price ); ?></td>
                                 <td><?php echo esc_html( $property->price_per_m2 ); ?></td>
@@ -1569,7 +1671,7 @@ final class EstateOffice_CRM_Plugin {
                     <tbody>
                         <?php foreach ( $searches as $search ) : ?>
                             <tr>
-                                <td><?php echo esc_html( strtoupper( $search->property_type ) ); ?></td>
+                                <td><a href="<?php echo esc_url( $this->get_profile_url( 'search', $search->id ) ); ?>"><?php echo esc_html( strtoupper( $search->property_type ) ); ?></a></td>
                                 <td><?php echo esc_html( trim( sprintf( '%s - %s', $search->budget_min, $search->budget_max ) ) ); ?></td>
                                 <td><?php echo esc_html( $search->location ); ?></td>
                                 <td><?php echo esc_html( strtoupper( $search->transaction_type ) ); ?></td>
@@ -1578,6 +1680,119 @@ final class EstateOffice_CRM_Plugin {
                     </tbody>
                 </table>
             <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    private function render_client_profile( $client_id ) {
+        global $wpdb;
+        $client = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}eo_clients WHERE id = %d", $client_id ) );
+        if ( ! $client ) {
+            echo '<p>Nie znaleziono klienta.</p>';
+            return;
+        }
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Profil klienta</h3>
+            <p><strong>Nazwa:</strong> <?php echo esc_html( $this->get_client_display_name( $client ) ); ?></p>
+            <p><strong>Telefon:</strong> <?php echo esc_html( $client->phone ); ?></p>
+            <p><strong>E-mail:</strong> <?php echo esc_html( $client->email ); ?></p>
+            <p><strong>Adres:</strong> <?php echo esc_html( trim( sprintf( '%s %s, %s', $client->address_street, $client->address_number, $client->address_city ) ) ); ?></p>
+        </div>
+        <?php
+    }
+
+    private function render_contract_profile( $contract_id ) {
+        global $wpdb;
+        $contract = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}eo_contracts WHERE id = %d", $contract_id ) );
+        if ( ! $contract ) {
+            echo '<p>Nie znaleziono umowy.</p>';
+            return;
+        }
+        $stages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}eo_contract_stages WHERE contract_id = %d ORDER BY stage_date DESC", $contract_id ) );
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Profil umowy</h3>
+            <p><strong>Numer:</strong> <?php echo esc_html( $contract->number ); ?></p>
+            <p><strong>Typ transakcji:</strong> <?php echo esc_html( strtoupper( $contract->transaction_type ) ); ?></p>
+            <p><strong>Data zawarcia:</strong> <?php echo esc_html( $contract->start_date ); ?></p>
+            <p><strong>Data zakończenia:</strong> <?php echo esc_html( $contract->indefinite ? 'Bezterminowa' : $contract->end_date ); ?></p>
+        </div>
+        <div class="estateoffice-crm__section">
+            <h3>Aktualizacja etapu</h3>
+            <form method="post">
+                <?php wp_nonce_field( 'estateoffice_update_contract_stage', 'estateoffice_stage_nonce' ); ?>
+                <input type="hidden" name="estateoffice_action" value="update_contract_stage">
+                <input type="hidden" name="contract_id" value="<?php echo esc_attr( $contract_id ); ?>">
+                <label for="stage">Etap</label>
+                <select id="stage" name="stage" required>
+                    <option value="Umowa Pośrednictwa">Umowa Pośrednictwa</option>
+                    <option value="Publikacja w MLS">Publikacja w MLS</option>
+                    <option value="Przygotowanie oferty">Przygotowanie oferty</option>
+                    <option value="Publikacja oferty">Publikacja oferty</option>
+                    <option value="Marketing i prezentacje">Marketing i prezentacje</option>
+                    <option value="Oferta kupna">Oferta kupna</option>
+                    <option value="Negocjacje">Negocjacje</option>
+                    <option value="Umowa przedwstępna">Umowa przedwstępna</option>
+                    <option value="Umowa przyrzeczona">Umowa przyrzeczona</option>
+                    <option value="Przekazanie lokalu">Przekazanie lokalu</option>
+                    <option value="Umowa zakończona">Umowa zakończona</option>
+                </select>
+                <label for="stage_date">Data</label>
+                <input id="stage_date" name="stage_date" type="date" required>
+                <button type="submit">Aktualizuj etap</button>
+            </form>
+            <h4>Historia etapów</h4>
+            <?php if ( empty( $stages ) ) : ?>
+                <p>Brak historii etapów.</p>
+            <?php else : ?>
+                <table>
+                    <thead><tr><th>Data</th><th>Etap</th></tr></thead>
+                    <tbody>
+                        <?php foreach ( $stages as $stage ) : ?>
+                            <tr><td><?php echo esc_html( $stage->stage_date ); ?></td><td><?php echo esc_html( $stage->stage ); ?></td></tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    private function render_property_profile( $property_id ) {
+        global $wpdb;
+        $property = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}eo_properties WHERE id = %d", $property_id ) );
+        if ( ! $property ) {
+            echo '<p>Nie znaleziono nieruchomości.</p>';
+            return;
+        }
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Profil nieruchomości</h3>
+            <p><strong>Numer oferty:</strong> <?php echo esc_html( $property->id ); ?></p>
+            <p><strong>Adres:</strong> <?php echo esc_html( trim( sprintf( '%s %s, %s', $property->address_street, $property->address_number, $property->address_city ) ) ); ?></p>
+            <p><strong>Cena:</strong> <?php echo esc_html( $property->price ); ?></p>
+            <p><strong>Metraż:</strong> <?php echo esc_html( $property->area ); ?></p>
+            <p><strong>Pokoje:</strong> <?php echo esc_html( $property->rooms ); ?></p>
+            <p><strong>Opis:</strong> <?php echo wp_kses_post( wpautop( (string) $property->description ) ); ?></p>
+        </div>
+        <?php
+    }
+
+    private function render_search_profile( $search_id ) {
+        global $wpdb;
+        $search = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}eo_searches WHERE id = %d", $search_id ) );
+        if ( ! $search ) {
+            echo '<p>Nie znaleziono poszukiwania.</p>';
+            return;
+        }
+        ?>
+        <div class="estateoffice-crm__section">
+            <h3>Profil poszukiwania</h3>
+            <p><strong>Typ transakcji:</strong> <?php echo esc_html( strtoupper( $search->transaction_type ) ); ?></p>
+            <p><strong>Rodzaj nieruchomości:</strong> <?php echo esc_html( strtoupper( $search->property_type ) ); ?></p>
+            <p><strong>Budżet:</strong> <?php echo esc_html( $search->budget_min . ' - ' . $search->budget_max ); ?></p>
+            <p><strong>Lokalizacja:</strong> <?php echo esc_html( $search->location ); ?></p>
         </div>
         <?php
     }
