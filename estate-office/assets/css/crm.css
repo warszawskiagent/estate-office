@@ -32,3 +32,68 @@
     border-top: 1px solid #e5e7eb;
     padding-top: 1rem;
 }
+
+.estateoffice-notice {
+    margin: .75rem 0;
+    padding: .625rem .75rem;
+    border-radius: 6px;
+}
+
+.estateoffice-notice--success {
+    background: #dcfce7;
+    color: #14532d;
+}
+
+.estateoffice-notice--error {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.estateoffice-grid {
+    display: grid;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+.estateoffice-grid--2 {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.estateoffice-grid--3 {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.estateoffice-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.estateoffice-grid input,
+.estateoffice-grid select,
+.estateoffice-grid textarea,
+.estateoffice-search-form input {
+    width: 100%;
+}
+
+.estateoffice-table-wrap {
+    overflow-x: auto;
+}
+
+.estateoffice-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.estateoffice-table th,
+.estateoffice-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: .5rem;
+    text-align: left;
+}
+
+.estateoffice-search-form {
+    display: flex;
+    gap: .5rem;
+    margin: .75rem 0;
+}
