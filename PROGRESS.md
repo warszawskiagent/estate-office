@@ -45,3 +45,11 @@ Status: zakończono etap 0.6 (gotowe do testów dodawania poszukiwań).
 - Dodano podstawowy CSS dla panelu CRM i formularzy.
 
 Status: zakończono etap 0.65 (gotowe do testów wyglądu CRM).
+
+## Wersja 0.7.0
+- Rozbudowano formularz dodawania nieruchomości zgodnie z projektem (sekcje adresowe, prawne, dane nieruchomości, media, znaczniki i opis).
+- Dodano dynamiczne pola formularza zależne od rodzaju nieruchomości (DOM/DZIAŁKA/MIESZKANIE/LOKAL), obsługę pola KW oraz kształtu działki.
+- Rozszerzono tabelę nieruchomości o dodatkowe pola i zapis danych szczegółowych.
+- Zaktualizowano listę nieruchomości o kolumny zgodne z założeniami CRM (numer oferty, adres, cena, cena za m², metraż, pokoje, opiekun).
+
+Status: zakończono etap 0.7 (gotowe do testów formularza nieruchomości).
