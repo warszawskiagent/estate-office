@@ -1,5 +1,19 @@
 # Progres prac — EstateOffice CRM
 
+## 0.6.1 (zakończone)
+- Dodano moduł `EstateOffice_Searches` z bezpiecznym endpointem `admin-post` do tworzenia poszukiwań.
+- Wdrożono walidację i sanityzację danych poszukiwań:
+  - numer poszukiwania (unikalny),
+  - typ transakcji,
+  - rodzaj nieruchomości,
+  - zakresy budżetu, metrażu i pokoi,
+  - podstawowe kryteria (media, udogodnienia, wyposażenie, powierzchnie dodatkowe).
+- Dodano zapis do własnej tabeli `eo_searches` z `criteria_data` w JSON.
+- Rozbudowano widok CRM Poszukiwania:
+  - formularz dodawania,
+  - lista poszukiwań,
+  - wyszukiwarka po kluczowych polach.
+
 ## 0.5.1 (zakończone)
 - Dodano moduł `EstateOffice_Properties` z bezpiecznym endpointem `admin-post` do tworzenia nieruchomości.
 - Wdrożono walidację i sanityzację danych nieruchomości:
@@ -97,5 +111,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.6.0
-- Rozszerzenie funkcjonalności pozostałych modułów (poszukiwania i integracje).
+## Następny cel: 0.7.0
+- Rozszerzenie pozostałych integracji i workflow end-to-end (umowa → oferta/poszukiwanie → profile).

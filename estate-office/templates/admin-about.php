@@ -5,7 +5,7 @@ if (! defined('ABSPATH')) {
 ?>
 <div class="wrap">
     <h1>EstateOffice CRM</h1>
-    <p>Wersja 0.5.1: moduł nieruchomości z dynamicznym formularzem dodawania, zapisem do własnej bazy oraz listą i wyszukiwarką.</p>
+    <p>Wersja 0.6.1: moduł poszukiwań z dynamicznym formularzem, zapisem do własnej bazy i listą z wyszukiwarką.</p>
     <h2>Roadmapa</h2>
     <ol>
         <li><strong>0.1</strong> - Struktura i instalacja ✅</li>
@@ -14,7 +14,8 @@ if (! defined('ABSPATH')) {
         <li><strong>0.4.1</strong> - Umowy (Etap 1 + Etap 2) ✅</li>
         <li><strong>0.4.2</strong> - Umowy (lista + profil + etapy) ✅</li>
         <li><strong>0.5.1</strong> - Nieruchomości (dodawanie + lista) ✅</li>
-        <li><strong>0.6-0.9</strong> - Pozostałe moduły i integracje</li>
+        <li><strong>0.6.1</strong> - Poszukiwania (dodawanie + lista) ✅</li>
+        <li><strong>0.7-0.9</strong> - Pozostałe moduły i integracje</li>
         <li><strong>0.95-1.0</strong> - Beta i poprawki</li>
     </ol>
 </div>
