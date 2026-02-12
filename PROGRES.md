@@ -1,5 +1,27 @@
 # Progres prac — EstateOffice CRM
 
+## 0.5.1 (zakończone)
+- Dodano moduł `EstateOffice_Properties` z bezpiecznym endpointem `admin-post` do tworzenia nieruchomości.
+- Wdrożono walidację i sanityzację danych nieruchomości:
+  - numer oferty (unikalny),
+  - typ transakcji,
+  - rodzaj nieruchomości,
+  - dane adresowe,
+  - dane cenowe i metraż.
+- Dodano zapis nieruchomości do własnej tabeli `eo_properties` wraz z sekcjami JSON (`address_data`, `pricing_data`, `details_data`, `tags_data`).
+- Wdrożono dynamiczny formularz CRM Nieruchomości:
+  - przełączanie pól zależnych od rodzaju nieruchomości,
+  - obsługa pola „Brak KW”,
+  - automatyczne wyliczanie ceny za m².
+- Dodano listę nieruchomości z wyszukiwarką i wymaganymi kolumnami:
+  - Numer oferty,
+  - Adres,
+  - Cena,
+  - Cena za m²,
+  - Metraż,
+  - Liczba pokoi,
+  - Opiekun.
+
 ## 0.4.2 (zakończone)
 - Rozszerzono moduł umów o widok listy umów z wyszukiwarką.
 - Dodano profil umowy:
@@ -75,5 +97,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.5.0
-- W pełni funkcjonalne dodawanie nieruchomości.
+## Następny cel: 0.6.0
+- Rozszerzenie funkcjonalności pozostałych modułów (poszukiwania i integracje).

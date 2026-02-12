@@ -105,3 +105,16 @@
     border: 1px solid #e2e8f0;
     border-radius: 6px;
 }
+
+#eo-property-form fieldset {
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    padding: .5rem .75rem;
+}
+
+#eo-property-form fieldset label {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-right: .75rem;
+}
