@@ -1,5 +1,18 @@
 # Progres prac — EstateOffice CRM
 
+## 0.4.2 (zakończone)
+- Rozszerzono moduł umów o widok listy umów z wyszukiwarką.
+- Dodano profil umowy:
+  - dane podstawowe umowy,
+  - lista klientów powiązanych,
+  - historia etapów (Data, Etap).
+- Dodano bezpieczną aktualizację etapu umowy (`admin-post`):
+  - kontrola uprawnień,
+  - nonce,
+  - walidacja dozwolonych etapów,
+  - zapis aktualnego etapu i dopisanie wpisu do historii etapów.
+- Uporządkowano przepływ widoków umów (`list` / `wizard` / `profile`) i nawigację między nimi.
+
 ## 0.4.1 (zakończone)
 - Dodano moduł umów (`EstateOffice_Agreements`) z bezpiecznymi handlerami `admin-post`.
 - Wdrożono **Etap 1: Nowa Umowa**:
@@ -62,5 +75,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.4.2
-- Rozszerzenie umów o pełne profile umów i przygotowanie pod etap 3a/3b.
+## Następny cel: 0.5.0
+- W pełni funkcjonalne dodawanie nieruchomości.
