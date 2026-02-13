@@ -1,5 +1,15 @@
 # Progres prac — EstateOffice CRM
 
+## 0.7.1 (zakończone)
+- Wzmocniono integrację workflow między umowami a ofertami/poszukiwaniami.
+- Dodano walidację powiązania umowy przy dodawaniu nieruchomości i poszukiwań:
+  - sprawdzenie istnienia umowy,
+  - wymuszenie zgodności typu transakcji z umową.
+- Rozszerzono profil umowy o sekcje:
+  - nieruchomości powiązane z umową,
+  - poszukiwania powiązane z umową.
+- Dodano metody backendowe pobierające powiązane rekordy z tabel `eo_properties` i `eo_searches`.
+
 ## 0.6.1 (zakończone)
 - Dodano moduł `EstateOffice_Searches` z bezpiecznym endpointem `admin-post` do tworzenia poszukiwań.
 - Wdrożono walidację i sanityzację danych poszukiwań:
@@ -111,5 +121,5 @@
 - Dodano podstawowe shortcody i szkielety widoków frontend CRM.
 - Dodano podstawowe menu administratora Estate Office CRM (About / Agenci / Ustawienia / Licencja).
 
-## Następny cel: 0.7.0
+## Następny cel: 0.8.0
 - Rozszerzenie pozostałych integracji i workflow end-to-end (umowa → oferta/poszukiwanie → profile).

@@ -14,6 +14,8 @@ $agreements = EstateOffice_Agreements::get_agreements($search);
 $agreement = $agreementId > 0 ? EstateOffice_Agreements::get_agreement($agreementId) : null;
 $linkedClients = $agreementId > 0 ? EstateOffice_Agreements::get_linked_clients($agreementId) : [];
 $stageHistory = $agreementId > 0 ? EstateOffice_Agreements::get_stage_history($agreementId) : [];
+$relatedProperties = $agreementId > 0 ? EstateOffice_Agreements::get_related_properties($agreementId) : [];
+$relatedSearches = $agreementId > 0 ? EstateOffice_Agreements::get_related_searches($agreementId) : [];
 $stageOptions = EstateOffice_Agreements::get_stage_options();
 
 $clientSearch = isset($_GET['eo_client_search']) ? sanitize_text_field(wp_unslash((string) $_GET['eo_client_search'])) : '';
@@ -224,6 +226,29 @@ $clients = EstateOffice_Agreements::search_clients($clientSearch);
                         : trim(((string) $client['first_name']) . ' ' . ((string) $client['last_name']));
                     ?>
                     <li><?php echo esc_html($name); ?></li>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </ul>
+
+
+        <h4>Nieruchomości powiązane</h4>
+        <ul>
+            <?php if (empty($relatedProperties)) : ?>
+                <li>Brak powiązanych nieruchomości.</li>
+            <?php else : ?>
+                <?php foreach ($relatedProperties as $property) : ?>
+                    <li><?php echo esc_html((string) $property['offer_number'] . ' — ' . (string) $property['property_type'] . ' (' . (string) $property['transaction_type'] . ')'); ?></li>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </ul>
+
+        <h4>Poszukiwania powiązane</h4>
+        <ul>
+            <?php if (empty($relatedSearches)) : ?>
+                <li>Brak powiązanych poszukiwań.</li>
+            <?php else : ?>
+                <?php foreach ($relatedSearches as $searchItem) : ?>
+                    <li><?php echo esc_html((string) $searchItem['search_number'] . ' — ' . (string) $searchItem['property_type'] . ' (' . (string) $searchItem['transaction_type'] . ')'); ?></li>
                 <?php endforeach; ?>
             <?php endif; ?>
         </ul>

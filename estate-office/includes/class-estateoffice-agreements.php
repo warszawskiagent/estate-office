@@ -328,6 +328,32 @@ class EstateOffice_Agreements
         return $wpdb->get_results($sql, ARRAY_A) ?: [];
     }
 
+    public static function get_related_properties(int $agreementId): array
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_properties';
+
+        $sql = $wpdb->prepare(
+            "SELECT id, offer_number, transaction_type, property_type FROM {$table} WHERE agreement_id = %d ORDER BY created_at DESC",
+            $agreementId
+        );
+
+        return $wpdb->get_results($sql, ARRAY_A) ?: [];
+    }
+
+    public static function get_related_searches(int $agreementId): array
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'eo_searches';
+
+        $sql = $wpdb->prepare(
+            "SELECT id, search_number, transaction_type, property_type FROM {$table} WHERE agreement_id = %d ORDER BY created_at DESC",
+            $agreementId
+        );
+
+        return $wpdb->get_results($sql, ARRAY_A) ?: [];
+    }
+
     public static function search_clients(string $needle = ''): array
     {
         return EstateOffice_Clients::get_clients($needle);

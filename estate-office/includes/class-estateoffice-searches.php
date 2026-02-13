@@ -35,6 +35,17 @@ class EstateOffice_Searches
             self::redirect_with_notice('error', 'Nieprawidłowy typ transakcji lub rodzaj nieruchomości.');
         }
 
+        if ($agreementId > 0) {
+            $agreement = EstateOffice_Agreements::get_agreement($agreementId);
+            if (! $agreement) {
+                self::redirect_with_notice('error', 'Nie znaleziono powiązanej umowy.');
+            }
+
+            if ((string) $agreement['transaction_type'] !== $transactionType) {
+                self::redirect_with_notice('error', 'Typ transakcji musi być zgodny z powiązaną umową.');
+            }
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'eo_searches';
 
@@ -80,7 +91,7 @@ class EstateOffice_Searches
             $table,
             [
                 'search_number' => $searchNumber,
-                'agreement_id' => $agreementId > 0 ? $agreementId : null,
+                'agreement_id' => $agreementId > 0 ? $agreementId : 0,
                 'transaction_type' => $transactionType,
                 'property_type' => $propertyType,
                 'budget_from' => $budgetFrom,

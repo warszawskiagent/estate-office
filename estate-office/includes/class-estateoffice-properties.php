@@ -36,6 +36,17 @@ class EstateOffice_Properties
             self::redirect_with_notice('error', 'Numer oferty jest wymagany.');
         }
 
+        if ($agreementId > 0) {
+            $agreement = EstateOffice_Agreements::get_agreement($agreementId);
+            if (! $agreement) {
+                self::redirect_with_notice('error', 'Nie znaleziono powiązanej umowy.');
+            }
+
+            if ((string) $agreement['transaction_type'] !== $transactionType) {
+                self::redirect_with_notice('error', 'Typ transakcji musi być zgodny z powiązaną umową.');
+            }
+        }
+
         $addressData = [
             'street' => self::post_text('street'),
             'number' => self::post_text('number'),
@@ -102,7 +113,7 @@ class EstateOffice_Properties
             $table,
             [
                 'offer_number' => $offerNumber,
-                'agreement_id' => $agreementId > 0 ? $agreementId : null,
+                'agreement_id' => $agreementId > 0 ? $agreementId : 0,
                 'transaction_type' => $transactionType,
                 'property_type' => $propertyType,
                 'legal_status' => $legalStatus,
