@@ -1,0 +1,120 @@
+.estateoffice-crm {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 1rem;
+}
+
+.estateoffice-crm__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.estateoffice-crm__menu-link,
+.estateoffice-crm__add-agreement {
+    display: inline-flex;
+    align-items: center;
+    padding: .5rem .75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    background: #eff6ff;
+    color: #1e3a8a;
+}
+
+.estateoffice-crm__menu-link.is-active {
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.estateoffice-crm__content {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+}
+
+.estateoffice-notice {
+    margin: .75rem 0;
+    padding: .625rem .75rem;
+    border-radius: 6px;
+}
+
+.estateoffice-notice--success {
+    background: #dcfce7;
+    color: #14532d;
+}
+
+.estateoffice-notice--error {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.estateoffice-grid {
+    display: grid;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+.estateoffice-grid--2 {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.estateoffice-grid--3 {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.estateoffice-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.estateoffice-grid input,
+.estateoffice-grid select,
+.estateoffice-grid textarea,
+.estateoffice-search-form input {
+    width: 100%;
+}
+
+.estateoffice-table-wrap {
+    overflow-x: auto;
+}
+
+.estateoffice-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.estateoffice-table th,
+.estateoffice-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: .5rem;
+    text-align: left;
+}
+
+.estateoffice-search-form {
+    display: flex;
+    gap: .5rem;
+    margin: .75rem 0;
+}
+
+.estateoffice-stepper {
+    margin-bottom: 1rem;
+    padding: .5rem .75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+#eo-property-form fieldset {
+    border: 1px solid #dbeafe;
+    border-radius: 6px;
+    padding: .5rem .75rem;
+}
+
+#eo-property-form fieldset label {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-right: .75rem;
+}
