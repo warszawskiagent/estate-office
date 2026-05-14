@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "EstateOffice CRM",
+    "slug": "estate-office-crm",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a237e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pl.estateofficecrm.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aparat jest potrzebny do dodawania zdjęć nieruchomości.",
+        "NSPhotoLibraryUsageDescription": "Dostęp do galerii jest potrzebny do wybierania zdjęć nieruchomości.",
+        "NSLocationWhenInUseUsageDescription": "Lokalizacja jest używana do zaznaczania nieruchomości na mapie."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a237e"
+      },
+      "package": "pl.estateofficecrm.mobile",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lokalizacja jest używana do zaznaczania nieruchomości na mapie."
+        }
+      ]
+    ]
+  }
+}

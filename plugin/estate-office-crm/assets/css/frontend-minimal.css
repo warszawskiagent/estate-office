@@ -1,0 +1,1345 @@
+/**
+ * Estate Office CRM — Minimal frontend style (v1.1692)
+ * --------------------------------------------------
+ * Loaded on top of frontend.css when developer access is active
+ * and the "minimal" CRM style is selected in Settings.
+ *
+ * Philosophy:
+ *   - Less color, more whitespace, flat surfaces.
+ *   - Single accent (subtle indigo) instead of multiple gradients.
+ *   - No gradient pills, no colored card stripes, no glow shadows.
+ *   - Tighter type rhythm, cleaner table grid.
+ *
+ * All rules below override (or neutralize) the default modern look
+ * by tweaking variables and unsetting decorative layers.
+ */
+
+/* === Tokens — minimal palette =============================== */
+.eocrm-wrap,
+.eocrm-prop-profile,
+.eocrm-prop-detail,
+.eocrm-dash {
+    --eocrm-bg: #fafbfc;
+    --eocrm-card: #ffffff;
+    --eocrm-border: #e6e8eb;
+    --eocrm-border-strong: #d4d8dd;
+    --eocrm-text: #1a1d23;
+    --eocrm-muted: #6b7280;
+    --eocrm-primary: #2f3a4e;
+    --eocrm-primary-dark: #1e2533;
+    --eocrm-primary-soft: #eef0f4;
+    --eocrm-accent: #4f5b75;
+    --eocrm-success: #2f7d50;
+    --eocrm-success-soft: #eaf3ed;
+    --eocrm-danger: #a93c2c;
+    --eocrm-danger-soft: #fbecea;
+    --eocrm-warning: #8a6a16;
+    --eocrm-warning-soft: #f6f0df;
+    --eocrm-radius-sm: 6px;
+    --eocrm-radius: 8px;
+    --eocrm-radius-lg: 10px;
+    --eocrm-shadow-sm: none;
+    --eocrm-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --eocrm-shadow-lg: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --eocrm-focus-ring: 0 0 0 3px rgba(47, 58, 78, 0.14);
+}
+
+/* === Wrap =================================================== */
+.eocrm-wrap {
+    background: var(--eocrm-bg);
+    border-radius: var(--eocrm-radius-lg);
+    box-shadow: none;
+}
+
+.eocrm-wrap h1,
+.eocrm-wrap h2,
+.eocrm-wrap h3,
+.eocrm-wrap h4 {
+    color: var(--eocrm-text);
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+/* === Header / Tabs ========================================= */
+.eocrm-tabs {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+    gap: 2px;
+    border-bottom: 1px solid var(--eocrm-border);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.eocrm-tab {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 10px 14px;
+    color: var(--eocrm-muted);
+    font-weight: 500;
+    box-shadow: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.eocrm-tab:hover {
+    background: transparent;
+    color: var(--eocrm-text);
+    border-color: var(--eocrm-border-strong);
+}
+
+.eocrm-tab.is-active {
+    background: transparent;
+    color: var(--eocrm-text);
+    border-bottom-color: var(--eocrm-primary);
+    box-shadow: none;
+}
+
+/* === Buttons =============================================== */
+.eocrm-btn {
+    border-radius: var(--eocrm-radius);
+    box-shadow: none;
+    font-weight: 500;
+    border-color: var(--eocrm-border-strong);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.eocrm-btn:hover {
+    background: var(--eocrm-primary-soft);
+    border-color: var(--eocrm-border-strong);
+    color: var(--eocrm-text);
+    box-shadow: none;
+    transform: none;
+}
+
+.eocrm-btn-primary {
+    background: var(--eocrm-primary);
+    border-color: var(--eocrm-primary);
+    color: #fff;
+    box-shadow: none;
+}
+
+.eocrm-btn-primary:hover {
+    background: var(--eocrm-primary-dark);
+    border-color: var(--eocrm-primary-dark);
+    transform: none;
+    box-shadow: none;
+}
+
+.eocrm-btn-danger {
+    background: #fff;
+    border-color: #e4c8c4;
+    color: var(--eocrm-danger);
+}
+
+.eocrm-btn-danger:hover {
+    background: var(--eocrm-danger-soft);
+    border-color: var(--eocrm-danger);
+    color: var(--eocrm-danger);
+}
+
+/* === Cards & panels ======================================== */
+.eocrm-card,
+.eocrm-prop-detail-card,
+.eocrm-prop-detail-gallery,
+.eocrm-prop-list-wrap,
+.eocrm-prop-toolbar,
+.eocrm-dash-panel,
+.eocrm-dash-kpi,
+.eocrm-dash-quick,
+.eocrm-prop-quick-stat,
+.eocrm-prop-stages,
+.eocrm-agreement-client-card,
+.eocrm-agreement-property-card,
+.eocrm-client-agreement-card {
+    border-radius: var(--eocrm-radius);
+    box-shadow: var(--eocrm-shadow-sm);
+    border-color: var(--eocrm-border);
+}
+
+/* Kill all decorative top stripes on cards */
+.eocrm-prop-detail-card::before,
+.eocrm-prop-quick-stat::after,
+.eocrm-dash-kpi::after {
+    display: none !important;
+}
+
+.eocrm-prop-detail-card:hover,
+.eocrm-prop-quick-stat:hover,
+.eocrm-dash-kpi:hover,
+.eocrm-dash-quick:hover,
+.eocrm-agreement-client-card:hover,
+.eocrm-agreement-property-card:hover,
+.eocrm-client-agreement-card:hover {
+    transform: none;
+    box-shadow: var(--eocrm-shadow);
+    border-color: var(--eocrm-border-strong);
+}
+
+/* === Hero panels (dashboard, property profile, agreement, etc.) === */
+.eocrm-prop-profile-hero,
+.eocrm-dash-hero {
+    background: var(--eocrm-card);
+    box-shadow: var(--eocrm-shadow-sm);
+    border-color: var(--eocrm-border);
+}
+
+.eocrm-prop-profile-hero__eyebrow,
+.eocrm-dash-hero__role {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+}
+
+.eocrm-prop-profile-hero__title,
+.eocrm-dash-hero__greeting {
+    color: var(--eocrm-text);
+    letter-spacing: 0;
+    font-weight: 700;
+}
+
+.eocrm-dash-hero__greeting strong {
+    color: var(--eocrm-primary);
+}
+
+/* === Status pills ========================================== */
+.eocrm-prop-status-pill,
+.eocrm-prop-stage-pill,
+.eocrm-dash-pill,
+.eocrm-prop-detail-agreement__stage,
+.eocrm-prop-client-type-pill {
+    border-radius: var(--eocrm-radius);
+    box-shadow: none;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.eocrm-prop-status-pill.is-active,
+.eocrm-prop-stage-pill.is-progress,
+.eocrm-dash-pill.is-progress,
+.eocrm-prop-detail-agreement__stage.is-progress,
+.eocrm-prop-client-type-pill.is-individual {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+    border-color: var(--eocrm-border);
+}
+
+.eocrm-prop-status-pill.is-done,
+.eocrm-prop-stage-pill.is-done,
+.eocrm-dash-pill.is-done,
+.eocrm-dash-pill.is-published,
+.eocrm-prop-detail-agreement__stage.is-done,
+.eocrm-prop-client-type-pill.is-company {
+    background: var(--eocrm-success-soft);
+    color: var(--eocrm-success);
+    border-color: #cfe2d6;
+}
+
+.eocrm-prop-status-pill.is-sold {
+    background: var(--eocrm-danger-soft);
+    color: var(--eocrm-danger);
+    border-color: #efcecb;
+}
+
+.eocrm-prop-status-pill.is-rented,
+.eocrm-prop-status-pill.is-premium,
+.eocrm-prop-status-pill.is-exclusive {
+    background: var(--eocrm-warning-soft);
+    color: var(--eocrm-warning);
+    border-color: #e7dfc7;
+}
+
+/* === Tables =============================================== */
+.eocrm-table,
+.eocrm-prop-list {
+    box-shadow: none;
+    border-radius: var(--eocrm-radius);
+}
+
+.eocrm-table thead th,
+.eocrm-prop-list thead th {
+    background: var(--eocrm-bg);
+    color: var(--eocrm-muted);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--eocrm-border);
+}
+
+.eocrm-table tbody tr:hover,
+.eocrm-prop-row:hover {
+    background: var(--eocrm-bg);
+}
+
+/* === Toolbar / filters ===================================== */
+.eocrm-prop-toolbar {
+    box-shadow: var(--eocrm-shadow-sm);
+}
+
+.eocrm-prop-toolbar__search-btn {
+    background: var(--eocrm-primary);
+    border-color: var(--eocrm-primary);
+    box-shadow: none;
+}
+
+.eocrm-prop-toolbar__search-btn:hover {
+    background: var(--eocrm-primary-dark);
+    border-color: var(--eocrm-primary-dark);
+    box-shadow: none;
+    transform: none;
+}
+
+.eocrm-table-filter-toggle span {
+    background: #fff;
+    border-color: var(--eocrm-border-strong);
+    color: var(--eocrm-text);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+.eocrm-table-filter-toggle input:checked + span,
+.eocrm-prop-filters .eocrm-table-filter-toggle input:checked + span {
+    background: var(--eocrm-primary);
+    border-color: var(--eocrm-primary);
+    color: #fff;
+    box-shadow: none;
+}
+
+/* === Quick stats ========================================== */
+.eocrm-prop-quick-stat__icon,
+.eocrm-dash-kpi__icon,
+.eocrm-prop-detail-card__icon {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+}
+
+.eocrm-prop-quick-stat__avatar {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+}
+
+.eocrm-prop-quick-stat__value,
+.eocrm-dash-kpi__value {
+    color: var(--eocrm-text);
+    letter-spacing: 0;
+}
+
+/* === Stage timeline ====================================== */
+.eocrm-prop-stage__indicator {
+    box-shadow: none;
+    border-color: var(--eocrm-border-strong);
+}
+
+.eocrm-prop-stage.is-completed .eocrm-prop-stage__indicator {
+    background: var(--eocrm-success);
+    border-color: var(--eocrm-success);
+    box-shadow: none;
+}
+
+.eocrm-prop-stage.is-current .eocrm-prop-stage__indicator {
+    background: var(--eocrm-primary);
+    border-color: var(--eocrm-primary);
+    box-shadow: none;
+    transform: none;
+}
+
+.eocrm-prop-stage.is-current .eocrm-prop-stage__indicator::before {
+    display: none;
+}
+
+.eocrm-prop-stage.is-completed:not(:last-child)::after {
+    background: var(--eocrm-success);
+}
+
+.eocrm-prop-stage.is-current:not(:last-child)::after {
+    background: linear-gradient(90deg, var(--eocrm-primary) 0%, var(--eocrm-border) 100%);
+}
+
+.eocrm-prop-stages__progress-fill {
+    background: var(--eocrm-primary);
+}
+
+.eocrm-prop-stages__progress-value {
+    color: var(--eocrm-text);
+}
+
+/* === Dashboard accents trimmed ============================ */
+.eocrm-dash-kpi--green::after,
+.eocrm-dash-kpi--purple::after,
+.eocrm-dash-kpi--orange::after,
+.eocrm-prop-quick-stat--green::after,
+.eocrm-prop-quick-stat--purple::after,
+.eocrm-prop-quick-stat--orange::after,
+.eocrm-prop-detail-card--location::before,
+.eocrm-prop-detail-card--dimensions::before,
+.eocrm-prop-detail-card--condition::before,
+.eocrm-prop-detail-card--media::before,
+.eocrm-prop-detail-card--features::before,
+.eocrm-prop-detail-card--export::before {
+    display: none !important;
+}
+
+.eocrm-dash-kpi--green .eocrm-dash-kpi__icon,
+.eocrm-dash-kpi--purple .eocrm-dash-kpi__icon,
+.eocrm-dash-kpi--orange .eocrm-dash-kpi__icon,
+.eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon,
+.eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon,
+.eocrm-prop-quick-stat--orange .eocrm-prop-quick-stat__icon,
+.eocrm-prop-detail-card--dimensions .eocrm-prop-detail-card__icon,
+.eocrm-prop-detail-card--condition .eocrm-prop-detail-card__icon,
+.eocrm-prop-detail-card--media .eocrm-prop-detail-card__icon,
+.eocrm-prop-detail-card--features .eocrm-prop-detail-card__icon,
+.eocrm-prop-detail-card--export .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+}
+
+.eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__avatar,
+.eocrm-prop-quick-stat--orange .eocrm-prop-quick-stat__avatar {
+    background: var(--eocrm-primary-soft);
+    color: var(--eocrm-primary);
+}
+
+/* === Forms (CRUD) ========================================= */
+.eocrm-card:has(> form[data-eocrm-property-form]),
+.eocrm-card:has(> form[data-eocrm-search-form]),
+.eocrm-card:has(> form[data-eocrm-agreement-form]),
+.eocrm-card:has(> form[data-eocrm-client-form]) {
+    box-shadow: var(--eocrm-shadow-sm);
+    border-color: var(--eocrm-border);
+}
+
+.eocrm-card:has(> form[data-eocrm-property-form]) > h3,
+.eocrm-card:has(> form[data-eocrm-search-form]) > h3,
+.eocrm-card:has(> form[data-eocrm-agreement-form]) > h3,
+.eocrm-card:has(> form[data-eocrm-client-form]) > h3 {
+    background: var(--eocrm-bg);
+}
+
+.eocrm-card:has(> form[data-eocrm-property-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-search-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-agreement-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-client-form]) > h3::before {
+    background: var(--eocrm-primary);
+}
+
+.eocrm-card > form[data-eocrm-property-form] h4,
+.eocrm-card > form[data-eocrm-search-form] h4,
+.eocrm-card > form[data-eocrm-agreement-form] h4,
+.eocrm-card > form[data-eocrm-client-form] h4 {
+    color: var(--eocrm-text);
+    border-bottom-color: var(--eocrm-border);
+}
+
+.eocrm-card > form[data-eocrm-property-form] h4::before,
+.eocrm-card > form[data-eocrm-search-form] h4::before,
+.eocrm-card > form[data-eocrm-agreement-form] h4::before,
+.eocrm-card > form[data-eocrm-client-form] h4::before {
+    background: var(--eocrm-primary);
+}
+
+.eocrm-card > form[data-eocrm-property-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-search-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-agreement-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-client-form] > p:last-of-type .eocrm-btn-primary {
+    box-shadow: none;
+}
+
+/* === Inputs / selects / textarea =========================== */
+.eocrm-wrap input[type="text"],
+.eocrm-wrap input[type="email"],
+.eocrm-wrap input[type="number"],
+.eocrm-wrap input[type="url"],
+.eocrm-wrap input[type="password"],
+.eocrm-wrap input[type="search"],
+.eocrm-wrap input[type="tel"],
+.eocrm-wrap input[type="date"],
+.eocrm-wrap input[type="datetime-local"],
+.eocrm-wrap input[type="time"],
+.eocrm-wrap select,
+.eocrm-wrap textarea {
+    border-radius: var(--eocrm-radius);
+    border-color: var(--eocrm-border-strong);
+    box-shadow: none;
+}
+
+.eocrm-wrap input:focus,
+.eocrm-wrap select:focus,
+.eocrm-wrap textarea:focus {
+    border-color: var(--eocrm-primary);
+    box-shadow: var(--eocrm-focus-ring);
+}
+
+/* === Login panel =========================================== */
+.eocrm-agent-login-panel__card {
+    border-radius: var(--eocrm-radius-lg);
+    box-shadow: var(--eocrm-shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.eocrm-agent-login-panel__form input[type="submit"],
+.eocrm-agent-login-panel__form button[type="submit"],
+.eocrm-agent-login-panel__button {
+    background: var(--eocrm-primary);
+    box-shadow: none;
+}
+
+.eocrm-agent-login-panel__form input[type="submit"]:hover,
+.eocrm-agent-login-panel__form button[type="submit"]:hover,
+.eocrm-agent-login-panel__button:hover {
+    background: var(--eocrm-primary-dark);
+    box-shadow: none;
+}
+
+/* === Offer single (public) ================================ */
+.eocrm-offer-row-card,
+.eocrm-offers-filters,
+.eocrm-offers-map-panel,
+.eocrm-offer-single-summary,
+.eocrm-offer-single-media,
+.eocrm-team-card,
+.eocrm-team-hero {
+    box-shadow: var(--eocrm-shadow-sm);
+    border-color: var(--eocrm-border);
+}
+
+.eocrm-offer-row-card:hover {
+    box-shadow: var(--eocrm-shadow);
+    transform: none;
+    border-color: var(--eocrm-border-strong);
+}
+
+.eocrm-offer-price {
+    color: var(--eocrm-text);
+}
+
+/* === Misc trims ============================================ */
+.eocrm-prop-detail-card__defs dt {
+    color: var(--eocrm-muted);
+}
+
+.eocrm-prop-detail-card__defs dd {
+    color: var(--eocrm-text);
+    font-weight: 500;
+}
+
+.eocrm-prop-meta__count strong {
+    color: var(--eocrm-text);
+}
+
+/* Remove subtle gradient backgrounds on radial decorations */
+.eocrm-prop-profile-hero,
+.eocrm-dash-hero,
+.eocrm-settings-page,
+.eocrm-agents-page,
+.eocrm-about-page,
+.eocrm-license-page,
+.eocrm-dashboard-page {
+    background-image: none !important;
+}
+
+/* ============================================================
+   v1.1704 — Pastel icon palette for minimal style
+   --------------------------------------------------
+   A coherent set of soft, real-estate-friendly pastels
+   that match the minimalist aesthetic. Each icon family
+   gets its own muted hue with darker tone for the glyph.
+   ============================================================ */
+
+.eocrm-wrap,
+.eocrm-prop-profile,
+.eocrm-prop-detail,
+.eocrm-dash {
+    /* Sage — homes, growth (used for properties) */
+    --eocrm-min-sage-bg: #e6efe6;
+    --eocrm-min-sage-fg: #4a6b51;
+    /* Sky — trust, calm (used for primary / clients / location) */
+    --eocrm-min-sky-bg: #e4ecf3;
+    --eocrm-min-sky-fg: #3a5a7c;
+    /* Sand — paper, legal (used for agreements / owner) */
+    --eocrm-min-sand-bg: #efe9df;
+    --eocrm-min-sand-fg: #7b6240;
+    /* Lilac — discovery, exploration (used for searches / media) */
+    --eocrm-min-lilac-bg: #ebe9f3;
+    --eocrm-min-lilac-fg: #5a527b;
+    /* Rose — premium, alerts (used for premium / warnings) */
+    --eocrm-min-rose-bg: #f2e6e3;
+    --eocrm-min-rose-fg: #884a4a;
+    /* Clay — friendly warm (used for hero greeting / klienci avatar) */
+    --eocrm-min-clay-bg: #f1e9de;
+    --eocrm-min-clay-fg: #7a5c3f;
+}
+
+/* === Hero eyebrows / role pills — soft sky =============== */
+.eocrm-prop-profile-hero__eyebrow,
+.eocrm-dash-hero__role {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+    border: 0;
+}
+
+/* === Dashboard KPI tiles — real-estate mapping ============ */
+.eocrm-dash-kpi--blue .eocrm-dash-kpi__icon {
+    /* Nieruchomosci → sage */
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-dash-kpi--green .eocrm-dash-kpi__icon {
+    /* Umowy → sand (paper) */
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+.eocrm-dash-kpi--purple .eocrm-dash-kpi__icon {
+    /* Poszukiwania → lilac */
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-dash-kpi--orange .eocrm-dash-kpi__icon {
+    /* Klienci → sky */
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+/* === Profile quick-stat icons — same mapping ============== */
+.eocrm-prop-quick-stat--blue .eocrm-prop-quick-stat__icon {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-prop-quick-stat--orange .eocrm-prop-quick-stat__icon,
+.eocrm-prop-quick-stat--orange .eocrm-prop-quick-stat__avatar {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+}
+
+/* Fallback for quick stats without modifier */
+.eocrm-prop-quick-stat__icon {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-quick-stat__avatar {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+}
+
+/* === Themed detail-card icons (location / dimensions / etc.) === */
+.eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-detail-card--location .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-detail-card--dimensions .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-prop-detail-card--condition .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+.eocrm-prop-detail-card--media .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-prop-detail-card--features .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-prop-detail-card--export .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+/* History timeline icon */
+.eocrm-prop-detail-card--history .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+}
+
+/* Side cards in agreement profile */
+.eocrm-prop-detail-card--side .eocrm-prop-detail-card__icon,
+.eocrm-prop-detail-card--flags .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+/* Gallery + description cards */
+.eocrm-prop-detail-card--gallery .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-prop-detail-card--description .eocrm-prop-detail-card__icon {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+/* === Listing thumbnails (left of row title) =============== */
+.eocrm-prop-thumb {
+    background: var(--eocrm-min-sky-bg);
+}
+
+/* Property listing — sage homes */
+.eocrm-prop-list:not(.eocrm-search-list):not(.eocrm-agreement-list):not(.eocrm-client-list) .eocrm-prop-thumb {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-prop-thumb__placeholder {
+    color: var(--eocrm-min-sage-fg);
+    opacity: 0.7;
+}
+
+.eocrm-prop-thumb--icon {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-prop-thumb--agreement {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+.eocrm-prop-thumb--client {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-thumb--client.is-company {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+/* === Status icons (3 globes in property/search status col) === */
+.eocrm-prop-status-icon.is-on {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+    border-color: #cfdecf;
+}
+
+.eocrm-prop-status-icon.is-off {
+    background: #f1f2f4;
+    color: #98a0aa;
+    border-color: #e3e5ea;
+}
+
+/* === Stage timeline indicators =========================== */
+.eocrm-prop-stage.is-completed .eocrm-prop-stage__indicator {
+    background: var(--eocrm-min-sage-bg);
+    border-color: #cfdecf;
+    color: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-prop-stage.is-current .eocrm-prop-stage__indicator {
+    background: var(--eocrm-min-sky-bg);
+    border-color: #c8d6e2;
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-prop-stage.is-completed:not(:last-child)::after {
+    background: #b9cdb9;
+}
+
+.eocrm-prop-stage.is-current:not(:last-child)::after {
+    background: linear-gradient(90deg, var(--eocrm-min-sky-fg) 0%, var(--eocrm-border) 100%);
+}
+
+.eocrm-prop-stages__progress-fill {
+    background: var(--eocrm-min-sage-fg);
+}
+
+/* === Owner avatars (table rows, hero) ==================== */
+.eocrm-prop-owner__avatar {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+    border-color: #e3d9c9;
+}
+
+/* === Related-list avatars (small icon circles) =========== */
+.eocrm-prop-detail-related-list__avatar {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+/* === Client hero avatar (big) ============================ */
+.eocrm-client-hero__avatar {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.eocrm-client-hero__avatar.is-company {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+}
+
+/* === Status pills (Aktywna / Sprzedane / etc.) =========== */
+.eocrm-prop-status-pill.is-active,
+.eocrm-prop-stage-pill.is-progress,
+.eocrm-dash-pill.is-progress,
+.eocrm-prop-detail-agreement__stage.is-progress,
+.eocrm-prop-client-type-pill.is-individual {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+    border-color: #c8d6e2;
+}
+
+.eocrm-prop-status-pill.is-done,
+.eocrm-prop-stage-pill.is-done,
+.eocrm-dash-pill.is-done,
+.eocrm-dash-pill.is-published,
+.eocrm-prop-detail-agreement__stage.is-done,
+.eocrm-prop-client-type-pill.is-company {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+    border-color: #cfdecf;
+}
+
+.eocrm-prop-status-pill.is-sold {
+    background: var(--eocrm-min-rose-bg);
+    color: var(--eocrm-min-rose-fg);
+    border-color: #e6cdc8;
+}
+
+.eocrm-prop-status-pill.is-rented,
+.eocrm-prop-status-pill.is-premium,
+.eocrm-prop-status-pill.is-exclusive {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+    border-color: #ddd0bb;
+}
+
+.eocrm-prop-status-pill.is-company {
+    background: var(--eocrm-min-sage-bg);
+    color: var(--eocrm-min-sage-fg);
+    border-color: #cfdecf;
+}
+
+.eocrm-prop-status-pill.is-individual {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+    border-color: #c8d6e2;
+}
+
+/* === Date badge (Bezterminowa) =========================== */
+.eocrm-prop-date-main--badge {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+    border-color: #d6d3e3;
+}
+
+/* === Agreement client/property cards (icons) ============= */
+.eocrm-agreement-client-card__avatar {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-client-agreement-card__icon {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+/* Agreement-card transaction badge in client profile */
+.eocrm-client-agreement-card__tx {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+/* === Tag chips on property detail ======================== */
+.eocrm-prop-detail-tag-chip {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+    border-color: #ddd0bb;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+/* === Mini pills (U / P) in property listing =============== */
+.eocrm-prop-mini-pill {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+    border-color: #c8d6e2;
+}
+
+.eocrm-prop-mini-pill.is-portal {
+    background: var(--eocrm-min-lilac-bg);
+    color: var(--eocrm-min-lilac-fg);
+    border-color: #d6d3e3;
+}
+
+/* === Agreement side sidebar — soft pastel summary ======== */
+.eocrm-agreement-side-summary__pct {
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-agreement-side-summary__fill {
+    background: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-agreement-side-owner__avatar {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+    border-color: #e3d9c9;
+}
+
+/* === Dashboard quick-action chips ======================== */
+.eocrm-dash-quick__icon {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+/* === Dashboard bars / rank ============================== */
+.eocrm-dash-bar__fill,
+.eocrm-dash-bar--sprzedaz .eocrm-dash-bar__fill,
+.eocrm-dash-bar--kupno .eocrm-dash-bar__fill,
+.eocrm-dash-bar--wynajem .eocrm-dash-bar__fill,
+.eocrm-dash-bar--najem .eocrm-dash-bar__fill {
+    background: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-bar--sprzedaz .eocrm-dash-bar__fill {
+    background: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-bar--kupno .eocrm-dash-bar__fill {
+    background: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-dash-bar--wynajem .eocrm-dash-bar__fill {
+    background: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-dash-bar--najem .eocrm-dash-bar__fill {
+    background: var(--eocrm-min-sand-fg);
+}
+
+.eocrm-dash-bar__value strong {
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-rank-position {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-rank-item:nth-child(1) .eocrm-dash-rank-position {
+    background: var(--eocrm-min-sand-bg);
+    color: var(--eocrm-min-sand-fg);
+}
+
+.eocrm-dash-rank-item:nth-child(2) .eocrm-dash-rank-position {
+    background: var(--eocrm-min-sky-bg);
+    color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-rank-item:nth-child(3) .eocrm-dash-rank-position {
+    background: var(--eocrm-min-clay-bg);
+    color: var(--eocrm-min-clay-fg);
+}
+
+.eocrm-dash-rank-fill {
+    background: var(--eocrm-min-sky-fg);
+}
+
+/* === Export breakdown dots =============================== */
+.eocrm-dash-export-dot--www {
+    background: var(--eocrm-min-sage-fg);
+}
+
+.eocrm-dash-export-dot--www-only {
+    background: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-dash-export-dot--portals {
+    background: var(--eocrm-min-lilac-fg);
+}
+
+.eocrm-dash-export-dot--none {
+    background: #c2c6cc;
+}
+
+/* === Empty-state icons (lupa, doc, etc.) — soft tint ===== */
+.eocrm-prop-empty__icon,
+.eocrm-prop-detail-gallery__empty-icon,
+.eocrm-prop-stages__empty-icon {
+    color: var(--eocrm-min-sky-fg);
+    opacity: 0.55;
+}
+
+/* === Submit buttons in form footers — soft accent ======== */
+.eocrm-card > form[data-eocrm-property-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-search-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-agreement-form] > p:last-of-type .eocrm-btn-primary,
+.eocrm-card > form[data-eocrm-client-form] > p:last-of-type .eocrm-btn-primary {
+    background: var(--eocrm-min-sky-fg);
+    border-color: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-card > form[data-eocrm-property-form] > p:last-of-type .eocrm-btn-primary:hover,
+.eocrm-card > form[data-eocrm-search-form] > p:last-of-type .eocrm-btn-primary:hover,
+.eocrm-card > form[data-eocrm-agreement-form] > p:last-of-type .eocrm-btn-primary:hover,
+.eocrm-card > form[data-eocrm-client-form] > p:last-of-type .eocrm-btn-primary:hover {
+    background: #2d4660;
+    border-color: #2d4660;
+}
+
+/* === Form section h4 accent bar — sky tint ============== */
+.eocrm-card > form[data-eocrm-property-form] h4::before,
+.eocrm-card > form[data-eocrm-search-form] h4::before,
+.eocrm-card > form[data-eocrm-agreement-form] h4::before,
+.eocrm-card > form[data-eocrm-client-form] h4::before {
+    background: var(--eocrm-min-sky-fg);
+}
+
+.eocrm-card > form[data-eocrm-property-form] h4,
+.eocrm-card > form[data-eocrm-search-form] h4,
+.eocrm-card > form[data-eocrm-agreement-form] h4,
+.eocrm-card > form[data-eocrm-client-form] h4 {
+    color: var(--eocrm-min-sky-fg);
+    border-bottom-color: var(--eocrm-min-sky-bg);
+}
+
+/* === Hero accent stripe on form cards =================== */
+.eocrm-card:has(> form[data-eocrm-property-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-search-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-agreement-form]) > h3::before,
+.eocrm-card:has(> form[data-eocrm-client-form]) > h3::before {
+    background: linear-gradient(90deg, var(--eocrm-min-sky-fg) 0%, var(--eocrm-min-sage-fg) 100%);
+}
+
+/* === Misc helper paragraphs in forms (info boxes) ======= */
+.eocrm-card > form[data-eocrm-property-form] > p:not(.eocrm-form-field):not(.eocrm-form-field-checkbox):not(.eocrm-actions-row),
+.eocrm-card > form[data-eocrm-search-form] > p:not(.eocrm-form-field):not(.eocrm-form-field-checkbox):not(.eocrm-actions-row),
+.eocrm-card > form[data-eocrm-agreement-form] > p:not(.eocrm-form-field):not(.eocrm-form-field-checkbox):not(.eocrm-actions-row),
+.eocrm-card > form[data-eocrm-client-form] > p:not(.eocrm-form-field):not(.eocrm-form-field-checkbox):not(.eocrm-actions-row) {
+    background: var(--eocrm-min-sky-bg);
+    border-color: var(--eocrm-border);
+    border-left-color: var(--eocrm-min-sky-fg);
+}
+
+/* === Hero (profile) — subtle sky/sage gradient =========== */
+.eocrm-prop-profile-hero,
+.eocrm-dash-hero {
+    background:
+        radial-gradient(circle at 100% 0%, rgba(58, 90, 124, 0.04), transparent 38%),
+        radial-gradient(circle at 0% 100%, rgba(74, 107, 81, 0.04), transparent 42%),
+        #ffffff !important;
+}
+
+/* ============================================================
+   v1.1705 — Replace emoji glyphs with clean SVG icons
+   --------------------------------------------------
+   Hides the inline emoji text in icon containers and renders
+   a monochrome mask-based SVG instead. Color comes from the
+   parent's `color`, so the existing pastel mapping applies.
+   ============================================================ */
+
+.eocrm-wrap,
+.eocrm-dash {
+    --eo-icon-location: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 7-8 12-8 12s-8-5-8-12a8 8 0 0 1 16 0Z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+    --eo-icon-ruler: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.3 8.7 8.7 21.3a1.5 1.5 0 0 1-2.1 0L2.7 17.4a1.5 1.5 0 0 1 0-2.1L15.3 2.7a1.5 1.5 0 0 1 2.1 0l3.9 3.9a1.5 1.5 0 0 1 0 2.1Z'/%3E%3Cpath d='m7.5 10.5 2 2'/%3E%3Cpath d='m10.5 7.5 2 2'/%3E%3Cpath d='m13.5 4.5 2 2'/%3E%3Cpath d='m4.5 13.5 2 2'/%3E%3C/svg%3E");
+    --eo-icon-home: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 9 12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'/%3E%3Cpolyline points='9 22 9 12 15 12 15 22'/%3E%3C/svg%3E");
+    --eo-icon-bolt: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/%3E%3C/svg%3E");
+    --eo-icon-check-circle: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpolyline points='22 4 12 14.01 9 11.01'/%3E%3C/svg%3E");
+    --eo-icon-globe: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10'/%3E%3C/svg%3E");
+    --eo-icon-file-text: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='9' y1='13' x2='15' y2='13'/%3E%3Cline x1='9' y1='17' x2='15' y2='17'/%3E%3C/svg%3E");
+    --eo-icon-file: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
+    --eo-icon-tag: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z'/%3E%3Ccircle cx='7' cy='7' r='1.2' fill='%23000'/%3E%3C/svg%3E");
+    --eo-icon-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E");
+    --eo-icon-camera: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 4 16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2Z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E");
+    --eo-icon-phone: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7 12.8 12.8 0 0 0 .7 2.8 2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4 12.8 12.8 0 0 0 2.8.7 2 2 0 0 1 1.7 2Z'/%3E%3C/svg%3E");
+    --eo-icon-clock: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+    --eo-icon-coin: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M14.5 9a3 3 0 0 0-2.5-1.3c-1.5 0-2.7 1-2.7 2.3 0 2.6 5.4 1.4 5.4 4 0 1.3-1.2 2.3-2.7 2.3a3 3 0 0 1-2.5-1.3'/%3E%3Cline x1='12' y1='6.5' x2='12' y2='8'/%3E%3Cline x1='12' y1='16.5' x2='12' y2='18'/%3E%3C/svg%3E");
+    --eo-icon-bed: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4v16'/%3E%3Cpath d='M22 4v16'/%3E%3Cpath d='M2 16h20'/%3E%3Cpath d='M2 11h20a2 2 0 0 1 2 2v3'/%3E%3Cpath d='M5 11V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3'/%3E%3Ccircle cx='8' cy='9' r='1.4' fill='%23000'/%3E%3C/svg%3E");
+    --eo-icon-user: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+    --eo-icon-users: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M22 21v-2a4 4 0 0 0-3-3.87'/%3E%3Cpath d='M16 3.13a4 4 0 0 1 0 7.75'/%3E%3C/svg%3E");
+    --eo-icon-search: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    --eo-icon-calendar: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    --eo-icon-bar-chart: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='20' x2='12' y2='10'/%3E%3Cline x1='18' y1='20' x2='18' y2='4'/%3E%3Cline x1='6' y1='20' x2='6' y2='16'/%3E%3C/svg%3E");
+    --eo-icon-target: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='6'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/svg%3E");
+    --eo-icon-clipboard: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='2' width='8' height='4' rx='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3Cline x1='9' y1='12' x2='15' y2='12'/%3E%3Cline x1='9' y1='16' x2='13' y2='16'/%3E%3C/svg%3E");
+    --eo-icon-flag: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1Z'/%3E%3Cline x1='4' y1='22' x2='4' y2='15'/%3E%3C/svg%3E");
+    --eo-icon-plus: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+}
+
+/* Generic icon container — hide emoji text, prepare for ::before SVG */
+.eocrm-prop-detail-card__icon,
+.eocrm-prop-quick-stat__icon,
+.eocrm-dash-kpi__icon,
+.eocrm-dash-quick__icon,
+.eocrm-prop-detail-related-list__avatar,
+.eocrm-client-agreement-card__icon,
+.eocrm-prop-detail-gallery__empty-icon,
+.eocrm-prop-empty__icon,
+.eocrm-prop-stages__empty-icon {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    text-indent: -9999px;
+    overflow: hidden;
+}
+
+/* Default ::before icon (fallback file-text) */
+.eocrm-prop-detail-card__icon::before,
+.eocrm-prop-quick-stat__icon::before,
+.eocrm-dash-kpi__icon::before,
+.eocrm-dash-quick__icon::before,
+.eocrm-prop-detail-related-list__avatar::before,
+.eocrm-client-agreement-card__icon::before {
+    content: "";
+    display: block;
+    background-color: currentColor;
+    -webkit-mask: var(--eo-icon-this, var(--eo-icon-file-text)) no-repeat center / contain;
+            mask: var(--eo-icon-this, var(--eo-icon-file-text)) no-repeat center / contain;
+    text-indent: 0;
+}
+
+/* === Sizes per container ================================== */
+.eocrm-prop-detail-card__icon::before { width: 18px; height: 18px; }
+.eocrm-prop-quick-stat__icon::before { width: 22px; height: 22px; }
+.eocrm-dash-kpi__icon::before { width: 22px; height: 22px; }
+.eocrm-dash-quick__icon::before { width: 14px; height: 14px; }
+.eocrm-prop-detail-related-list__avatar::before { width: 16px; height: 16px; }
+.eocrm-client-agreement-card__icon::before { width: 22px; height: 22px; }
+
+/* === THEMED DETAIL CARD ICONS ============================ */
+.eocrm-prop-detail-card--location .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-location); }
+.eocrm-prop-detail-card--dimensions .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-ruler); }
+.eocrm-prop-detail-card--condition .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-home); }
+.eocrm-prop-detail-card--media .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-bolt); }
+.eocrm-prop-detail-card--features .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-check-circle); }
+.eocrm-prop-detail-card--export .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-globe); }
+.eocrm-prop-detail-card--description .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-file-text); }
+.eocrm-prop-detail-card--history .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-clock); }
+.eocrm-prop-detail-card--gallery .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-image); }
+.eocrm-prop-detail-card--flags .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-flag); }
+.eocrm-prop-detail-card--side .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-clipboard); }
+
+/* Agreement sidebar: 2nd card = Opiekun (user), 3rd = Podsumowanie (bar-chart) */
+[data-eocrm-agreement-profile] .eocrm-agreement-side-col > .eocrm-prop-detail-card--side:nth-of-type(2) .eocrm-prop-detail-card__icon {
+    --eo-icon-this: var(--eo-icon-user);
+}
+[data-eocrm-agreement-profile] .eocrm-agreement-side-col > .eocrm-prop-detail-card--side:nth-of-type(3) .eocrm-prop-detail-card__icon,
+[data-eocrm-agreement-profile] .eocrm-agreement-side-summary .eocrm-prop-detail-card__icon {
+    --eo-icon-this: var(--eo-icon-bar-chart);
+}
+
+/* Related cards (default order) */
+.eocrm-prop-detail-related > .eocrm-prop-detail-card:nth-of-type(1) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-users); }
+.eocrm-prop-detail-related > .eocrm-prop-detail-card:nth-of-type(2) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-file); }
+.eocrm-prop-detail-related > .eocrm-prop-detail-card:nth-of-type(3) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-tag); }
+
+/* Agreement profile: full cards order (Klienci, Nieruchomosci, Poszukiwania) */
+[data-eocrm-agreement-detail] > .eocrm-prop-detail-card--full:nth-of-type(1) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-users); }
+[data-eocrm-agreement-detail] > .eocrm-prop-detail-card--full:nth-of-type(2) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-home); }
+[data-eocrm-agreement-detail] > .eocrm-prop-detail-card--full:nth-of-type(3) .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-search); }
+[data-eocrm-agreement-detail] > .eocrm-prop-detail-card--export .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-clipboard); }
+[data-eocrm-agreement-detail] > .eocrm-prop-detail-card--history .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-clock); }
+
+/* Client profile: features card here = Contact (phone) */
+[data-eocrm-client-detail] .eocrm-prop-detail-card--features .eocrm-prop-detail-card__icon { --eo-icon-this: var(--eo-icon-phone); }
+
+/* === DASHBOARD KPI ICONS ================================ */
+.eocrm-dash .eocrm-dash-kpi--blue .eocrm-dash-kpi__icon { --eo-icon-this: var(--eo-icon-home); }
+.eocrm-dash .eocrm-dash-kpi--green .eocrm-dash-kpi__icon { --eo-icon-this: var(--eo-icon-file); }
+.eocrm-dash .eocrm-dash-kpi--purple .eocrm-dash-kpi__icon { --eo-icon-this: var(--eo-icon-search); }
+.eocrm-dash .eocrm-dash-kpi--orange .eocrm-dash-kpi__icon { --eo-icon-this: var(--eo-icon-users); }
+
+/* === DASHBOARD QUICK ACTIONS ============================ */
+.eocrm-dash-hero__quick .eocrm-dash-quick:nth-child(1) .eocrm-dash-quick__icon { --eo-icon-this: var(--eo-icon-plus); }
+.eocrm-dash-hero__quick .eocrm-dash-quick:nth-child(2) .eocrm-dash-quick__icon { --eo-icon-this: var(--eo-icon-home); }
+.eocrm-dash-hero__quick .eocrm-dash-quick:nth-child(3) .eocrm-dash-quick__icon { --eo-icon-this: var(--eo-icon-user); }
+.eocrm-dash-hero__quick .eocrm-dash-quick:nth-child(4) .eocrm-dash-quick__icon { --eo-icon-this: var(--eo-icon-search); }
+
+/* === QUICK STATS — per-profile mapping =================== */
+
+/* Property profile: Cena / Metraz / Pokoje / Opiekun */
+.eocrm-prop-profile[data-eocrm-prop-profile] .eocrm-prop-quick-stat--blue .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-coin);
+}
+.eocrm-prop-profile[data-eocrm-prop-profile] .eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-ruler);
+}
+.eocrm-prop-profile[data-eocrm-prop-profile] .eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-bed);
+}
+
+/* Search profile: Budzet / Metraz / Pokoje / Opiekun */
+.eocrm-prop-profile[data-eocrm-search-profile] .eocrm-prop-quick-stat--blue .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-coin);
+}
+.eocrm-prop-profile[data-eocrm-search-profile] .eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-ruler);
+}
+.eocrm-prop-profile[data-eocrm-search-profile] .eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-bed);
+}
+
+/* Agreement profile: Daty / Postep / Prowizja / Opiekun */
+.eocrm-prop-profile[data-eocrm-agreement-profile] .eocrm-prop-quick-stat--blue .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-calendar);
+}
+.eocrm-prop-profile[data-eocrm-agreement-profile] .eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-bar-chart);
+}
+.eocrm-prop-profile[data-eocrm-agreement-profile] .eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-coin);
+}
+
+/* Client profile: Umowy / Nieruchomosci / Poszukiwania / Opiekun */
+.eocrm-prop-profile[data-eocrm-client-profile] .eocrm-prop-quick-stat--blue .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-file);
+}
+.eocrm-prop-profile[data-eocrm-client-profile] .eocrm-prop-quick-stat--green .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-home);
+}
+.eocrm-prop-profile[data-eocrm-client-profile] .eocrm-prop-quick-stat--purple .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-search);
+}
+
+/* Orange = Opiekun (user) for all profiles */
+.eocrm-prop-quick-stat--orange .eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-user);
+}
+
+/* Default fallback for any quick-stat icon */
+.eocrm-prop-quick-stat__icon {
+    --eo-icon-this: var(--eo-icon-file-text);
+}
+
+/* === Related-list small avatars (icon style) ============= */
+.eocrm-prop-detail-related-list .eocrm-prop-detail-related-list__avatar {
+    --eo-icon-this: var(--eo-icon-user);
+}
+
+[data-eocrm-client-detail] .eocrm-prop-detail-related > .eocrm-prop-detail-card:nth-of-type(1) .eocrm-prop-detail-related-list__avatar {
+    --eo-icon-this: var(--eo-icon-home);
+}
+
+[data-eocrm-client-detail] .eocrm-prop-detail-related > .eocrm-prop-detail-card:nth-of-type(2) .eocrm-prop-detail-related-list__avatar {
+    --eo-icon-this: var(--eo-icon-search);
+}
+
+.eocrm-agreement-search-list .eocrm-prop-detail-related-list__avatar {
+    --eo-icon-this: var(--eo-icon-search);
+}
+
+/* === Hero gallery overlay camera ========================= */
+.eocrm-prop-detail-gallery__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.eocrm-prop-detail-gallery__count-icon {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    text-indent: -9999px;
+    overflow: hidden;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+}
+
+.eocrm-prop-detail-gallery__count-icon::before {
+    content: "";
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-color: currentColor;
+    -webkit-mask: var(--eo-icon-camera) no-repeat center / contain;
+            mask: var(--eo-icon-camera) no-repeat center / contain;
+    text-indent: 0;
+}
+
+/* === Empty states ======================================== */
+.eocrm-prop-empty__icon::before {
+    content: "";
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background-color: currentColor;
+    -webkit-mask: var(--eo-empty-icon, var(--eo-icon-file-text)) no-repeat center / contain;
+            mask: var(--eo-empty-icon, var(--eo-icon-file-text)) no-repeat center / contain;
+    text-indent: 0;
+}
+
+.eocrm-prop-list:not(.eocrm-search-list):not(.eocrm-agreement-list):not(.eocrm-client-list) .eocrm-prop-empty__icon { --eo-empty-icon: var(--eo-icon-home); }
+.eocrm-search-list .eocrm-prop-empty__icon { --eo-empty-icon: var(--eo-icon-search); }
+.eocrm-agreement-list .eocrm-prop-empty__icon { --eo-empty-icon: var(--eo-icon-file); }
+.eocrm-client-list .eocrm-prop-empty__icon { --eo-empty-icon: var(--eo-icon-users); }
+
+.eocrm-prop-detail-gallery__empty-icon::before {
+    content: "";
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background-color: currentColor;
+    -webkit-mask: var(--eo-icon-image) no-repeat center / contain;
+            mask: var(--eo-icon-image) no-repeat center / contain;
+    text-indent: 0;
+}
+
+.eocrm-prop-stages__empty-icon::before {
+    content: "";
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background-color: currentColor;
+    -webkit-mask: var(--eo-icon-file) no-repeat center / contain;
+            mask: var(--eo-icon-file) no-repeat center / contain;
+    text-indent: 0;
+}
+
+/* === Avatars (keep initial text / image visible) ========= */
+.eocrm-prop-quick-stat__avatar,
+.eocrm-client-hero__avatar,
+.eocrm-prop-owner__avatar,
+.eocrm-agreement-side-owner__avatar,
+.eocrm-agreement-client-card__avatar {
+    font-size: inherit !important;
+    line-height: 1 !important;
+    text-indent: 0 !important;
+    overflow: hidden;
+}
+
+.eocrm-client-hero__avatar svg {
+    width: 36px;
+    height: 36px;
+}
+
+/* === Status icons — keep inline SVG visible ============== */
+.eocrm-prop-status-icons,
+.eocrm-prop-status-icon {
+    font-size: inherit !important;
+    line-height: 1 !important;
+    text-indent: 0 !important;
+    overflow: visible !important;
+}
