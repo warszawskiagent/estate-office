@@ -1,0 +1,2013 @@
+.eocrm-admin-wrap {
+    max-width: 1280px;
+}
+
+.eocrm-admin-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin: 14px 0 18px;
+}
+
+.eocrm-admin-card {
+    background: #ffffff;
+    border: 1px solid #d7e1ef;
+    border-left: 4px solid #0057b8;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.eocrm-admin-card h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #334155;
+}
+
+.eocrm-admin-card p {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: #0057b8;
+}
+
+.eocrm-admin-panel {
+    background: #fff;
+    border: 1px solid #d7e1ef;
+    border-radius: 8px;
+    padding: 14px;
+    margin: 0 0 14px;
+}
+
+.eocrm-admin-panel h2 {
+    margin-top: 0;
+}
+
+.eocrm-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+.eocrm-admin-action-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.eocrm-media-field {
+    border-top: 1px dashed #d7e1ef;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.eocrm-media-field img {
+    display: block;
+    border: 1px solid #d7e1ef;
+    border-radius: 6px;
+    margin-top: 6px;
+}
+
+.eocrm-dev-access-card {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #b9d2ef;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+}
+
+.eocrm-dev-access-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.eocrm-dev-access-head h3 {
+    margin: 0 0 6px;
+    color: #0b376d;
+}
+
+.eocrm-dev-access-head p {
+    margin: 0;
+    color: #475569;
+}
+
+.eocrm-dev-access-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    padding: 10px 16px;
+    border: 1px solid #b9cbe2;
+    border-radius: 999px;
+    background: #fff;
+    color: #1f2a37;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.eocrm-dev-access-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.eocrm-dev-access-toggle.is-active {
+    border-color: #0b5cad;
+    background: #0b5cad;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(11, 92, 173, 0.22);
+}
+
+.eocrm-dev-access-password {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #c8daee;
+}
+
+.eocrm-dev-access-password.is-hidden {
+    display: none;
+}
+
+.eocrm-dev-only-panel {
+    border-color: #8fb9e8;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f7ff 100%);
+}
+
+.eocrm-template-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 12px 0 16px;
+}
+
+.eocrm-template-card {
+    display: block;
+    border: 1px solid #d7e1ef;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.eocrm-template-card input[type="radio"] {
+    margin: 0 0 10px;
+}
+
+.eocrm-template-preview {
+    display: block;
+    width: 100%;
+    height: 120px;
+    border-radius: 8px;
+    border: 1px solid #d7e1ef;
+    margin-bottom: 10px;
+    background: #f8fafc;
+    overflow: hidden;
+}
+
+.eocrm-template-preview-modern {
+    background:
+        linear-gradient(120deg, rgba(0, 87, 184, 0.85), rgba(11, 41, 84, 0.95)),
+        radial-gradient(circle at 75% 20%, rgba(255, 255, 255, 0.4) 0 12%, transparent 13%),
+        radial-gradient(circle at 22% 74%, rgba(255, 255, 255, 0.18) 0 18%, transparent 19%);
+}
+
+.eocrm-template-preview-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center center;
+    background: #fff;
+}
+
+@media (max-width: 1500px) {
+    .eocrm-template-selector-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1200px) {
+    .eocrm-template-selector-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 782px) {
+    .eocrm-template-selector-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.eocrm-template-title {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.eocrm-template-description {
+    display: block;
+    color: #475569;
+}
+
+.eocrm-template-selector-grid-pdf .eocrm-template-card {
+    max-width: 320px;
+}
+
+.eocrm-numbering-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+.eocrm-numbering-box {
+    border: 1px solid #d7e1ef;
+}
+
+.eocrm-numbering-box h3 {
+    margin-top: 0;
+}
+
+.eocrm-numbering-box-agreement {
+    grid-column: 1 / -1;
+}
+
+.eocrm-numbering-agreement-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
+.eocrm-numbering-agreement-panel h4 {
+    margin: 0 0 8px;
+}
+
+.eocrm-numbering-agreement-panel.is-hidden {
+    display: none !important;
+}
+
+.eocrm-numbering-box-inner {
+    border: 1px solid #dbe5f2;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.eocrm-numbering-part {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #d7e1ef;
+}
+
+.eocrm-numbering-part .description {
+    margin-top: 28px;
+}
+
+.eocrm-numbering-part.is-hidden,
+.eocrm-numbering-part [data-eocrm-numbering-type-block].is-hidden {
+    display: none !important;
+}
+
+/* Modern admin polish for Settings + Agents pages */
+.eocrm-admin-wrap {
+    --eocrm-admin-bg: #f3f6fb;
+    --eocrm-admin-card: #ffffff;
+    --eocrm-admin-border: #d6e1ef;
+    --eocrm-admin-border-strong: #c6d5e7;
+    --eocrm-admin-text: #1f2a37;
+    --eocrm-admin-muted: #5b6b82;
+    --eocrm-admin-primary: #0b5cad;
+    --eocrm-admin-primary-soft: #e7f0fb;
+    --eocrm-admin-radius: 12px;
+}
+
+.eocrm-settings-page,
+.eocrm-agents-page {
+    background: linear-gradient(180deg, #f6f9fe 0%, #eef4fb 100%);
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 16px;
+    padding: 14px 16px 16px;
+    margin-top: 14px;
+}
+
+.eocrm-settings-page h1,
+.eocrm-agents-page h1 {
+    margin: 0 0 12px;
+    font-size: 26px;
+    line-height: 1.2;
+    color: #102438;
+}
+
+.eocrm-settings-page .eocrm-admin-panel,
+.eocrm-agents-page .eocrm-admin-panel {
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: var(--eocrm-admin-radius);
+    background: var(--eocrm-admin-card);
+    box-shadow: 0 8px 24px rgba(15, 31, 54, 0.06);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+}
+
+.eocrm-settings-page .eocrm-admin-panel h2,
+.eocrm-settings-page .eocrm-admin-panel h3,
+.eocrm-settings-page .eocrm-admin-panel h4,
+.eocrm-agents-page .eocrm-admin-panel h2,
+.eocrm-agents-page .eocrm-admin-panel h3,
+.eocrm-agents-page .eocrm-admin-panel h4 {
+    margin: 0 0 8px;
+    color: #112b47;
+}
+
+.eocrm-settings-page .eocrm-admin-panel p,
+.eocrm-agents-page .eocrm-admin-panel p {
+    color: var(--eocrm-admin-text);
+}
+
+.eocrm-settings-page .eocrm-admin-panel p.description,
+.eocrm-agents-page .eocrm-admin-panel p.description,
+.eocrm-settings-page .eocrm-admin-panel .description,
+.eocrm-agents-page .eocrm-admin-panel .description {
+    color: var(--eocrm-admin-muted);
+}
+
+.eocrm-settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 0;
+    margin: 2px 0 14px;
+    padding: 0;
+}
+
+.eocrm-settings-tabs .nav-tab {
+    margin: 0;
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: #1d3957;
+    padding: 8px 14px;
+    line-height: 1.25;
+    font-weight: 600;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.eocrm-settings-tabs .nav-tab:hover {
+    border-color: var(--eocrm-admin-border-strong);
+    background: #f9fbff;
+    color: #123860;
+}
+
+.eocrm-settings-tabs .nav-tab.nav-tab-active {
+    background: var(--eocrm-admin-primary-soft);
+    border-color: #a8c4e7;
+    color: var(--eocrm-admin-primary);
+}
+
+.eocrm-agents-page .eocrm-tab-hidden {
+    display: none !important;
+}
+
+.eocrm-settings-form label,
+.eocrm-agents-page label {
+    display: inline-block;
+    font-weight: 600;
+    color: #1e334d;
+}
+
+.eocrm-settings-form input[type="text"],
+.eocrm-settings-form input[type="email"],
+.eocrm-settings-form input[type="number"],
+.eocrm-settings-form input[type="url"],
+.eocrm-settings-form input[type="password"],
+.eocrm-settings-form select,
+.eocrm-settings-form textarea,
+.eocrm-agents-page input[type="text"],
+.eocrm-agents-page input[type="email"],
+.eocrm-agents-page input[type="number"],
+.eocrm-agents-page input[type="url"],
+.eocrm-agents-page input[type="password"],
+.eocrm-agents-page select,
+.eocrm-agents-page textarea {
+    border-color: var(--eocrm-admin-border-strong);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.eocrm-settings-form input[type="text"],
+.eocrm-settings-form input[type="email"],
+.eocrm-settings-form input[type="number"],
+.eocrm-settings-form input[type="url"],
+.eocrm-settings-form input[type="password"],
+.eocrm-settings-form select,
+.eocrm-agents-page input[type="text"],
+.eocrm-agents-page input[type="email"],
+.eocrm-agents-page input[type="number"],
+.eocrm-agents-page input[type="url"],
+.eocrm-agents-page input[type="password"],
+.eocrm-agents-page select {
+    min-height: 38px;
+}
+
+.eocrm-settings-form textarea,
+.eocrm-agents-page textarea {
+    min-height: 120px;
+}
+
+.eocrm-settings-form input:focus,
+.eocrm-settings-form select:focus,
+.eocrm-settings-form textarea:focus,
+.eocrm-agents-page input:focus,
+.eocrm-agents-page select:focus,
+.eocrm-agents-page textarea:focus {
+    border-color: #7aa3d1;
+    box-shadow: 0 0 0 3px rgba(11, 92, 173, 0.12);
+}
+
+.eocrm-settings-form .regular-text,
+.eocrm-settings-form .large-text,
+.eocrm-agents-page .regular-text,
+.eocrm-agents-page .large-text {
+    max-width: 100%;
+    width: min(640px, 100%);
+}
+
+.eocrm-settings-form .small-text,
+.eocrm-agents-page .small-text {
+    width: 110px;
+}
+
+.eocrm-settings-form input[type="checkbox"],
+.eocrm-agents-page input[type="checkbox"] {
+    margin-top: -1px;
+}
+
+.eocrm-settings-page .eocrm-media-field,
+.eocrm-agents-page [id^="eocrm-office-logo-preview"],
+.eocrm-agents-page [id^="eocrm-agent-photo-preview"] {
+    background: #f8fbff;
+    border: 1px dashed var(--eocrm-admin-border);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.eocrm-settings-page .eocrm-media-field img,
+.eocrm-agents-page [id^="eocrm-office-logo-preview"] img,
+.eocrm-agents-page [id^="eocrm-agent-photo-preview"] img {
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 8px;
+}
+
+.eocrm-admin-table {
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 900px;
+}
+
+.eocrm-admin-table thead th {
+    background: linear-gradient(180deg, #f7faff 0%, #edf3fb 100%);
+    color: #18334d;
+    border-bottom: 1px solid var(--eocrm-admin-border);
+    font-weight: 700;
+}
+
+.eocrm-admin-table td,
+.eocrm-admin-table th {
+    vertical-align: middle;
+}
+
+.eocrm-admin-table tbody tr:nth-child(odd) {
+    background: #fcfdff;
+}
+
+.eocrm-agents-page .button,
+.eocrm-settings-page .button {
+    border-radius: 8px;
+}
+
+.eocrm-agents-page .button-primary,
+.eocrm-settings-page .button-primary {
+    border-color: #0b5cad;
+    background: #0b5cad;
+}
+
+.eocrm-crop-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: none;
+}
+
+.eocrm-crop-modal.is-open {
+    display: block;
+}
+
+.eocrm-crop-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 28, 45, 0.62);
+}
+
+.eocrm-crop-modal-dialog {
+    position: relative;
+    width: min(860px, calc(100vw - 40px));
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 24px 60px rgba(9, 24, 44, 0.36);
+    border: 1px solid #d8e2f0;
+    padding: 16px;
+}
+
+.eocrm-crop-modal-title {
+    margin: 0 0 12px;
+    font-size: 20px;
+    line-height: 1.3;
+}
+
+.eocrm-crop-modal-body {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+#eocrm-agent-crop-canvas {
+    width: 340px;
+    height: 340px;
+    border-radius: 10px;
+    border: 1px solid #d6e2f3;
+    background: #f2f6fc;
+}
+
+.eocrm-crop-controls label {
+    display: block;
+    margin-bottom: 12px;
+}
+
+.eocrm-crop-controls label span {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.eocrm-crop-controls input[type="range"] {
+    width: 100%;
+}
+
+.eocrm-crop-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.eocrm-crop-modal-actions .button.is-busy {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+@media (max-width: 860px) {
+    .eocrm-crop-modal-dialog {
+        margin-top: 20px;
+    }
+
+    .eocrm-crop-modal-body {
+        grid-template-columns: 1fr;
+    }
+
+    #eocrm-agent-crop-canvas {
+        width: min(100%, 340px);
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+.eocrm-settings-page .submit,
+.eocrm-agents-page .submit {
+    margin-top: 8px;
+    padding-bottom: 0;
+}
+
+.eocrm-numbering-box {
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 10px;
+    background: #fbfdff;
+}
+
+.eocrm-numbering-box-inner {
+    background: #fff;
+}
+
+.eocrm-numbering-agreement-tabs .button {
+    border-radius: 999px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.eocrm-custom-fields-table th,
+.eocrm-custom-fields-table td {
+    vertical-align: middle;
+}
+
+.eocrm-custom-fields-table .regular-text {
+    width: 100%;
+    min-width: 200px;
+}
+
+.eocrm-custom-fields-table select {
+    width: 100%;
+    min-width: 170px;
+}
+
+.eocrm-custom-fields-table .button-link-delete {
+    color: #b42318;
+}
+
+.eocrm-custom-fields-table .button-link-delete:hover {
+    color: #7a1f1f;
+}
+
+.eocrm-portal-export-layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.eocrm-portal-export-sidebar {
+    border: 1px solid #d7e4f3;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 12px;
+}
+
+.eocrm-portal-export-sidebar h3,
+.eocrm-portal-export-content h3 {
+    margin-top: 0;
+}
+
+.eocrm-portal-export-content {
+    border: 1px solid #d7e4f3;
+    border-radius: 10px;
+    background: #fff;
+    padding: 12px;
+}
+
+.eocrm-portal-provider-panel + .eocrm-portal-provider-panel {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e6edf6;
+}
+
+.eocrm-portal-provider-panel.is-hidden {
+    display: none;
+}
+
+.eocrm-about-page {
+    background: linear-gradient(180deg, #f6f9fe 0%, #eef4fb 100%);
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 16px;
+    padding: 14px 16px 16px;
+    margin-top: 14px;
+}
+
+.eocrm-about-page .eocrm-admin-panel {
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: var(--eocrm-admin-radius);
+    background: var(--eocrm-admin-card);
+    box-shadow: 0 8px 24px rgba(15, 31, 54, 0.06);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.eocrm-about-page .eocrm-admin-panel h2 {
+    margin: 0 0 10px;
+    color: #112b47;
+}
+
+.eocrm-about-page .eocrm-about-hero {
+    text-align: left;
+}
+
+.eocrm-about-page .eocrm-about-logo-wrap {
+    margin-bottom: 12px;
+}
+
+.eocrm-about-page .eocrm-about-logo {
+    display: block;
+    max-width: min(240px, 100%);
+    max-height: 240px;
+    height: auto;
+    object-fit: contain;
+}
+
+.eocrm-about-page .eocrm-about-lead {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #23344a;
+    margin: 0 0 10px;
+}
+
+.eocrm-about-page .eocrm-about-contact-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.eocrm-about-page .eocrm-about-contact-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+    color: #143459;
+    border: 1px solid #cfe0f4;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    padding: 10px 12px;
+}
+
+.eocrm-about-page .eocrm-about-contact-pill:hover,
+.eocrm-about-page .eocrm-about-contact-pill:focus {
+    border-color: #95b8df;
+    color: #0b4f9a;
+    box-shadow: 0 0 0 3px rgba(11, 92, 173, 0.12);
+}
+
+.eocrm-about-page .eocrm-about-contact-pill span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+    color: #587293;
+}
+
+.eocrm-about-page .eocrm-about-contact-pill strong {
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.eocrm-about-page .eocrm-about-contact-pill-status {
+    cursor: default;
+}
+
+.eocrm-about-page .eocrm-about-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.eocrm-about-page .eocrm-about-note {
+    margin: 0 0 10px;
+    color: #20364f;
+}
+
+.eocrm-about-page .eocrm-about-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.eocrm-about-page .eocrm-about-list li {
+    border: 1px solid #d5e3f3;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 10px 12px;
+}
+
+.eocrm-about-page .eocrm-about-list-changelog li {
+    border-left: 4px solid #0b5cad;
+    background: #f8fbff;
+}
+
+.eocrm-about-page .eocrm-about-item-title {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #123458;
+}
+
+.eocrm-about-page .eocrm-about-item-text {
+    display: block;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #25394f;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-lead {
+    margin: 0 0 12px;
+    color: #22364d;
+}
+
+.eocrm-dashboard-brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    margin: 2px 0 14px;
+    padding: 14px 18px;
+    border: 1px solid #dbe7f4;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 26px rgba(15, 31, 54, 0.07);
+}
+
+.eocrm-dashboard-logo {
+    display: block;
+    max-width: min(420px, 100%);
+    max-height: 86px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.eocrm-onboarding-table th:nth-child(2),
+.eocrm-onboarding-table th:nth-child(3),
+.eocrm-onboarding-table td:nth-child(2),
+.eocrm-onboarding-table td:nth-child(3) {
+    width: 180px;
+    text-align: center;
+}
+
+.eocrm-onboarding-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid #cfe0f2;
+    border-radius: 999px;
+    background: #f4f8fd;
+    white-space: nowrap;
+}
+
+.eocrm-onboarding-toggle label {
+    position: relative;
+    display: inline-flex;
+    margin: 0;
+    cursor: pointer;
+}
+
+.eocrm-onboarding-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.eocrm-onboarding-toggle span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 28px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: #607287;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.eocrm-onboarding-toggle input:checked + span {
+    background: #0b5cad;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(11, 92, 173, 0.22);
+}
+
+.eocrm-onboarding-toggle input[value="0"]:checked + span {
+    background: #eef2f7;
+    color: #52657c;
+    box-shadow: inset 0 0 0 1px #d7e2ef;
+}
+
+.eocrm-onboarding-links-table input[type="text"],
+.eocrm-onboarding-links-table input[type="url"] {
+    width: 100%;
+}
+
+.eocrm-onboarding-links-table th:nth-child(3),
+.eocrm-onboarding-links-table th:nth-child(4),
+.eocrm-onboarding-links-table td:nth-child(3),
+.eocrm-onboarding-links-table td:nth-child(4) {
+    width: 160px;
+    text-align: center;
+}
+
+.eocrm-onboarding-links-table th:nth-child(5),
+.eocrm-onboarding-links-table td:nth-child(5) {
+    width: 90px;
+    text-align: center;
+}
+
+.eocrm-onboarding-send-panel {
+    border-left: 4px solid #0b5cad;
+}
+
+.eocrm-onboarding-send-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.eocrm-onboarding-send-row label {
+    min-width: min(100%, 420px);
+}
+
+.eocrm-onboarding-send-row select {
+    width: 100%;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-kpis .eocrm-admin-card {
+    border-left-width: 5px;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-kpis .eocrm-admin-card small {
+    display: block;
+    margin-top: 6px;
+    color: #5a718d;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-panel h2 {
+    margin: 0 0 10px;
+}
+
+.eocrm-dashboard-bars {
+    display: grid;
+    gap: 10px;
+}
+
+.eocrm-dashboard-bar-row {
+    display: grid;
+    gap: 6px;
+}
+
+.eocrm-dashboard-bar-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+    color: #20344b;
+}
+
+.eocrm-dashboard-bar-head strong {
+    color: #0b5cad;
+}
+
+.eocrm-dashboard-bar-track {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e4edf8;
+    overflow: hidden;
+}
+
+.eocrm-dashboard-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0b5cad 0%, #2f80d1 100%);
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-alerts {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-alerts li {
+    margin: 0;
+    color: #24374e;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-links {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-links li {
+    margin: 0;
+}
+
+.eocrm-dashboard-quick-links {
+    margin: 0 0 22px;
+}
+
+.eocrm-dashboard-quick-links__heading {
+    margin: 0 0 12px;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #4f6480;
+    font-weight: 600;
+}
+
+.eocrm-dashboard-quick-links__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.eocrm-dashboard-quick-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f8ff 100%);
+    border: 1px solid #cfdcef;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(20, 50, 90, 0.04);
+    color: #13385d;
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.eocrm-dashboard-quick-link:hover,
+.eocrm-dashboard-quick-link:focus {
+    transform: translateY(-2px);
+    border-color: #0b5cad;
+    box-shadow: 0 8px 22px rgba(11, 92, 173, 0.14);
+    background: linear-gradient(135deg, #ffffff 0%, #e7f1ff 100%);
+    color: #0b5cad;
+    outline: none;
+}
+
+.eocrm-dashboard-quick-link:focus-visible {
+    box-shadow: 0 0 0 2px #0b5cad, 0 8px 22px rgba(11, 92, 173, 0.14);
+}
+
+.eocrm-dashboard-quick-link__icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #e3edfb;
+    color: #0b5cad;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.eocrm-dashboard-quick-link__icon::before {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+}
+
+.eocrm-dashboard-quick-link:hover .eocrm-dashboard-quick-link__icon,
+.eocrm-dashboard-quick-link:focus .eocrm-dashboard-quick-link__icon {
+    background: #0b5cad;
+    color: #ffffff;
+}
+
+.eocrm-dashboard-quick-link__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.eocrm-dashboard-quick-link__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: inherit;
+    line-height: 1.25;
+}
+
+.eocrm-dashboard-quick-link__desc {
+    font-size: 12px;
+    color: #5a718d;
+    line-height: 1.35;
+}
+
+.eocrm-dashboard-quick-link:hover .eocrm-dashboard-quick-link__desc,
+.eocrm-dashboard-quick-link:focus .eocrm-dashboard-quick-link__desc {
+    color: #284f7a;
+}
+
+.eocrm-dashboard-quick-link__chevron {
+    color: #88a0bf;
+    transition: transform 0.18s ease, color 0.18s ease;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.eocrm-dashboard-quick-link:hover .eocrm-dashboard-quick-link__chevron,
+.eocrm-dashboard-quick-link:focus .eocrm-dashboard-quick-link__chevron {
+    color: #0b5cad;
+    transform: translateX(3px);
+}
+
+@media (max-width: 600px) {
+    .eocrm-dashboard-quick-links__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-table {
+    min-width: 100%;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-insights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-insights article {
+    border: 1px solid #d7e4f3;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 10px 12px;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-insights h3 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: #13385d;
+}
+
+.eocrm-dashboard-page .eocrm-dashboard-insights p {
+    margin: 0;
+    color: #2a3e55;
+    line-height: 1.45;
+    font-size: 13px;
+}
+
+.eocrm-license-page {
+    max-width: 1180px;
+}
+
+.eocrm-license-page .eocrm-license-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top right, rgba(11, 92, 173, 0.13), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f4f9ff 100%);
+}
+
+.eocrm-license-page .eocrm-license-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #0b5cad;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.eocrm-license-page .eocrm-license-hero h1 {
+    margin: 0;
+    color: #10243d;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.08;
+}
+
+.eocrm-license-page .eocrm-license-hero p {
+    max-width: 640px;
+    margin: 10px 0 0;
+    color: #516579;
+    font-size: 15px;
+}
+
+.eocrm-license-page .eocrm-license-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 118px;
+    border: 1px solid #bfd4ec;
+    border-radius: 999px;
+    background: #eaf3ff;
+    color: #0b5cad;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.eocrm-license-page .eocrm-license-status-pill-active {
+    border-color: #c9ddb7;
+    background: #edf7e6;
+    color: #3a701f;
+}
+
+.eocrm-license-page .eocrm-license-status-pill-expired,
+.eocrm-license-page .eocrm-license-status-pill-invalid,
+.eocrm-license-page .eocrm-license-status-pill-missing {
+    border-color: #f0cbc6;
+    background: #fff1ef;
+    color: #a4382c;
+}
+
+.eocrm-license-page .eocrm-license-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.75fr);
+    align-items: start;
+}
+
+.eocrm-license-page .eocrm-license-card {
+    padding: 22px;
+}
+
+.eocrm-license-page .eocrm-license-card h2 {
+    margin-top: 0;
+    color: #10243d;
+}
+
+.eocrm-license-page .eocrm-license-form .regular-text {
+    width: min(100%, 520px);
+    border-color: #c8d8ea;
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+
+.eocrm-license-page .eocrm-license-form .button-primary {
+    border-radius: 999px;
+    background: #0b5cad;
+    border-color: #0b5cad;
+    padding: 4px 18px;
+    font-weight: 700;
+}
+
+.eocrm-license-page .eocrm-license-status-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.eocrm-license-page .eocrm-license-status-list div {
+    display: grid;
+    grid-template-columns: 138px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #dbe7f4;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 11px 12px;
+}
+
+.eocrm-license-page .eocrm-license-status-list dt {
+    color: #607287;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.eocrm-license-page .eocrm-license-status-list dd {
+    margin: 0;
+    color: #17283d;
+    overflow-wrap: anywhere;
+}
+
+.eocrm-license-page .eocrm-license-unregister-form {
+    margin-top: 18px;
+    border-top: 1px solid #e1e9f3;
+    padding-top: 18px;
+}
+
+.eocrm-license-page .eocrm-license-danger-button {
+    border-radius: 999px;
+    border-color: #e5b1ab;
+    background: #fff7f5;
+    color: #9b3328;
+    font-weight: 800;
+}
+
+.eocrm-license-page .eocrm-license-danger-button:hover,
+.eocrm-license-page .eocrm-license-danger-button:focus {
+    border-color: #c74a3c;
+    background: #ffe9e5;
+    color: #7f241b;
+}
+
+@media (max-width: 782px) {
+    .eocrm-settings-page,
+    .eocrm-agents-page,
+    .eocrm-about-page,
+    .eocrm-license-page {
+        padding: 10px;
+    }
+
+    .eocrm-settings-tabs {
+        gap: 6px;
+    }
+
+    .eocrm-settings-tabs .nav-tab {
+        padding: 7px 11px;
+        font-size: 12px;
+    }
+
+    .eocrm-admin-table {
+        min-width: 760px;
+    }
+
+    .eocrm-portal-export-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .eocrm-about-page .eocrm-about-contact-row,
+    .eocrm-about-page .eocrm-about-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .eocrm-dashboard-page .eocrm-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eocrm-dashboard-page .eocrm-dashboard-insights {
+        grid-template-columns: 1fr;
+    }
+
+    .eocrm-license-page .eocrm-license-hero,
+    .eocrm-license-page .eocrm-license-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eocrm-license-page .eocrm-license-hero {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .eocrm-license-page .eocrm-license-status-list div {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
+/* ============================================================
+   v1.1678 — Modern admin polish overlay
+   Refined tokens, typography, forms, tables, buttons.
+   Append-only: extends rules above without changing layout.
+   ============================================================ */
+
+.eocrm-admin-wrap,
+.eocrm-settings-page,
+.eocrm-agents-page,
+.eocrm-about-page,
+.eocrm-license-page,
+.eocrm-dashboard-page {
+    --eocrm-admin-bg: #f4f7fc;
+    --eocrm-admin-card: #ffffff;
+    --eocrm-admin-border: #e1e8f3;
+    --eocrm-admin-border-strong: #cdd9eb;
+    --eocrm-admin-text: #0f1d33;
+    --eocrm-admin-muted: #5d6d85;
+    --eocrm-admin-primary: #1d6ad6;
+    --eocrm-admin-primary-dark: #144d9c;
+    --eocrm-admin-primary-soft: #eaf2fd;
+    --eocrm-admin-accent: #6c4cf5;
+    --eocrm-admin-success: #16a34a;
+    --eocrm-admin-danger: #d92d20;
+    --eocrm-admin-warning: #b8810b;
+    --eocrm-admin-radius: 12px;
+    --eocrm-admin-radius-lg: 16px;
+    --eocrm-admin-shadow-sm: 0 1px 2px rgba(15, 31, 54, 0.05);
+    --eocrm-admin-shadow: 0 4px 14px rgba(15, 31, 54, 0.06);
+    --eocrm-admin-shadow-lg: 0 18px 38px rgba(15, 31, 54, 0.10);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv01", "cv11";
+}
+
+.eocrm-settings-page,
+.eocrm-agents-page,
+.eocrm-about-page,
+.eocrm-license-page,
+.eocrm-dashboard-page {
+    background:
+        radial-gradient(circle at 0% -10%, rgba(29, 106, 214, 0.08), transparent 38%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+    border-color: var(--eocrm-admin-border);
+    border-radius: var(--eocrm-admin-radius-lg);
+}
+
+.eocrm-settings-page h1,
+.eocrm-agents-page h1,
+.eocrm-about-page h1,
+.eocrm-license-page h1,
+.eocrm-dashboard-page h1 {
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    color: #0c1e36;
+}
+
+.eocrm-admin-panel,
+.eocrm-settings-page .eocrm-admin-panel,
+.eocrm-agents-page .eocrm-admin-panel,
+.eocrm-about-page .eocrm-admin-panel {
+    border-color: var(--eocrm-admin-border);
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.eocrm-admin-panel:hover,
+.eocrm-settings-page .eocrm-admin-panel:hover,
+.eocrm-agents-page .eocrm-admin-panel:hover {
+    box-shadow: var(--eocrm-admin-shadow-lg);
+}
+
+/* Form inputs — unified, modern */
+.eocrm-settings-form input[type="text"],
+.eocrm-settings-form input[type="email"],
+.eocrm-settings-form input[type="number"],
+.eocrm-settings-form input[type="url"],
+.eocrm-settings-form input[type="password"],
+.eocrm-settings-form input[type="search"],
+.eocrm-settings-form input[type="tel"],
+.eocrm-settings-form select,
+.eocrm-settings-form textarea,
+.eocrm-agents-page input[type="text"],
+.eocrm-agents-page input[type="email"],
+.eocrm-agents-page input[type="number"],
+.eocrm-agents-page input[type="url"],
+.eocrm-agents-page input[type="password"],
+.eocrm-agents-page input[type="search"],
+.eocrm-agents-page input[type="tel"],
+.eocrm-agents-page select,
+.eocrm-agents-page textarea {
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 1px solid var(--eocrm-admin-border-strong);
+    border-radius: 10px;
+    background: #ffffff;
+    color: var(--eocrm-admin-text);
+    box-shadow: inset 0 1px 1px rgba(15, 31, 54, 0.03);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.eocrm-settings-form input:hover:not(:focus),
+.eocrm-settings-form select:hover:not(:focus),
+.eocrm-settings-form textarea:hover:not(:focus),
+.eocrm-agents-page input:hover:not(:focus),
+.eocrm-agents-page select:hover:not(:focus),
+.eocrm-agents-page textarea:hover:not(:focus) {
+    border-color: #adc4e3;
+}
+
+.eocrm-settings-form input:focus,
+.eocrm-settings-form select:focus,
+.eocrm-settings-form textarea:focus,
+.eocrm-agents-page input:focus,
+.eocrm-agents-page select:focus,
+.eocrm-agents-page textarea:focus {
+    border-color: var(--eocrm-admin-primary);
+    box-shadow: 0 0 0 4px rgba(29, 106, 214, 0.14);
+    outline: none;
+    background: #ffffff;
+}
+
+.eocrm-settings-form textarea,
+.eocrm-agents-page textarea {
+    line-height: 1.55;
+    padding: 10px 12px;
+}
+
+.eocrm-settings-form label,
+.eocrm-agents-page label {
+    color: #1a2c45;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+}
+
+.eocrm-settings-form .description,
+.eocrm-agents-page .description,
+.eocrm-settings-form p.description,
+.eocrm-agents-page p.description {
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin-top: 6px;
+    color: var(--eocrm-admin-muted);
+}
+
+/* Form table rows breathe */
+.eocrm-settings-form .form-table th,
+.eocrm-agents-page .form-table th {
+    padding: 14px 10px 14px 0;
+    color: #16294a;
+    font-weight: 600;
+    width: 220px;
+}
+
+.eocrm-settings-form .form-table td,
+.eocrm-agents-page .form-table td {
+    padding: 12px 10px;
+}
+
+/* Tabs */
+.eocrm-settings-tabs .nav-tab {
+    padding: 9px 16px;
+    box-shadow: var(--eocrm-admin-shadow-sm);
+}
+
+.eocrm-settings-tabs .nav-tab.nav-tab-active {
+    background: linear-gradient(180deg, #ffffff 0%, var(--eocrm-admin-primary-soft) 100%);
+    border-color: #b6cbe9;
+    color: var(--eocrm-admin-primary-dark);
+    box-shadow: 0 4px 12px rgba(29, 106, 214, 0.14);
+}
+
+/* Buttons */
+.eocrm-agents-page .button,
+.eocrm-settings-page .button,
+.eocrm-about-page .button,
+.eocrm-license-page .button,
+.eocrm-dashboard-page .button {
+    border-radius: 9px;
+    padding: 6px 16px;
+    min-height: 36px;
+    font-weight: 600;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.eocrm-agents-page .button-primary,
+.eocrm-settings-page .button-primary,
+.eocrm-about-page .button-primary,
+.eocrm-license-page .button-primary,
+.eocrm-dashboard-page .button-primary {
+    background: linear-gradient(180deg, #2378e0 0%, var(--eocrm-admin-primary) 100%);
+    border-color: var(--eocrm-admin-primary-dark);
+    box-shadow: 0 4px 12px rgba(29, 106, 214, 0.22);
+    text-shadow: none;
+}
+
+.eocrm-agents-page .button-primary:hover,
+.eocrm-settings-page .button-primary:hover,
+.eocrm-about-page .button-primary:hover,
+.eocrm-license-page .button-primary:hover,
+.eocrm-dashboard-page .button-primary:hover,
+.eocrm-agents-page .button-primary:focus,
+.eocrm-settings-page .button-primary:focus {
+    background: linear-gradient(180deg, #1f6ed1 0%, #144d9c 100%);
+    box-shadow: 0 6px 16px rgba(20, 77, 156, 0.30);
+    transform: translateY(-1px);
+}
+
+/* Tables */
+.eocrm-admin-table {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.eocrm-admin-table thead th {
+    background: linear-gradient(180deg, #f7faff 0%, #eaf1fa 100%);
+    color: #0e2848;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 14px;
+}
+
+.eocrm-admin-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.eocrm-admin-table tbody tr:hover {
+    background: #f3f8ff;
+}
+
+.eocrm-admin-table tbody td {
+    padding: 12px 14px;
+    color: #1a2c45;
+}
+
+/* Cards */
+.eocrm-admin-card {
+    border-radius: var(--eocrm-admin-radius);
+    border-color: var(--eocrm-admin-border);
+    border-left-width: 4px;
+    border-left-color: var(--eocrm-admin-primary);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    padding: 14px 16px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.eocrm-admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--eocrm-admin-shadow);
+}
+
+.eocrm-admin-card h2 {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5d6d85;
+    font-weight: 700;
+}
+
+.eocrm-admin-card p {
+    font-size: 30px;
+    font-variant-numeric: tabular-nums;
+    color: var(--eocrm-admin-primary-dark);
+    letter-spacing: -0.01em;
+}
+
+/* Numbering / settings inner panels */
+.eocrm-numbering-box {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    padding: 14px 16px;
+}
+
+.eocrm-numbering-box-inner {
+    border-radius: 10px;
+    background: #fbfdff;
+}
+
+/* Dev access card refresh */
+.eocrm-dev-access-card {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow);
+}
+
+.eocrm-dev-access-toggle {
+    border-radius: 999px;
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.eocrm-dev-access-toggle:hover {
+    transform: translateY(-1px);
+}
+
+/* Template selector cards */
+.eocrm-template-card {
+    border-radius: var(--eocrm-admin-radius);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.eocrm-template-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--eocrm-admin-primary);
+    box-shadow: var(--eocrm-admin-shadow);
+}
+
+.eocrm-template-card:has(input[type="radio"]:checked) {
+    border-color: var(--eocrm-admin-primary);
+    box-shadow: 0 0 0 3px rgba(29, 106, 214, 0.18);
+}
+
+/* Crop modal polish */
+.eocrm-crop-modal-dialog {
+    border-radius: var(--eocrm-admin-radius-lg);
+    box-shadow: 0 30px 70px rgba(9, 24, 44, 0.40);
+}
+
+/* About page polish */
+.eocrm-about-page .eocrm-about-contact-pill {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.eocrm-about-page .eocrm-about-contact-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--eocrm-admin-shadow);
+}
+
+/* Dashboard quick links — soften shadow on hover */
+.eocrm-dashboard-quick-link {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+}
+
+/* License page hero */
+.eocrm-license-page .eocrm-license-hero {
+    border-radius: var(--eocrm-admin-radius-lg);
+    border: 1px solid var(--eocrm-admin-border);
+    box-shadow: var(--eocrm-admin-shadow);
+}
+
+.eocrm-license-page .eocrm-license-status-pill {
+    box-shadow: var(--eocrm-admin-shadow-sm);
+}
+
+/* Agreements / portal export */
+.eocrm-portal-export-sidebar,
+.eocrm-portal-export-content {
+    border-radius: var(--eocrm-admin-radius);
+    box-shadow: var(--eocrm-admin-shadow-sm);
+}
+
+/* AML / RODO / UODO document repository */
+.eocrm-compliance-hero {
+    background:
+        radial-gradient(circle at top left, rgba(29, 106, 214, 0.12), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.eocrm-compliance-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.eocrm-compliance-sources a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 10px;
+    border: 1px solid var(--eocrm-admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--eocrm-admin-primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: var(--eocrm-admin-shadow-sm);
+}
+
+.eocrm-compliance-table th:nth-child(1) {
+    width: 22%;
+}
+
+.eocrm-compliance-table th:nth-child(3) {
+    width: 22%;
+}
+
+.eocrm-compliance-table th:nth-child(4) {
+    width: 20%;
+}
+
+.eocrm-compliance-row td {
+    vertical-align: top;
+}
+
+.eocrm-compliance-row strong {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.eocrm-compliance-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eaf2fd;
+    color: var(--eocrm-admin-primary-dark);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.eocrm-compliance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+
+.eocrm-compliance-file-preview {
+    min-height: 38px;
+    padding: 9px 11px;
+    border: 1px dashed var(--eocrm-admin-border);
+    border-radius: 10px;
+    background: #f8fbff;
+}
+
+.eocrm-compliance-file-preview a {
+    color: var(--eocrm-admin-primary-dark);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.eocrm-compliance-file-preview span {
+    color: var(--eocrm-admin-muted);
+}
+
+.eocrm-compliance-table textarea {
+    width: 100%;
+    min-height: 84px;
+}
+
+/* WP notices in our pages */
+.eocrm-settings-page .notice,
+.eocrm-agents-page .notice,
+.eocrm-about-page .notice,
+.eocrm-license-page .notice,
+.eocrm-dashboard-page .notice {
+    border-radius: 10px;
+    border-width: 1px;
+    border-left-width: 4px;
+    box-shadow: var(--eocrm-admin-shadow-sm);
+    padding: 10px 14px;
+}
+
+/* Custom fields table polish */
+.eocrm-custom-fields-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--eocrm-admin-radius);
+    overflow: hidden;
+}
+
+.eocrm-custom-fields-table th,
+.eocrm-custom-fields-table td {
+    padding: 11px 12px;
+}
+
+/* Select list (multiselects) */
+.eocrm-settings-form select[multiple],
+.eocrm-agents-page select[multiple] {
+    min-height: 120px;
+    padding: 8px;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+    .eocrm-admin-card,
+    .eocrm-template-card,
+    .eocrm-about-page .eocrm-about-contact-pill,
+    .eocrm-dev-access-toggle,
+    .eocrm-agents-page .button,
+    .eocrm-settings-page .button,
+    .eocrm-admin-panel {
+        transition: none !important;
+    }
+    .eocrm-admin-card:hover,
+    .eocrm-template-card:hover,
+    .eocrm-about-page .eocrm-about-contact-pill:hover {
+        transform: none !important;
+    }
+}
+
+
+/* ============================================================
+   v1.1692 — CRM style selector inside Dev access card
+   ============================================================ */
+
+.eocrm-dev-access-style {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #c8daee;
+}
+
+.eocrm-dev-access-style h4 {
+    color: #0b376d;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.eocrm-crm-style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.eocrm-crm-style-option {
+    position: relative;
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 4px 14px;
+    align-items: start;
+    padding: 12px;
+    border: 1px solid #c8daee;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.eocrm-crm-style-option:hover {
+    border-color: #95b8df;
+    box-shadow: 0 4px 14px rgba(11, 92, 173, 0.10);
+    transform: translateY(-1px);
+}
+
+.eocrm-crm-style-option.is-active {
+    border-color: #0b5cad;
+    background: linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
+    box-shadow: 0 0 0 3px rgba(11, 92, 173, 0.16);
+}
+
+.eocrm-crm-style-option input[type="radio"] {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+}
+
+.eocrm-crm-style-option__preview {
+    grid-row: 1 / span 2;
+    width: 86px;
+    height: 72px;
+    border-radius: 10px;
+    border: 1px solid #c8daee;
+    overflow: hidden;
+    position: relative;
+}
+
+.eocrm-crm-style-option__preview--default {
+    background:
+        linear-gradient(135deg, rgba(108, 76, 245, 0.16), transparent 38%),
+        linear-gradient(135deg, rgba(29, 106, 214, 0.18), transparent 42%),
+        linear-gradient(135deg, #ffffff 0%, #f4f8fd 100%);
+}
+
+.eocrm-crm-style-option__preview--default::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1d6ad6 0%, #6c4cf5 100%);
+}
+
+.eocrm-crm-style-option__preview--default::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    height: 28px;
+    background:
+        linear-gradient(90deg, #1d6ad6 0%, #6c4cf5 100%) no-repeat 0 0 / 60% 6px,
+        #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(15, 31, 54, 0.10);
+}
+
+.eocrm-crm-style-option__preview--minimal {
+    background: #fafbfc;
+    border-color: #e6e8eb;
+}
+
+.eocrm-crm-style-option__preview--minimal::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: #2f3a4e;
+}
+
+.eocrm-crm-style-option__preview--minimal::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    height: 28px;
+    background: #ffffff;
+    border: 1px solid #e6e8eb;
+    border-radius: 4px;
+}
+
+.eocrm-crm-style-option__label {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0b376d;
+    line-height: 1.3;
+    padding-right: 22px;
+}
+
+.eocrm-crm-style-option__desc {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 12px;
+    color: #5b6b82;
+    line-height: 1.45;
+}
